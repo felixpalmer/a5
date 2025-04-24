@@ -16,7 +16,7 @@ class AreaDemo extends Component {
     return (
       <div>
         <p>Area comparison between H3 and A5 tiling systems.</p>
-        <p>H3 cells vary in size across the globe, with the ratio between the largest and smallest cell areas being roughly 2.</p>
+        <p>H3 cells vary in size across the globe, with the ratio between the largest and smallest cell areas being roughly 1.63.</p>
         <p>A5 cells area are more uniform, with the ratio between the largest and smallest cell areas being roughly 1.02.</p>
       </div>
     );
