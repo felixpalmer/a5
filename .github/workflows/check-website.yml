@@ -1,0 +1,22 @@
+name: check-website
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Volta
+        uses: volta-cli/action@v4
+
+      - name: Build website
+        run: |
+          cd website
+          yarn install
+          yarn build
