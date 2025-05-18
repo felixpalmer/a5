@@ -21,11 +21,14 @@ describe('normalizeGamma', () => {
   }
 
   it('is periodic with period 2*PI_OVER_5', () => {
-    const gamma1 = PI_OVER_5 as Radians;
-    const gamma2 = (gamma1 + 2 * PI_OVER_5) as Radians;
-    const normalized1 = normalizeGamma(gamma1);
-    const normalized2 = normalizeGamma(gamma2);
-    expect(normalized1).toBeCloseTo(normalized2);
+    const TEST_VALUES = [0.01, 0.14, 0.333, 0.5, 0.6198123, 0.77, 0.9];
+    for (const value of TEST_VALUES) {
+      const gamma1 = (value * 2 * PI_OVER_5) as Radians;
+      const gamma2 = (gamma1 + 2 * PI_OVER_5) as Radians;
+      const normalized1 = normalizeGamma(gamma1);
+      const normalized2 = normalizeGamma(gamma2);
+      expect(normalized1).toBeCloseTo(normalized2);
+    }
   });
 });
 
