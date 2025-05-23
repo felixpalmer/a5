@@ -5,12 +5,9 @@ import {
   toCartesian,
   toSpherical,
   fromLonLat,
-  toLonLat,
-  Degrees,
-  LonLat,
-  Radians,
-  Spherical,
-} from 'a5/core/math'
+  toLonLat
+} from 'a5/core/coordinate-transforms'
+import type { Degrees, LonLat, Radians, Spherical } from 'a5/core/coordinate-systems'
 
 describe('angle conversions', () => {
   it('converts degrees to radians', () => {
