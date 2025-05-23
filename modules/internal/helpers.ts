@@ -4,7 +4,7 @@
 
 import { vec2, mat2, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { LonLat, Face, fromLonLat, toFace } from '../core/math';
+import { LonLat, Face, fromLonLat, toFace } from '../core/coordinate-transforms';
 import { findNearestOrigin } from '../core/origin';
 import { unprojectDodecahedron } from '../core/dodecahedron';
 import { PI_OVER_5 } from '../core/constants';

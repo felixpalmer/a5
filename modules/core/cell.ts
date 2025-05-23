@@ -5,8 +5,8 @@
 import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Face, LonLat } from "./types";
-import { FaceToIJ, fromLonLat, toFace } from "./math";
+import type { Face, LonLat } from "./coordinate-systems";
+import { FaceToIJ, fromLonLat, toFace } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { unprojectDodecahedron } from "./dodecahedron";
 import { A5Cell, PentagonShape } from "./utils";

@@ -14,5 +14,5 @@ export {hexToBigInt, bigIntToHex} from './core/hex';
 export {cellToParent, cellToChildren, getResolution} from './core/serialization';
 
 // Types
-export type {Degrees, Radians} from './core/types';
+export type {Degrees, Radians} from './core/coordinate-systems';
 export type {A5Cell} from './core/utils';

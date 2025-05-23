@@ -4,7 +4,7 @@
 
 import { vec2, quat, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Degrees, Radians, Face, Polar, IJ, Cartesian, Spherical, LonLat } from "./types";
+import type { Degrees, Radians, Face, Polar, IJ, Cartesian, Spherical, LonLat } from "./coordinate-systems";
 import { BASIS_INVERSE, BASIS } from "./pentagon";
 
 export function degToRad(deg: Degrees): Radians {
