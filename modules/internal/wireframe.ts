@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { LonLat } from '../core/coordinate-transforms';
+import type { LonLat } from '../core/coordinate-systems';
 import { cellToBoundary } from '../core/cell';
 import { cellToChildren, FIRST_HILBERT_RESOLUTION } from '../core/serialization';
 
