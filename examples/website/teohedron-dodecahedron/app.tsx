@@ -5,7 +5,7 @@ import { OrbitControls } from '@react-three/drei';
 import { DoubleSide, BufferGeometry, BufferAttribute, Vector3 } from 'three';
 import { generateWireframe } from 'a5-internal/wireframe';
 
-import {fromLonLat, toCartesian} from 'a5/core/math';
+import {fromLonLat, toCartesian} from 'a5/core/coordinate-transforms';
 
 const RESOLUTION = 3;
 

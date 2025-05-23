@@ -4,7 +4,7 @@
 
 import { vec2, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { IJ, KJ } from './types';
+import { IJ, KJ } from './coordinate-systems';
 
 export type Quaternary = 0 | 1 | 2 | 3;
 export const YES = -1 as const;

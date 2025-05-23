@@ -4,7 +4,7 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { ACESFilmicToneMapping, Vector3, Matrix4, Euler, DoubleSide, BackSide } from 'three';
 import { generateWireframe } from 'a5-internal/wireframe';
-import { fromLonLat, toCartesian } from 'a5/core/math';
+import { fromLonLat, toCartesian } from 'a5/core/coordinate-transforms';
 
 type DimplePosition = { center: Vector3; up: Vector3; };
 

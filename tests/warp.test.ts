@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { warpPoint, unwarpPoint } from 'a5/core/warp'
 import { normalizeGamma, warpPolar, unwarpPolar, warpBeta, unwarpBeta } from 'a5/core/warp'
 import { PI_OVER_5, PI_OVER_10, TWO_PI_OVER_5, distanceToEdge } from 'a5/core/constants'
-import type { Radians, Polar } from 'a5/core/types'
+import type { Radians, Polar } from 'a5/core/coordinate-systems'
 import TEST_COORDS from './test-polar-coordinates.json';
 
 describe('normalizeGamma', () => {

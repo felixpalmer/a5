@@ -7,7 +7,7 @@ import {H3HexagonLayer} from '@deck.gl/geo-layers';
 import {PolygonLayer} from '@deck.gl/layers';
 import {cellArea, getRes0Cells, cellToChildren, cellToVertexes, vertexToLatLng, greatCircleDistance, cellToBoundary, cellToLatLng, isPentagon} from 'h3-js';
 import {generateWireframe} from 'a5-internal/wireframe';
-import {toCartesian, fromLonLat} from 'a5/core/math';
+import {toCartesian, fromLonLat} from 'a5/core/coordinate-transforms';
 import {colorContinuous} from '@deck.gl/carto';
 
 import {pentagonArea} from 'a5/core/utils';

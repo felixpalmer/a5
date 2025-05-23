@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { Radians } from "./types";
+import type { Radians } from "./coordinate-systems";
 
 // Golden ratio
 export const φ = (1 + Math.sqrt(5)) / 2;
