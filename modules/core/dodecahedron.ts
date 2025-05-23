@@ -4,7 +4,7 @@
 
 import { vec3, quat, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { toCartesian, toSpherical } from "./math";
+import { toCartesian, toSpherical } from "./coordinate-transforms";
 import type { Radians, Spherical, Cartesian, Polar } from "./coordinate-systems";
 import { unwarpPolar, warpPolar } from './warp';
 import { projectGnomonic, unprojectGnomonic } from './gnomonic';

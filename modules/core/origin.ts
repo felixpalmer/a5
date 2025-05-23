@@ -4,7 +4,7 @@
 
 import { vec2, vec3, quat, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { toCartesian, quatFromSpherical } from "./math";
+import { toCartesian, quatFromSpherical } from "./coordinate-transforms";
 import type { Radians, Spherical, Cartesian, Face } from "./coordinate-systems";
 import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5, distanceToEdge } from './constants';
 import { Orientation } from "./hilbert";
