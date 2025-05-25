@@ -15,6 +15,7 @@ def extract_imports(file_path):
 def build_dependency_graph(directory):
     graph = defaultdict(set)
     files = {}
+    file_sizes = {}
     
     # First pass: collect all .ts files
     for filename in os.listdir(directory):
@@ -22,6 +23,7 @@ def build_dependency_graph(directory):
             file_path = os.path.join(directory, filename)
             module_name = os.path.splitext(filename)[0]
             files[module_name] = file_path
+            file_sizes[module_name] = os.path.getsize(file_path)
     
     # Second pass: build dependency graph
     for module_name, file_path in files.items():
@@ -32,7 +34,7 @@ def build_dependency_graph(directory):
             if imp_base in files:
                 graph[module_name].add(imp_base)
     
-    return graph
+    return graph, file_sizes
 
 def find_cycle(graph, start, visited, path):
     """Find a cycle in the graph starting from 'start' node."""
@@ -54,7 +56,7 @@ def find_cycle(graph, start, visited, path):
     path.pop()
     return None
 
-def topological_sort(graph):
+def topological_sort(graph, file_sizes):
     visited = set()
     temp = set()
     order = []
@@ -77,7 +79,11 @@ def topological_sort(graph):
         order.append(node)
 
     # Sort nodes to ensure consistent order
-    for node in sorted(graph.keys()):
+    # First sort by number of dependencies, then by file size
+    nodes = sorted(graph.keys(), 
+                  key=lambda x: (len(graph[x]), file_sizes[x]))
+    
+    for node in nodes:
         if node not in visited:
             visit(node)
 
@@ -89,7 +95,7 @@ def main():
         sys.exit(1)
 
     core_dir = sys.argv[1]
-    graph = build_dependency_graph(core_dir)
+    graph, file_sizes = build_dependency_graph(core_dir)
     
     # Print dependency information
     print("\nDependencies for each file:")
@@ -101,7 +107,7 @@ def main():
     
     print("\nSuggested porting order:")
     try:
-        order = topological_sort(graph)
+        order = topological_sort(graph, file_sizes)
         for i, file in enumerate(order, 1):
             print(f"{i}. {file}")
     except ValueError as e:
