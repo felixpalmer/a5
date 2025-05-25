@@ -22,16 +22,15 @@ def build_dependency_graph(directory):
             file_path = os.path.join(directory, filename)
             module_name = os.path.splitext(filename)[0]
             files[module_name] = file_path
-            files[filename] = file_path  # Also store with extension
     
     # Second pass: build dependency graph
-    for filename, file_path in files.items():
+    for module_name, file_path in files.items():
         imports = extract_imports(file_path)
         for imp in imports:
             # Get the base name of the imported file
             imp_base = os.path.splitext(os.path.basename(imp))[0]
             if imp_base in files:
-                graph[filename].add(imp_base)
+                graph[module_name].add(imp_base)
     
     return graph
 
