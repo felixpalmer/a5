@@ -1,3 +1,6 @@
+# This script analyzes the dependencies between files in the core directory and suggests a porting order.
+# python3 analyze_imports.py modules/core
+
 import os
 import re
 import sys
