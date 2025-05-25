@@ -3,7 +3,8 @@
 // Copyright (c) A5 contributors
 
 import { A5Cell } from "./utils";
-import { Origin, origins } from "./origin";
+import { Origin } from './utils';
+import { origins } from "./origin";
 
 export const FIRST_HILBERT_RESOLUTION = 3;
 export const MAX_RESOLUTION = 31;

@@ -2,11 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec2, mat2, mat2d, vec3, glMatrix} from 'gl-matrix';
+import {vec2, mat2, mat2d, vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { Origin } from './origin';
+import type { Radians, Spherical, Cartesian, Face, Degrees, LonLat } from './coordinate-systems';
 import { Triangle } from './triangle';
-import type { Degrees, LonLat, Face } from './coordinate-systems';
+import { Orientation } from "./hilbert";
+
+export type Origin = {
+  id: number;
+  axis: Spherical;
+  quat: quat;
+  angle: Radians;
+  orientation: Orientation[];
+  firstQuintant: number;
+};
 
 export type Pentagon = [Face, Face, Face, Face, Face];
 

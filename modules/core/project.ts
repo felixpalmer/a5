@@ -5,7 +5,8 @@
 import { vec2, mat2, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import { PentagonShape } from './utils';
-import { Origin, movePointToFace, findNearestOrigin, isNearestOrigin } from './origin';
+import { Origin } from './utils';
+import { movePointToFace, findNearestOrigin, isNearestOrigin } from './origin';
 import { projectDodecahedron } from './dodecahedron';
 import type { Face, LonLat, Polar, Radians } from './coordinate-systems';
 import { toLonLat, toPolar } from './coordinate-transforms';

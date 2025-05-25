@@ -8,17 +8,9 @@ import { toCartesian, quatFromSpherical } from "./coordinate-transforms";
 import type { Radians, Spherical, Cartesian, Face } from "./coordinate-systems";
 import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5, distanceToEdge } from './constants';
 import { Orientation } from "./hilbert";
+import type { Origin } from './utils';
 
 const UP: vec3 = [0, 0, 1] as Cartesian;
-
-export type Origin = {
-  id: number;
-  axis: Spherical;
-  quat: quat;
-  angle: Radians;
-  orientation: Orientation[];
-  firstQuintant: number;
-};
 
 // Quintant layouts (clockwise & counterclockwise)
 export const clockwiseFan = ['vu', 'uw', 'vw', 'vw', 'vw'] as Orientation[];
