@@ -84,4 +84,27 @@ describe('Authalic Conversion', () => {
             }
         })
     })
+
+    describe('specific conversion values', () => {
+        it('matches reference conversion values', () => {
+            const testCases = [
+                { geodetic: -90, authalic: -90.0000 },
+                { geodetic: -67.5, authalic: -67.4092 },
+                { geodetic: -45, authalic: -44.8717 },
+                { geodetic: -22.5, authalic: -22.4094 },
+                { geodetic: 0, authalic: 0 },
+                { geodetic: 22.5, authalic: 22.4094 },
+                { geodetic: 45, authalic: 44.8717 },
+                { geodetic: 67.5, authalic: 67.4092 },
+                { geodetic: 90, authalic: 90.0000 }
+            ]
+
+            testCases.forEach(({ geodetic, authalic }) => {
+                const geodeticRad = (geodetic * Math.PI / 180) as Radians
+                const authalicRad = (authalic * Math.PI / 180) as Radians
+                const result = geodeticToAuthalic(geodeticRad)
+                expect(result).toBeCloseTo(authalicRad, 5)
+            })
+        })
+    })
 }) 
