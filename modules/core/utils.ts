@@ -4,8 +4,7 @@
 
 import {vec2, mat2, mat2d, vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Radians, Spherical, Cartesian, Face, Degrees, LonLat } from './coordinate-systems';
-import { Triangle } from './triangle';
+import type { Radians, Spherical, Face, Degrees, LonLat } from './coordinate-systems';
 import { Orientation } from "./hilbert";
 
 export type Origin = {
@@ -22,7 +21,6 @@ export type Pentagon = [Face, Face, Face, Face, Face];
 export class PentagonShape {
   private vertices: Pentagon;
   public id: {i: number, j: number, k: number, resolution: number, segment?: number, origin?: Origin};
-  private triangles?: Triangle[];
 
   constructor(vertices: Pentagon) {
     this.vertices = vertices;
@@ -53,12 +51,18 @@ export class PentagonShape {
 
   /**
    * Reflects the pentagon over the x-axis (equivalent to negating y)
+   * and reverses the winding order to maintain consistent orientation
    * @returns The reflected pentagon
    */
   reflectY(): PentagonShape {
+    // First reflect all vertices
     for (const vertex of this.vertices) {
       vertex[1] = -vertex[1];
     }
+    
+    // Then reverse the winding order to maintain consistent orientation
+    this.vertices.reverse();
+    
     return this;
   }
 
@@ -96,32 +100,34 @@ export class PentagonShape {
   }
 
   /**
-   * Tests if a point is inside the pentagon by checking if it's in any of the three triangles
-   * that make up the pentagon. Assumes pentagon is convex.
+   * Tests if a point is inside the pentagon by checking if it's on the correct side of all edges.
+   * Assumes consistent winding order (counter-clockwise).
    * @param point The point to test
    * @returns true if the point is inside the pentagon
    */
   containsPoint(point: vec2): boolean {
-    // Split pentagon into three triangles from first vertex
-    const v0 = this.vertices[0];
+    // For each edge of the pentagon
+    const N = this.vertices.length;
+    for (let i = 0; i < N; i++) {
+      const v1 = this.vertices[i];
+      const v2 = this.vertices[(i + 1) % N];
+      
+      // Calculate the cross product to determine which side of the line the point is on
+      // (v2 - v1) × (point - v1)
+      const dx = v2[0] - v1[0];
+      const dy = v2[1] - v1[1];
+      const px = point[0] - v1[0];
+      const py = point[1] - v1[1];
+      
+      // Cross product: dx * py - dy * px
+      // If positive, point is on the wrong side
+      // If negative, point is on the correct side
+      if (dx * py - dy * px > 0) {
+        return false;
+      }
+    }
     
-    if (!this.triangles) {
-      this.triangles = [];
-      // Order triangles by size to increase chance of early return
-      for (const i of [2, 1, 3]) {
-        const v1 = this.vertices[i];
-        const v2 = this.vertices[i + 1];
-        this.triangles.push(new Triangle(v0, v1, v2));
-      }
-    }
-
-    for (const triangle of this.triangles) {
-      if (triangle.containsPoint(point)) {
-        return true;
-      }
-    }
-
-    return false;
+    return true;
   }
 
   /**

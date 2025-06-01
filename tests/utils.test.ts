@@ -44,7 +44,21 @@ describe('PentagonShape', () => {
       expect(pentagon.containsPoint([1, 1.49999])).toBe(true)  // Right edge
       expect(pentagon.containsPoint([-1, 1.49999])).toBe(true) // Left edge
     })
-  })
+
+    it('containsPointSmall', () => {
+      const smallPentagon = new PentagonShape([
+        [0.005584805117118508, 0.007421763173983242],
+        [0.007142475800174408, 0.01035468366141623],
+        [0.010413195654227048, 0.01092979424101126],
+        [0.011970866337282948, 0.00799687375357827],
+        [0.008855524971171091, 0.006846652594388214]
+      ] as Pentagon);
+
+      const redPoint = [ 0.008777835727200756, 0.007709318463780757 ];
+      expect(smallPentagon.containsPoint(redPoint as any)).toBe(true);
+    });
+  });
+
 
   describe('normalizeLongitudes', () => {
     it('handles simple contour without wrapping', () => {
