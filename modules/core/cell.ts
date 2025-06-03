@@ -63,6 +63,14 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   throw new Error('No cell found');
 }
 
+function _lonLatToFace(lonLat: LonLat): Face {
+  const spherical = fromLonLat(lonLat);
+  const origin = {...findNearestOrigin(spherical)};
+  mat2.fromRotation(rotation, -origin.angle);
+  const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle);
+  return toFace(polar);
+}
+
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
 // Thus this function only returns an cell nearby, and we need to search the neighbourhood to find the correct cell
 // TODO: Implement a more accurate function
@@ -126,7 +134,7 @@ export function cellToBoundary(cellId: bigint): LonLat[] {
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): boolean {
   const pentagon = _getPentagon(cell);
-  const projectedPentagonVertices = projectPentagon(pentagon, cell.origin);
-  const projPentagon = new PentagonShape(projectedPentagonVertices as any);
-  return projPentagon.containsPoint(point);
+  pentagon.getVertices();
+  const face = _lonLatToFace(point);
+  return pentagon.containsPoint(face);
 }
