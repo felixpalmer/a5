@@ -53,7 +53,7 @@ const v: Face = [L * Math.cos(V), L * Math.sin(V)] as Face;
 
 const W = bisectorAngle - PI_OVER_5;
 const w: Face = [L * Math.cos(W), L * Math.sin(W)] as Face;
-const TRIANGLE = new PentagonShape([u, v, w, w, w]); // TODO hacky, don't pretend this is pentagon
+const TRIANGLE = new PentagonShape([u, v, w] as any); // TODO hacky, don't pretend this is pentagon
 
 /**
  * Basis vectors used to layout primitive unit

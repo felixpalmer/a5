@@ -78,6 +78,53 @@ export const quaternaryToFlips = (n: Quaternary): [Flip, Flip] => {
 
 const FLIP_SHIFT = vec2.fromValues(-1, 1) as IJ;
 
+
+// Patterns used to rearrange the cells when shifting. This adjusts the layout so that
+// children always overlap with their parent cells.
+function reversePattern(pattern: number[]): number[] {
+  return Array.from({length: pattern.length}, (_, i) => pattern.indexOf(i));
+}
+
+const PATTERN = [0, 1, 3, 4, 5, 6, 7, 2];
+const PATTERN_FLIPPED = [0, 1, 2, 7, 3, 4, 5, 6];
+const PATTERN_REVERSED = reversePattern(PATTERN);
+const PATTERN_FLIPPED_REVERSED = reversePattern(PATTERN_FLIPPED);
+
+const _shiftDigits = (
+  digits: Quaternary[],
+  i: number,
+  flips: [Flip, Flip],
+  invertJ: boolean,
+  pattern: number[]
+): void => {
+  if (i <= 0) return;
+
+  const parentK = digits[i] || 0;
+  const childK = digits[i - 1];
+  const F = flips[0] + flips[1];
+
+  // Detect when cells need to be shifted
+  let needsShift: boolean = true;
+  let first: boolean = true;
+
+  // The value of F which cells need to be shifted
+  // The rule is flipped depending on the orientation, specifically on the value of invertJ
+  if (invertJ !== (F === 0)) {
+    needsShift = parentK === 1 || parentK === 2; // Second & third pentagons only
+    first = parentK === 1; // Second pentagon is first
+  } else {
+    needsShift = parentK < 2; // First two pentagons only
+    first = parentK === 0; // First pentagon is first
+  }
+  if (!needsShift) return;
+  
+  // Apply the pattern by setting the digits based on the value provided
+  const src = first ? childK : childK + 4;
+  const dst = pattern[src];
+  digits[i - 1] = dst % 4 as Quaternary;
+  digits[i] = (parentK + 4 + Math.floor(dst / 4) - Math.floor(src / 4)) % 4 as Quaternary;
+}
+
 export const sToAnchor = (s: number | bigint, resolution: number, orientation: Orientation): Anchor => {
   let input = BigInt(s);
   const reverse = orientation === 'vu' || orientation === 'wu' || orientation === 'vw';
@@ -86,7 +133,7 @@ export const sToAnchor = (s: number | bigint, resolution: number, orientation: O
   if (reverse) {
     input = (1n << BigInt(2 * resolution)) - input - 1n;
   }
-  const anchor = _sToAnchor(input);
+  const anchor = _sToAnchor(input, resolution, invertJ, flipIJ);
   if (flipIJ) {
     const { offset: [_i, _j], flips: [flipX, flipY] } = anchor;
     anchor.offset = [_j, _i] as IJ;
@@ -106,29 +153,38 @@ export const sToAnchor = (s: number | bigint, resolution: number, orientation: O
   return anchor;
 }
 
-export const _sToAnchor = (s: number | bigint): Anchor => {
-  const k = Number(s) % 4 as Quaternary;
+export const _sToAnchor = (s: number | bigint, resolution: number, invertJ: boolean, flipIJ: boolean): Anchor => {
   const offset = vec2.create() as KJ;
   const flips = [NO, NO] as [Flip, Flip];
   let input = BigInt(s);
   
   // Get all quaternary digits first
   const digits: Quaternary[] = [];
-  while (input > 0n) {
+  while (input > 0n || digits.length < resolution) {
     digits.push(Number(input % 4n) as Quaternary);
     input = input >> 2n;
   }
-  
+
+  const pattern = flipIJ ? PATTERN_FLIPPED : PATTERN;
+
   // Process digits from left to right (most significant first)
+  for (let i = digits.length - 1; i >= 0; i--) {
+    _shiftDigits(digits, i, flips, invertJ, pattern);
+    vec2.multiply(flips, flips, quaternaryToFlips(digits[i]));
+  }
+
+  flips[0] = NO; flips[1] = NO; // Reset flips for the next loop
   for (let i = digits.length - 1; i >= 0; i--) {
     // Scale up existing anchor
     vec2.scale(offset, offset, 2);
-    
+
     // Get child anchor and combine with current anchor
     const childOffset = quaternaryToKJ(digits[i], flips);
     vec2.add(offset, offset, childOffset);
     vec2.multiply(flips, flips, quaternaryToFlips(digits[i]));
   }
+
+  const k = digits[0] || 0 as Quaternary;
 
   return {flips, k, offset: KJToIJ(offset)};
 }
@@ -182,26 +238,26 @@ export const IJToS = (input: IJ, resolution: number, orientation: Orientation = 
     ij[1] = (1 << resolution) - (i + j);
   }
   
-  let S = _IJToS(ij);
+  let S = _IJToS(ij, invertJ, flipIJ, resolution);
   if (reverse) {
     S = (1n << BigInt(2 * resolution)) - S - 1n;
   }
   return S;
 }
 
-export const _IJToS = (input: IJ): bigint => {
+export const _IJToS = (input: IJ, invertJ: boolean, flipIJ: boolean, resolution: number): bigint => {
   // Get number of digits we need to process
-  const numDigits = getRequiredDigits(input);
+  const numDigits = resolution;
   const digits: Quaternary[] = new Array(numDigits);
 
   const flips: [Flip, Flip] = [NO, NO];
   const pivot = vec2.create() as IJ;
 
   // Process digits from left to right (most significant first)
-  for (let i = 0; i < numDigits; i++) {
+  for (let i = numDigits - 1; i >= 0; i--) {
     const relativeOffset = vec2.subtract(vec2.create(), input, pivot) as IJ;
 
-    const scale = 1 << (numDigits - 1 - i);
+    const scale = 1 << i;
     const scaledOffset = vec2.scale(vec2.create(), relativeOffset, 1 / scale) as IJ;
 
     const digit = IJtoQuaternary(scaledOffset, flips);
@@ -214,9 +270,16 @@ export const _IJToS = (input: IJ): bigint => {
     vec2.multiply(flips, flips, quaternaryToFlips(digit));
   }
 
+  const pattern = flipIJ ? PATTERN_FLIPPED_REVERSED : PATTERN_REVERSED;
+
+  for (let i = 0; i < digits.length; i++) {
+    vec2.multiply(flips, flips, quaternaryToFlips(digits[i]));
+    _shiftDigits(digits, i, flips, invertJ, pattern);
+  }
+
   let output = 0n;
-  for (let i = 0; i < numDigits; i++) {
-    const scale = 1n << BigInt(2 * (numDigits - 1 - i));
+  for (let i = numDigits - 1; i >= 0; i--) {
+    const scale = 1n << BigInt(2 * i);
     output += BigInt(digits[i]) * scale;
   }
 

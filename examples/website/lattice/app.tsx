@@ -4,13 +4,15 @@ import DeckGL from '@deck.gl/react';
 import {PolygonLayer, PathLayer, ScatterplotLayer, TextLayer} from '@deck.gl/layers';
 import {DataFilterExtension} from '@deck.gl/extensions';
 import { colorContinuous } from '@deck.gl/carto';
-import { mat2, mat2d, vec2 } from 'gl-matrix';
+import { vec2 } from 'gl-matrix';
 
-import { YES, NO, Orientation } from 'a5/core/hilbert';
+import { Orientation } from 'a5/core/hilbert';
 import { Anchor, sToAnchor } from 'a5/core/hilbert';
-import { PENTAGON, TRIANGLE, BASIS } from 'a5/core/pentagon';
+import { Pentagon, PentagonShape } from 'a5/core/utils';
+import { getPentagonVertices } from 'a5/core/tiling';
+import { BASIS } from 'a5/core/pentagon';
 
-export type Triangle = {
+export type Cell = {
   origin: vec2;
   anchor: Anchor;
   vertices: vec2[];
@@ -18,79 +20,87 @@ export type Triangle = {
   index: number;
 }
 
-// Keep transforms that don't depend on BASIS at module level
-const M_rotate180 = mat2.fromValues(-1, 0, 0, -1);
-const M_reflectY = mat2.fromValues(1, 0, 0, -1);
-
-const applyTransform = (vertices: vec2[], transform: mat2 | mat2d) => {
-    const newVertices = vertices.map(v => vec2.create());
-    if (transform.length === 6) {
-      for (let i = 0; i < vertices.length; i++) {
-        vec2.transformMat2d(newVertices[i], vertices[i], transform);
-      }
-    } else {
-      for (let i = 0; i < vertices.length; i++) {
-        vec2.transformMat2(newVertices[i], vertices[i], transform as mat2);
+function crossCheck(cells: Cell[], cells2: Cell[]) {
+  for (let i = 0; i < cells2.length; i++) {
+    const child = cells2[i];
+    const parent = cells[Math.floor(i / 4)];
+    const pentagon = new PentagonShape(parent.vertices as Pentagon);
+    let contained = false;
+    for (const vertex of child.vertices) {
+      if (pentagon.containsPoint(vertex)) {
+        contained = true;
+        break;
       }
     }
-    return newVertices;
+    if (!contained) {
+      // @ts-ignore
+      parent.crossCheckFailed = true;
+    }
+  }
 }
 
 const App: React.FC = () => {
-  const [resolution, setResolution] = useState(2);
-  const [usePentagon, setUsePentagon] = useState(true);
+  const [resolution, setResolution] = useState(3);
   const [layerVisibility, setLayerVisibility] = useState({
     triangles: true,
     path: true,
-    points: false,
+    points: true,
     labels: false,
-    anchors: false
+    anchors: false,
+    children: false,
+    centerLines: false
   });
   const [orientation, setOrientation] = useState<Orientation>('uv');
-  const [quaternaryColor, setQuaternaryColor] = useState(false);
+  const [colorByParent, setColorByParent] = useState(true);
   const [maxFilterValue, setMaxFilterValue] = useState(100);
+  const [hoveredCellIndex, setHoveredCellIndex] = useState<number | null>(null);
 
-  // Memoize points and BASIS
-  const points = useMemo(() => 
-    usePentagon ? PENTAGON.getVertices() : TRIANGLE.getVertices(), 
-    [usePentagon]
-  );
-
-  // Memoize BASIS-dependent transforms
-  const transforms = useMemo(() => {
-    const M_translateRight = mat2d.fromTranslation(mat2d.create(), TRIANGLE.getVertices()[2]);
-    const M_translateLeft = mat2d.invert(mat2d.create(), M_translateRight);
-    return { M_translateLeft, M_translateRight };
-  }, []);
-
-  // Memoize the triangle generation function
-  const generateTriangles = useCallback((resolution: number) => {
+  // Memoize the cell generation function
+  const generateCells = useCallback((resolution: number) => {
     const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
     const scale = Math.pow(2, -resolution);
     
     let anchors = sequence.map(s => sToAnchor(s, resolution, orientation)) as Anchor[];
-    return anchors.map((anchor, i) => 
-      createTriangle(anchor, scale, i, points, BASIS, transforms.M_translateLeft, transforms.M_translateRight)
-    );
-  }, [points, BASIS, transforms, orientation]);
 
-  const generatePaths = useCallback((triangles: Triangle[]) => {
-    return triangles.slice(0, -1).map((triangle, i) => ({
-      path: [triangle.center, triangles[i + 1].center],
-      index: triangle.index
+    return anchors.map((anchor, i) => {
+      const origin = vec2.transformMat2(vec2.create(), anchor.offset, BASIS);
+      const vertices = getPentagonVertices(resolution, 0, anchor).getVertices().map(v => [...v]);
+      // Calculate center as average of vertices
+      const center = vertices.reduce((sum, v) => vec2.add(sum, sum, vec2.fromValues(v[0], v[1])), [0, 0] as vec2);
+      vec2.scale(center, center, 1/vertices.length);
+      return { 
+        origin: vec2.scale(vec2.create(), origin, scale), 
+        anchor, 
+        vertices, 
+        center, 
+        index: i 
+      };
+    });
+  }, [orientation]);
+
+  const generatePaths = useCallback((cells: Cell[]) => {
+    return cells.slice(0, -1).map((cell, i) => ({
+      path: [cell.center, cells[i + 1].center],
+      index: cell.index
     }));
   }, []);
 
   // Initialize state with memoized values
-  const [triangles, setTriangles] = useState(() => generateTriangles(resolution));
-  const [paths, setPaths] = useState(() => generatePaths(triangles));
+  const [cells, setCells] = useState([]);
+  const [children, setChildren] = useState([]);
+  const [paths, setPaths] = useState(() => generatePaths(cells));
 
-  // Update geometry when resolution or pentagon mode changes
+  // Update geometry when resolution changes
   useEffect(() => {
-    const newTriangles = generateTriangles(resolution);
-    setTriangles(newTriangles);
-    setPaths(generatePaths(newTriangles));
-  }, [resolution, generateTriangles, generatePaths]);
+    const newCells = generateCells(resolution);
+    const newChildren = generateCells(resolution + 1);
+    if (newCells.length > 0 && newChildren.length === 4 * newCells.length) {
+      crossCheck(newCells, newChildren);
+    }
+    setCells(newCells);
+    setChildren(newChildren);
+    setPaths(generatePaths(newCells));
+  }, [resolution, generateCells, generatePaths]);
 
   // Resolution change handler
   const handleResolutionChange = useCallback((newResolution: number) => {
@@ -106,80 +116,27 @@ const App: React.FC = () => {
     return [0, maxValue] as [number, number];
   }, [paths.length, maxFilterValue]);
 
-  // Move createTriangle outside component and pass in dependencies
-  function createTriangle(
-    anchor: Anchor, 
-    scale: number, 
-    index: number,
-    points: vec2[],
-    BASIS: mat2,
-    M_translateLeft: mat2d,
-    M_translateRight: mat2d
-  ): Triangle {
-    const origin = vec2.transformMat2(vec2.create(), anchor.offset, BASIS);
-    let primitive = points;
-
-    if (anchor.flips[0] === NO && anchor.flips[1] === YES) {
-      primitive = applyTransform(primitive, M_rotate180);
-    }
-
-    const k = anchor.k;
-    const F = anchor.flips[0] + anchor.flips[1];
-    if (
-        // Orient last two pentagons when both or neither flips are YES
-        ((F === -2 || F === 2) && k > 1) ||
-        // Orient first & last pentagons when only one of flips is YES
-        (F === 0 && (k === 0 || k === 3))
-    ) {
-        primitive = applyTransform(primitive, M_reflectY);
-    }
-
-    if (anchor.flips[0] === YES && anchor.flips[1] === YES) {
-        primitive = applyTransform(primitive, M_rotate180);
-    } else if (anchor.flips[0] === YES) {
-        primitive = applyTransform(primitive, M_translateLeft);
-    } else if (anchor.flips[1] === YES) {
-        primitive = applyTransform(primitive, M_translateRight);
-    }
-    
-    // Calculate vertices
-    const vertices = primitive.map(p => {
-        const unscaled = vec2.add([0, 0], origin, p);
-        vec2.scale(unscaled, unscaled, scale);
-        return unscaled;
-    });
-    
-    // Calculate center as average of vertices
-    const center = vertices.reduce((sum, v) => vec2.add(sum, sum, v), [0, 0] as vec2);
-    vec2.scale(center, center, 1/vertices.length);
-    return { origin: vec2.scale(vec2.create(), origin, scale), anchor, vertices, center, index };
-  }
-
   const INITIAL_VIEW_STATE = { latitude: 0, longitude: 0.4, zoom: 9 };
 
   // UI Components
   const Controls: React.FC<{
     resolution: number,
     onResolutionChange: (res: number) => void,
-    layerVisibility: {triangles: boolean, path: boolean, points: boolean, labels: boolean, anchors: boolean},
-    setLayerVisibility: (vis: {triangles: boolean, path: boolean, points: boolean, labels: boolean, anchors: boolean}) => void,
-    usePentagon: boolean,
-    setUsePentagon: (use: boolean) => void,
+    layerVisibility: {triangles: boolean, path: boolean, points: boolean, labels: boolean, anchors: boolean, children: boolean, centerLines: boolean},
+    setLayerVisibility: (vis: {triangles: boolean, path: boolean, points: boolean, labels: boolean, anchors: boolean, children: boolean, centerLines: boolean}) => void,
     orientation: Orientation,
     setOrientation: (o: Orientation) => void,
-    quaternaryColor: boolean,
-    setQuaternaryColor: (quaternaryColor: boolean) => void
+    colorByParent: boolean,
+    setColorByParent: (colorByParent: boolean) => void
   }> = ({
     resolution, 
     onResolutionChange, 
     layerVisibility, 
     setLayerVisibility, 
-    usePentagon, 
-    setUsePentagon,
     orientation,
     setOrientation,
-    quaternaryColor,
-    setQuaternaryColor
+    colorByParent,
+    setColorByParent
   }) => {
     return (
       <div style={{
@@ -209,24 +166,14 @@ const App: React.FC = () => {
             </select>
           </label>
         </div>
-
-        <div style={{marginBottom: '10px'}}>
-          <label>
-            <input
-              type="checkbox"
-              checked={usePentagon}
-              onChange={e => setUsePentagon(e.target.checked)}
-            /> Use Pentagon
-          </label>
-        </div>
         
         <div style={{marginBottom: '10px'}}>
           <label>
             <input
               type="checkbox"
-              checked={quaternaryColor}
-              onChange={e => setQuaternaryColor(e.target.checked)}
-            /> Quaternary Color
+              checked={colorByParent}
+              onChange={e => setColorByParent(e.target.checked)}
+            /> Color by Parent
           </label>
         </div>
 
@@ -256,7 +203,7 @@ const App: React.FC = () => {
               type="checkbox"
               checked={layerVisibility.triangles}
               onChange={e => setLayerVisibility({...layerVisibility, triangles: e.target.checked})}
-            /> Show {usePentagon ? 'Pentagon' : 'Triangle'}s
+            /> Show Cells
           </label>
           <label>
             <input
@@ -285,6 +232,20 @@ const App: React.FC = () => {
               checked={layerVisibility.anchors}
               onChange={e => setLayerVisibility({...layerVisibility, anchors: e.target.checked})}
             /> Show Anchors
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={layerVisibility.children}
+              onChange={e => setLayerVisibility({...layerVisibility, children: e.target.checked})}
+            /> Show Children
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={layerVisibility.centerLines}
+              onChange={e => setLayerVisibility({...layerVisibility, centerLines: e.target.checked})}
+            /> Show Center Lines
           </label>
         </div>
       </div>
@@ -328,7 +289,7 @@ const App: React.FC = () => {
   const createLayers = (
     filterRange: [number, number], 
     pathsLength: number,
-    triangles: Triangle[],
+    cells: Cell[],
     paths: any[],
     softBuffer: number
   ) => {
@@ -347,35 +308,41 @@ const App: React.FC = () => {
       colors: 'Geyser',
       domain: Array.from({length: 10}).map((_, i) => i * pathsLength / 10),
     });
-    const getQuaternaryColor = (d: Triangle) => {
-      if (!quaternaryColor) {
-        return [100, 100, 100, 200]; // Default gray color
+    const getParentColor = (d: Cell) => {
+      if ((d as any).crossCheckFailed) {
+        return [255, 0, 0, 255];
       }
-      
-      const {k} = d.anchor;
-      if (k === 0) {
-        return [255, 99, 71, 200]; // Tomato red
-      } else if (k === 1) {
-        return [50, 205, 50, 200]; // Lime green  
-      } else if (k === 2) {
-        return [147, 112, 219, 200]; // Medium purple
-      } else {
-        return [255, 215, 0, 200]; // Gold
-      }
-    }
 
+      if (!colorByParent) {
+        return [100, 100, 100, 0]; // Default gray color
+      }
+
+      const parent = Math.floor(d.index / 4) + 5;
+      const r = Math.sin(2748127411 * parent) * 127 + 128;
+      const g = Math.sin(748119248 * parent) * 127 + 128;
+      const b = Math.sin(33712841 * parent) * 127 + 128;
+      return [r, g, b, 200];
+    }
     return [
-      new PolygonLayer<Triangle>({
+      new PolygonLayer<Cell>({
         id: 'triangles',
-        data: triangles,
+        data: cells,
         getPolygon: d => d.vertices,
-        getFillColor: getQuaternaryColor,
-        updateTriggers: { getFillColor: [quaternaryColor] },
-        getLineColor: [135, 206, 235, 100],
+        getFillColor: getParentColor,
+        updateTriggers: { getFillColor: [colorByParent] },
+        getLineColor: [255, 255, 255, 255],
         filled: true,
         visible: layerVisibility.triangles,
         ...lineProps,
-        ...filterProps
+        ...filterProps,
+        pickable: true,
+        onHover: info => {
+          if (info.object) {
+            setHoveredCellIndex(info.object.index);
+          } else {
+            setHoveredCellIndex(null);
+          }
+        }
       }),
 
       new PathLayer({
@@ -390,13 +357,14 @@ const App: React.FC = () => {
         ...filterProps
       }),
 
-      new TextLayer<Triangle>({
+      new TextLayer<Cell>({
         id: 'labels',
-        data: triangles,
+        data: cells,
         getPosition: d => vec2.lerp(vec2.create(), d.origin, d.center, 0.2),
-        getText: d => {
+        getText: (d, info) => {
           const [i, j] = d.anchor.offset;
-          return `[${i},${j}]`;
+          const label = `[${i},${j}]`;
+          return label;
         },
         getSize: 16,
         getColor: [255, 255, 255, 255],
@@ -406,9 +374,9 @@ const App: React.FC = () => {
         ...filterProps
       }),
 
-      new ScatterplotLayer<Triangle>({
+      new ScatterplotLayer<Cell>({
         id: 'points',
-        data: triangles,
+        data: cells,
         getPosition: d => d.center,
         getFillColor: getSegmentColor,
         getRadius: 8,
@@ -419,9 +387,9 @@ const App: React.FC = () => {
         ...filterProps
       }),
 
-      new ScatterplotLayer<Triangle>({
+      new ScatterplotLayer<Cell>({
         id: 'anchors',
-        data: triangles,
+        data: cells,
         getPosition: d => d.origin,
         getFillColor: [0, 0, 0],
         getLineColor: [255, 255, 255],
@@ -431,6 +399,33 @@ const App: React.FC = () => {
         lineWidthMinPixels: 1,
         visible: layerVisibility.anchors,
         ...filterProps
+      }),
+
+      new PolygonLayer<Cell>({
+        id: 'children',
+        data: children,
+        getPolygon: d => d.vertices,
+        getLineColor: [255, 255, 255, 100],
+        filled: false,
+        stroked: true,
+        lineWidthMinPixels: 2,
+        visible: layerVisibility.children,
+        extensions: [new DataFilterExtension({filterSize: 1})],
+        getFilterValue: (d: any) => Math.floor(d.index / 4),
+        filterRange: hoveredCellIndex !== null ? 
+          [hoveredCellIndex - 0.5, hoveredCellIndex + 0.5] : 
+          [0, 0]
+      }),
+
+      // New layer for center-to-anchor lines
+      new PathLayer({
+        id: 'center-lines',
+        data: cells,
+        getPath: d => [[...d.origin], d.center],
+        getColor: [0, 244, 50, 100],
+        getWidth: 1,
+        widthUnits: 'pixels',
+        visible: layerVisibility.centerLines,
       })
     ];
   };
@@ -443,7 +438,7 @@ const App: React.FC = () => {
         layers={createLayers(
           filterRange,
           paths.length,
-          triangles,
+          cells,
           paths,
           softBuffer
         )}
@@ -453,12 +448,10 @@ const App: React.FC = () => {
         onResolutionChange={handleResolutionChange}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
-        usePentagon={usePentagon}
-        setUsePentagon={setUsePentagon}
         orientation={orientation}
         setOrientation={setOrientation}
-        quaternaryColor={quaternaryColor}
-        setQuaternaryColor={setQuaternaryColor}
+        colorByParent={colorByParent}
+        setColorByParent={setColorByParent}
       />
       <FilterSlider 
         value={maxFilterValue}
