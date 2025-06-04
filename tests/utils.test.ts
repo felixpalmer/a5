@@ -57,6 +57,20 @@ describe('PentagonShape', () => {
       const redPoint = [ 0.008777835727200756, 0.007709318463780757 ];
       expect(smallPentagon.containsPoint(redPoint as any)).toBe(true);
     });
+
+    it('containsPointOnEdge', () => {
+      // Singapore pentagon, resolution 4 (in Face coordiantes, origin 8)
+      const singaporePentagon = new PentagonShape([
+        [0.24999999999999994, -0.406149620291133],
+        [0.1761431542833664, -0.48255778435927743],
+        [0.19098300562505247, -0.5877852522924732],
+        [0.29564604095473646, -0.6061887908395137],
+        [0.2998454618577896, -0.500003075888989]
+      ] as Pentagon);
+
+      const singapore = [0.22395879916296305, -0.5770707674730963];
+      expect(singaporePentagon.containsPoint(singapore as any)).toBe(true);
+    });
   });
 
 
