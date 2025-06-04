@@ -122,7 +122,7 @@ export class PentagonShape {
    * @param point The point to test
    * @returns true if the point is inside the pentagon
    */
-  containsPoint(point: vec2): boolean {
+  containsPoint(point: vec2): boolean | number {
     // TODO later we can likely remove this, but for now it's useful for debugging
     if (!this.isWindingCorrect()) {
       throw new Error("Pentagon is not counter-clockwise");
@@ -143,8 +143,10 @@ export class PentagonShape {
       // Cross product: dx * py - dy * px
       // If positive, point is on the wrong side
       // If negative, point is on the correct side
-      if (dx * py - dy * px > 0) {
-        return false;
+      const crossProduct = (dx * py - dy * px);
+      if (crossProduct > 0) {
+        const pLength = Math.sqrt(px * px + py * py);
+        return crossProduct / pLength;
       }
     }
     

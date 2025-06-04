@@ -9,21 +9,25 @@ import type { Face, LonLat } from "./coordinate-systems";
 import { FaceToIJ, fromLonLat, toFace } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { unprojectDodecahedron } from "./dodecahedron";
-import { A5Cell, PentagonShape } from "./utils";
+import { A5Cell, Pentagon, PentagonShape } from "./utils";
 import { getFaceVertices, getPentagonVertices, getQuintant, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
 import { projectPentagon, projectPoint } from "./project";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
-import { bigIntToHex } from "./hex";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
 
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
+  if (resolution < FIRST_HILBERT_RESOLUTION) {
+    // For low resolutions there is no Hilbert curve, so we can just return as the result is exact
+    return serialize(_lonLatToEstimate(lonLat, resolution));
+  }
+
   const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
   const samples: LonLat[] = [lonLat];
-  const N = 25;
+  const N = 100;
   const scale = 50 / Math.pow(2, hilbertResolution);
   for (let i = 0; i < N; i++) {
     const R = (i / N) * scale;
@@ -39,6 +43,19 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
     estimates.push({estimate, sample});
   }
 
+  // Log sample points as GeoJSON for debugging
+  false && console.log(JSON.stringify({
+    type: "FeatureCollection",
+    features: samples.map(coord => ({
+      type: "Feature", 
+      geometry: {
+        type: "Point",
+        coordinates: [coord[0], coord[1]]
+      },
+      properties: {}
+    }))
+  }));
+
   // Deduplicate estimates
   const estimateSet = new Set<bigint>();
   const uniqueEstimates: A5Cell[] = [];
@@ -51,8 +68,7 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   }
 
   for (const estimate of uniqueEstimates) {
-    // For resolution 0 there is no Hilbert curve, so we can just return as the result is exact
-    if (resolution < FIRST_HILBERT_RESOLUTION || a5cellContainsPoint(estimate, lonLat)) {
+    if (a5cellContainsPoint(estimate, lonLat) === true) {
       return serialize(estimate);
     } else {
       cells.push(estimate);
@@ -72,6 +88,23 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
       bestCell = cell;
     }
   }
+
+  console.log('BEST CELL FALLBACK', bestCell);
+  const boundaries = cells.map(cell => cellToBoundary(serialize(cell)));
+  boundaries.forEach(boundary => boundary.push(boundary[0]));
+
+  console.log(JSON.stringify({
+    type: "FeatureCollection",
+    features: boundaries.map(boundary => ({
+      type: "Feature", 
+      geometry: {
+        type: "Polygon",
+        coordinates: [boundary]
+      },
+      properties: {}
+    }))
+  }));
+  debugger;
 
   if (bestCell) {
     return serialize(bestCell);
@@ -139,7 +172,7 @@ export function cellToBoundary(cellId: bigint): LonLat[] {
   return projectPentagon(pentagon, origin);
 }
 
-export function a5cellContainsPoint(cell: A5Cell, point: LonLat): boolean {
+export function a5cellContainsPoint(cell: A5Cell, point: LonLat): boolean | number {
   const spherical = fromLonLat(point);
 
   // Important to use the same origin as the cell, so we unproject onto correct face
@@ -147,7 +180,14 @@ export function a5cellContainsPoint(cell: A5Cell, point: LonLat): boolean {
   const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle);
   const face = toFace(polar);
 
-  // Perform containment test in Face coordinates, where cell edges are straight lines
+  // Required for points on pentagon that cross the origin boundary
   const pentagon = _getPentagon(cell);
-  return pentagon.containsPoint(face); 
+  const projectedPentagon = projectPentagon(pentagon, origin);
+  const sphericalPentagon = projectedPentagon.map(fromLonLat);
+  const polarPentagon = sphericalPentagon.map(spherical => unprojectDodecahedron(spherical, origin.quat, origin.angle));
+  const facePentagon = polarPentagon.map(polar => toFace(polar)) as Pentagon;
+  const normalizedPentagon = new PentagonShape(facePentagon);
+
+  // Perform containment test in Face coordinates, where cell edges are straight lines
+  return normalizedPentagon.containsPoint(face);
 }
