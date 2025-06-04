@@ -161,7 +161,7 @@ export function findNearestOrigin(point: Spherical): Origin {
 }
 
 export function isNearestOrigin(point: Spherical, origin: Origin): boolean {
-  return haversine(point, origin.axis) > 0.49;
+  return haversine(point, origin.axis) > 0.49999999;
 }
 
 /**
