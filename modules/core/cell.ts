@@ -43,19 +43,6 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
     estimates.push({estimate, sample});
   }
 
-  // Log sample points as GeoJSON for debugging
-  false && console.log(JSON.stringify({
-    type: "FeatureCollection",
-    features: samples.map(coord => ({
-      type: "Feature", 
-      geometry: {
-        type: "Point",
-        coordinates: [coord[0], coord[1]]
-      },
-      properties: {}
-    }))
-  }));
-
   // Deduplicate estimates
   const estimateSet = new Set<bigint>();
   const uniqueEstimates: A5Cell[] = [];
@@ -68,57 +55,17 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   }
 
   for (const estimate of uniqueEstimates) {
-    const containsResult = a5cellContainsPoint(estimate, lonLat);
-    if (containsResult === true) {
+    const distance = a5cellContainsPoint(estimate, lonLat);
+    if (distance < 0) {
       return serialize(estimate);
-    } else if (typeof containsResult === 'number') {
-      cells.push({cell: estimate, distance: containsResult});
     } else {
-      cells.push({cell: estimate, distance: Infinity});
+      cells.push({cell: estimate, distance});
     }
   }
 
   // Sort cells by distance and use the closest one
   cells.sort((a, b) => a.distance - b.distance);
-  if (cells.length > 0) {
-    return serialize(cells[0].cell);
-  }
-
-  // Failed to find based on hit test, just return the closest cell
-  // TODO: investigate why this even happens
-  let D = Infinity;
-  let bestCell: A5Cell | null = null;
-  for (const {cell} of cells) {
-    const pentagon = _getPentagon(cell);
-    const center = projectPoint(pentagon.getCenter(), cell.origin);
-    const distance = vec2.dist(center, lonLat);
-    if (distance < D) {
-      D = distance;
-      bestCell = cell;
-    }
-  }
-
-  console.log('BEST CELL FALLBACK', bestCell);
-  const boundaries = cells.map(({cell}) => cellToBoundary(serialize(cell)));
-  boundaries.forEach(boundary => boundary.push(boundary[0]));
-
-  console.log(JSON.stringify({
-    type: "FeatureCollection",
-    features: boundaries.map(boundary => ({
-      type: "Feature", 
-      geometry: {
-        type: "Polygon",
-        coordinates: [boundary]
-      },
-      properties: {}
-    }))
-  }));
-  debugger;
-
-  if (bestCell) {
-    return serialize(bestCell);
-  }
-  throw new Error('No cell found');
+  return serialize(cells[0].cell);
 }
 
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
@@ -181,7 +128,7 @@ export function cellToBoundary(cellId: bigint): LonLat[] {
   return projectPentagon(pentagon, origin);
 }
 
-export function a5cellContainsPoint(cell: A5Cell, point: LonLat): boolean | number {
+export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
   const spherical = fromLonLat(point);
 
   // Important to use the same origin as the cell, so we unproject onto correct face

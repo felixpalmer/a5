@@ -120,9 +120,9 @@ export class PentagonShape {
    * Tests if a point is inside the pentagon by checking if it's on the correct side of all edges.
    * Assumes consistent winding order (counter-clockwise).
    * @param point The point to test
-   * @returns true if the point is inside the pentagon
+   * @returns -1 if point is inside, otherwise a value proportional to the distance from the point to the edge
    */
-  containsPoint(point: vec2): boolean | number {
+  containsPoint(point: vec2): number {
     // TODO later we can likely remove this, but for now it's useful for debugging
     if (!this.isWindingCorrect()) {
       throw new Error("Pentagon is not counter-clockwise");
@@ -145,12 +145,14 @@ export class PentagonShape {
       // If negative, point is on the correct side
       const crossProduct = (dx * py - dy * px);
       if (crossProduct > 0) {
+        // Only normalize by distance of point to edge as we can assume the edges of the
+        // pentagon are all the same length
         const pLength = Math.sqrt(px * px + py * py);
         return crossProduct / pLength;
       }
     }
     
-    return true;
+    return -1;
   }
 
   /**

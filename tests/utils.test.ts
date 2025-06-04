@@ -15,12 +15,12 @@ describe('PentagonShape', () => {
 
     it('returns true for points inside pentagon', () => {
       // Test center
-      expect(pentagon.containsPoint([0, 0])).toBe(true)
+      expect(pentagon.containsPoint([0, 0])).toBe(-1)
       
       // Test points in different triangular regions
-      expect(pentagon.containsPoint([0, 1.5])).toBe(true)  // Upper triangle
-      expect(pentagon.containsPoint([1, 0])).toBe(true)    // Right triangle
-      expect(pentagon.containsPoint([-1, 0])).toBe(true)   // Left triangle
+      expect(pentagon.containsPoint([0, 1.5])).toBe(-1)  // Upper triangle
+      expect(pentagon.containsPoint([1, 0])).toBe(-1)    // Right triangle
+      expect(pentagon.containsPoint([-1, 0])).toBe(-1)   // Left triangle
     })
 
     it('returns number outside pentagon', () => {
@@ -37,12 +37,12 @@ describe('PentagonShape', () => {
 
     it('handles edge cases correctly', () => {
       // Points on vertices
-      expect(pentagon.containsPoint([0, 2])).toBe(true)
-      expect(pentagon.containsPoint([1.9999, 0.9999])).toBe(true)
+      expect(pentagon.containsPoint([0, 2])).toBe(-1)
+      expect(pentagon.containsPoint([1.9999, 0.9999])).toBe(-1)
       
       // Points on edges
-      expect(pentagon.containsPoint([1, 1.49999])).toBe(true)  // Right edge
-      expect(pentagon.containsPoint([-1, 1.49999])).toBe(true) // Left edge
+      expect(pentagon.containsPoint([1, 1.49999])).toBe(-1)  // Right edge
+      expect(pentagon.containsPoint([-1, 1.49999])).toBe(-1) // Left edge
     })
 
     it('containsPointSmall', () => {
@@ -55,7 +55,7 @@ describe('PentagonShape', () => {
       ] as Pentagon);
 
       const redPoint = [ 0.008777835727200756, 0.007709318463780757 ];
-      expect(smallPentagon.containsPoint(redPoint as any)).toBe(true);
+      expect(smallPentagon.containsPoint(redPoint as any)).toBe(-1);
     });
 
     it('containsPointOnEdge', () => {
@@ -69,7 +69,7 @@ describe('PentagonShape', () => {
       ] as Pentagon);
 
       const singapore = [0.22395879916296305, -0.5770707674730963];
-      expect(singaporePentagon.containsPoint(singapore as any)).toBe(true);
+      expect(singaporePentagon.containsPoint(singapore as any)).toBe(-1);
     });
   });
 
