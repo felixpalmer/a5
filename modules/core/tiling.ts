@@ -8,6 +8,7 @@ import { Pentagon, PentagonShape } from "./utils";
 import { a, BASIS, PENTAGON, TRIANGLE, v, V, w } from "./pentagon";
 import { TWO_PI, TWO_PI_OVER_5 } from "./constants";
 import { NO, Anchor, YES } from "./hilbert";
+import { Polar } from "./coordinate-systems";
 
 const TRIANGLE_MODE = false;
 
@@ -94,4 +95,8 @@ export function getQuintant(point: vec2): number {
   const angle = Math.atan2(point[1], point[0]);
   const normalizedAngle = (angle - V + TWO_PI) % TWO_PI;
   return Math.ceil(normalizedAngle / TWO_PI_OVER_5) % 5;
+}
+
+export function getQuintantPolar([_, gamma]: Polar): number {
+  return (Math.round(gamma / TWO_PI_OVER_5) + 5) % 5;
 }
