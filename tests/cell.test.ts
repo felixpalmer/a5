@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type {Degrees,LonLat } from "a5/core/coordinate-systems";
 import { cellToBoundary, cellToLonLat, lonLatToCell,a5cellContainsPoint } from 'a5/core/cell'
 import { deserialize, MAX_RESOLUTION } from 'a5/core/serialization';
+import populatedPlaces from './data/ne_50m_populated_places_nameonly.json';
 
 interface GeoJSONFeature {
     type: 'Feature';
@@ -67,18 +68,21 @@ function boundaryToGeoJSON(boundary: LonLat[], resolution: number, cellId: strin
 
 describe('Cell Boundary Tests', () => {
     it('should contain the original point for all resolutions', () => {
-        // Generate 100 random points
-        const randomPoints: LonLat[] = Array.from({ length: 100 }, () => [
-            (Math.random() * 360 - 180) as Degrees,  // longitude: -180 to 180
-            (Math.random() * 180 - 90) as Degrees    // latitude: -90 to 90
-        ] as LonLat);
+        // Extract coordinates from GeoJSON features
+        const testPoints: LonLat[] = populatedPlaces.features.map((feature: any) => {
+            const [lon, lat] = feature.geometry.coordinates;
+            return [lon as Degrees, lat as Degrees] as LonLat;
+        });
+
+        console.log(`Testing with ${testPoints.length} points from GeoJSON file`);
 
         // Dictionary to store failures for each resolution and point
         const failures: Record<string, Record<number, string[]>> = {};
         
-        // Test each random point
-        for (const [pointIndex, testLonlat] of randomPoints.entries()) {
-            const pointKey = `Point ${pointIndex} (${testLonlat[0]}, ${testLonlat[1]})`;
+        // Test each point from GeoJSON
+        for (const [pointIndex, testLonlat] of testPoints.entries()) {
+            const featureName = populatedPlaces.features[pointIndex].properties?.name || `Unnamed ${pointIndex}`;
+            const pointKey = `Point ${pointIndex} - ${featureName} (${testLonlat[0]}, ${testLonlat[1]})`;
             failures[pointKey] = {};
 
             // Test resolutions from 0 to MAX_RESOLUTION
