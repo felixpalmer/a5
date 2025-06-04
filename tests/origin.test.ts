@@ -8,6 +8,7 @@ import {
   quintantToSegment,
   segmentToQuintant,
   movePointToFace,
+  isNearestOrigin,
 } from 'a5/core/origin'
 import { distanceToEdge, PI_OVER_5, TWO_PI_OVER_5 } from 'a5/core/constants'
 import type { Face, Radians, Spherical } from 'a5/core/coordinate-systems'
@@ -176,6 +177,31 @@ describe('quintant conversion', () => {
       const {segment, orientation} = quintantToSegment(quintant, origin);
       const {quintant: roundTripQuintant} = segmentToQuintant(segment, origin);
       expect(roundTripQuintant).toBe(quintant);
+    }
+  });
+});
+
+describe('isNearestOrigin', () => {
+  it('returns true for points at face centers', () => {
+    for (const origin of origins) {
+      const nearest = findNearestOrigin(origin.axis);
+      expect(nearest).toBe(origin);
+    }
+  });
+
+  it('returns false for points at face boundaries', () => {
+    // Test points halfway between adjacent origins
+    const BOUNDARY_POINTS = [
+      // Between north pole and equatorial faces
+      {point: [0, PI_OVER_5/2], origin: origins[0]},
+      // Between equatorial faces
+      {point: [2*PI_OVER_5, PI_OVER_5], origin: origins[3]},
+      // Between equatorial and south pole
+      {point: [0, Math.PI - PI_OVER_5/2], origin: origins[9]},
+    ] as {point: Spherical, origin: Origin}[];
+
+    for (const {point, origin} of BOUNDARY_POINTS) {
+      expect(isNearestOrigin(point, origin)).toBe(false);
     }
   });
 }); 
