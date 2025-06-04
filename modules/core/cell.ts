@@ -13,7 +13,7 @@ import { A5Cell, Pentagon, PentagonShape } from "./utils";
 import { getFaceVertices, getPentagonVertices, getQuintant, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
-import { projectPentagon, projectPoint } from "./project";
+import { projectPentagon, projectPoint, reprojectPentagon } from "./project";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
 
 // Reuse these objects to avoid allocation
@@ -138,12 +138,8 @@ export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
 
   // Required for points on pentagon that cross the origin boundary
   const pentagon = _getPentagon(cell);
-  const projectedPentagon = projectPentagon(pentagon, origin);
-  const sphericalPentagon = projectedPentagon.map(fromLonLat);
-  const polarPentagon = sphericalPentagon.map(spherical => unprojectDodecahedron(spherical, origin.quat, origin.angle));
-  const facePentagon = polarPentagon.map(polar => toFace(polar)) as Pentagon;
-  const normalizedPentagon = new PentagonShape(facePentagon);
+  const reprojectedPentagon = reprojectPentagon(pentagon, origin);
 
   // Perform containment test in Face coordinates, where cell edges are straight lines
-  return normalizedPentagon.containsPoint(face);
+  return reprojectedPentagon.containsPoint(face);
 }
