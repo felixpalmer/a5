@@ -70,6 +70,7 @@ export function getPentagonVertices(resolution: number, quintant: number, anchor
   return pentagon;
 }
 
+// TODO: memoize these two functions?
 export function getQuintantVertices(quintant: number): PentagonShape {
   const triangle = TRIANGLE.clone();
   triangle.transform(QUINTANT_ROTATIONS[quintant]);
@@ -81,6 +82,9 @@ export function getFaceVertices(): PentagonShape {
   for (const rotation of QUINTANT_ROTATIONS) {
     vertices.push(vec2.transformMat2(vec2.create(), v, rotation));
   }
+
+  // Need to reverse to obtain correct winding order
+  vertices.reverse();
   return new PentagonShape(vertices as Pentagon);
 }
 
