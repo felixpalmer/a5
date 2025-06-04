@@ -10,11 +10,12 @@ import { FaceToIJ, fromLonLat, toFace } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { unprojectDodecahedron } from "./dodecahedron";
 import { A5Cell, PentagonShape } from "./utils";
-import { getFaceVertices, getPentagonVertices, getQuintant, getQuintantVertices } from "./tiling";
+import { getFaceVertices, getPentagonVertices, getQuintant, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
 import { projectPentagon, projectPoint } from "./project";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
+import { bigIntToHex } from "./hex";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -32,9 +33,24 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   }
 
   const cells: A5Cell[] = [];
+  const estimates: {estimate: A5Cell, sample: LonLat}[] = [];
   for (const sample of samples) {
     const estimate = _lonLatToEstimate(sample, resolution);
+    estimates.push({estimate, sample});
+  }
 
+  // Deduplicate estimates
+  const estimateSet = new Set<bigint>();
+  const uniqueEstimates: A5Cell[] = [];
+  for (const {estimate, sample} of estimates) {
+    const estimateKey = serialize(estimate);
+    if (!estimateSet.has(estimateKey)) {
+      estimateSet.add(estimateKey);
+      uniqueEstimates.push(estimate);
+    }
+  }
+
+  for (const estimate of uniqueEstimates) {
     // For resolution 0 there is no Hilbert curve, so we can just return as the result is exact
     if (resolution < FIRST_HILBERT_RESOLUTION || a5cellContainsPoint(estimate, lonLat)) {
       return serialize(estimate);
@@ -63,25 +79,16 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   throw new Error('No cell found');
 }
 
-function _lonLatToFace(lonLat: LonLat): Face {
-  const spherical = fromLonLat(lonLat);
-  const origin = {...findNearestOrigin(spherical)};
-  mat2.fromRotation(rotation, -origin.angle);
-  const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle);
-  return toFace(polar);
-}
-
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
 // Thus this function only returns an cell nearby, and we need to search the neighbourhood to find the correct cell
 // TODO: Implement a more accurate function
 function _lonLatToEstimate(lonLat: LonLat, resolution: number): A5Cell {
   const spherical = fromLonLat(lonLat);
   const origin = {...findNearestOrigin(spherical)};
-  mat2.fromRotation(rotation, -origin.angle);
 
   const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle);
   const dodecPoint = toFace(polar);
-  const quintant = getQuintant(dodecPoint);
+  const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);
   if (resolution < FIRST_HILBERT_RESOLUTION) {
     // For low resolutions there is no Hilbert curve
@@ -133,8 +140,14 @@ export function cellToBoundary(cellId: bigint): LonLat[] {
 }
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): boolean {
+  const spherical = fromLonLat(point);
+
+  // Important to use the same origin as the cell, so we unproject onto correct face
+  const {origin} = cell;
+  const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle);
+  const face = toFace(polar);
+
+  // Perform containment test in Face coordinates, where cell edges are straight lines
   const pentagon = _getPentagon(cell);
-  pentagon.getVertices();
-  const face = _lonLatToFace(point);
-  return pentagon.containsPoint(face);
+  return pentagon.containsPoint(face); 
 }
