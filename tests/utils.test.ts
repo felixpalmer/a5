@@ -23,16 +23,16 @@ describe('PentagonShape', () => {
       expect(pentagon.containsPoint([-1, 0])).toBe(true)   // Left triangle
     })
 
-    it('returns false for points outside pentagon', () => {
+    it('returns number outside pentagon', () => {
       // Test points clearly outside
-      expect(pentagon.containsPoint([0, 3])).toBe(false)
-      expect(pentagon.containsPoint([3, 0])).toBe(false)
-      expect(pentagon.containsPoint([0, -3])).toBe(false)
-      expect(pentagon.containsPoint([-3, 0])).toBe(false)
+      expect(pentagon.containsPoint([0, 3])).toBe(2)
+      expect(pentagon.containsPoint([3, 0])).toBeCloseTo(2.82842)
+      expect(pentagon.containsPoint([0, -3])).toBeCloseTo(1.41421)
+      expect(pentagon.containsPoint([-3, 0])).toBeCloseTo(1.41421)
       
       // Test points just outside edges
-      expect(pentagon.containsPoint([0, 2.1])).toBe(false)
-      expect(pentagon.containsPoint([2.1, 1])).toBe(false)
+      expect(pentagon.containsPoint([0, 2.1])).toBe(2)
+      expect(pentagon.containsPoint([2.1, 1])).toBeCloseTo(0.042993)
     })
 
     it('handles edge cases correctly', () => {

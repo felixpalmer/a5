@@ -36,7 +36,7 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
     samples.push(coordinate as LonLat);
   }
 
-  const cells: A5Cell[] = [];
+  const cells: {cell: A5Cell, distance: number}[] = [];
   const estimates: {estimate: A5Cell, sample: LonLat}[] = [];
   for (const sample of samples) {
     const estimate = _lonLatToEstimate(sample, resolution);
@@ -68,18 +68,27 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   }
 
   for (const estimate of uniqueEstimates) {
-    if (a5cellContainsPoint(estimate, lonLat) === true) {
+    const containsResult = a5cellContainsPoint(estimate, lonLat);
+    if (containsResult === true) {
       return serialize(estimate);
+    } else if (typeof containsResult === 'number') {
+      cells.push({cell: estimate, distance: containsResult});
     } else {
-      cells.push(estimate);
+      cells.push({cell: estimate, distance: Infinity});
     }
+  }
+
+  // Sort cells by distance and use the closest one
+  cells.sort((a, b) => a.distance - b.distance);
+  if (cells.length > 0) {
+    return serialize(cells[0].cell);
   }
 
   // Failed to find based on hit test, just return the closest cell
   // TODO: investigate why this even happens
   let D = Infinity;
   let bestCell: A5Cell | null = null;
-  for (const cell of cells) {
+  for (const {cell} of cells) {
     const pentagon = _getPentagon(cell);
     const center = projectPoint(pentagon.getCenter(), cell.origin);
     const distance = vec2.dist(center, lonLat);
@@ -90,7 +99,7 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   }
 
   console.log('BEST CELL FALLBACK', bestCell);
-  const boundaries = cells.map(cell => cellToBoundary(serialize(cell)));
+  const boundaries = cells.map(({cell}) => cellToBoundary(serialize(cell)));
   boundaries.forEach(boundary => boundary.push(boundary[0]));
 
   console.log(JSON.stringify({
