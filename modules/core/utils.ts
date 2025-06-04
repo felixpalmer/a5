@@ -25,6 +25,23 @@ export class PentagonShape {
   constructor(vertices: Pentagon) {
     this.vertices = vertices;
     this.id = {i: 0, j: 0, k: 0, resolution: 1};
+    if (!this.isWindingCorrect()) {
+      this.vertices.reverse();
+    }
+  }
+
+  getArea(): number {
+    let signedArea = 0;
+    const N = this.vertices.length;
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      signedArea += (this.vertices[j][0] - this.vertices[i][0]) * (this.vertices[j][1] + this.vertices[i][1]);
+    }
+    return signedArea;
+  }
+
+  private isWindingCorrect(): boolean {
+    return this.getArea() >= 0;
   }
 
   getVertices(): Pentagon {
@@ -106,7 +123,11 @@ export class PentagonShape {
    * @returns true if the point is inside the pentagon
    */
   containsPoint(point: vec2): boolean {
-    // For each edge of the pentagon
+    // TODO later we can likely remove this, but for now it's useful for debugging
+    if (!this.isWindingCorrect()) {
+      throw new Error("Pentagon is not counter-clockwise");
+    }
+
     const N = this.vertices.length;
     for (let i = 0; i < N; i++) {
       const v1 = this.vertices[i];
