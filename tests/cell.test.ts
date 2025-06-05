@@ -78,17 +78,17 @@ describe('Cell Boundary Tests', () => {
 
         // Dictionary to store failures for each resolution and point
         const failures: Record<string, Record<number, string[]>> = {};
+
+        console.log(`Skipping resolution ${MAX_RESOLUTION} as lonLatToCell is not implemented for this resolution yet`);
         
         // Test each point from GeoJSON
         for (const [pointIndex, testLonlat] of testPoints.entries()) {
             const featureName = populatedPlaces.features[pointIndex].properties?.name || `Unnamed ${pointIndex}`;
             const pointKey = `Point ${pointIndex} - ${featureName} (${testLonlat[0]}, ${testLonlat[1]})`;
-            failures[pointKey] = {};
 
             // Test resolutions from 0 to MAX_RESOLUTION
             for (let resolution = 1; resolution <= MAX_RESOLUTION; resolution++) {
                 if (resolution === MAX_RESOLUTION) {
-                    console.log(`Skipping resolution ${resolution} as lonLatToCell is not implemented for this resolution yet`);
                     continue;
                 }
 

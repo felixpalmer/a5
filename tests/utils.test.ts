@@ -15,34 +15,34 @@ describe('PentagonShape', () => {
 
     it('returns true for points inside pentagon', () => {
       // Test center
-      expect(pentagon.containsPoint([0, 0])).toBe(true)
+      expect(pentagon.containsPoint([0, 0])).toBe(-1)
       
       // Test points in different triangular regions
-      expect(pentagon.containsPoint([0, 1.5])).toBe(true)  // Upper triangle
-      expect(pentagon.containsPoint([1, 0])).toBe(true)    // Right triangle
-      expect(pentagon.containsPoint([-1, 0])).toBe(true)   // Left triangle
+      expect(pentagon.containsPoint([0, 1.5])).toBe(-1)  // Upper triangle
+      expect(pentagon.containsPoint([1, 0])).toBe(-1)    // Right triangle
+      expect(pentagon.containsPoint([-1, 0])).toBe(-1)   // Left triangle
     })
 
-    it('returns false for points outside pentagon', () => {
+    it('returns number outside pentagon', () => {
       // Test points clearly outside
-      expect(pentagon.containsPoint([0, 3])).toBe(false)
-      expect(pentagon.containsPoint([3, 0])).toBe(false)
-      expect(pentagon.containsPoint([0, -3])).toBe(false)
-      expect(pentagon.containsPoint([-3, 0])).toBe(false)
+      expect(pentagon.containsPoint([0, 3])).toBe(2)
+      expect(pentagon.containsPoint([3, 0])).toBeCloseTo(2.82842)
+      expect(pentagon.containsPoint([0, -3])).toBeCloseTo(1.41421)
+      expect(pentagon.containsPoint([-3, 0])).toBeCloseTo(1.41421)
       
       // Test points just outside edges
-      expect(pentagon.containsPoint([0, 2.1])).toBe(false)
-      expect(pentagon.containsPoint([2.1, 1])).toBe(false)
+      expect(pentagon.containsPoint([0, 2.1])).toBe(2)
+      expect(pentagon.containsPoint([2.1, 1])).toBeCloseTo(0.042993)
     })
 
     it('handles edge cases correctly', () => {
       // Points on vertices
-      expect(pentagon.containsPoint([0, 2])).toBe(true)
-      expect(pentagon.containsPoint([1.9999, 0.9999])).toBe(true)
+      expect(pentagon.containsPoint([0, 2])).toBe(-1)
+      expect(pentagon.containsPoint([1.9999, 0.9999])).toBe(-1)
       
       // Points on edges
-      expect(pentagon.containsPoint([1, 1.49999])).toBe(true)  // Right edge
-      expect(pentagon.containsPoint([-1, 1.49999])).toBe(true) // Left edge
+      expect(pentagon.containsPoint([1, 1.49999])).toBe(-1)  // Right edge
+      expect(pentagon.containsPoint([-1, 1.49999])).toBe(-1) // Left edge
     })
 
     it('containsPointSmall', () => {
@@ -55,7 +55,21 @@ describe('PentagonShape', () => {
       ] as Pentagon);
 
       const redPoint = [ 0.008777835727200756, 0.007709318463780757 ];
-      expect(smallPentagon.containsPoint(redPoint as any)).toBe(true);
+      expect(smallPentagon.containsPoint(redPoint as any)).toBe(-1);
+    });
+
+    it('containsPointOnEdge', () => {
+      // Singapore pentagon, resolution 4 (in Face coordiantes, origin 8)
+      const singaporePentagon = new PentagonShape([
+        [0.24999999999999994, -0.406149620291133],
+        [0.1761431542833664, -0.48255778435927743],
+        [0.19098300562505247, -0.5877852522924732],
+        [0.29564604095473646, -0.6061887908395137],
+        [0.2998454618577896, -0.500003075888989]
+      ] as Pentagon);
+
+      const singapore = [0.22395879916296305, -0.5770707674730963];
+      expect(singaporePentagon.containsPoint(singapore as any)).toBe(-1);
     });
   });
 

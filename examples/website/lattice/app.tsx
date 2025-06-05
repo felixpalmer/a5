@@ -27,7 +27,7 @@ function crossCheck(cells: Cell[], cells2: Cell[]) {
     const pentagon = new PentagonShape(parent.vertices as Pentagon);
     let contained = false;
     for (const vertex of child.vertices) {
-      if (pentagon.containsPoint(vertex)) {
+      if (pentagon.containsPoint(vertex) < 0) {
         contained = true;
         break;
       }

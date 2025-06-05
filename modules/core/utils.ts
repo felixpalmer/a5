@@ -25,6 +25,23 @@ export class PentagonShape {
   constructor(vertices: Pentagon) {
     this.vertices = vertices;
     this.id = {i: 0, j: 0, k: 0, resolution: 1};
+    if (!this.isWindingCorrect()) {
+      this.vertices.reverse();
+    }
+  }
+
+  getArea(): number {
+    let signedArea = 0;
+    const N = this.vertices.length;
+    for (let i = 0; i < N; i++) {
+      const j = (i + 1) % N;
+      signedArea += (this.vertices[j][0] - this.vertices[i][0]) * (this.vertices[j][1] + this.vertices[i][1]);
+    }
+    return signedArea;
+  }
+
+  private isWindingCorrect(): boolean {
+    return this.getArea() >= 0;
   }
 
   getVertices(): Pentagon {
@@ -103,10 +120,14 @@ export class PentagonShape {
    * Tests if a point is inside the pentagon by checking if it's on the correct side of all edges.
    * Assumes consistent winding order (counter-clockwise).
    * @param point The point to test
-   * @returns true if the point is inside the pentagon
+   * @returns -1 if point is inside, otherwise a value proportional to the distance from the point to the edge
    */
-  containsPoint(point: vec2): boolean {
-    // For each edge of the pentagon
+  containsPoint(point: vec2): number {
+    // TODO later we can likely remove this, but for now it's useful for debugging
+    if (!this.isWindingCorrect()) {
+      throw new Error("Pentagon is not counter-clockwise");
+    }
+
     const N = this.vertices.length;
     for (let i = 0; i < N; i++) {
       const v1 = this.vertices[i];
@@ -122,12 +143,16 @@ export class PentagonShape {
       // Cross product: dx * py - dy * px
       // If positive, point is on the wrong side
       // If negative, point is on the correct side
-      if (dx * py - dy * px > 0) {
-        return false;
+      const crossProduct = (dx * py - dy * px);
+      if (crossProduct > 0) {
+        // Only normalize by distance of point to edge as we can assume the edges of the
+        // pentagon are all the same length
+        const pLength = Math.sqrt(px * px + py * py);
+        return crossProduct / pLength;
       }
     }
     
-    return true;
+    return -1;
   }
 
   /**
