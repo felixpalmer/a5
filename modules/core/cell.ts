@@ -27,7 +27,7 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
 
   const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
   const samples: LonLat[] = [lonLat];
-  const N = 100;
+  const N = 25;
   const scale = 50 / Math.pow(2, hilbertResolution);
   for (let i = 0; i < N; i++) {
     const R = (i / N) * scale;
