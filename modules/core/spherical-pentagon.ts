@@ -120,14 +120,12 @@ export class SphericalPentagonShape {
 
     const thetaA = Math.atan2(A[1], A[0]) as Radians;
     const thetaB = Math.atan2(B[1], B[0]) as Radians;
-    if (Math.abs(thetaA) > 1e-12) {
-      throw new Error(`thetaA is not near 0: ${thetaA}`);
-    }
     return [thetaA, thetaB];
   }
 
-  containsPoint(point: Spherical): boolean {
+  containsPoint(point: Spherical): number {
     const N = this.vertices.length;
+    let thetaDelta = Infinity;
     for (let i = 0; i < N; i++) {
       // Transform point into coordinate system of vertex
       const X = toCartesian(point);
@@ -137,10 +135,8 @@ export class SphericalPentagonShape {
       // Check if point is within vertex angles
       const vertexAngles = this.getVertexAngles(i);
       const thetaX = Math.atan2(X[1], X[0]) as Radians;
-      if (thetaX < vertexAngles[0] || thetaX > vertexAngles[1]) {
-        return false;
-      }
+      thetaDelta = Math.min(thetaDelta, thetaX - vertexAngles[0], vertexAngles[1] - thetaX);
     }
-    return true;
+    return thetaDelta;
   }
 }

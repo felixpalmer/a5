@@ -24,7 +24,7 @@ function Scene({ resolution }: { resolution: number }) {
   // Filter cells based on current point
   const filteredCells = a5cells.filter(cell => {
     const pentagon = sphericalPentagonFromCell(cell);
-    return pentagon.containsPoint(point);
+    return pentagon.containsPoint(point) > 0;
   });
 
   const handleSphereClick = (intersection: Spherical) => {

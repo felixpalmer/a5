@@ -5,7 +5,7 @@
 import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Face, LonLat } from "./coordinate-systems";
+import type { Face, LonLat, Spherical } from "./coordinate-systems";
 import { FaceToIJ, fromLonLat, toFace } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { unprojectDodecahedron } from "./dodecahedron";
@@ -15,6 +15,7 @@ import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
 import { projectPentagon, projectPoint, reprojectPentagon } from "./project";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
+import { SphericalPentagonShape } from "./spherical-pentagon";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -56,7 +57,7 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
 
   for (const estimate of uniqueEstimates) {
     const distance = a5cellContainsPoint(estimate, lonLat);
-    if (distance < 0) {
+    if (distance > 0) {
       return serialize(estimate);
     } else {
       cells.push({cell: estimate, distance});
@@ -64,7 +65,7 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   }
 
   // Sort cells by distance and use the closest one
-  cells.sort((a, b) => a.distance - b.distance);
+  cells.sort((a, b) => b.distance - a.distance);
   return serialize(cells[0].cell);
 }
 
@@ -129,7 +130,12 @@ export function cellToBoundary(cellId: bigint): LonLat[] {
 }
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
-  const spherical = fromLonLat(point);
+  const spherical = point as unknown as Spherical;
+
+  const boundary = cellToBoundary(serialize(cell));
+  const sphericalBoundary = boundary as unknown as Spherical[];
+  const sphericalPentagon = new SphericalPentagonShape(sphericalBoundary);
+  return sphericalPentagon.containsPoint(spherical);
 
   // Important to use the same origin as the cell, so we unproject onto correct face
   const {origin} = cell;
