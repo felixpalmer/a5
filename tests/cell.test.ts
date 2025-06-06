@@ -120,6 +120,9 @@ describe('Cell Boundary Tests', () => {
                 
                 // Store failures for this resolution if any occurred
                 if (resolutionFailures.length > 0) {
+                    if (!failures[pointKey]) {
+                        failures[pointKey] = {};
+                    }
                     failures[pointKey][resolution] = resolutionFailures;
                 }
             }
