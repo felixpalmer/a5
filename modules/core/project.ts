@@ -4,13 +4,13 @@
 
 import { vec2, mat2, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { Pentagon, PentagonShape } from './utils';
+import { PentagonShape } from './utils';
 import { Origin } from './utils';
 import { movePointToFace, findNearestOrigin, isNearestOrigin } from './origin';
-import { projectDodecahedron, unprojectDodecahedron } from './dodecahedron';
-import type { Face, LonLat, Polar, Radians } from './coordinate-systems';
-import { fromLonLat, toFace, toLonLat, toPolar } from './coordinate-transforms';
-import { distanceToEdge, PI_OVER_5 } from './constants';
+import { projectDodecahedron } from './dodecahedron';
+import type { Face, LonLat, Radians } from './coordinate-systems';
+import { toLonLat, toPolar } from './coordinate-transforms';
+import { PI_OVER_5 } from './constants';
 
 // Reusable matrices to avoid recreation
 const rotation = mat2.create();
