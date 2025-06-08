@@ -5,15 +5,15 @@
 import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Cartesian, Degrees, Face, LonLat, Spherical } from "./coordinate-systems";
+import type { Face, LonLat } from "./coordinate-systems";
 import { FaceToIJ, fromLonLat, toCartesian, toFace } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { unprojectDodecahedron } from "./dodecahedron";
-import { A5Cell, Pentagon, PentagonShape } from "./utils";
-import { getFaceVertices, getPentagonVertices, getQuintant, getQuintantPolar, getQuintantVertices } from "./tiling";
+import { A5Cell, PentagonShape } from "./utils";
+import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
-import { projectPentagon, projectPoint, reprojectPentagon } from "./project";
+import { projectPentagon, projectPoint } from "./project";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
 import { SphericalPentagonShape } from "./spherical-pentagon";
 
