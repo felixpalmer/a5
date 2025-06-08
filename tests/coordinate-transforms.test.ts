@@ -5,8 +5,7 @@ import {
   toCartesian,
   toSpherical,
   fromLonLat,
-  toLonLat,
-  lonLatToCartesian
+  toLonLat
 } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat, Radians, Spherical } from 'a5/core/coordinate-systems'
 
@@ -97,30 +96,4 @@ describe('LonLat to/from spherical', () => {
       expect(newLat).toBeCloseTo(lat)
     })
   })
-})
-
-describe('LonLat to Cartesian', () => {
-  it('produces unit vectors', () => {
-    // Test that all output vectors have length 1 (within floating point precision)
-    TEST_POINTS.forEach(point => {
-      const cartesian = lonLatToCartesian(point)
-      const length = Math.sqrt(
-        cartesian[0] * cartesian[0] + 
-        cartesian[1] * cartesian[1] + 
-        cartesian[2] * cartesian[2]
-      )
-      expect(length).toBeCloseTo(1)
-    })
-  })
-
-  it('matches composition of fromLonLat and toCartesian', () => {
-    // Test that lonLatToCartesian gives same results as fromLonLat -> toCartesian
-    TEST_POINTS.forEach(point => {
-      const direct = lonLatToCartesian(point)
-      const composed = toCartesian(fromLonLat(point))
-      expect(direct[0]).toBeCloseTo(composed[0])
-      expect(direct[1]).toBeCloseTo(composed[1])
-      expect(direct[2]).toBeCloseTo(composed[2])
-    })
-  })
-}) 
+});

@@ -6,7 +6,7 @@ import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type { Cartesian, Degrees, Face, LonLat, Spherical } from "./coordinate-systems";
-import { degToRad, FaceToIJ, fromLonLat, lonLatToCartesian, toCartesian, toFace } from "./coordinate-transforms";
+import { FaceToIJ, fromLonLat, toCartesian, toFace } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { unprojectDodecahedron } from "./dodecahedron";
 import { A5Cell, Pentagon, PentagonShape } from "./utils";
@@ -132,8 +132,8 @@ export function cellToBoundary(cellId: bigint): LonLat[] {
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
   const boundary = cellToBoundary(serialize(cell));
 
-  const cartesian = lonLatToCartesian(point);
-  const sphericalBoundary = boundary.map(lonLatToCartesian);
+  const cartesian = toCartesian(fromLonLat(point));
+  const sphericalBoundary = boundary.map(vertex => toCartesian(fromLonLat(vertex)));
 
   const sphericalPentagon = new SphericalPentagonShape(sphericalBoundary);
   return sphericalPentagon.containsPoint(cartesian);

@@ -42,12 +42,12 @@ export function toSpherical(xyz: Cartesian): Spherical {
 }
 
 export function toCartesian([theta, phi]: Spherical): Cartesian {
-  const x = Math.sin(phi) * Math.cos(theta);
-  const y = Math.sin(phi) * Math.sin(theta);
+  const sinPhi = Math.sin(phi);
+  const x = sinPhi * Math.cos(theta);
+  const y = sinPhi * Math.sin(theta);
   const z = Math.cos(phi);
   return [x, y, z] as Cartesian;
 }
-
 
 /**
  * Determine the offset longitude for the spherical coordinate system
@@ -81,16 +81,6 @@ export function toLonLat([theta, phi]: Spherical): LonLat {
   const longitude = radToDeg(theta) - LONGITUDE_OFFSET as Degrees;
   const latitude = (90 - radToDeg(phi)) as Degrees;
   return [longitude, latitude] as LonLat;
-}
-
-/**
- * Convert longitude/latitude directly to Cartesian coordinates
- * @param lon Longitude in degrees (0 to 360)
- * @param lat Latitude in degrees (-90 to 90)
- * @returns [x, y, z] (unit vector)
- */
-export function lonLatToCartesian(lonLat: LonLat): Cartesian {
-  return toCartesian(fromLonLat(lonLat));
 }
 
 /**
