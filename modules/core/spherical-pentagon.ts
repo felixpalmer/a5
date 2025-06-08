@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec2, mat2, mat2d, vec3, glMatrix, quat} from 'gl-matrix';
+import {vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Radians, Spherical, Face, Degrees, LonLat, Cartesian } from './coordinate-systems';
-import { quatFromSpherical, radToDeg, toCartesian, toSpherical } from './coordinate-transforms';
+import type { Cartesian } from './coordinate-systems';
 
+// Use Cartesian system for all calculations for greater accuracy
+// Using [x, y, z] gives equal precision in all directions, unlike spherical coordinates
 export type SphericalPolygon = Cartesian[];
 const UP = [0, 0, 1] as Cartesian;
 

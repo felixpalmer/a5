@@ -5,9 +5,24 @@ import {
   toCartesian,
   toSpherical,
   fromLonLat,
-  toLonLat
+  toLonLat,
+  lonLatToCartesian
 } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat, Radians, Spherical } from 'a5/core/coordinate-systems'
+
+const TEST_POINTS: Array<LonLat> = [
+  [0, 0],     // Equator
+  [90, 0],    // Equator
+  [180, 0],   // Equator
+  [0, 45],    // Mid latitude
+  [0, -45],   // Mid latitude
+  [-90, -45], // West hemisphere mid-latitude
+  [180, 45],  // Date line mid-latitude
+  [90, 45],   // East hemisphere mid-latitude
+  [0, 90],    // North pole
+  [0, -90],   // South pole
+  [123, 45],  // Arbitrary point
+] as LonLat[];
 
 describe('angle conversions', () => {
   it('converts degrees to radians', () => {
@@ -74,20 +89,38 @@ describe('LonLat to/from spherical', () => {
 
   it('converts spherical to longitude/latitude coordinates', () => {
     // Test round trip conversion
-    const TEST_POINTS: Array<[number, number]> = [
-      [0, 0],     // Greenwich equator
-      [0, 90],    // North pole
-      [0, -90],   // South pole
-      [180, 45],  // Date line mid-latitude
-      [-90, -45], // West hemisphere mid-latitude
-    ];
-
     TEST_POINTS.forEach(([lon, lat]) => {
       const spherical = fromLonLat([lon, lat] as LonLat)
       const [newLon, newLat] = toLonLat(spherical)
       
       expect(newLon).toBeCloseTo(lon)
       expect(newLat).toBeCloseTo(lat)
+    })
+  })
+})
+
+describe('LonLat to Cartesian', () => {
+  it('produces unit vectors', () => {
+    // Test that all output vectors have length 1 (within floating point precision)
+    TEST_POINTS.forEach(point => {
+      const cartesian = lonLatToCartesian(point)
+      const length = Math.sqrt(
+        cartesian[0] * cartesian[0] + 
+        cartesian[1] * cartesian[1] + 
+        cartesian[2] * cartesian[2]
+      )
+      expect(length).toBeCloseTo(1)
+    })
+  })
+
+  it('matches composition of fromLonLat and toCartesian', () => {
+    // Test that lonLatToCartesian gives same results as fromLonLat -> toCartesian
+    TEST_POINTS.forEach(point => {
+      const direct = lonLatToCartesian(point)
+      const composed = toCartesian(fromLonLat(point))
+      expect(direct[0]).toBeCloseTo(composed[0])
+      expect(direct[1]).toBeCloseTo(composed[1])
+      expect(direct[2]).toBeCloseTo(composed[2])
     })
   })
 }) 
