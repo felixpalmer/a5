@@ -4,19 +4,20 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { hexToBigInt, cellToChildren, cellToParent } from 'a5/index';
 import { A5Pentagon, Marker, Sphere, sphericalPentagonFromCell } from './components';
-import { radToDeg, toCartesian } from 'a5/core/coordinate-transforms';
-import { Spherical } from 'a5/core/coordinate-systems';
+import { toCartesian } from 'a5/core/coordinate-transforms';
+import { Cartesian, Spherical } from 'a5/core/coordinate-systems';
 import { vec3 } from 'gl-matrix';
 
-const initialPoint = [2 * Math.PI * Math.random(), Math.PI * Math.random()] as Spherical;
-const camera = toCartesian(initialPoint);
+const initialSpherical = [2 * Math.PI * Math.random(), Math.PI * Math.random()] as Spherical;
+const initialPoint = toCartesian(initialSpherical);
+const camera = toCartesian(initialSpherical);
 vec3.scale(camera, camera, 2);
 
 const a5CellHex = '1200000000000000';
 const a5cell = hexToBigInt(a5CellHex);
 
 function Scene({ resolution }: { resolution: number }) {
-  const [point, setPoint] = useState<Spherical>(initialPoint);
+  const [point, setPoint] = useState<Cartesian>(initialPoint);
 
   // Get cells at current resolution
   const a5cells = cellToChildren(cellToParent(a5cell), resolution);
@@ -28,7 +29,7 @@ function Scene({ resolution }: { resolution: number }) {
   });
 
   const handleSphereClick = (intersection: Spherical) => {
-    setPoint(intersection);
+    setPoint(toCartesian(intersection));
   };
 
   return (
@@ -39,7 +40,7 @@ function Scene({ resolution }: { resolution: number }) {
       <Sphere onSphereClick={handleSphereClick} />
       {filteredCells.map(cell => <A5Pentagon key={cell.toString()} cell={cell} disabled={false} />)}
       {a5cells.map(cell => <A5Pentagon key={cell.toString()} cell={cell} disabled={true} />)}
-      <Marker spherical={point} />
+      <Marker cartesian={point} />
       <OrbitControls enableDamping enableZoom={true} minPolarAngle={0} maxPolarAngle={Math.PI} minDistance={1.02} maxDistance={10} enablePan={false} />
     </>
   );

@@ -16,7 +16,7 @@ export class SphericalPentagonShape {
   constructor(vertices: SphericalPolygon) {
     this.vertices = vertices;
     if (!this.isWindingCorrect()) {
-      debugger;
+      console.log('Winding is incorrect, reversing');
       this.vertices.reverse();
     }
   }
@@ -81,34 +81,6 @@ export class SphericalPentagonShape {
     const out = vec3.fromValues(0, 0, 1);
     vec3.transformQuat(out, out, qCombined);
     return out as Cartesian;
-  }
-
-  getVertexQuat(t: number): quat {
-    const N = this.vertices.length;
-    const i = Math.floor(t % N);
-    const j = (i + 1) % N;
-
-    // Points A & B
-    const A = this.vertices[i];
-    const B = this.vertices[j];
-
-    // Rotation from vertex A to origin (north pole)
-    const qAO = quat.rotationTo(quat.create(), A, UP);
-    const axis = vec3.create();
-    const angle = quat.getAxisAngle(axis, qAO);
-
-    // Rotate B into coordinate system of A
-    // const _A = vec3.transformQuat(vec3.create(), A, qAO);
-    // const _B = vec3.transformQuat(vec3.create(), B, qAO);
-    // const _theta = Math.atan2(_B[1], _B[0]) as Radians;
-
-    // const qTwist = quat.setAxisAngle(quat.create(), UP, -_theta);
-    // vec3.transformQuat(_A, _A, qTwist);
-    // vec3.transformQuat(_B, _B, qTwist);
-
-    // Rotate such that B lies it is along x-axis
-    //quat.multiply(qAO, qTwist, qAO);
-    return qAO;
   }
 
   /**
