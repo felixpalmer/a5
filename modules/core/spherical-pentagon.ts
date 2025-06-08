@@ -94,6 +94,8 @@ export class SphericalPentagonShape {
 
     // Rotation from vertex A to origin (north pole)
     const qAO = quat.rotationTo(quat.create(), A, UP);
+    const axis = vec3.create();
+    const angle = quat.getAxisAngle(axis, qAO);
 
     // Rotate B into coordinate system of A
     // const _A = vec3.transformQuat(vec3.create(), A, qAO);
@@ -109,16 +111,19 @@ export class SphericalPentagonShape {
     return qAO;
   }
 
-  transformVertices(t: number): [Cartesian, Cartesian] {
+  transformVertices(t: number): [Cartesian, Cartesian, Cartesian] {
     const N = this.vertices.length;
     const i = Math.floor(t % N);
     const j = (i + 1) % N;
     const k = (i + N - 1) % N;
 
     // Points A & B (vertex before and after)
-    const V = this.vertices[i];
-    const A = this.vertices[j];
-    const B = this.vertices[k];
+    const V = vec3.clone(this.vertices[i]) as Cartesian;
+    const A = vec3.clone(this.vertices[j]) as Cartesian;
+    const B = vec3.clone(this.vertices[k]) as Cartesian;
+    vec3.sub(A, A, V);
+    vec3.sub(B, B, V);
+    return [V, A, B];
 
     // Quat to rotate into coordinate system of vertex
     const qV = this.getVertexQuat(t);
@@ -135,25 +140,26 @@ export class SphericalPentagonShape {
 
   containsPoint(point: Cartesian): number {
     const N = this.vertices.length;
-    console.log(this.vertices)
     let thetaDeltaMin = Infinity;
     for (let i = 0; i < N; i++) {
       // Transform point into coordinate system of vertex
-      const qV = this.getVertexQuat(i);
-      const X = vec3.transformQuat(vec3.create(), point, qV);
+      //const qV = this.getVertexQuat(i);
+      // const X = vec3.transformQuat(vec3.create(), point, qV);
+      const X = vec3.clone(point) as Cartesian;
 
-      // Check if point is within vertex angles
-      const [A, B] = this.transformVertices(i);
-      A[2] = 0;
-      B[2] = 0;
-      X[2] = 0;
+      // Move origin to V
+      const [V, A, B] = this.transformVertices(i);
+      vec3.sub(X, X, V);
 
       vec3.normalize(A, A);
       vec3.normalize(B, B);
       vec3.normalize(X, X);
 
-      const sinXA = vec3.cross(vec3.create(), X, A)[2];
-      const sinBX = vec3.cross(vec3.create(), B, X)[2];
+      const crossXA = vec3.cross(vec3.create(), X, A);
+      const crossBX = vec3.cross(vec3.create(), B, X);
+
+      const sinXA = vec3.dot(V, crossXA);
+      const sinBX = vec3.dot(V, crossBX);
 
       thetaDeltaMin = Math.min(thetaDeltaMin, sinXA, sinBX);
     }
