@@ -21,6 +21,11 @@ export class SphericalPentagonShape {
     }
   }
 
+  /**
+   * 
+   * @param nSegments Returns a close boundary of the polygon, with nSegments points per edge
+   * @returns SphericalPolygon
+   */
   getBoundary(nSegments: number = 1): SphericalPolygon {
     const points: SphericalPolygon = [];
     const N = this.vertices.length;
@@ -83,15 +88,18 @@ export class SphericalPentagonShape {
   }
 
   containsPoint(point: Cartesian): number {
+    // Adaption of algorithm from:
+    // 'Locating a point on a spherical surface relative to a spherical polygon'
+    // Using only the condition of 'necessary strike'
     const N = this.vertices.length;
     let thetaDeltaMin = Infinity;
 
     for (let i = 0; i < N; i++) {
-      // Transform point and neighboring vertices into coordinate system of vertex
+      // Transform point and neighboring vertices into coordinate system centered on vertex
       const [V, VA, VB] = this.getTransformedVertices(i);
       const VP = vec3.sub(vec3.create(), point, V);
 
-      // Normalize direction vectors
+      // Normalize to obtain unit direction vectors
       vec3.normalize(VP, VP);
       vec3.normalize(VA, VA);
       vec3.normalize(VB, VB);
