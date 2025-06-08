@@ -111,7 +111,14 @@ export class SphericalPentagonShape {
     return qAO;
   }
 
-  transformVertices(t: number): [Cartesian, Cartesian, Cartesian] {
+  /**
+   * Returns the vertex given by index t, along with the vectors:
+   * - VA: Vector from vertex to point A
+   * - VB: Vector from vertex to point B
+   * @param t 
+   * @returns 
+   */
+  getTransformedVertices(t: number): [Cartesian, Cartesian, Cartesian] {
     const N = this.vertices.length;
     const i = Math.floor(t % N);
     const j = (i + 1) % N;
@@ -119,50 +126,45 @@ export class SphericalPentagonShape {
 
     // Points A & B (vertex before and after)
     const V = vec3.clone(this.vertices[i]) as Cartesian;
-    const A = vec3.clone(this.vertices[j]) as Cartesian;
-    const B = vec3.clone(this.vertices[k]) as Cartesian;
-    vec3.sub(A, A, V);
-    vec3.sub(B, B, V);
-    return [V, A, B];
-
-    // Quat to rotate into coordinate system of vertex
-    const qV = this.getVertexQuat(t);
-
-    const _V = vec3.transformQuat(vec3.create(), V, qV);
-    const _A = vec3.transformQuat(vec3.create(), A, qV) as Cartesian;
-    const _B = vec3.transformQuat(vec3.create(), B, qV) as Cartesian;
-    return [_A, _B];
-
-    // const thetaA = Math.atan2(_A[1], _A[0]) as Radians;
-    // const thetaB = Math.atan2(_B[1], _B[0]) as Radians;
-    // return [thetaA, thetaB];
+    const VA = vec3.clone(this.vertices[j]) as Cartesian;
+    const VB = vec3.clone(this.vertices[k]) as Cartesian;
+    vec3.sub(VA, VA, V);
+    vec3.sub(VB, VB, V);
+    return [V, VA, VB];
   }
 
   containsPoint(point: Cartesian): number {
     const N = this.vertices.length;
     let thetaDeltaMin = Infinity;
+
     for (let i = 0; i < N; i++) {
-      // Transform point into coordinate system of vertex
-      //const qV = this.getVertexQuat(i);
-      // const X = vec3.transformQuat(vec3.create(), point, qV);
-      const X = vec3.clone(point) as Cartesian;
+      // Transform point and neighboring vertices into coordinate system of vertex
+      const [V, VA, VB] = this.getTransformedVertices(i);
+      const VP = vec3.sub(vec3.create(), point, V);
 
-      // Move origin to V
-      const [V, A, B] = this.transformVertices(i);
-      vec3.sub(X, X, V);
+      // Normalize direction vectors
+      vec3.normalize(VP, VP);
+      vec3.normalize(VA, VA);
+      vec3.normalize(VB, VB);
 
-      vec3.normalize(A, A);
-      vec3.normalize(B, B);
-      vec3.normalize(X, X);
+      // Cross products will point away from the center of the sphere when
+      // point P is within arc formed by VA and VB
+      const crossPA = vec3.cross(vec3.create(), VP, VA);
+      const crossBP = vec3.cross(vec3.create(), VB, VP);
 
-      const crossXA = vec3.cross(vec3.create(), X, A);
-      const crossBX = vec3.cross(vec3.create(), B, X);
+      // Dot product will be positive when point P is within arc formed by VA and VB
+      // The magnitude of the dot product is the sine of the angle between the two vectors
+      // which is the same as the angle for small angles.
+      const sinPA = vec3.dot(V, crossPA);
+      const sinBP = vec3.dot(V, crossBP);
 
-      const sinXA = vec3.dot(V, crossXA);
-      const sinBX = vec3.dot(V, crossBX);
-
-      thetaDeltaMin = Math.min(thetaDeltaMin, sinXA, sinBX);
+      // By returning the minimum value we find the arc where the point is closest to being outside
+      thetaDeltaMin = Math.min(thetaDeltaMin, sinPA, sinBP);
     }
+
+    // If point is inside all arcs, will return a position value
+    // If point is on edge of arc, will return 0
+    // If point is outside all arcs, will return -1, the further away from 0, the further away from the arc
     return thetaDeltaMin;
   }
 }
