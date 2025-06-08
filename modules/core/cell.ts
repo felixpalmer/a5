@@ -37,34 +37,30 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
     samples.push(coordinate as LonLat);
   }
 
-  const cells: {cell: A5Cell, distance: number}[] = [];
-  const estimates: {estimate: A5Cell, sample: LonLat}[] = [];
-  for (const sample of samples) {
-    const estimate = _lonLatToEstimate(sample, resolution);
-    estimates.push({estimate, sample});
-  }
-
   // Deduplicate estimates
   const estimateSet = new Set<bigint>();
   const uniqueEstimates: A5Cell[] = [];
-  for (const {estimate, sample} of estimates) {
+
+  const cells: {cell: A5Cell, distance: number}[] = [];
+  for (const sample of samples) {
+    const estimate = _lonLatToEstimate(sample, resolution);
     const estimateKey = serialize(estimate);
     if (!estimateSet.has(estimateKey)) {
+      // Have new estimate, add to set and list
       estimateSet.add(estimateKey);
       uniqueEstimates.push(estimate);
+
+      // Check if we have a hit, storing distance if not
+      const distance = a5cellContainsPoint(estimate, lonLat);
+      if (distance > 0) {
+        return serialize(estimate);
+      } else {
+        cells.push({cell: estimate, distance});
+      }
     }
   }
 
-  for (const estimate of uniqueEstimates) {
-    const distance = a5cellContainsPoint(estimate, lonLat);
-    if (distance > 0) {
-      return serialize(estimate);
-    } else {
-      cells.push({cell: estimate, distance});
-    }
-  }
-
-  // Sort cells by distance and use the closest one
+  // As fallback, sort cells by distance and use the closest one
   cells.sort((a, b) => b.distance - a.distance);
   return serialize(cells[0].cell);
 }
