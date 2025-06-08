@@ -16,32 +16,8 @@ export class SphericalPentagonShape {
   constructor(vertices: SphericalPolygon) {
     this.vertices = vertices;
     if (!this.isWindingCorrect()) {
-      console.log('Winding is incorrect, reversing');
       this.vertices.reverse();
     }
-  }
-
-  private isWindingCorrect(): boolean {
-    return this.getArea() >= 0;
-  }
-
-  getArea(): number {
-    let signedArea = 0;
-    const N = this.vertices.length;
-    
-    // Project vertices onto tangent plane at north pole
-    const projectedVertices = this.vertices.map(v => {
-      const z = vec3.dot(v, UP);
-      return [v[0]/(1+z), v[1]/(1+z)] as [number, number];
-    });
-
-    // Calculate signed area in projected plane
-    for (let i = 0; i < N; i++) {
-      const j = (i + 1) % N;
-      signedArea += (projectedVertices[j][0] - projectedVertices[i][0]) * 
-                    (projectedVertices[j][1] + projectedVertices[i][1]);
-    }
-    return signedArea;
   }
 
   getBoundary(nSegments: number = 1): SphericalPolygon {
@@ -138,5 +114,11 @@ export class SphericalPentagonShape {
     // If point is on edge of arc, will return 0
     // If point is outside all arcs, will return -1, the further away from 0, the further away from the arc
     return thetaDeltaMin;
+  }
+
+  private isWindingCorrect(): boolean {
+    const [V, VA, VB] = this.getTransformedVertices(0);
+    const cross = vec3.cross(vec3.create(), VA, VB);
+    return vec3.dot(V, cross) <= 0;
   }
 }
