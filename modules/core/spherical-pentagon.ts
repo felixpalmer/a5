@@ -96,20 +96,20 @@ export class SphericalPentagonShape {
     const qAO = quat.rotationTo(quat.create(), A, UP);
 
     // Rotate B into coordinate system of A
-    const _A = vec3.transformQuat(vec3.create(), A, qAO);
-    const _B = vec3.transformQuat(vec3.create(), B, qAO);
-    const _theta = Math.atan2(_B[1], _B[0]) as Radians;
+    // const _A = vec3.transformQuat(vec3.create(), A, qAO);
+    // const _B = vec3.transformQuat(vec3.create(), B, qAO);
+    // const _theta = Math.atan2(_B[1], _B[0]) as Radians;
 
-    const qTwist = quat.setAxisAngle(quat.create(), UP, -_theta);
-    vec3.transformQuat(_A, _A, qTwist);
-    vec3.transformQuat(_B, _B, qTwist);
+    // const qTwist = quat.setAxisAngle(quat.create(), UP, -_theta);
+    // vec3.transformQuat(_A, _A, qTwist);
+    // vec3.transformQuat(_B, _B, qTwist);
 
     // Rotate such that B lies it is along x-axis
-    quat.multiply(qAO, qTwist, qAO);
+    //quat.multiply(qAO, qTwist, qAO);
     return qAO;
   }
 
-  getVertexAngles(t: number): [Radians, Radians] {
+  transformVertices(t: number): [Cartesian, Cartesian] {
     const N = this.vertices.length;
     const i = Math.floor(t % N);
     const j = (i + 1) % N;
@@ -124,27 +124,39 @@ export class SphericalPentagonShape {
     const qV = this.getVertexQuat(t);
 
     const _V = vec3.transformQuat(vec3.create(), V, qV);
-    const _A = vec3.transformQuat(vec3.create(), A, qV);
-    const _B = vec3.transformQuat(vec3.create(), B, qV);
+    const _A = vec3.transformQuat(vec3.create(), A, qV) as Cartesian;
+    const _B = vec3.transformQuat(vec3.create(), B, qV) as Cartesian;
+    return [_A, _B];
 
-    const thetaA = Math.atan2(_A[1], _A[0]) as Radians;
-    const thetaB = Math.atan2(_B[1], _B[0]) as Radians;
-    return [thetaA, thetaB];
+    // const thetaA = Math.atan2(_A[1], _A[0]) as Radians;
+    // const thetaB = Math.atan2(_B[1], _B[0]) as Radians;
+    // return [thetaA, thetaB];
   }
 
   containsPoint(point: Cartesian): number {
     const N = this.vertices.length;
-    let thetaDelta = Infinity;
+    console.log(this.vertices)
+    let thetaDeltaMin = Infinity;
     for (let i = 0; i < N; i++) {
       // Transform point into coordinate system of vertex
       const qV = this.getVertexQuat(i);
       const X = vec3.transformQuat(vec3.create(), point, qV);
 
       // Check if point is within vertex angles
-      const vertexAngles = this.getVertexAngles(i);
-      const thetaX = Math.atan2(X[1], X[0]) as Radians;
-      thetaDelta = Math.min(thetaDelta, thetaX - vertexAngles[0], vertexAngles[1] - thetaX);
+      const [A, B] = this.transformVertices(i);
+      A[2] = 0;
+      B[2] = 0;
+      X[2] = 0;
+
+      vec3.normalize(A, A);
+      vec3.normalize(B, B);
+      vec3.normalize(X, X);
+
+      const sinXA = vec3.cross(vec3.create(), X, A)[2];
+      const sinBX = vec3.cross(vec3.create(), B, X)[2];
+
+      thetaDeltaMin = Math.min(thetaDeltaMin, sinXA, sinBX);
     }
-    return thetaDelta;
+    return thetaDeltaMin;
   }
 }

@@ -5,8 +5,8 @@
 import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Face, LonLat, Spherical } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toFace } from "./coordinate-transforms";
+import type { Cartesian, Degrees, Face, LonLat, Spherical } from "./coordinate-systems";
+import { degToRad, FaceToIJ, fromLonLat, toCartesian, toFace } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { unprojectDodecahedron } from "./dodecahedron";
 import { A5Cell, Pentagon, PentagonShape } from "./utils";
@@ -129,13 +129,18 @@ export function cellToBoundary(cellId: bigint): LonLat[] {
   return projectPentagon(pentagon, origin);
 }
 
-export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
-  const spherical = point as unknown as Spherical;
+function lonLatToCartesian(lonLat: LonLat): Cartesian {
+  return toCartesian(fromLonLat(lonLat));
+}
 
+export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
   const boundary = cellToBoundary(serialize(cell));
-  const sphericalBoundary = boundary as unknown as Spherical[];
+
+  const cartesian = lonLatToCartesian(point);
+  const sphericalBoundary = boundary.map(lonLatToCartesian);
+
   const sphericalPentagon = new SphericalPentagonShape(sphericalBoundary);
-  return sphericalPentagon.containsPoint(spherical);
+  return sphericalPentagon.containsPoint(cartesian);
 
   // Important to use the same origin as the cell, so we unproject onto correct face
   const {origin} = cell;
