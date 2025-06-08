@@ -7,7 +7,7 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Radians, Spherical, Face, Degrees, LonLat, Cartesian } from './coordinate-systems';
 import { quatFromSpherical, radToDeg, toCartesian, toSpherical } from './coordinate-transforms';
 
-export type SphericalPolygon = Spherical[];
+export type SphericalPolygon = Cartesian[];
 const UP = [0, 0, 1] as Cartesian;
 
 export class SphericalPentagonShape {
@@ -16,6 +16,7 @@ export class SphericalPentagonShape {
   constructor(vertices: SphericalPolygon) {
     this.vertices = vertices;
     if (!this.isWindingCorrect()) {
+      debugger;
       this.vertices.reverse();
     }
   }
@@ -27,15 +28,24 @@ export class SphericalPentagonShape {
   getArea(): number {
     let signedArea = 0;
     const N = this.vertices.length;
+    
+    // Project vertices onto tangent plane at north pole
+    const projectedVertices = this.vertices.map(v => {
+      const z = vec3.dot(v, UP);
+      return [v[0]/(1+z), v[1]/(1+z)] as [number, number];
+    });
+
+    // Calculate signed area in projected plane
     for (let i = 0; i < N; i++) {
       const j = (i + 1) % N;
-      signedArea += (this.vertices[j][0] - this.vertices[i][0]) * (this.vertices[j][1] + this.vertices[i][1]);
+      signedArea += (projectedVertices[j][0] - projectedVertices[i][0]) * 
+                    (projectedVertices[j][1] + projectedVertices[i][1]);
     }
     return signedArea;
   }
 
-  getBoundary(nSegments: number = 1): Spherical[] {
-    const points: Spherical[] = [];
+  getBoundary(nSegments: number = 1): SphericalPolygon {
+    const points: SphericalPolygon = [];
     const N = this.vertices.length;
     for (let s = 0; s < N * nSegments; s++) {
       const t = s / nSegments;
@@ -49,17 +59,17 @@ export class SphericalPentagonShape {
   /**
    * Interpolates along boundary of polygon. Pass t = 1.5 to get the midpoint between 2nd and 3rd vertices
    * @param t 
-   * @returns Spherical (lat, lon) coordinate
+   * @returns Cartesian coordinate
    */
-  slerp(t: number): Spherical {
+  slerp(t: number): Cartesian {
     const N = this.vertices.length;
     const f = t % 1;
     const i = Math.floor(t % N);
     const j = (i + 1) % N;
 
     // Points A & B
-    const A = toCartesian(this.vertices[i]);
-    const B = toCartesian(this.vertices[j]);
+    const A = this.vertices[i];
+    const B = this.vertices[j];
 
     // Quaternions
     const identity = quat.create();
@@ -70,7 +80,7 @@ export class SphericalPentagonShape {
 
     const out = vec3.fromValues(0, 0, 1);
     vec3.transformQuat(out, out, qCombined);
-    return toSpherical(out as Cartesian);
+    return out as Cartesian;
   }
 
   getVertexQuat(t: number): quat {
@@ -79,8 +89,8 @@ export class SphericalPentagonShape {
     const j = (i + 1) % N;
 
     // Points A & B
-    const A = toCartesian(this.vertices[i]);
-    const B = toCartesian(this.vertices[j]);
+    const A = this.vertices[i];
+    const B = this.vertices[j];
 
     // Rotation from vertex A to origin (north pole)
     const qAO = quat.rotationTo(quat.create(), A, UP);
@@ -89,7 +99,6 @@ export class SphericalPentagonShape {
     const _A = vec3.transformQuat(vec3.create(), A, qAO);
     const _B = vec3.transformQuat(vec3.create(), B, qAO);
     const _theta = Math.atan2(_B[1], _B[0]) as Radians;
-
 
     const qTwist = quat.setAxisAngle(quat.create(), UP, -_theta);
     vec3.transformQuat(_A, _A, qTwist);
@@ -107,30 +116,29 @@ export class SphericalPentagonShape {
     const k = (i + N - 1) % N;
 
     // Points A & B (vertex before and after)
-    const V = toCartesian(this.vertices[i]);
-    const A = toCartesian(this.vertices[j]);
-    const B = toCartesian(this.vertices[k]);
+    const V = this.vertices[i];
+    const A = this.vertices[j];
+    const B = this.vertices[k];
 
     // Quat to rotate into coordinate system of vertex
     const qV = this.getVertexQuat(t);
 
-    vec3.transformQuat(V, V, qV);
-    vec3.transformQuat(A, A, qV);
-    vec3.transformQuat(B, B, qV);
+    const _V = vec3.transformQuat(vec3.create(), V, qV);
+    const _A = vec3.transformQuat(vec3.create(), A, qV);
+    const _B = vec3.transformQuat(vec3.create(), B, qV);
 
-    const thetaA = Math.atan2(A[1], A[0]) as Radians;
-    const thetaB = Math.atan2(B[1], B[0]) as Radians;
+    const thetaA = Math.atan2(_A[1], _A[0]) as Radians;
+    const thetaB = Math.atan2(_B[1], _B[0]) as Radians;
     return [thetaA, thetaB];
   }
 
-  containsPoint(point: Spherical): number {
+  containsPoint(point: Cartesian): number {
     const N = this.vertices.length;
     let thetaDelta = Infinity;
     for (let i = 0; i < N; i++) {
       // Transform point into coordinate system of vertex
-      const X = toCartesian(point);
       const qV = this.getVertexQuat(i);
-      vec3.transformQuat(X, X, qV);
+      const X = vec3.transformQuat(vec3.create(), point, qV);
 
       // Check if point is within vertex angles
       const vertexAngles = this.getVertexAngles(i);
