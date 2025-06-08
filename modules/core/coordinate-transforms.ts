@@ -84,6 +84,16 @@ export function toLonLat([theta, phi]: Spherical): LonLat {
 }
 
 /**
+ * Convert longitude/latitude directly to Cartesian coordinates
+ * @param lon Longitude in degrees (0 to 360)
+ * @param lat Latitude in degrees (-90 to 90)
+ * @returns [x, y, z] (unit vector)
+ */
+export function lonLatToCartesian(lonLat: LonLat): Cartesian {
+  return toCartesian(fromLonLat(lonLat));
+}
+
+/**
  * Creates a quaternion representing a rotation
  * from the north pole to a given axis.
  * @param axis Spherical coordinate of axis to rotate to

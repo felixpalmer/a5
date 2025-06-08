@@ -52,37 +52,3 @@ export function projectPentagon(pentagon: PentagonShape, origin: Origin): LonLat
   const normalizedVertices = PentagonShape.normalizeLongitudes(rotatedVertices);
   return normalizedVertices;
 }
-
-/**
- * Reproject a pentagon so that all vertices are defined in the same Face coordinate system
- * of a single origin. This is required for containment testing as the vertices of a cell
- * can span multiple origins, which are warped differently. Applying this function allows
- * us to perform containment testing in Face coordinates, where cell edges are straight lines.
- * @param pentagon 
- * @param origin 
- * @returns 
- */
-export function reprojectPentagon(pentagon: PentagonShape, origin: Origin): PentagonShape {
-  // If all vertices are within a single origin, we can just return the pentagon
-  let withinSingleOrigin = true;
-  for (const vertex of pentagon.getVertices()) {
-    const D = vec2.length(vertex);
-    if (D > distanceToEdge) {
-      withinSingleOrigin = false;
-      break;
-    }
-  }
-
-  if (withinSingleOrigin) {
-    return pentagon;
-  }
-
-  // Project to sphere, projectPoint will handle "folding" vertices across the dodecahedron edges
-  const projectedPentagon = projectPentagon(pentagon, origin);
-  const sphericalPentagon = projectedPentagon.map(fromLonLat);
-
-  // Unproject to dodecahedron, with all vertices now defined in the same Face coordinate system
-  const polarPentagon = sphericalPentagon.map(spherical => unprojectDodecahedron(spherical, origin.quat, origin.angle));
-  const facePentagon = polarPentagon.map(polar => toFace(polar)) as Pentagon;
-  return new PentagonShape(facePentagon);
-}
