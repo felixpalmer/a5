@@ -42,12 +42,12 @@ export function toSpherical(xyz: Cartesian): Spherical {
 }
 
 export function toCartesian([theta, phi]: Spherical): Cartesian {
-  const x = Math.sin(phi) * Math.cos(theta);
-  const y = Math.sin(phi) * Math.sin(theta);
+  const sinPhi = Math.sin(phi);
+  const x = sinPhi * Math.cos(theta);
+  const y = sinPhi * Math.sin(theta);
   const z = Math.cos(phi);
   return [x, y, z] as Cartesian;
 }
-
 
 /**
  * Determine the offset longitude for the spherical coordinate system
@@ -83,6 +83,12 @@ export function toLonLat([theta, phi]: Spherical): LonLat {
   return [longitude, latitude] as LonLat;
 }
 
+/**
+ * Creates a quaternion representing a rotation
+ * from the north pole to a given axis.
+ * @param axis Spherical coordinate of axis to rotate to
+ * @returns quaternion
+ */
 export function quatFromSpherical(axis: Spherical): quat {
   const cartesian = toCartesian(axis);
   const Q = quat.create();

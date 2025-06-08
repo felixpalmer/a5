@@ -9,6 +9,20 @@ import {
 } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat, Radians, Spherical } from 'a5/core/coordinate-systems'
 
+const TEST_POINTS: Array<LonLat> = [
+  [0, 0],     // Equator
+  [90, 0],    // Equator
+  [180, 0],   // Equator
+  [0, 45],    // Mid latitude
+  [0, -45],   // Mid latitude
+  [-90, -45], // West hemisphere mid-latitude
+  [180, 45],  // Date line mid-latitude
+  [90, 45],   // East hemisphere mid-latitude
+  [0, 90],    // North pole
+  [0, -90],   // South pole
+  [123, 45],  // Arbitrary point
+] as LonLat[];
+
 describe('angle conversions', () => {
   it('converts degrees to radians', () => {
     expect(degToRad(180 as Degrees)).toBe(Math.PI)
@@ -74,14 +88,6 @@ describe('LonLat to/from spherical', () => {
 
   it('converts spherical to longitude/latitude coordinates', () => {
     // Test round trip conversion
-    const TEST_POINTS: Array<[number, number]> = [
-      [0, 0],     // Greenwich equator
-      [0, 90],    // North pole
-      [0, -90],   // South pole
-      [180, 45],  // Date line mid-latitude
-      [-90, -45], // West hemisphere mid-latitude
-    ];
-
     TEST_POINTS.forEach(([lon, lat]) => {
       const spherical = fromLonLat([lon, lat] as LonLat)
       const [newLon, newLat] = toLonLat(spherical)
@@ -90,4 +96,4 @@ describe('LonLat to/from spherical', () => {
       expect(newLat).toBeCloseTo(lat)
     })
   })
-}) 
+});

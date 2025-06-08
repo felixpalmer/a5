@@ -89,14 +89,6 @@ export function getFaceVertices(): PentagonShape {
   return new PentagonShape(vertices as Pentagon);
 }
 
-
-export function getQuintant(point: vec2): number {
-  // TODO perhaps quicker way without trigonometry
-  const angle = Math.atan2(point[1], point[0]);
-  const normalizedAngle = (angle - V + TWO_PI) % TWO_PI;
-  return Math.ceil(normalizedAngle / TWO_PI_OVER_5) % 5;
-}
-
 export function getQuintantPolar([_, gamma]: Polar): number {
   return (Math.round(gamma / TWO_PI_OVER_5) + 5) % 5;
 }
