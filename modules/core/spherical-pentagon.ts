@@ -108,17 +108,17 @@ export class SphericalPentagonShape {
 
       // Cross products will point away from the center of the sphere when
       // point P is within arc formed by VA and VB
-      const crossPA = vec3.cross(vec3.create(), VP, VA);
-      const crossBP = vec3.cross(vec3.create(), VB, VP);
+      const crossAP = vec3.cross(vec3.create(), VA, VP);
+      const crossPB = vec3.cross(vec3.create(), VP, VB);
 
       // Dot product will be positive when point P is within arc formed by VA and VB
       // The magnitude of the dot product is the sine of the angle between the two vectors
       // which is the same as the angle for small angles.
-      const sinPA = vec3.dot(V, crossPA);
-      const sinBP = vec3.dot(V, crossBP);
+      const sinAP = vec3.dot(V, crossAP);
+      const sinPB = vec3.dot(V, crossPB);
 
       // By returning the minimum value we find the arc where the point is closest to being outside
-      thetaDeltaMin = Math.min(thetaDeltaMin, sinPA, sinBP);
+      thetaDeltaMin = Math.min(thetaDeltaMin, sinAP, sinPB);
     }
 
     // If point is inside all arcs, will return a position value
@@ -130,6 +130,6 @@ export class SphericalPentagonShape {
   private isWindingCorrect(): boolean {
     const [V, VA, VB] = this.getTransformedVertices(0);
     const cross = vec3.cross(vec3.create(), VA, VB);
-    return vec3.dot(V, cross) <= 0;
+    return vec3.dot(V, cross) >= 0;
   }
 }
