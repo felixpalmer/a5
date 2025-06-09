@@ -15,19 +15,24 @@ import {pentagonArea} from 'a5/core/utils';
 const H3_RESOLUTION = 1; // 1
 const A5_RESOLUTION = 4; // 4
 
+const AUTHALIC_RADIUS = 6371.0072; // km
+const AUTHALIC_AREA = 4 * Math.PI * AUTHALIC_RADIUS * AUTHALIC_RADIUS;
+
 // 'Bold' color scheme
 const COLORS = ['#7F3C8D', '#11A579', '#3969AC', '#F2B701', '#E73F74', '#80BA5A', '#E68310', '#008695', '#CF1C90', '#f97b72', '#4b4b8f', '#A5AA99'];
 
 // Add Controls component
 const Controls: React.FC<{
   areaLimits: [number, number];
+  authalicAverageArea: number;
   perimeterLimits: [number, number];
   tilingSystem: 'h3' | 'a5';
   onTilingSystemChange: (system: 'h3' | 'a5') => void;
-}> = ({areaLimits, perimeterLimits, tilingSystem, onTilingSystemChange}) => {
+}> = ({areaLimits, authalicAverageArea, perimeterLimits, tilingSystem, onTilingSystemChange}) => {
   const [minArea, maxArea] = areaLimits;
   const [minPerimeter, maxPerimeter] = perimeterLimits;
   const areaRatio = maxArea / minArea;
+  const areaError = (maxArea / authalicAverageArea - 1) * 100; // Percent that largest cell is larger than authalic average
   const perimeterRatio = maxPerimeter / minPerimeter;
 
   return (
@@ -59,6 +64,8 @@ const Controls: React.FC<{
       <div>Min Area: {minArea.toFixed(2)} km²</div>
       <div>Max Area: {maxArea.toFixed(2)} km²</div>
       <div>Area Ratio: {areaRatio.toFixed(4)}</div>
+      <div>Authalic Average Area: {authalicAverageArea.toFixed(2)} km²</div>
+      <div style={{fontWeight: 'bold'}}>Area Error: {areaError.toFixed(2)}%</div>
       
       <h3 style={{margin: '12px 0 8px', fontSize: '14px'}}>Area Statistics</h3>
       <div>Min Perimeter: {minPerimeter.toFixed(2)} km</div>
@@ -668,6 +675,10 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
     }
   }
 
+  // Cell count
+  const cellCount = tilingSystem === 'h3' ? h3Output.length : a5Output.length;
+  const authalicAverageArea = AUTHALIC_AREA / cellCount;
+
   // Combine layers
   const layers = highlightLayer ? [baseLayer, highlightLayer] : [baseLayer];
 
@@ -703,6 +714,7 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
       </Map>
       <Controls 
         areaLimits={areaLimits}
+        authalicAverageArea={authalicAverageArea}
         perimeterLimits={perimeterLimits}
         tilingSystem={tilingSystem}
         onTilingSystemChange={handleTilingSystemChange}
