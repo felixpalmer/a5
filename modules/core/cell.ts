@@ -156,7 +156,7 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
 }
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
-  const boundary = cellToBoundary(serialize(cell));
+  const boundary = cellToBoundary(serialize(cell), {closedRing: false, segments: 1});
 
   const cartesian = toCartesian(fromLonLat(point));
   const sphericalBoundary = boundary.map(vertex => toCartesian(fromLonLat(vertex)));
