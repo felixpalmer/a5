@@ -23,10 +23,10 @@ export function generateWireframe(resolution: number): LonLat[][] {
     const segment = BigInt(i) << 58n; // 6 bits for segment, numbered incrementally
     const index = segment | stamp;
     if (resolution < FIRST_HILBERT_RESOLUTION) {
-      cells.push(cellToBoundary(index));
+      cells.push(cellToBoundary(index, {closedRing: false, segments: 1}));
     } else {
       const children = cellToChildren(index, resolution)
-      cells = cells.concat(children.map(child => cellToBoundary(child)));
+      cells = cells.concat(children.map(child => cellToBoundary(child, {closedRing: false, segments: 1})));
     }
   }
   return cells;
