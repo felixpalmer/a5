@@ -140,6 +140,12 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
   if (segments === 'auto') {
     segments = Math.max(1,  Math.pow(2, 7 - resolution));
   }
+  if (segments <= 1) {
+    if (closedRing) {
+      projectedPentagon.push(projectedPentagon[0]);
+    }
+    return projectedPentagon;
+  }
 
   const cartesianPentagon = projectedPentagon.map(p => toCartesian(fromLonLat(p))) as SphericalPolygon;
   const sphericalPentagon = new SphericalPentagonShape(cartesianPentagon);

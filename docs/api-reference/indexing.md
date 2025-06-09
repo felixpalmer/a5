@@ -39,19 +39,25 @@ function cellToLonLat(cell: bigint): [longitude: number, latitude: number];
 
 ### cellToBoundary
 
-Returns the five vertices that define the boundary of an A5 cell.
+Returns the vertices that define the boundary of an A5 cell.
 
 ```ts
-function cellToBoundary(cell: bigint): [longitude: number, latitude: number][];
+function cellToBoundary(cell: bigint, options?: {
+  closedRing?: boolean;
+  segments?: number | 'auto';
+}): [longitude: number, latitude: number][];
 ```
 
 #### Parameters
 
 - `cell` **(bigint)** A5 cell identifier
+- `options` **(object)** Optional configuration object
+  - `closedRing` **(boolean)** Whether to close the ring by repeating the first point at the end. Defaults to `true`.
+  - `segments` **(number | 'auto')** Number of segments to use for each edge. When set to 'auto', uses a resolution-appropriate value. Defaults to 'auto'.
 
 #### Return value
 
-- **(number[][])** Array of five coordinates, each as `[longitude, latitude]`
+- **(number[][])** Array of coordinates defining the cell boundary, each as `[longitude, latitude]`
 
 ## Cell representation
 
