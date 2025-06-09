@@ -23,7 +23,12 @@ export const distanceToEdge = φ - 1;
 export const distanceToVertex = distanceToEdge / Math.cos(PI_OVER_5);
 
 // Warping parameters
-export const WARP_FACTOR = 0.515; // Set to near 0 to disable warping
+export const WARP_FACTORS = {
+   BETA_SCALE: 0.5115918059668587,
+   RHO_SHIFT: 0.9461616498962347,
+   RHO_SCALE: 0.04001633808056544,
+   RHO_SCALE2: 0.008305829720486808,
+}
 
 // Dodecahedron sphere radii (normalized to unit radius for inscribed sphere)
 /**
