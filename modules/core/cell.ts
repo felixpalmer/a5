@@ -151,7 +151,8 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
   const sphericalPentagon = new SphericalPentagonShape(cartesianPentagon);
 
   const curvedBoundary = sphericalPentagon.getBoundary(segments, closedRing);
-  return curvedBoundary.map(p => toLonLat(toSpherical(p)));
+  const boundary =  curvedBoundary.map(p => toLonLat(toSpherical(p)));
+  return PentagonShape.normalizeLongitudes(boundary);
 }
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
