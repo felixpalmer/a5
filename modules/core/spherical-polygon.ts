@@ -11,7 +11,7 @@ import type { Cartesian } from './coordinate-systems';
 export type SphericalPolygon = Cartesian[];
 const UP = [0, 0, 1] as Cartesian;
 
-export class SphericalPentagonShape {
+export class SphericalPolygonShape {
   private vertices: SphericalPolygon;
 
   constructor(vertices: SphericalPolygon) {

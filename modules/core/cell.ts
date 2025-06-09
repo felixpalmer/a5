@@ -15,7 +15,7 @@ import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
 import { projectPentagon, projectPoint } from "./project";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
-import { SphericalPentagonShape, SphericalPolygon } from "./spherical-pentagon";
+import { SphericalPolygonShape, SphericalPolygon } from "./spherical-polygon";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -148,7 +148,7 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
   }
 
   const cartesianPentagon = projectedPentagon.map(p => toCartesian(fromLonLat(p))) as SphericalPolygon;
-  const sphericalPentagon = new SphericalPentagonShape(cartesianPentagon);
+  const sphericalPentagon = new SphericalPolygonShape(cartesianPentagon);
 
   const curvedBoundary = sphericalPentagon.getBoundary(segments, closedRing);
   const boundary =  curvedBoundary.map(p => toLonLat(toSpherical(p)));
@@ -161,6 +161,6 @@ export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
   const cartesian = toCartesian(fromLonLat(point));
   const sphericalBoundary = boundary.map(vertex => toCartesian(fromLonLat(vertex)));
 
-  const sphericalPentagon = new SphericalPentagonShape(sphericalBoundary);
+  const sphericalPentagon = new SphericalPolygonShape(sphericalBoundary);
   return sphericalPentagon.containsPoint(cartesian);
 }
