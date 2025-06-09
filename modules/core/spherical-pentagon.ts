@@ -26,14 +26,16 @@ export class SphericalPentagonShape {
    * @param nSegments Returns a close boundary of the polygon, with nSegments points per edge
    * @returns SphericalPolygon
    */
-  getBoundary(nSegments: number = 1): SphericalPolygon {
+  getBoundary(nSegments: number = 1, closedRing: boolean = true): SphericalPolygon {
     const points: SphericalPolygon = [];
     const N = this.vertices.length;
     for (let s = 0; s < N * nSegments; s++) {
       const t = s / nSegments;
       points.push(this.slerp(t));
     }
-    points.push(points[0]);
+    if (closedRing) {
+      points.push(points[0]);
+    }
     
     return points;
   }
