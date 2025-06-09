@@ -144,6 +144,9 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
     if (closedRing) {
       projectedPentagon.push(projectedPentagon[0]);
     }
+    // TODO: This is a patch to make the boundary CCW, but we should fix the winding order of the pentagon
+    // throughout the whole codebase
+    projectedPentagon.reverse();
     return projectedPentagon;
   }
 
@@ -151,7 +154,7 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
   const sphericalPentagon = new SphericalPolygonShape(cartesianPentagon);
 
   const curvedBoundary = sphericalPentagon.getBoundary(segments, closedRing);
-  const boundary =  curvedBoundary.map(p => toLonLat(toSpherical(p)));
+  const boundary = curvedBoundary.map(p => toLonLat(toSpherical(p)));
   return PentagonShape.normalizeLongitudes(boundary);
 }
 

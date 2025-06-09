@@ -35,7 +35,7 @@ export class PentagonShape {
     const N = this.vertices.length;
     for (let i = 0; i < N; i++) {
       const j = (i + 1) % N;
-      signedArea += (this.vertices[i][0]) * (this.vertices[j][1] + this.vertices[i][1] - this.vertices[j][0]);
+      signedArea += (this.vertices[j][0] - this.vertices[i][0]) * (this.vertices[j][1] + this.vertices[i][1]);
     }
     return signedArea;
   }
