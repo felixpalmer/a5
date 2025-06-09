@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import type { Radians, Polar } from './coordinate-systems';
-import { distanceToEdge, PI_OVER_5, TWO_PI_OVER_5, WARP_FACTOR } from './constants';
+import { distanceToEdge, PI_OVER_5, TWO_PI_OVER_5, WARP_FACTORS } from './constants';
 
 export function normalizeGamma(gamma: Radians): Radians {
   const segment = gamma / TWO_PI_OVER_5;
@@ -16,13 +16,13 @@ export function normalizeGamma(gamma: Radians): Radians {
 }
 
 function _warpBeta(beta: number) {
-  const shiftedBeta = beta * WARP_FACTOR;
-  return Math.tan(shiftedBeta);
+  const x = beta * WARP_FACTORS.BETA_SCALE;
+  return Math.tan(x);
 }
 
 function _unwarpBeta(beta: number) {
   const shiftedBeta = Math.atan(beta);
-  return shiftedBeta / WARP_FACTOR;
+  return shiftedBeta / WARP_FACTORS.BETA_SCALE;
 }
 
 const betaMax = PI_OVER_5;
@@ -33,25 +33,32 @@ export function warpBeta(beta: number): number {
 }
 
 export function unwarpBeta(beta: number): number {
+  const WARP_SCALER = _warpBeta(betaMax) / betaMax;
   return _unwarpBeta(beta * WARP_SCALER);
+}
+
+function rhoScaleFactor(betaRatio: number) {
+  const beta2 = betaRatio * betaRatio;
+  const beta4 = beta2 * beta2;
+  return (WARP_FACTORS.RHO_SHIFT - WARP_FACTORS.RHO_SCALE * beta2 - WARP_FACTORS.RHO_SCALE2 * beta4);
 }
 
 function warpRho(rho: number, beta: number) {
   const betaRatio = Math.abs(beta) / betaMax;
-  const shiftedRho = rho * (0.95 - 0.05 * betaRatio);
+  const shiftedRho = rho * rhoScaleFactor(betaRatio);
   return Math.tan(shiftedRho);
 }
 
 function unwarpRho(rho: number, beta: number) {
   const betaRatio = Math.abs(beta) / betaMax;
   const shiftedRho = Math.atan(rho);
-  return shiftedRho / (0.95 - 0.05 * betaRatio);
+  return shiftedRho / rhoScaleFactor(betaRatio);
 }
 
 export function warpPolar([rho, gamma]: Polar): Polar {
   const beta = normalizeGamma(gamma);
   
-  const beta2 = warpBeta(normalizeGamma(gamma));
+  const beta2 = warpBeta(beta);
   const deltaBeta = beta2 - beta;
 
   // Distance to edge will change, so shift rho to match

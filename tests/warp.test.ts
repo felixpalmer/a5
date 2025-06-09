@@ -76,8 +76,8 @@ describe('warpBeta', () => {
   const TEST_VALUES = [
     {input: 0, expected: 0},
     {input: 0.1, expected: 0.09657},
-    {input: -0.2, expected: -0.19366},
-    {input: PI_OVER_10, expected: 0.30579},
+    {input: -0.2, expected: -0.193740},
+    {input: PI_OVER_10, expected: 0.305902},
     {input: PI_OVER_5, expected: PI_OVER_5},
   ];
 
