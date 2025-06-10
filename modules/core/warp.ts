@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import type { Radians, Polar } from './coordinate-systems';
-import { distanceToEdge, PI_OVER_5, TWO_PI_OVER_5, WARP_FACTORS } from './constants';
+import { distanceToEdge, PI_OVER_5, TWO_PI_OVER_5, WARP_FACTORS_HIGH } from './constants';
 
 export function normalizeGamma(gamma: Radians): Radians {
   const segment = gamma / TWO_PI_OVER_5;
@@ -16,13 +16,13 @@ export function normalizeGamma(gamma: Radians): Radians {
 }
 
 function _warpBeta(beta: number) {
-  const x = beta * WARP_FACTORS.BETA_SCALE;
+  const x = beta * WARP_FACTORS_HIGH.BETA_SCALE;
   return Math.tan(x);
 }
 
 function _unwarpBeta(beta: number) {
   const shiftedBeta = Math.atan(beta);
-  return shiftedBeta / WARP_FACTORS.BETA_SCALE;
+  return shiftedBeta / WARP_FACTORS_HIGH.BETA_SCALE;
 }
 
 const betaMax = PI_OVER_5;
@@ -40,7 +40,7 @@ export function unwarpBeta(beta: number): number {
 function rhoScaleFactor(betaRatio: number) {
   const beta2 = betaRatio * betaRatio;
   const beta4 = beta2 * beta2;
-  return (WARP_FACTORS.RHO_SHIFT - WARP_FACTORS.RHO_SCALE * beta2 - WARP_FACTORS.RHO_SCALE2 * beta4);
+  return (WARP_FACTORS_HIGH.RHO_SHIFT - WARP_FACTORS_HIGH.RHO_SCALE * beta2 - WARP_FACTORS_HIGH.RHO_SCALE2 * beta4);
 }
 
 function warpRho(rho: number, beta: number) {

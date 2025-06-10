@@ -23,11 +23,18 @@ export const distanceToEdge = φ - 1;
 export const distanceToVertex = distanceToEdge / Math.cos(PI_OVER_5);
 
 // Warping parameters
-export const WARP_FACTORS = {
+export const WARP_FACTORS_HIGH = {
    BETA_SCALE: 0.5115918059668587,
    RHO_SHIFT: 0.9461616498962347,
    RHO_SCALE: 0.04001633808056544,
    RHO_SCALE2: 0.008305829720486808,
+}
+
+export const WARP_FACTORS_LOW = {
+   BETA_SCALE: 0.5170052913652168,
+   RHO_SHIFT: 0.939689240972851,
+   RHO_SCALE: 0.008891290305379163,
+   RHO_SCALE2: 0.03962853541477156,
 }
 
 // Dodecahedron sphere radii (normalized to unit radius for inscribed sphere)
