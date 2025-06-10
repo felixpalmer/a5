@@ -34,13 +34,11 @@ try {
     }
 
     const cellId = lonLatToCell([lng, lat], resolution);
-    const cellCenter = cellToLonLat(cellId);
     const cellIdHex = bigIntToHex(cellId);
 
     if (!aggregatedData.has(cellIdHex)) {
       aggregatedData.set(cellIdHex, {
         cellId: cellIdHex,
-        center: cellCenter,
         count: 1
       });
     } else {
