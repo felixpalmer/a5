@@ -1,0 +1,12 @@
+{
+  "name": "a5-wireframe-cli",
+  "version": "1.0.0",
+  "description": "CLI tool to generate all cells at given resolution",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "a5-js": "latest"
+  }
+} 
