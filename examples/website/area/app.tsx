@@ -135,7 +135,7 @@ const CellVisualization: React.FC<{
 
   // Generate projected points for a cell using gnomonic projection
   const projectH3Cell = (cell) => {
-    const boundary = cellToBoundary(cell.cell);
+    const boundary = cellToBoundary(cell.cell, {closedRing: false, segments: 1});
     const center = cellToLatLng(cell.cell);
     
     // Convert center to radians

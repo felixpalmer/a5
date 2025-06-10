@@ -6,7 +6,7 @@ import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type { Face, LonLat } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toCartesian, toFace } from "./coordinate-transforms";
+import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { unprojectDodecahedron } from "./dodecahedron";
 import { A5Cell, PentagonShape } from "./utils";
@@ -15,7 +15,7 @@ import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
 import { projectPentagon, projectPoint } from "./project";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
-import { SphericalPentagonShape } from "./spherical-pentagon";
+import { SphericalPolygonShape, SphericalPolygon } from "./spherical-polygon";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -119,18 +119,51 @@ export function cellToLonLat(cell: bigint): LonLat {
   return PentagonShape.normalizeLongitudes([lonLat])[0];
 }
 
-export function cellToBoundary(cellId: bigint): LonLat[] {
+type CellToBoundaryOptions = {
+  /**
+   * Pass true to close the ring with the first point
+   * @default true
+   */
+  closedRing?: boolean;
+  /**
+   * Number of segments to use for each edge. Pass 'auto' to use the resolution of the cell.
+   * @default 'auto'
+   */
+  segments?: number | 'auto';
+}
+
+export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}): LonLat[] {
   const {S, segment, origin, resolution} = deserialize(cellId);
   const pentagon = _getPentagon({S, segment, origin, resolution});
-  return projectPentagon(pentagon, origin);
+  const projectedPentagon = projectPentagon(pentagon, origin);
+
+  if (segments === 'auto') {
+    segments = Math.max(1,  Math.pow(2, 7 - resolution));
+  }
+  if (segments <= 1) {
+    if (closedRing) {
+      projectedPentagon.push(projectedPentagon[0]);
+    }
+    // TODO: This is a patch to make the boundary CCW, but we should fix the winding order of the pentagon
+    // throughout the whole codebase
+    projectedPentagon.reverse();
+    return projectedPentagon;
+  }
+
+  const cartesianPentagon = projectedPentagon.map(p => toCartesian(fromLonLat(p))) as SphericalPolygon;
+  const sphericalPentagon = new SphericalPolygonShape(cartesianPentagon);
+
+  const curvedBoundary = sphericalPentagon.getBoundary(segments, closedRing);
+  const boundary = curvedBoundary.map(p => toLonLat(toSpherical(p)));
+  return PentagonShape.normalizeLongitudes(boundary);
 }
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
-  const boundary = cellToBoundary(serialize(cell));
+  const boundary = cellToBoundary(serialize(cell), {closedRing: false, segments: 1});
 
   const cartesian = toCartesian(fromLonLat(point));
   const sphericalBoundary = boundary.map(vertex => toCartesian(fromLonLat(vertex)));
 
-  const sphericalPentagon = new SphericalPentagonShape(sphericalBoundary);
+  const sphericalPentagon = new SphericalPolygonShape(sphericalBoundary);
   return sphericalPentagon.containsPoint(cartesian);
 }

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map} from 'react-map-gl/maplibre';
-import {ScatterplotLayer, ArcLayer, LineLayer} from '@deck.gl/layers';
+import {ScatterplotLayer, PolygonLayer} from '@deck.gl/layers';
 import {lonLatToCell, cellToBoundary, cellToChildren, cellToParent} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
@@ -46,40 +46,23 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
   }, [resolution, cellLocation, showChildren, showParent]);
 
   // Convert cell boundaries to great circle arcs
-  const arcs = useMemo(() => {
-    return data.children.map(cell => {
-      const boundary = cellToBoundary(cell);
-      // Create pairs of points for each edge of the pentagon
-      return boundary.map((point, i) => ({
-        source: point,
-        target: boundary[(i + 1) % boundary.length],
-        cellId: cell
-      }));
-    }).flat();
+  const polygons = useMemo(() => {
+    return data.children.map((cell: bigint) => {
+      const boundary = cellToBoundary(cell, {segments: 'auto'});
+      return {polygon: [boundary], cellId: cell};
+    });
   }, [data.children]);
 
-  const getColor = (_, info) => {
-    return info.index < 5 ? A5GREEN : [160, 160, 160, 255];
-  }
-
-  const polygonProps: any = {
-    data: arcs,
-    getSourcePosition: d => d.source,
-    getTargetPosition: d => d.target,
-    getSourceColor: getColor,
-    getTargetColor: getColor,
-    getColor: getColor,
-    getWidth: (_, info) => info.index < 5 ? 2 : 1,
-    getHeight: 0,
-    greatCircle: true,
-    widthUnits: 'pixels'
-  }
-
-  // At low zooms, draw great circle arcs
-  const arcLayer = new ArcLayer({ id: 'cell-boundaries-arc', ...polygonProps });
-
-  // At high zooms, draw lines (arc layer is slower and has precision issues)
-  const lineLayer = new LineLayer({ id: 'cell-boundaries-line', ...polygonProps, });
+  const polygonLayer = new PolygonLayer({
+    id: 'cell-boundaries-line',
+    data: polygons,
+    getPolygon: d => d.polygon,
+    stroked: true,
+    filled: false,
+    getLineColor: (_, info) => info.index < 1 ? A5GREEN : [160, 160, 160, 255],
+    getLineWidth: (_, info) => info.index < 1 ? 2 : 1,
+    lineWidthUnits: 'pixels'
+  });
 
   const scatterplotLayer = new ScatterplotLayer({
     id: 'source-point',
@@ -116,21 +99,11 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
     <>
       <DeckGL
         views={new MapView({repeat: true})}
-        layers={[scatterplotLayer, arcLayer, lineLayer]}
+        layers={[scatterplotLayer, polygonLayer]}
         viewState={viewState}
         onViewStateChange={onViewStateChange}
         controller={{dragRotate: false}}
         onClick={handleMapClick}
-        layerFilter={({layer}) => {
-          const ZOOM_THRESHOLD = 8;
-          if (layer.id === 'cell-boundaries-arc') {
-            return viewState.zoom < ZOOM_THRESHOLD;
-          }
-          if (layer.id === 'cell-boundaries-line') {
-            return viewState.zoom >= ZOOM_THRESHOLD;
-          }
-          return true;
-        }}
       >
         <Map 
           mapStyle={MAP_STYLE} 

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { BufferGeometry, Float32BufferAttribute, DoubleSide, Vector3, Raycaster, Sphere as ThreeSphere } from 'three';
-import { SphericalPentagonShape } from 'a5/core/spherical-pentagon';
+import { SphericalPolygonShape } from 'a5/core/spherical-polygon';
 import { toCartesian, fromLonLat, toSpherical } from 'a5/core/coordinate-transforms';
 import { cellToBoundary } from 'a5/index';
 import type { Spherical, Radians, Cartesian } from 'a5/core/coordinate-systems';
@@ -29,7 +29,7 @@ export function Sphere({ onSphereClick }: { onSphereClick: (point: Spherical) =>
   );
 }
 
-export function PentagonLines(props: { sphericalPentagon: SphericalPentagonShape, disabled: boolean }) {
+export function PentagonLines(props: { sphericalPentagon: SphericalPolygonShape, disabled: boolean }) {
   const { sphericalPentagon, disabled } = props;
   const geometry = useMemo(() => {
     // Use 20 segments per edge for smooth curves
@@ -46,10 +46,9 @@ export function PentagonLines(props: { sphericalPentagon: SphericalPentagonShape
   );
 }
 
-export function sphericalPentagonFromCell(cell: bigint): SphericalPentagonShape {
-  const boundary = cellToBoundary(cell);
-  const cartesianBoundary = boundary.map(lonlat => toCartesian(fromLonLat(lonlat)));
-  return new SphericalPentagonShape(cartesianBoundary);
+export function sphericalPentagonFromCell(cell: bigint): SphericalPolygonShape {
+  const cartesianBoundary = cellToBoundary(cell, {closedRing: false, segments: 1}).map(p => toCartesian(fromLonLat(p)));
+  return new SphericalPolygonShape(cartesianBoundary);
 }
 
 export function A5Pentagon(props: { cell: bigint, disabled: boolean }) {
