@@ -29,15 +29,17 @@ function _unwarpBeta(beta: number, warpType: WarpType) {
 }
 
 const betaMax = PI_OVER_5;
+const WARP_SCALER: Record<WarpType, number> = {
+  'low': _warpBeta(betaMax, 'low') / betaMax,
+  'high': _warpBeta(betaMax, 'high') / betaMax,
+}
 
 export function warpBeta(beta: number, warpType: WarpType): number {
-  const WARP_SCALER = _warpBeta(betaMax, warpType) / betaMax;
-  return _warpBeta(beta, warpType) / WARP_SCALER;
+  return _warpBeta(beta, warpType) / WARP_SCALER[warpType];
 }
 
 export function unwarpBeta(beta: number, warpType: WarpType): number {
-  const WARP_SCALER = _warpBeta(betaMax, warpType) / betaMax;
-  return _unwarpBeta(beta * WARP_SCALER, warpType);
+  return _unwarpBeta(beta * WARP_SCALER[warpType], warpType);
 }
 
 function rhoScaleFactor(betaRatio: number, warpType: WarpType) {
