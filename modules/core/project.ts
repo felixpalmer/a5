@@ -15,9 +15,9 @@ import { PI_OVER_5 } from './constants';
 // Reusable matrices to avoid recreation
 const rotation = mat2.create();
 
-export function projectPoint(vertex: Face, origin: Origin): LonLat {
+export function projectPoint(vertex: Face, origin: Origin, resolution: number): LonLat {
   const unwarped = toPolar(vertex);
-  const point = projectDodecahedron(unwarped, origin.quat, origin.angle);
+  const point = projectDodecahedron(unwarped, origin.quat, origin.angle, resolution);
   const closest = isNearestOrigin(point, origin) ? origin : findNearestOrigin(point);
   
   if (closest.id !== origin.id) {
@@ -36,7 +36,7 @@ export function projectPoint(vertex: Face, origin: Origin): LonLat {
     polar2[1] = polar2[1] - angle2 as Radians;
 
     // Project back to sphere
-    const point2 = projectDodecahedron(polar2, interfaceQuat, angle2);
+    const point2 = projectDodecahedron(polar2, interfaceQuat, angle2, resolution);
     point[0] = point2[0];
     point[1] = point2[1];
   }
@@ -44,9 +44,9 @@ export function projectPoint(vertex: Face, origin: Origin): LonLat {
   return toLonLat(point);
 }
 
-export function projectPentagon(pentagon: PentagonShape, origin: Origin): LonLat[] {
+export function projectPentagon(pentagon: PentagonShape, origin: Origin, resolution: number): LonLat[] {
   const vertices = pentagon.getVertices();
-  const rotatedVertices = vertices.map(vertex => projectPoint(vertex, origin));
+  const rotatedVertices = vertices.map(vertex => projectPoint(vertex, origin, resolution));
 
   // Normalize longitudes to handle antimeridian crossing
   const normalizedVertices = PentagonShape.normalizeLongitudes(rotatedVertices);

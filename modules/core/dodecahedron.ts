@@ -8,10 +8,15 @@ import { toCartesian, toSpherical } from "./coordinate-transforms";
 import type { Radians, Spherical, Cartesian, Polar } from "./coordinate-systems";
 import { unwarpPolar, warpPolar } from './warp';
 import { projectGnomonic, unprojectGnomonic } from './gnomonic';
+import type { WarpType } from './constants';
 
-export function projectDodecahedron(unwarped: Polar, originTransform: quat, originRotation: Radians): Spherical {
+function getWarpType(resolution: number): WarpType {
+  return (resolution < 5) ? 'low' : 'high';
+}
+
+export function projectDodecahedron(unwarped: Polar, originTransform: quat, originRotation: Radians, resolution: number): Spherical {
   // Warp in polar space to minimize area variation across sphere
-  const [rho, gamma] = warpPolar(unwarped);
+  const [rho, gamma] = warpPolar(unwarped, getWarpType(resolution));
 
   // Rotate around face axis to match origin rotation
   const polar = [rho, gamma + originRotation] as Polar;
@@ -25,7 +30,7 @@ export function projectDodecahedron(unwarped: Polar, originTransform: quat, orig
   return toSpherical(projected);
 }
 
-export function unprojectDodecahedron(spherical: Spherical, originTransform: quat, originRotation: Radians): Polar {
+export function unprojectDodecahedron(spherical: Spherical, originTransform: quat, originRotation: Radians, resolution: number): Polar {
   // Transform back origin space
   const [x, y, z] = toCartesian(spherical);
   const inverseQuat = quat.create();
@@ -41,5 +46,5 @@ export function unprojectDodecahedron(spherical: Spherical, originTransform: qua
   polar[1] = (polar[1] - originRotation) as Radians;
 
   // Unwarp the polar coordinates to obtain points in lattice space
-  return unwarpPolar(polar);
+  return unwarpPolar(polar, getWarpType(resolution));
 }

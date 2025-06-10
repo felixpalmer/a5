@@ -72,7 +72,7 @@ function _lonLatToEstimate(lonLat: LonLat, resolution: number): A5Cell {
   const spherical = fromLonLat(lonLat);
   const origin = {...findNearestOrigin(spherical)};
 
-  const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle);
+  const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle, resolution);
   const dodecPoint = toFace(polar);
   const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);
@@ -115,7 +115,7 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
 export function cellToLonLat(cell: bigint): LonLat {
   const {S, segment, origin, resolution} = deserialize(cell);
   const pentagon = _getPentagon({S, segment, origin, resolution});
-  const lonLat = projectPoint(pentagon.getCenter() as Face, origin);
+  const lonLat = projectPoint(pentagon.getCenter() as Face, origin, resolution);
   return PentagonShape.normalizeLongitudes([lonLat])[0];
 }
 
@@ -135,7 +135,7 @@ type CellToBoundaryOptions = {
 export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}): LonLat[] {
   const {S, segment, origin, resolution} = deserialize(cellId);
   const pentagon = _getPentagon({S, segment, origin, resolution});
-  const projectedPentagon = projectPentagon(pentagon, origin);
+  const projectedPentagon = projectPentagon(pentagon, origin, resolution);
 
   if (segments === 'auto') {
     segments = Math.max(1,  Math.pow(2, 7 - resolution));
