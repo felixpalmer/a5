@@ -40,9 +40,9 @@ The next resolution level subdivides each *regular pentagon* **primitive** into 
 
 For higher resolution levels it is necessary to sub-divide each **quintant** primitive into smaller cells. This is [achieved with a tiling](./the-pentagon-that-could) using an *irregular pentagon* as a **primitive**, where each additional resolution level **quadruples** the number of cells. Thus resolution **level 3** gives **240 cells**, **level 4** gives **960 cells** and so on.
 
-These cells together form a **solid**, which as far as the author is aware, has not yet been described and will be refered to as a *teohedron*.
+These cells together form a **solid** (technically is it a partitioning of a sphere), which as far as the author is aware, has not yet been described and will be refered to as a *teohedron*.
 
-While all the preceding solids have primitives of exactly equal shapes and sizes, the *teohedron* can be thought of as a pseudo-Platonic solid, in that it is constructed from primitives of almost equal shape and area (the area varies by only ~2%).
+While all the preceding solids have primitives of exactly equal shapes and sizes, the *teohedron* can be thought of as a pseudo-Platonic solid, in that it is constructed from primitives of almost equal shape and area (the area varies by less than 1%).
 
 <img src={SolidTeohedron} style={{width: "100%", maxWidth: "360px"}}/>
 

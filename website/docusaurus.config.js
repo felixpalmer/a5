@@ -127,6 +127,10 @@ const config = {
               {
                 label: 'GitHub',
                 href: 'https://github.com/felixpalmer/a5'
+              },
+              {
+                label: 'Join us on Slack',
+                href: 'https://join.slack.com/t/a5-3ap4392/shared_invite/zt-35rpdc904-2vcsoikrJKFRJF7ncN1fmw'
               }
             ]
           }

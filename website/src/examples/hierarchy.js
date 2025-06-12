@@ -17,7 +17,7 @@ class HierarchyDemo extends Component {
         <p>A5 cells for a given location on the globe.</p>
         <p>Zoom in/out to change the resolution level of the A5 pentagon at the center of the map.</p>
         <p>Click to see the pentagon hierarchy at that location. Notice how cells at similar locations have similar cell ids.</p>
-        <p>Parent cells do not exactly cover children cells, but are guaranteed to be close.</p>
+        <p>Parent cells do not exactly cover children cells, but are guaranteed to overlap.</p>
       </div>
     );
   }
