@@ -30,34 +30,47 @@ describe('spherical-polygon.ts', () => {
 
   describe('getBoundary', () => {
     it('returns boundary points with different segment counts', () => {
-      const testCases = testPolygons.map((vertices, i) => ({
-        polygon: new SphericalPolygonShape(vertices),
-        nSegments: i + 1,
-        closedRing: true
-      }));
+      const expectedResults = [
+        // Triangle with 1 segment
+        [
+          [0.11043152956009886, 0, 0.9938837342863687],
+          [-0.055213440211813215, 0.0960713848509679, 0.9938419215513068],
+          [-0.055213440211813215, -0.0960713848509679, 0.9938419215513068],
+          [0.11043152956009886, 0, 0.9938837342863687]
+        ],
+        // Pentagon with 2 segments
+        [
+          [0.9999999999999998, 0, 2.220446049250313e-16],
+          [0.8090173744213622, 0.5877847292031038, -2.220446049250313e-16],
+          [0.3090182226643831, 0.9510561171988461, -5.868212804571726e-9],
+          [-0.3089290367688098, 0.9510850909572153, -5.868212582527121e-9],
+          [-0.8089090123512248, 0.5879338480959965, 1.6546987779975098e-8],
+          [-1.0000000000000002, -6.600235413767308e-9, 1.6546987668952795e-8],
+          [-0.8089090123512248, -0.5879338480959965, 1.6546987779975098e-8],
+          [-0.30892902454635696, -0.9510850949272814, 1.6546988224064307e-8],
+          [0.3090182226643831, -0.9510561171988461, -5.868212804571726e-9],
+          [0.8090173734529743, -0.5877847305359768, -5.868213026616331e-9],
+          [0.9999999999999998, 0, 2.220446049250313e-16]
+        ]
+      ];
 
-      for (const testCase of testCases) {
-        const result = testCase.polygon.getBoundary(testCase.nSegments, testCase.closedRing);
-        console.log('getBoundary test case:', {
-          input: {
-            vertices: testCase.polygon['vertices'],
-            nSegments: testCase.nSegments,
-            closedRing: testCase.closedRing
-          },
-          output: result
+      testPolygons.forEach((vertices, i) => {
+        const polygon = new SphericalPolygonShape(vertices);
+        const result = polygon.getBoundary(i + 1, true);
+        
+        expect(result.length).toBe(expectedResults[i].length);
+        result.forEach((point, j) => {
+          expect(point[0]).toBeCloseTo(expectedResults[i][j][0], 6);
+          expect(point[1]).toBeCloseTo(expectedResults[i][j][1], 6);
+          expect(point[2]).toBeCloseTo(expectedResults[i][j][2], 6);
         });
-        // TODO: Add assertions once we have verified outputs
-        expect(result).toBeDefined();
-        if (testCase.closedRing) {
-          expect(result[0]).toEqual(result[result.length - 1]);
-        }
-      }
+      });
     });
   });
 
   describe('slerp', () => {
     it('interpolates between vertices', () => {
-      const testCases = testPolygons.map((vertices, i) => ({
+      const testCases = testPolygons.map((vertices) => ({
         polygon: new SphericalPolygonShape(vertices),
         tValues: [0, 0.25, 0.5, 0.75, 1.0, 1.5]
       }));
@@ -68,14 +81,6 @@ describe('spherical-polygon.ts', () => {
           return { t, result };
         });
         
-        console.log('slerp test case:', {
-          input: {
-            vertices: testCase.polygon['vertices'],
-            tValues: testCase.tValues
-          },
-          output: results
-        });
-        // TODO: Add assertions once we have verified outputs
         results.forEach(({ result }) => {
           expect(result).toBeDefined();
           expect(result.length).toBe(3);
@@ -88,35 +93,34 @@ describe('spherical-polygon.ts', () => {
 
   describe('containsPoint', () => {
     it('correctly identifies points inside and outside polygon', () => {
-      const testCases = testPolygons.map((vertices) => {
+      const expectedResults = [
+        // Triangle results
+        [
+          -6.298927875819649e-9,   // Point on edge
+          0.4975161666370207,      // North pole
+          -0.027744911851070468    // South pole
+        ],
+        // Pentagon results
+        [
+          -2.9067971274991057e-16, // Point on edge
+          0.5719850412819585,      // North pole
+          -0.5720993058152115      // South pole
+        ]
+      ];
+
+      testPolygons.forEach((vertices, i) => {
         const polygon = new SphericalPolygonShape(vertices);
-        // Test points: center of first edge, center point, and point far from polygon
         const points = [
           polygon.slerp(0.5), // Point on edge
           createNormalizedVector(0, 0, 1), // North pole
           createNormalizedVector(0, 0, -1), // South pole
         ];
-        return { polygon, points };
-      });
 
-      for (const testCase of testCases) {
-        const results = testCase.points.map(point => {
-          const result = testCase.polygon.containsPoint(point);
-          return { point, result };
+        points.forEach((point, j) => {
+          const result = polygon.containsPoint(point);
+          expect(result).toBeCloseTo(expectedResults[i][j], 6);
         });
-        
-        console.log('containsPoint test case:', {
-          input: {
-            vertices: testCase.polygon['vertices'],
-            points: testCase.points
-          },
-          output: results
-        });
-        // TODO: Add assertions once we have verified outputs
-        results.forEach(({ result }) => {
-          expect(typeof result).toBe('number');
-        });
-      }
+      });
     });
   });
 }); 
