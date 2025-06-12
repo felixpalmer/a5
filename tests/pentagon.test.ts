@@ -25,24 +25,24 @@ describe('pentagon.ts', () => {
   describe('pentagon vertices', () => {
     it('has correct vertex coordinates', () => {
       // Vertex a
-      expect(a[0]).toBeCloseTo(0, 10);
-      expect(a[1]).toBeCloseTo(0, 10);
+      expect(a[0]).toBe(0);
+      expect(a[1]).toBe(0);
 
       // Vertex b
-      expect(b[0]).toBeCloseTo(0.1993818474311588, 10);
-      expect(b[1]).toBeCloseTo(0.3754138223914238, 10);
+      expect(b[0]).toBe(0.1993818474311588);
+      expect(b[1]).toBe(0.3754138223914238);
 
       // Vertex c
-      expect(c[0]).toBeCloseTo(0.6180339887498949, 10);
-      expect(c[1]).toBeCloseTo(0.4490279765795854, 10);
+      expect(c[0]).toBe(0.6180339887498949);
+      expect(c[1]).toBe(0.4490279765795854);
 
       // Vertex d
-      expect(d[0]).toBeCloseTo(0.8174158361810537, 10);
-      expect(d[1]).toBeCloseTo(0.0736141541881617, 10);
+      expect(d[0]).toBe(0.8174158361810537);
+      expect(d[1]).toBe(0.0736141541881617);
 
       // Vertex e
-      expect(e[0]).toBeCloseTo(0.418652141318736, 10);
-      expect(e[1]).toBeCloseTo(-0.07361415418816161, 10);
+      expect(e[0]).toBe(0.418652141318736);
+      expect(e[1]).toBe(-0.07361415418816161);
     });
   });
 
@@ -58,8 +58,8 @@ describe('pentagon.ts', () => {
 
       const vertices = PENTAGON.getVertices();
       vertices.forEach((vertex, i) => {
-        expect(vertex[0]).toBeCloseTo(expected[i][0], 10);
-        expect(vertex[1]).toBeCloseTo(expected[i][1], 10);
+        expect(vertex[0]).toBe(expected[i][0]);
+        expect(vertex[1]).toBe(expected[i][1]);
       });
     });
   });
@@ -67,16 +67,16 @@ describe('pentagon.ts', () => {
   describe('triangle vertices', () => {
     it('has correct vertex coordinates', () => {
       // Vertex u
-      expect(u[0]).toBeCloseTo(0, 10);
-      expect(u[1]).toBeCloseTo(0, 10);
+      expect(u[0]).toBe(0);
+      expect(u[1]).toBe(0);
 
       // Vertex v
-      expect(v[0]).toBeCloseTo(0.6180339887498949, 10);
-      expect(v[1]).toBeCloseTo(0.4490279765795854, 10);
+      expect(v[0]).toBe(0.6180339887498949);
+      expect(v[1]).toBe(0.4490279765795854);
 
       // Vertex w
-      expect(w[0]).toBeCloseTo(0.6180339887498949, 10);
-      expect(w[1]).toBeCloseTo(-0.4490279765795854, 10);
+      expect(w[0]).toBe(0.6180339887498949);
+      expect(w[1]).toBe(-0.4490279765795854);
 
       // Angle V
       expect(V).toBe(0.6283185307179586);
@@ -93,8 +93,8 @@ describe('pentagon.ts', () => {
 
       const vertices = TRIANGLE.getVertices();
       vertices.forEach((vertex, i) => {
-        expect(vertex[0]).toBeCloseTo(expected[i][0], 10);
-        expect(vertex[1]).toBeCloseTo(expected[i][1], 10);
+        expect(vertex[0]).toBe(expected[i][0]);
+        expect(vertex[1]).toBe(expected[i][1]);
       });
     });
   });
@@ -116,11 +116,11 @@ describe('pentagon.ts', () => {
       ];
 
       Array.from(BASIS).forEach((value, i) => {
-        expect(value).toBeCloseTo(expectedBasis[i], 10);
+        expect(value).toBe(expectedBasis[i]);
       });
 
       Array.from(BASIS_INVERSE).forEach((value, i) => {
-        expect(value).toBeCloseTo(expectedInverse[i], 10);
+        expect(value).toBe(expectedInverse[i]);
       });
 
       // Verify BASIS * BASIS_INVERSE = Identity
