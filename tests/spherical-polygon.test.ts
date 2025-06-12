@@ -4,27 +4,20 @@ import type { Cartesian } from 'a5/core/coordinate-systems'
 import { vec3 } from 'gl-matrix'
 
 describe('spherical-polygon.ts', () => {
-  // Helper function to create normalized vectors
-  function createNormalizedVector(x: number, y: number, z: number): Cartesian {
-    const v = vec3.fromValues(x, y, z);
-    vec3.normalize(v, v);
-    return v as Cartesian;
-  }
-
   const testPolygons: SphericalPolygon[] = [
     // Simple triangle near north pole
     [
-      createNormalizedVector(0.1, 0, 0.9),
-      createNormalizedVector(-0.05, 0.087, 0.9),
-      createNormalizedVector(-0.05, -0.087, 0.9)
+      [0.11043152607484655, 0, 0.9938837346736189] as Cartesian,
+      [-0.05521344008179805, 0.0960713857423286, 0.9938419214723649] as Cartesian,
+      [-0.05521344008179805, -0.0960713857423286, 0.9938419214723649] as Cartesian
     ],
     // Pentagon around equator
     [
-      createNormalizedVector(1, 0, 0),
-      createNormalizedVector(0.309, 0.951, 0),
-      createNormalizedVector(-0.809, 0.588, 0),
-      createNormalizedVector(-0.809, -0.588, 0),
-      createNormalizedVector(0.309, -0.951, 0)
+      [1, 0, 0] as Cartesian,
+      [0.3090182326136022, 0.9510561139661348, 0] as Cartesian,
+      [-0.8089090028554804, 0.58793386116072, 0] as Cartesian,
+      [-0.8089090028554804, -0.58793386116072, 0] as Cartesian,
+      [0.3090182326136022, -0.9510561139661348, 0] as Cartesian
     ]
   ];
 
@@ -112,8 +105,8 @@ describe('spherical-polygon.ts', () => {
         const polygon = new SphericalPolygonShape(vertices);
         const points = [
           polygon.slerp(0.5), // Point on edge
-          createNormalizedVector(0, 0, 1), // North pole
-          createNormalizedVector(0, 0, -1), // South pole
+          [0, 0, 1] as Cartesian, // North pole
+          [0, 0, -1] as Cartesian, // South pole
         ];
 
         points.forEach((point, j) => {
