@@ -7,7 +7,7 @@ import { cellToBoundary } from '../core/cell';
 import { cellToChildren, FIRST_HILBERT_RESOLUTION } from '../core/serialization';
 
 // TODO find a nicer way to expose this
-export function generateWireframe(resolution: number): LonLat[][] {
+export function generateWireframe(resolution: number, {segments = 1}: {segments?: number} = {}): LonLat[][] {
   let cells: LonLat[][] = [];
   let baseCells = 1;
   let stamp = 0n;
@@ -23,10 +23,10 @@ export function generateWireframe(resolution: number): LonLat[][] {
     const segment = BigInt(i) << 58n; // 6 bits for segment, numbered incrementally
     const index = segment | stamp;
     if (resolution < FIRST_HILBERT_RESOLUTION) {
-      cells.push(cellToBoundary(index, {closedRing: false, segments: 1}));
+      cells.push(cellToBoundary(index, {closedRing: false, segments}));
     } else {
       const children = cellToChildren(index, resolution)
-      cells = cells.concat(children.map(child => cellToBoundary(child, {closedRing: false, segments: 1})));
+      cells = cells.concat(children.map(child => cellToBoundary(child, {closedRing: false, segments})));
     }
   }
   return cells;

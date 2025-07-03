@@ -13,7 +13,7 @@ import {colorContinuous} from '@deck.gl/carto';
 import {pentagonArea} from 'a5/core/utils';
 
 const H3_RESOLUTION = 1; // 1
-const A5_RESOLUTION = 4; // 4
+const A5_RESOLUTION = 6; // 4
 
 const AUTHALIC_RADIUS = 6371.0072; // km
 const AUTHALIC_AREA = 4 * Math.PI * AUTHALIC_RADIUS * AUTHALIC_RADIUS;
@@ -135,7 +135,7 @@ const CellVisualization: React.FC<{
 
   // Generate projected points for a cell using gnomonic projection
   const projectH3Cell = (cell) => {
-    const boundary = cellToBoundary(cell.cell, {closedRing: false, segments: 1});
+    const boundary = cellToBoundary(cell.cell);
     const center = cellToLatLng(cell.cell);
     
     // Convert center to radians
@@ -380,7 +380,7 @@ h3AreaLimits = [Math.min(...h3Areas), Math.max(...h3Areas)];
 h3PerimeterLimits = [Math.min(...h3Perimeters), Math.max(...h3Perimeters)];
 
 // Prepare A5 data
-const a5Data = generateWireframe(A5_RESOLUTION); //.slice(0, Math.pow(4, a5Res));
+const a5Data = generateWireframe(A5_RESOLUTION, {segments: 10}); //.slice(0, Math.pow(4, a5Res));
 let a5AreaLimits: [number, number] = [Infinity, -Infinity];
 let a5PerimeterLimits: [number, number] = [Infinity, -Infinity];
 
@@ -556,7 +556,7 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
     bearing: 0
   };
 
-  const [tilingSystem, setTilingSystem] = useState<'a5' | 'h3'>('h3');
+  const [tilingSystem, setTilingSystem] = useState<'a5' | 'h3'>('a5');
   const [areaLimits, setAreaLimits] = useState<[number, number]>(h3AreaLimits);
   const [perimeterLimits, setPerimeterLimits] = useState<[number, number]>(h3PerimeterLimits);
   const [hoveredCell, setHoveredCell] = useState<any>(null);
@@ -605,18 +605,18 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
   };
 
   const N = 11;
-  const domain = Array.from({length: N}, (_, i) => h3AreaLimits[0] + i * (h3AreaLimits[1] - h3AreaLimits[0]) / (N - 1));
+  const domain = Array.from({length: N}, (_, i) => a5AreaLimits[0] + i * (a5AreaLimits[1] - a5AreaLimits[0]) / (N - 1));
   const getFillColor = (d: any, info: any) => colorContinuous({ 
     attr: d => d.properties!.area,
     domain,
-    colors: 'Bold'
+    colors: 'OrYel'
   })(d, info);
   const props: any = {
     filled: true,
     stroked: true,
     extruded: false,
     getFillColor,
-    updateTriggers: { getFillColor: h3AreaLimits },
+    updateTriggers: { getFillColor: a5AreaLimits },
     opacity: 0.8,
     getLineColor: [255, 255, 255, 30],
     lineWidthMinPixels: 2,
