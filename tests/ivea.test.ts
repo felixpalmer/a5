@@ -20,7 +20,7 @@ describe('Tolerance', () => {
 
 describe('Dodecahedron projections', () => {
   // General case OK for TOLERANCE = 14, but some points are not OK for TOLERANCE = 12+
-  const TOLERANCE = 11; // Set to 12 to see failure
+  const TOLERANCE = 12; // Set to 12 to see failure
   for (const point of TEST_POINTS) {
     it(`preserves coordinates through backward->forward conversion for point ${point}`, () => {
       const unprojected = inverseVector(
@@ -41,7 +41,7 @@ describe('Dodecahedron projections (line)', () => {
 
   for (let i = 0; i <= N; i++) {
     it(`projects TEST_LINE_SPHERICAL to TEST_LINE_POINTS correctly ${i}/${N}`, () => {
-      const TOLERANCE = 10; // Set to 11 to see failure
+      const TOLERANCE = 11; // Set to 11 to see failure
       const sphericalPoint = vec3.lerp(vec3.create(), TEST_LINE_SPHERICAL[0], TEST_LINE_SPHERICAL[1], i / N) as Cartesian;
       vec3.normalize(sphericalPoint, sphericalPoint);
       const expectedFacePoint = vec2.lerp(vec2.create(), TEST_LINE_POINTS[0], TEST_LINE_POINTS[1], i / N);
