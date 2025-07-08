@@ -181,6 +181,38 @@ export class PentagonShape {
       return [longitude, latitude] as LonLat;
     });
   }
+
+  /**
+   * Splits each edge of the pentagon into the specified number of segments
+   * @param segments Number of segments to split each edge into
+   * @returns A new PentagonShape with more vertices, or the original PentagonShape if segments <= 1
+   */
+  splitEdges(segments: number): PentagonShape {
+    if (segments <= 1) {
+      return this;
+    }
+
+    const newVertices: Face[] = [];
+    const N = this.vertices.length;
+    
+    for (let i = 0; i < N; i++) {
+      const v1 = this.vertices[i];
+      const v2 = this.vertices[(i + 1) % N];
+      
+      // Add the current vertex
+      newVertices.push(vec2.clone(v1) as Face);
+      
+      // Add interpolated points along the edge (excluding the endpoints)
+      for (let j = 1; j < segments; j++) {
+        const t = j / segments;
+        const interpolated = vec2.create();
+        vec2.lerp(interpolated, v1, v2, t);
+        newVertices.push(interpolated as Face);
+      }
+    }
+    
+    return new PentagonShape(newVertices as Pentagon);
+  }
 } 
 
 export type A5Cell = {
@@ -222,12 +254,24 @@ function triangleArea(v1: vec3, v2: vec3, v3: vec3): number {
 }
 
 export function pentagonArea(pentagon: vec3[]): number {
-  let area = 0;
-  const v1 = pentagon[0];
-  for (let i = 1; i < 4; i++) {
-    const v2 = pentagon[(i)];
-    const v3 = pentagon[(i + 1)];
-    area += Math.abs(triangleArea(v1, v2, v3));
+  if (pentagon.length < 3) {
+    return 0;
   }
+  
+  // Calculate the center of the pentagon
+  const center = vec3.create();
+  for (const vertex of pentagon) {
+    vec3.add(center, center, vertex);
+  }
+  vec3.scale(center, center, 1 / pentagon.length);
+  
+  // Sum triangles in a fan pattern around the center
+  let area = 0;
+  for (let i = 0; i < pentagon.length; i++) {
+    const v1 = pentagon[i];
+    const v2 = pentagon[(i + 1) % pentagon.length];
+    area += triangleArea(center, v1, v2);
+  }
+  
   return area;
 }

@@ -4,7 +4,7 @@
 
 import { vec2, quat, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Degrees, Radians, Face, Polar, IJ, Cartesian, Spherical, LonLat } from "./coordinate-systems";
+import type { Degrees, Radians, Face, Polar, IJ, Cartesian, Spherical, LonLat, Barycentric, FaceTriangle } from "./coordinate-systems";
 import { BASIS_INVERSE, BASIS } from "./pentagon";
 import { geodeticToAuthalic, authalicToGeodetic } from "./authalic";
 
@@ -33,6 +33,31 @@ export function FaceToIJ(face: Face): IJ {
 
 export function IJToFace(ij: IJ): Face {
   return vec2.transformMat2(vec2.create(), ij, BASIS) as Face;
+}
+
+/**
+ * Convert face coordinates to barycentric coordinates
+ */
+export function faceToBarycentric(p: Face, [p1, p2, p3]: FaceTriangle): Barycentric {
+  const d31: [number, number] = [p1[0] - p3[0], p1[1] - p3[1]];
+  const d23: [number, number] = [p3[0] - p2[0], p3[1] - p2[1]];
+  const d3p: [number, number] = [p[0] - p3[0], p[1] - p3[1]];
+  
+  const det = d23[0] * d31[1] - d23[1] * d31[0];
+  const b0 = (d23[0] * d3p[1] - d23[1] * d3p[0]) / det;
+  const b1 = (d31[0] * d3p[1] - d31[1] * d3p[0]) / det;
+  const b2 = 1 - (b0 + b1);
+  return [b0, b1, b2] as Barycentric;
+}
+
+/**
+ * Convert barycentric coordinates to face coordinates
+ */
+export function barycentricToFace(b: Barycentric, [p1, p2, p3]: FaceTriangle): Face {
+  return [
+    b[0] * p1[0] + b[1] * p2[0] + b[2] * p3[0],
+    b[0] * p1[1] + b[1] * p2[1] + b[2] * p3[1]
+  ] as Face;
 }
 
 export function toSpherical(xyz: Cartesian): Spherical {

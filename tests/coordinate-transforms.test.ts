@@ -5,11 +5,14 @@ import {
   toCartesian,
   toSpherical,
   fromLonLat,
-  toLonLat
+  toLonLat,
+  faceToBarycentric,
+  barycentricToFace
 } from 'a5/core/coordinate-transforms'
-import type { Degrees, LonLat, Radians, Spherical } from 'a5/core/coordinate-systems'
+import type { Degrees, LonLat, Radians, Spherical, Face, Barycentric, FaceTriangle } from 'a5/core/coordinate-systems'
+import { TEST_POINTS } from './data/ivea-test-data'
 
-const TEST_POINTS: Array<LonLat> = [
+const TEST_POINTS_LONLAT: Array<LonLat> = [
   [0, 0],     // Equator
   [90, 0],    // Equator
   [180, 0],   // Equator
@@ -22,6 +25,9 @@ const TEST_POINTS: Array<LonLat> = [
   [0, -90],   // South pole
   [123, 45],  // Arbitrary point
 ] as LonLat[];
+
+// Test triangle for barycentric tests
+const TEST_TRIANGLE: FaceTriangle = [[0, 0], [1, 0], [0, 1]] as FaceTriangle;
 
 describe('angle conversions', () => {
   it('converts degrees to radians', () => {
@@ -36,6 +42,111 @@ describe('angle conversions', () => {
     expect(radToDeg(0 as Radians)).toBe(0)
   })
 })
+
+describe('barycentric coordinate functions', () => {
+  it('faceToBarycentric and barycentricToFace round-trip preserves coordinates', () => {
+    const TOLERANCE = 12;
+    for (const point of TEST_POINTS) {
+      // Convert to barycentric coordinates
+      const bary = faceToBarycentric(point, TEST_TRIANGLE);
+      
+      // Convert back to face coordinates
+      const result = barycentricToFace(bary, TEST_TRIANGLE);
+      
+      // Check round-trip accuracy
+      expect(result[0]).toBeCloseTo(point[0], TOLERANCE);
+      expect(result[1]).toBeCloseTo(point[1], TOLERANCE);
+      
+      // Check that barycentric coordinates sum to 1
+      expect(bary[0] + bary[1] + bary[2]).toBeCloseTo(1, TOLERANCE);
+      
+      // Check that all barycentric coordinates are non-negative (point is inside triangle)
+      expect(bary[0]).toBeGreaterThanOrEqual(0);
+      expect(bary[1]).toBeGreaterThanOrEqual(0);
+      expect(bary[2]).toBeGreaterThanOrEqual(0);
+    }
+  });
+  
+  it('barycentricToFace and faceToBarycentric round-trip preserves barycentric coordinates', () => {
+    // Test barycentric coordinates starting with the specific case
+    const testBaryCoords: Barycentric[] = [
+      [0.043821975867140296, 0.9561208684797726, 0.00005715565308705983],
+      [0.5, 0.3, 0.2],
+      [0.1, 0.8, 0.1],
+      [0.33, 0.33, 0.34],
+      [0.9, 0.05, 0.05],
+      [0.001, 0.999, 0.000],
+    ] as Barycentric[];
+    
+    for (const bary of testBaryCoords) {
+      // Convert barycentric to face coordinates
+      const face = barycentricToFace(bary, TEST_TRIANGLE);
+      
+      // Convert back to barycentric
+      const resultBary = faceToBarycentric(face, TEST_TRIANGLE);
+      
+      // Check round-trip accuracy
+      expect(resultBary[0]).toBeCloseTo(bary[0], 12);
+      expect(resultBary[1]).toBeCloseTo(bary[1], 12);
+      expect(resultBary[2]).toBeCloseTo(bary[2], 12);
+      
+      // Check that barycentric coordinates sum to 1
+      expect(resultBary[0] + resultBary[1] + resultBary[2]).toBeCloseTo(1, 12);
+    }
+  });
+  
+  it('handles triangle vertices correctly', () => {
+    // Test each vertex
+    const vertices: Face[] = [TEST_TRIANGLE[0], TEST_TRIANGLE[1], TEST_TRIANGLE[2]];
+    const expectedBary: [number, number, number][] = [
+      [1, 0, 0],  // pai -> [1, 0, 0]
+      [0, 1, 0],  // pbi -> [0, 1, 0]
+      [0, 0, 1],  // pci -> [0, 0, 1]
+    ];
+    
+    for (let i = 0; i < vertices.length; i++) {
+      const bary = faceToBarycentric(vertices[i], TEST_TRIANGLE);
+      
+      // Check barycentric coordinates
+      expect(bary[0]).toBeCloseTo(expectedBary[i][0], 12);
+      expect(bary[1]).toBeCloseTo(expectedBary[i][1], 12);
+      expect(bary[2]).toBeCloseTo(expectedBary[i][2], 12);
+      
+      // Round-trip test
+      const result = barycentricToFace(bary, TEST_TRIANGLE);
+      expect(result[0]).toBeCloseTo(vertices[i][0], 12);
+      expect(result[1]).toBeCloseTo(vertices[i][1], 12);
+    }
+  });
+  
+  it('handles edge midpoints correctly', () => {
+    const edgeMidpoints: Face[] = [
+      [0.5, 0],    // Midpoint of pai-pbi edge
+      [0, 0.5],    // Midpoint of pai-pci edge
+      [0.5, 0.5],  // Midpoint of pbi-pci edge
+    ] as Face[];
+    
+    const expectedBary: [number, number, number][] = [
+      [0.5, 0.5, 0],  // pai-pbi midpoint
+      [0.5, 0, 0.5],  // pai-pci midpoint
+      [0, 0.5, 0.5],  // pbi-pci midpoint
+    ];
+    
+    for (let i = 0; i < edgeMidpoints.length; i++) {
+      const bary = faceToBarycentric(edgeMidpoints[i], TEST_TRIANGLE);
+      
+      // Check barycentric coordinates
+      expect(bary[0]).toBeCloseTo(expectedBary[i][0], 12);
+      expect(bary[1]).toBeCloseTo(expectedBary[i][1], 12);
+      expect(bary[2]).toBeCloseTo(expectedBary[i][2], 12);
+      
+      // Round-trip test
+      const result = barycentricToFace(bary, TEST_TRIANGLE);
+      expect(result[0]).toBeCloseTo(edgeMidpoints[i][0], 12);
+      expect(result[1]).toBeCloseTo(edgeMidpoints[i][1], 12);
+    }
+  });
+});
 
 describe('coordinate conversions', () => {
   it('converts spherical to cartesian coordinates', () => {
@@ -60,7 +171,7 @@ describe('coordinate conversions', () => {
 
   it('converts cartesian to spherical coordinates', () => {
     // Test round trip conversion
-    const original: Spherical = [Math.PI/4, Math.PI/6]
+    const original: Spherical = [Math.PI/4 as Radians, Math.PI/6 as Radians] as Spherical
     const cartesian = toCartesian(original)
     const spherical = toSpherical(cartesian)
     
@@ -88,7 +199,7 @@ describe('LonLat to/from spherical', () => {
 
   it('converts spherical to longitude/latitude coordinates', () => {
     // Test round trip conversion
-    TEST_POINTS.forEach(([lon, lat]) => {
+    TEST_POINTS_LONLAT.forEach(([lon, lat]) => {
       const spherical = fromLonLat([lon, lat] as LonLat)
       const [newLon, newLat] = toLonLat(spherical)
       

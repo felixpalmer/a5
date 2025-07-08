@@ -7,9 +7,9 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 import { PentagonShape } from './utils';
 import { Origin } from './utils';
 import { movePointToFace, findNearestOrigin, isNearestOrigin } from './origin';
-import { projectDodecahedron } from './dodecahedron';
+import { projectDodecahedron, projectDodecahedronGnomonic } from './dodecahedron';
 import type { Face, LonLat, Radians } from './coordinate-systems';
-import { toLonLat, toPolar } from './coordinate-transforms';
+import { toCartesian, toLonLat, toPolar } from './coordinate-transforms';
 import { PI_OVER_5 } from './constants';
 
 // Reusable matrices to avoid recreation
@@ -17,10 +17,13 @@ const rotation = mat2.create();
 
 export function projectPoint(vertex: Face, origin: Origin, resolution: number): LonLat {
   const unwarped = toPolar(vertex);
-  const point = projectDodecahedron(unwarped, origin.quat, origin.angle, resolution);
-  const closest = isNearestOrigin(point, origin) ? origin : findNearestOrigin(point);
-  
-  if (closest.id !== origin.id) {
+  const projectedSpherical = projectDodecahedronGnomonic(unwarped, origin.quat, origin.angle);
+  const closest = isNearestOrigin(projectedSpherical, origin) ? origin : findNearestOrigin(projectedSpherical);
+
+  let point;
+  if (closest.id === origin.id) {
+    point = projectDodecahedron(unwarped, origin.quat, origin.angle, resolution);
+  } else {
     // Move point to be relative to new origin
     const dodecPoint2 = vec2.create() as Face;
     mat2.fromRotation(rotation, origin.angle);
@@ -36,9 +39,7 @@ export function projectPoint(vertex: Face, origin: Origin, resolution: number): 
     polar2[1] = polar2[1] - angle2 as Radians;
 
     // Project back to sphere
-    const point2 = projectDodecahedron(polar2, interfaceQuat, angle2, resolution);
-    point[0] = point2[0];
-    point[1] = point2[1];
+    point = projectDodecahedron(polar2, interfaceQuat, angle2, resolution);
   }
 
   return toLonLat(point);
