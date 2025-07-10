@@ -109,40 +109,6 @@ export function segmentToQuintant(segment: number, origin: Origin): {quintant: n
 }
 
 /**
- * Move a point defined in the coordinate system of one dodecahedron face to the coordinate system of another face
- * @param point The point to move
- * @param fromOrigin The origin of the current face
- * @param toOrigin The origin of the target face
- * @returns The new point and the quaternion representing the transform
- */
-export function movePointToFace(point: Face, fromOrigin: Origin, toOrigin: Origin): {point: Face, quat: quat} {
-  const inverseQuat = quat.create();
-  quat.invert(inverseQuat, fromOrigin.quat);
-
-  const toAxis = toCartesian(toOrigin.axis);
-
-  // Transform destination axis into face space
-  const localToAxis = vec3.create();
-  vec3.transformQuat(localToAxis, toAxis, inverseQuat);
-
-  // Flatten axis to XY plane to obtain direction, scale to get distance to new origin
-  const direction: Face = vec2.create() as Face;
-  vec2.normalize(direction, [localToAxis[0], localToAxis[1]]);
-  vec2.scale(direction, direction, 2 * distanceToEdge);
-
-  // Move point to be relative to new origin
-  const offsetPoint = vec2.create() as Face;
-  vec2.subtract(offsetPoint, point, direction);
-
-  // Construct relative transform from old origin to new origin
-  const interfaceQuat = quat.create();
-  quat.rotationTo(interfaceQuat, UP, localToAxis);
-  quat.multiply(interfaceQuat, fromOrigin.quat, interfaceQuat);
-
-  return {point: offsetPoint, quat: interfaceQuat};
-}
-
-/**
  * Find the nearest origin to a point on the sphere
  * Uses haversine formula to calculate great-circle distance
  */

@@ -7,7 +7,6 @@ import {
   haversine,
   quintantToSegment,
   segmentToQuintant,
-  movePointToFace,
   isNearestOrigin,
 } from 'a5/core/origin'
 import { distanceToEdge, PI_OVER_5, TWO_PI_OVER_5 } from 'a5/core/constants'
@@ -147,27 +146,6 @@ describe('haversine', () => {
       expect(haversine(p1, p2)).toBeCloseTo(expected, 4);
     });
   });
-});
-
-describe('face movement', () => {
-  it('moves point between faces', () => {
-    // First origin should be top
-    const origin1 = origins[0]
-    expect(origin1.axis).toStrictEqual([0,0]);
-
-    // Move all the way to next origin
-    const origin2 = origins[1]
-    const direction: vec2 = [Math.cos(origin2.axis[0]), Math.sin(origin2.axis[0])]
-    const point = vec2.scale(vec2.create(), direction, 2 * distanceToEdge) as Face;
-    const result = movePointToFace(point, origin1, origin2)
-    
-    // Result should include new point and interface quaternion
-    expect(result.point).toBeDefined()
-    expect(result.quat).toBeDefined()
-    
-    // New point should be on second origin
-    expect([...result.point]).toStrictEqual([0,0])
-  })
 });
 
 describe('quintant conversion', () => {

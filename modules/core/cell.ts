@@ -6,9 +6,9 @@ import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type { Face, LonLat } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical } from "./coordinate-transforms";
+import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical, toPolar } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
-import { unprojectDodecahedron } from "./dodecahedron";
+import { DodecahedronProjection } from "../projections/dodecahedron";
 import { A5Cell, PentagonShape } from "./utils";
 import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
@@ -19,6 +19,7 @@ import { SphericalPolygonShape, SphericalPolygon } from "./spherical-polygon";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
+const dodecahedron = new DodecahedronProjection();
 
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   if (resolution < FIRST_HILBERT_RESOLUTION) {
@@ -72,8 +73,8 @@ function _lonLatToEstimate(lonLat: LonLat, resolution: number): A5Cell {
   const spherical = fromLonLat(lonLat);
   const origin = {...findNearestOrigin(spherical)};
 
-  const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle, resolution);
-  const dodecPoint = toFace(polar);
+  const dodecPoint = dodecahedron.forward(spherical, origin.quat, origin.angle, resolution);
+  const polar = toPolar(dodecPoint);
   const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);
   if (resolution < FIRST_HILBERT_RESOLUTION) {

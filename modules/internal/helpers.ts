@@ -4,14 +4,15 @@
 
 import { vec2, mat2, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { fromLonLat, toFace } from '../core/coordinate-transforms';
+import { fromLonLat } from '../core/coordinate-transforms';
 import type { LonLat, Face } from '../core/coordinate-systems';
 import { findNearestOrigin } from '../core/origin';
-import { unprojectDodecahedron } from '../core/dodecahedron';
+import { DodecahedronProjection } from '../projections/dodecahedron';
 import { PI_OVER_5 } from '../core/constants';
 
 const rotation = mat2.create();
 const shift = vec2.create();
+const dodecahedron = new DodecahedronProjection();
 
 export function lonLatToFace(lonLat: LonLat, resolution: number, centroid?: LonLat): Face {
   const spherical = fromLonLat(lonLat);
@@ -25,8 +26,7 @@ export function lonLatToFace(lonLat: LonLat, resolution: number, centroid?: LonL
   const ROTATIONS = [0, 0, 9, 6, 7, 6, 5, 4, 7, 7, 9, 0]; 
   mat2.fromRotation(rotation, ROTATIONS[origin.id] * PI_OVER_5 + origin.angle);
 
-  const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle);
-  const dodecPoint = toFace(polar);
+  const dodecPoint = dodecahedron.forward(spherical, origin.quat, origin.angle, resolution);
   vec2.transformMat2(dodecPoint, dodecPoint, rotation);
 
   vec2.set(shift, 0, 0);

@@ -6,7 +6,10 @@ import { vec2, quat, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Degrees, Radians, Face, Polar, IJ, Cartesian, Spherical, LonLat, Barycentric, FaceTriangle } from "./coordinate-systems";
 import { BASIS_INVERSE, BASIS } from "./pentagon";
-import { geodeticToAuthalic, authalicToGeodetic } from "./authalic";
+import { AuthalicProjection } from "../projections/authalic";
+
+// Create a single instance to avoid garbage collection
+const authalic = new AuthalicProjection();
 
 export function degToRad(deg: Degrees): Radians {
   return deg * (Math.PI / 180) as Radians;
@@ -95,7 +98,7 @@ export function fromLonLat([longitude, latitude]: LonLat): Spherical {
   const theta = degToRad(longitude + LONGITUDE_OFFSET as Degrees);
   
   const geodeticLat = degToRad(latitude as Degrees);
-  const authalicLat = geodeticToAuthalic(geodeticLat);
+  const authalicLat = authalic.forward(geodeticLat);
   const phi = (Math.PI / 2 - authalicLat) as Radians;
   return [theta, phi] as Spherical;
 }
@@ -110,7 +113,7 @@ export function toLonLat([theta, phi]: Spherical): LonLat {
   const longitude = radToDeg(theta) - LONGITUDE_OFFSET as Degrees;
 
   const authalicLat = Math.PI / 2 - phi as Radians;
-  const geodeticLat = authalicToGeodetic(authalicLat);
+  const geodeticLat = authalic.inverse(authalicLat);
   const latitude = radToDeg(geodeticLat) as Degrees;
   return [longitude, latitude] as LonLat;
 }

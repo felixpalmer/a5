@@ -1,66 +1,67 @@
 import { describe, it, expect } from 'vitest'
-import { geodeticToAuthalic, authalicToGeodetic } from 'a5/core/authalic'
+import { AuthalicProjection } from '../../modules/projections/authalic'
 import type { Radians } from 'a5/core/coordinate-systems'
 
 describe('Authalic Conversion', () => {
+  const authalic = new AuthalicProjection();
     describe('geodeticToAuthalic', () => {
         it('converts zero latitude', () => {
-            const result = geodeticToAuthalic(0 as Radians)
+            const result = authalic.forward(0 as Radians)
             expect(result).toBeCloseTo(0, 10)
         })
 
         it('converts small latitudes', () => {
             const input = Math.PI / 180 as Radians // 1 degree
-            const result = geodeticToAuthalic(input)
+            const result = authalic.forward(input)
             expect(result).toBeCloseTo(input, 2)
         })
 
         it('converts medium latitudes', () => {
             const input = Math.PI / 4 as Radians // 45 degrees
-            const result = geodeticToAuthalic(input)
+            const result = authalic.forward(input)
             expect(result).toBeCloseTo(input, 2)
         })
 
         it('converts large latitudes', () => {
             const input = Math.PI / 2 as Radians // 90 degrees
-            const result = geodeticToAuthalic(input)
+            const result = authalic.forward(input)
             expect(result).toBeCloseTo(input, 2)
         })
 
         it('converts negative latitudes', () => {
             const input = -Math.PI / 4 as Radians // -45 degrees
-            const result = geodeticToAuthalic(input)
+            const result = authalic.forward(input)
             expect(result).toBeCloseTo(input, 2)
         })
     })
 
     describe('authalicToGeodetic', () => {
         it('converts zero latitude', () => {
-            const result = authalicToGeodetic(0 as Radians)
+            const result = authalic.inverse(0 as Radians)
             expect(result).toBeCloseTo(0, 10)
         })
 
         it('converts small latitudes', () => {
             const input = Math.PI / 180 as Radians // 1 degree
-            const result = authalicToGeodetic(input)
+            const result = authalic.inverse(input)
             expect(result).toBeCloseTo(input, 2)
         })
 
         it('converts medium latitudes', () => {
             const input = Math.PI / 4 as Radians // 45 degrees
-            const result = authalicToGeodetic(input)
+            const result = authalic.inverse(input)
             expect(result).toBeCloseTo(input, 2)
         })
 
         it('converts large latitudes', () => {
             const input = Math.PI / 2 as Radians // 90 degrees
-            const result = authalicToGeodetic(input)
+            const result = authalic.inverse(input)
             expect(result).toBeCloseTo(input, 2)
         })
 
         it('converts negative latitudes', () => {
             const input = -Math.PI / 4 as Radians // -45 degrees
-            const result = authalicToGeodetic(input)
+            const result = authalic.inverse(input)
             expect(result).toBeCloseTo(input, 2)
         })
     })
@@ -69,8 +70,8 @@ describe('Authalic Conversion', () => {
         it('preserves latitude through geodetic->authalic->geodetic conversion for all latitudes', () => {
             for (let deg = -90; deg <= 90; deg++) {
                 const lat = (deg * Math.PI / 180) as Radians
-                const authalic = geodeticToAuthalic(lat)
-                const geodetic = authalicToGeodetic(authalic)
+                const authalicLat = authalic.forward(lat)
+                const geodetic = authalic.inverse(authalicLat)
                 expect(geodetic).toBeCloseTo(lat, 15)
             }
         })
@@ -78,9 +79,9 @@ describe('Authalic Conversion', () => {
         it('preserves latitude through authalic->geodetic->authalic conversion for all latitudes', () => {
             for (let deg = -90; deg <= 90; deg++) {
                 const lat = (deg * Math.PI / 180) as Radians
-                const geodetic = authalicToGeodetic(lat)
-                const authalic = geodeticToAuthalic(geodetic)
-                expect(authalic).toBeCloseTo(lat, 15)
+                const geodetic = authalic.inverse(lat)
+                const authalicLat = authalic.forward(geodetic)
+                expect(authalicLat).toBeCloseTo(lat, 15)
             }
         })
     })
@@ -99,10 +100,10 @@ describe('Authalic Conversion', () => {
                 { geodetic: 90, authalic: 90.0000 }
             ]
 
-            testCases.forEach(({ geodetic, authalic }) => {
+            testCases.forEach(({ geodetic, authalic: expectedAuthalic }) => {
                 const geodeticRad = (geodetic * Math.PI / 180) as Radians
-                const authalicRad = (authalic * Math.PI / 180) as Radians
-                const result = geodeticToAuthalic(geodeticRad)
+                const authalicRad = (expectedAuthalic * Math.PI / 180) as Radians
+                const result = authalic.forward(geodeticRad)
                 expect(result).toBeCloseTo(authalicRad, 5)
             })
         })
