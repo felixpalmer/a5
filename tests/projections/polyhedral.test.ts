@@ -1,7 +1,7 @@
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { PolyhedralProjection } from '../../modules/projections/polyhedral';
 import { vec3 } from 'gl-matrix';
-import { TEST_POINTS, TEST_LINE_POINTS, TEST_LINE_SPHERICAL, TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE } from '../data/polyhedral-test-data';
+import { TEST_POINTS, TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE } from './data/polyhedral-test-data';
 
 const AUTHALIC_RADIUS = 6371.0072; // km
 const MAX_ANGLE = Math.max(

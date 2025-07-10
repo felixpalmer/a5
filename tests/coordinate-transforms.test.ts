@@ -10,7 +10,7 @@ import {
   barycentricToFace
 } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat, Radians, Spherical, Face, Barycentric, FaceTriangle } from 'a5/core/coordinate-systems'
-import { TEST_POINTS } from './data/polyhedral-test-data'
+import { TEST_POINTS } from './projections/data/polyhedral-test-data'
 
 const TEST_POINTS_LONLAT: Array<LonLat> = [
   [0, 0],     // Equator
