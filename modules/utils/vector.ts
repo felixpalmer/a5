@@ -77,6 +77,9 @@ export function quadrupleProduct(out: Cartesian, A: Cartesian, B: Cartesian, C: 
  */
 export function slerp(out: Cartesian, A: Cartesian, B: Cartesian, t: number): Cartesian {
   const gamma = vec3.angle(A, B);
+  if (gamma < 1e-12) {
+    return vec3.lerp(out, A, B, t) as Cartesian;
+  }
   const weightA = Math.sin((1 - t) * gamma) / Math.sin(gamma);
   const weightB = Math.sin(t * gamma) / Math.sin(gamma);
   const scaledA = vec3.scale(vec3.create(), A, weightA);
