@@ -50,6 +50,18 @@ export function vectorDifference(A: Cartesian, B: Cartesian): number {
 }
 
 /**
+ * Computes the triple product of four vectors
+ * @param A - The first vector
+ * @param B - The second vector
+ * @param C - The third vector
+ * @returns The scalar result
+ */
+export function tripleProduct(A: Cartesian, B: Cartesian, C: Cartesian): number {
+  vec3.cross(crossCD, B, C);
+  return vec3.dot(A, crossCD);
+}
+
+/**
  * Computes the quadruple product of four vectors
  * @param out - The target vector to write the result to
  * @param A - The first vector
@@ -77,6 +89,9 @@ export function quadrupleProduct(out: Cartesian, A: Cartesian, B: Cartesian, C: 
  */
 export function slerp(out: Cartesian, A: Cartesian, B: Cartesian, t: number): Cartesian {
   const gamma = vec3.angle(A, B);
+  if (gamma < 1e-12) {
+    return vec3.lerp(out, A, B, t) as Cartesian;
+  }
   const weightA = Math.sin((1 - t) * gamma) / Math.sin(gamma);
   const weightB = Math.sin(t * gamma) / Math.sin(gamma);
   const scaledA = vec3.scale(vec3.create(), A, weightA);

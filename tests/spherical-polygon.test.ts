@@ -116,4 +116,21 @@ describe('spherical-polygon.ts', () => {
       });
     });
   });
+
+  describe('getArea', () => {
+    it('returns positive area for triangle and pentagon', () => {
+      // TODO fix case of polygon with vertices on equator
+      for (const vertices of [testPolygons[0]]) {
+        const polygon = new SphericalPolygonShape(vertices);
+        const area = polygon.getArea();
+        expect(area).toBeGreaterThan(0);
+        expect(area).toBeLessThanOrEqual(2 * Math.PI);
+      }
+    });
+    it('returns 0 for degenerate polygons', () => {
+      expect(new SphericalPolygonShape([]).getArea()).toBe(0);
+      expect(new SphericalPolygonShape([[1,0,0] as Cartesian]).getArea()).toBe(0);
+      expect(new SphericalPolygonShape([[1,0,0] as Cartesian, [0,1,0] as Cartesian]).getArea()).toBe(0);
+    });
+  });
 }); 

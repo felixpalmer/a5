@@ -9,8 +9,7 @@ import {cellArea, getRes0Cells, cellToChildren, cellToVertexes, vertexToLatLng, 
 import {generateWireframe} from 'a5-internal/wireframe';
 import {toCartesian, fromLonLat} from 'a5/core/coordinate-transforms';
 import {colorContinuous} from '@deck.gl/carto';
-
-import {pentagonArea} from 'a5/core/utils';
+import {SphericalPolygonShape} from 'a5/core/spherical-polygon';
 
 const H3_RESOLUTION = 1; // 1
 const A5_RESOLUTION = 4; // 4
@@ -65,7 +64,7 @@ const Controls: React.FC<{
       <div>Max Area: {maxArea.toFixed(2)} km²</div>
       <div>Area Ratio: {areaRatio.toFixed(4)}</div>
       <div>Authalic Average Area: {authalicAverageArea.toFixed(2)} km²</div>
-      <div style={{fontWeight: 'bold'}}>Area Error: {areaError.toFixed(2)}%</div>
+      <div style={{fontWeight: 'bold'}}>Area Error: {areaError.toFixed(1)}%</div>
       
       <h3 style={{margin: '12px 0 8px', fontSize: '14px'}}>Area Statistics</h3>
       <div>Min Perimeter: {minPerimeter.toFixed(2)} km</div>
@@ -337,7 +336,7 @@ const a5Output = a5Data.map((vertices: [number, number][]) => {
   const xyz = vertices.map(lonLat => toCartesian(fromLonLat(lonLat)));
   
   // Calculate the area on unit sphere
-  const unitArea = pentagonArea(xyz);
+  const unitArea = new SphericalPolygonShape(xyz).getArea();
   
   // Convert to actual area on Earth's surface
   const area = unitArea * EARTH_SURFACE_AREA / (4 * Math.PI);
@@ -502,7 +501,7 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
     bearing: 0
   };
 
-  const [tilingSystem, setTilingSystem] = useState<'a5' | 'h3'>('a5');
+  const [tilingSystem, setTilingSystem] = useState<'a5' | 'h3'>('h3');
   const [areaLimits, setAreaLimits] = useState<[number, number]>(h3AreaLimits);
   const [perimeterLimits, setPerimeterLimits] = useState<[number, number]>(h3PerimeterLimits);
   const [hoveredCell, setHoveredCell] = useState<any>(null);

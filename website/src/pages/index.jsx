@@ -92,7 +92,7 @@ export default function IndexPage() {
               <img src={`${baseUrl}images/pentagon.svg`} />Uniform Cell Sizes with Minimal Distortion
             </h3>
             <p>
-              Data from all around the world can be directly compared due to the practically equal areas of all A5 cells.
+              Data from all around the world can be directly compared due to the exactly equal areas of all A5 cells.
             </p>
           </TextContainer>
         </div>
