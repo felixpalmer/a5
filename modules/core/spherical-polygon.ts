@@ -4,8 +4,14 @@
 
 import {vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Cartesian } from './coordinate-systems';
+import type { Cartesian, Radians } from './coordinate-systems';
 import { slerp } from '../utils/vector';
+
+// Pre-allocated vectors for midpoints. midA is the midpoint opposite the vertex A
+const midA = vec3.create() as Cartesian;
+const midB = vec3.create() as Cartesian;
+const midC = vec3.create() as Cartesian;
+const center = vec3.create() as Cartesian;
 
 // Use Cartesian system for all calculations for greater accuracy
 // Using [x, y, z] gives equal precision in all directions, unlike spherical coordinates
@@ -16,7 +22,7 @@ export class SphericalPolygonShape {
 
   constructor(vertices: SphericalPolygon) {
     this.vertices = vertices;
-    if (!this.isWindingCorrect()) {
+    if (this.vertices.length >= 3 && !this.isWindingCorrect()) {
       this.vertices.reverse();
     }
     Object.freeze(this.vertices);
@@ -112,6 +118,71 @@ export class SphericalPolygonShape {
     // If point is on edge of arc, will return 0
     // If point is outside all arcs, will return -1, the further away from 0, the further away from the arc
     return thetaDeltaMin;
+  }
+
+  /**
+   * Calculate the area of a spherical triangle given three vertices
+   * @param v1 First vertex
+   * @param v2 Second vertex  
+   * @param v3 Third vertex
+   * @returns Area of the spherical triangle in radians
+   */
+  private getTriangleArea(v1: Cartesian, v2: Cartesian, v3: Cartesian): Radians {
+    // Calculate midpoints
+    vec3.lerp(midA, v2, v3, 0.5);
+    vec3.lerp(midB, v3, v1, 0.5);
+    vec3.lerp(midC, v1, v2, 0.5);
+    vec3.normalize(midA, midA);
+    vec3.normalize(midB, midB);
+    vec3.normalize(midC, midC);
+    
+    // Compute scalar triple product of midpoints.
+    const crossBC = vec3.create();
+    vec3.cross(crossBC, midB, midC);
+    const tripleProduct = vec3.dot(midA, crossBC);
+
+    // Calculate area using asin of dot product, clamped to valid range
+    const clamped = Math.max(-1.0, Math.min(1.0, tripleProduct));
+    
+    // sin(x) = x for x < 1e-8
+    if (Math.abs(clamped) < 1e-8) {
+      return 2 * clamped as Radians;
+    } else {
+      return Math.asin(clamped) * 2 as Radians;
+    }
+  }
+
+  /**
+   * Calculate the area of the spherical polygon by decomposing it into a fan of triangles
+   * @returns The area of the spherical polygon in radians
+   */
+  getArea(): Radians {
+    if (this.vertices.length < 3) {
+      return 0 as Radians;
+    }
+    if (this.vertices.length === 3) {
+      return this.getTriangleArea(this.vertices[0], this.vertices[1], this.vertices[2]);
+    }
+
+    vec3.set(center, 0, 0, 0);
+    for (const vertex of this.vertices) {
+      vec3.add(center, center, vertex);
+    }
+
+    vec3.normalize(center, center);
+    console.log(center);
+
+    let area = 0;
+    for (let i = 1; i < this.vertices.length - 1; i++) {
+      const v1 = this.vertices[i];
+      const v2 = this.vertices[i + 1];
+      const triArea = this.getTriangleArea(center, v1, v2);
+      console.log(triArea);
+      if (!isNaN(triArea)) {
+        area += triArea;
+      }
+    }
+    return area as Radians;
   }
 
   private isWindingCorrect(): boolean {
