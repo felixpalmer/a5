@@ -19,6 +19,7 @@ export type SphericalPolygon = Cartesian[];
 
 export class SphericalPolygonShape {
   protected vertices: SphericalPolygon;
+  private _area: Radians | null = null;
 
   constructor(vertices: SphericalPolygon) {
     this.vertices = vertices;
@@ -157,32 +158,42 @@ export class SphericalPolygonShape {
    * @returns The area of the spherical polygon in radians
    */
   getArea(): Radians {
+    // Memoize the result since vertices are immutable
+    if (this._area === null) {
+      this._area = this._getArea();
+    }
+    return this._area;
+  }
+
+  private _getArea(): Radians {
     if (this.vertices.length < 3) {
       return 0 as Radians;
     }
+
     if (this.vertices.length === 3) {
-      return this.getTriangleArea(this.vertices[0], this.vertices[1], this.vertices[2]);
+      this._area = this.getTriangleArea(this.vertices[0], this.vertices[1], this.vertices[2]);
+      return this._area;
     }
 
+    // Calculate center of polygon
     vec3.set(center, 0, 0, 0);
     for (const vertex of this.vertices) {
       vec3.add(center, center, vertex);
     }
-
     vec3.normalize(center, center);
-    console.log(center);
 
+    // Sum fan of triangles around center
     let area = 0;
-    for (let i = 1; i < this.vertices.length - 1; i++) {
+    for (let i = 0; i < this.vertices.length; i++) {
       const v1 = this.vertices[i];
-      const v2 = this.vertices[i + 1];
+      const v2 = this.vertices[(i + 1) % this.vertices.length];
       const triArea = this.getTriangleArea(center, v1, v2);
-      console.log(triArea);
       if (!isNaN(triArea)) {
         area += triArea;
       }
     }
-    return area as Radians;
+    this._area = area as Radians;
+    return this._area;
   }
 
   private isWindingCorrect(): boolean {

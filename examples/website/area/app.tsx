@@ -9,8 +9,7 @@ import {cellArea, getRes0Cells, cellToChildren, cellToVertexes, vertexToLatLng, 
 import {generateWireframe} from 'a5-internal/wireframe';
 import {toCartesian, fromLonLat} from 'a5/core/coordinate-transforms';
 import {colorContinuous} from '@deck.gl/carto';
-
-import {pentagonArea} from 'a5/core/utils';
+import {SphericalPolygonShape} from 'a5/core/spherical-polygon';
 
 const H3_RESOLUTION = 1; // 1
 const A5_RESOLUTION = 4; // 4
@@ -337,7 +336,7 @@ const a5Output = a5Data.map((vertices: [number, number][]) => {
   const xyz = vertices.map(lonLat => toCartesian(fromLonLat(lonLat)));
   
   // Calculate the area on unit sphere
-  const unitArea = pentagonArea(xyz);
+  const unitArea = new SphericalPolygonShape(xyz).getArea();
   
   // Convert to actual area on Earth's surface
   const area = unitArea * EARTH_SURFACE_AREA / (4 * Math.PI);

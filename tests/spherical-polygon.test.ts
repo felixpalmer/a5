@@ -123,7 +123,6 @@ describe('spherical-polygon.ts', () => {
       for (const vertices of [testPolygons[0]]) {
         const polygon = new SphericalPolygonShape(vertices);
         const area = polygon.getArea();
-        console.log(area);
         expect(area).toBeGreaterThan(0);
         expect(area).toBeLessThanOrEqual(2 * Math.PI);
       }
