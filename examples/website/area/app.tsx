@@ -64,7 +64,7 @@ const Controls: React.FC<{
       <div>Max Area: {maxArea.toFixed(2)} km²</div>
       <div>Area Ratio: {areaRatio.toFixed(4)}</div>
       <div>Authalic Average Area: {authalicAverageArea.toFixed(2)} km²</div>
-      <div style={{fontWeight: 'bold'}}>Area Error: {areaError.toFixed(2)}%</div>
+      <div style={{fontWeight: 'bold'}}>Area Error: {areaError.toFixed(1)}%</div>
       
       <h3 style={{margin: '12px 0 8px', fontSize: '14px'}}>Area Statistics</h3>
       <div>Min Perimeter: {minPerimeter.toFixed(2)} km</div>
@@ -501,7 +501,7 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
     bearing: 0
   };
 
-  const [tilingSystem, setTilingSystem] = useState<'a5' | 'h3'>('a5');
+  const [tilingSystem, setTilingSystem] = useState<'a5' | 'h3'>('h3');
   const [areaLimits, setAreaLimits] = useState<[number, number]>(h3AreaLimits);
   const [perimeterLimits, setPerimeterLimits] = useState<[number, number]>(h3PerimeterLimits);
   const [hoveredCell, setHoveredCell] = useState<any>(null);
