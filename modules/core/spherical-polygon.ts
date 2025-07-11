@@ -5,7 +5,7 @@
 import {vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Cartesian, Radians } from './coordinate-systems';
-import { slerp } from '../utils/vector';
+import { slerp, tripleProduct } from '../utils/vector';
 
 // Pre-allocated vectors for midpoints. midA is the midpoint opposite the vertex A
 const midA = vec3.create() as Cartesian;
@@ -23,9 +23,7 @@ export class SphericalPolygonShape {
 
   constructor(vertices: SphericalPolygon) {
     this.vertices = vertices;
-    if (this.vertices.length >= 3 && !this.isWindingCorrect()) {
-      this.vertices.reverse();
-    }
+    // this.isWindingCorrect();
     Object.freeze(this.vertices);
   }
 
@@ -137,13 +135,9 @@ export class SphericalPolygonShape {
     vec3.normalize(midB, midB);
     vec3.normalize(midC, midC);
     
-    // Compute scalar triple product of midpoints.
-    const crossBC = vec3.create();
-    vec3.cross(crossBC, midB, midC);
-    const tripleProduct = vec3.dot(midA, crossBC);
-
     // Calculate area using asin of dot product, clamped to valid range
-    const clamped = Math.max(-1.0, Math.min(1.0, tripleProduct));
+    const S = tripleProduct(midA, midB, midC);
+    const clamped = Math.max(-1.0, Math.min(1.0, S));
     
     // sin(x) = x for x < 1e-8
     if (Math.abs(clamped) < 1e-8) {
@@ -196,9 +190,15 @@ export class SphericalPolygonShape {
     return this._area;
   }
 
-  private isWindingCorrect(): boolean {
-    const [V, VA, VB] = this.getTransformedVertices(0);
-    const cross = vec3.cross(vec3.create(), VA, VB);
-    return vec3.dot(V, cross) >= 0;
+  /**
+   * For debugging purposes, check if the winding order is correct
+   * In production, should always be correct
+   */
+  private isWindingCorrect(): void {
+    const area = this.getArea();
+    const isCorrect = area > 0;
+    if (!isCorrect) {
+      debugger;
+    }
   }
 }

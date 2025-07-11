@@ -50,6 +50,18 @@ export function vectorDifference(A: Cartesian, B: Cartesian): number {
 }
 
 /**
+ * Computes the triple product of four vectors
+ * @param A - The first vector
+ * @param B - The second vector
+ * @param C - The third vector
+ * @returns The scalar result
+ */
+export function tripleProduct(A: Cartesian, B: Cartesian, C: Cartesian): number {
+  vec3.cross(crossCD, B, C);
+  return vec3.dot(A, crossCD);
+}
+
+/**
  * Computes the quadruple product of four vectors
  * @param out - The target vector to write the result to
  * @param A - The first vector
