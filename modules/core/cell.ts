@@ -6,9 +6,9 @@ import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type { Face, LonLat } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical } from "./coordinate-transforms";
+import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical, toPolar } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
-import { unprojectDodecahedron } from "./dodecahedron";
+import { DodecahedronProjection } from "../projections/dodecahedron";
 import { A5Cell, PentagonShape } from "./utils";
 import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
@@ -19,6 +19,7 @@ import { SphericalPolygonShape, SphericalPolygon } from "./spherical-polygon";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
+const dodecahedron = new DodecahedronProjection();
 
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   if (resolution < FIRST_HILBERT_RESOLUTION) {
@@ -72,8 +73,8 @@ function _lonLatToEstimate(lonLat: LonLat, resolution: number): A5Cell {
   const spherical = fromLonLat(lonLat);
   const origin = {...findNearestOrigin(spherical)};
 
-  const polar = unprojectDodecahedron(spherical, origin.quat, origin.angle, resolution);
-  const dodecPoint = toFace(polar);
+  const dodecPoint = dodecahedron.forward(spherical, origin.quat, origin.angle, resolution);
+  const polar = toPolar(dodecPoint);
   const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);
   if (resolution < FIRST_HILBERT_RESOLUTION) {
@@ -134,28 +135,24 @@ type CellToBoundaryOptions = {
 
 export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}): LonLat[] {
   const {S, segment, origin, resolution} = deserialize(cellId);
-  const pentagon = _getPentagon({S, segment, origin, resolution});
-  const projectedPentagon = projectPentagon(pentagon, origin, resolution);
-
   if (segments === 'auto') {
     segments = Math.max(1,  Math.pow(2, 7 - resolution));
   }
-  if (segments <= 1) {
-    if (closedRing) {
-      projectedPentagon.push(projectedPentagon[0]);
-    }
-    // TODO: This is a patch to make the boundary CCW, but we should fix the winding order of the pentagon
-    // throughout the whole codebase
-    projectedPentagon.reverse();
-    return projectedPentagon;
+
+  const pentagon = _getPentagon({S, segment, origin, resolution});
+
+  // Split each edge into segments before projection
+  // Important to do before projection to obtain equal area cells
+  const splitPentagon = pentagon.splitEdges(segments);
+  const projectedPentagon = projectPentagon(splitPentagon, origin, resolution);
+
+  if (closedRing) {
+    projectedPentagon.push(projectedPentagon[0]);
   }
-
-  const cartesianPentagon = projectedPentagon.map(p => toCartesian(fromLonLat(p))) as SphericalPolygon;
-  const sphericalPentagon = new SphericalPolygonShape(cartesianPentagon);
-
-  const curvedBoundary = sphericalPentagon.getBoundary(segments, closedRing);
-  const boundary = curvedBoundary.map(p => toLonLat(toSpherical(p)));
-  return PentagonShape.normalizeLongitudes(boundary);
+  // TODO: This is a patch to make the boundary CCW, but we should fix the winding order of the pentagon
+  // throughout the whole codebase
+  projectedPentagon.reverse();
+  return projectedPentagon;
 }
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
@@ -164,6 +161,7 @@ export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
   const cartesian = toCartesian(fromLonLat(point));
   const sphericalBoundary = boundary.map(vertex => toCartesian(fromLonLat(vertex)));
 
+  // TODO should project to dodecahedron and then check if point is inside
   const sphericalPentagon = new SphericalPolygonShape(sphericalBoundary);
   return sphericalPentagon.containsPoint(cartesian);
 }

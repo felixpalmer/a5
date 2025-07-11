@@ -5,25 +5,26 @@
 import {vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Cartesian } from './coordinate-systems';
+import { slerp } from '../utils/vector';
 
 // Use Cartesian system for all calculations for greater accuracy
 // Using [x, y, z] gives equal precision in all directions, unlike spherical coordinates
 export type SphericalPolygon = Cartesian[];
-const UP = [0, 0, 1] as Cartesian;
 
 export class SphericalPolygonShape {
-  private vertices: SphericalPolygon;
+  protected vertices: SphericalPolygon;
 
   constructor(vertices: SphericalPolygon) {
     this.vertices = vertices;
     if (!this.isWindingCorrect()) {
       this.vertices.reverse();
     }
+    Object.freeze(this.vertices);
   }
 
   /**
    * 
-   * @param nSegments Returns a close boundary of the polygon, with nSegments points per edge
+   * @param nSegments Returns a closed boundary of the polygon, with nSegments points per edge
    * @returns SphericalPolygon
    */
   getBoundary(nSegments: number = 1, closedRing: boolean = true): SphericalPolygon {
@@ -50,21 +51,7 @@ export class SphericalPolygonShape {
     const f = t % 1;
     const i = Math.floor(t % N);
     const j = (i + 1) % N;
-
-    // Points A & B
-    const A = this.vertices[i];
-    const B = this.vertices[j];
-
-    // Quaternions
-    const identity = quat.create();
-    const qOA = quat.rotationTo(quat.create(), UP, A);
-    const qAB = quat.rotationTo(quat.create(), A, B);
-    const qPartial = quat.slerp(quat.create(), identity, qAB, f);
-    const qCombined = quat.multiply(quat.create(), qPartial, qOA);
-
-    const out = vec3.fromValues(0, 0, 1);
-    vec3.transformQuat(out, out, qCombined);
-    return out as Cartesian;
+    return slerp(vec3.create() as Cartesian, this.vertices[i], this.vertices[j], f);
   }
 
   /**

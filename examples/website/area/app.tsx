@@ -19,7 +19,7 @@ const AUTHALIC_RADIUS = 6371.0072; // km
 const AUTHALIC_AREA = 4 * Math.PI * AUTHALIC_RADIUS * AUTHALIC_RADIUS;
 
 // 'Bold' color scheme
-const COLORS = ['#7F3C8D', '#11A579', '#3969AC', '#F2B701', '#E73F74', '#80BA5A', '#E68310', '#008695', '#CF1C90', '#f97b72', '#4b4b8f', '#A5AA99'];
+const COLORS = ['#b0f2bc','#89e8ac','#67dba5','#4cc8a3','#38b2a3','#2c98a0','#257d98'];
 
 // Add Controls component
 const Controls: React.FC<{
@@ -84,9 +84,7 @@ const CellVisualization: React.FC<{
 }> = ({ tilingSystem, h3Output, a5Output, onCellHover }) => {
   // Find smallest and largest cells
   const getExtremeH3Cells = () => {
-    // Filter out pentagon cells for a fair comparison
-    const hexagonsOnly = h3Output.filter(cell => !isPentagon(cell.cell));
-    const sortedByArea = hexagonsOnly.sort((a, b) => a.properties.area - b.properties.area);
+    const sortedByArea = h3Output.sort((a, b) => a.properties.area - b.properties.area);
     const smallest = sortedByArea[0];
     const largest = sortedByArea[sortedByArea.length - 1];
     return { smallest, largest };
@@ -99,43 +97,9 @@ const CellVisualization: React.FC<{
     return { smallest, largest };
   };
 
-  // Calculate angles between edges in degrees
-  const calculateAngles = (projectedPoints) => {
-    const angles = [];
-    const n = projectedPoints.length;
-    
-    for (let i = 0; i < n; i++) {
-      const prev = projectedPoints[(i - 1 + n) % n];
-      const curr = projectedPoints[i];
-      const next = projectedPoints[(i + 1) % n];
-      
-      // Calculate vectors
-      const v1 = [prev[0] - curr[0], prev[1] - curr[1]];
-      const v2 = [next[0] - curr[0], next[1] - curr[1]];
-      
-      // Calculate dot product
-      const dotProduct = v1[0] * v2[0] + v1[1] * v2[1];
-      
-      // Calculate magnitudes
-      const mag1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1]);
-      const mag2 = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1]);
-      
-      // Calculate angle in radians and convert to degrees
-      const cosAngle = dotProduct / (mag1 * mag2);
-      // Clamp cosAngle to [-1, 1] to avoid numerical issues
-      const clampedCosAngle = Math.max(-1, Math.min(1, cosAngle));
-      const angleRad = Math.acos(clampedCosAngle);
-      const angleDeg = (angleRad * 180) / Math.PI;
-      
-      angles.push(angleDeg);
-    }
-    
-    return angles;
-  };
-
   // Generate projected points for a cell using gnomonic projection
   const projectH3Cell = (cell) => {
-    const boundary = cellToBoundary(cell.cell, {closedRing: false, segments: 1});
+    const boundary = cellToBoundary(cell.cell);
     const center = cellToLatLng(cell.cell);
     
     // Convert center to radians
@@ -254,15 +218,13 @@ const CellVisualization: React.FC<{
   const largestRadius = Math.max(...largestProjected.map(p => Math.sqrt(p[0]*p[0] + p[1]*p[1])));
   const scale = 45 / largestRadius; // Scale to fit in 90% of the SVG
   
-  // Generate SVG paths and get transformed points
-  const { path: smallestPath, transformedPoints: smallestTransformed } = 
-    generateSVGPath(smallestProjected, scale);
-  const { path: largestPath, transformedPoints: largestTransformed } = 
-    generateSVGPath(largestProjected, scale);
-  
-  // Calculate angles
-  const smallestAngles = calculateAngles(smallestTransformed);
-  const largestAngles = calculateAngles(largestTransformed);
+  // Generate SVG paths
+  const { path: smallestPath } = generateSVGPath(smallestProjected, scale);
+  const { path: largestPath } = generateSVGPath(largestProjected, scale);
+
+  const midColor = COLORS[Math.floor(COLORS.length / 2)];
+  const smallestColor = tilingSystem === 'h3' ? COLORS[0] : midColor;
+  const largestColor = tilingSystem === 'h3' ? COLORS[COLORS.length - 1] : midColor;
 
   return (
     <div style={{
@@ -292,19 +254,11 @@ const CellVisualization: React.FC<{
             onMouseEnter={() => onCellHover(currentSmallest, true)}
             onMouseLeave={() => onCellHover(currentSmallest, false)}
           >
-            <path d={smallestPath} fill="#6baed6" stroke="#000" strokeWidth="1" />
+            <path d={smallestPath} fill={smallestColor} stroke="#000" strokeWidth="1" />
           </svg>
           <p style={{margin: '5px 0 0', fontSize: '10px', textAlign: 'left'}}>
             {currentSmallest.properties.area.toFixed(2)} km²
           </p>
-          <div style={{marginTop: '5px', fontSize: '10px'}}>
-            <p style={{margin: '0 0 2px', fontWeight: 'bold'}}>Angles (degrees):</p>
-            <div style={{display: 'flex', flexWrap: 'wrap', gap: '2px 6px'}}>
-              {smallestAngles.map((angle, i) => (
-                <span key={i}>{angle.toFixed(2)}°</span>
-              ))}
-            </div>
-          </div>
         </div>
         
         <div>
@@ -317,19 +271,11 @@ const CellVisualization: React.FC<{
             onMouseEnter={() => onCellHover(currentLargest, true)}
             onMouseLeave={() => onCellHover(currentLargest, false)}
           >
-            <path d={largestPath} fill="#fd8d3c" stroke="#000" strokeWidth="1" />
+            <path d={largestPath} fill={largestColor} stroke="#000" strokeWidth="1" />
           </svg>
           <p style={{margin: '5px 0 0', fontSize: '10px', textAlign: 'left'}}>
             {currentLargest.properties.area.toFixed(2)} km²
           </p>
-          <div style={{marginTop: '5px', fontSize: '10px'}}>
-            <p style={{margin: '0 0 2px', fontWeight: 'bold'}}>Angles (degrees):</p>
-            <div style={{display: 'flex', flexWrap: 'wrap', gap: '2px 6px'}}>
-              {largestAngles.map((angle, i) => (
-                <span key={i}>{angle.toFixed(2)}°</span>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -380,7 +326,7 @@ h3AreaLimits = [Math.min(...h3Areas), Math.max(...h3Areas)];
 h3PerimeterLimits = [Math.min(...h3Perimeters), Math.max(...h3Perimeters)];
 
 // Prepare A5 data
-const a5Data = generateWireframe(A5_RESOLUTION); //.slice(0, Math.pow(4, a5Res));
+const a5Data = generateWireframe(A5_RESOLUTION, {segments: 5}); //.slice(0, Math.pow(4, a5Res));
 let a5AreaLimits: [number, number] = [Infinity, -Infinity];
 let a5PerimeterLimits: [number, number] = [Infinity, -Infinity];
 
@@ -556,7 +502,7 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
     bearing: 0
   };
 
-  const [tilingSystem, setTilingSystem] = useState<'a5' | 'h3'>('h3');
+  const [tilingSystem, setTilingSystem] = useState<'a5' | 'h3'>('a5');
   const [areaLimits, setAreaLimits] = useState<[number, number]>(h3AreaLimits);
   const [perimeterLimits, setPerimeterLimits] = useState<[number, number]>(h3PerimeterLimits);
   const [hoveredCell, setHoveredCell] = useState<any>(null);
@@ -609,14 +555,14 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
   const getFillColor = (d: any, info: any) => colorContinuous({ 
     attr: d => d.properties!.area,
     domain,
-    colors: 'Bold'
+    colors: 'TealGrn'
   })(d, info);
   const props: any = {
     filled: true,
     stroked: true,
     extruded: false,
     getFillColor,
-    updateTriggers: { getFillColor: h3AreaLimits },
+    updateTriggers: { getFillColor: a5AreaLimits },
     opacity: 0.8,
     getLineColor: [255, 255, 255, 30],
     lineWidthMinPixels: 2,

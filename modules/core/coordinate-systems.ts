@@ -38,4 +38,18 @@ export type Spherical = [theta: Radians, phi: Radians] & { __brand: 'Spherical' 
 /**
  * Geographic longitude & latitude
  */
-export type LonLat = [longitude: Degrees, latitude: Degrees] & { __brand: 'LonLat' }; 
+export type LonLat = [longitude: Degrees, latitude: Degrees] & { __brand: 'LonLat' };
+
+// Barycentric coordinates
+/**
+ * Barycentric coordinates for a triangle (sum to 1)
+ */
+export type Barycentric = [number, number, number] & { __brand: 'Barycentric' };
+/**
+ * Triangle defined by three face coordinates
+ */
+export type FaceTriangle = [Face, Face, Face];
+/**
+ * Triangle defined by three spherical coordinates
+ */
+export type SphericalTriangle = [Cartesian, Cartesian, Cartesian]; 

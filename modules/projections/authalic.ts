@@ -1,4 +1,8 @@
-import { Radians } from "./coordinate-systems";
+// A5
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) A5 contributors
+
+import type { Radians } from "../core/coordinate-systems";
 
 // Authalic conversion coefficients obtained from: https://arxiv.org/pdf/2212.05818
 // See: authalic_constants.py for the derivation of the coefficients
@@ -51,31 +55,43 @@ const AUTHALIC_TO_GEODETIC = new Float64Array([
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/**
- * Applies coefficients using Clenshaw summation algorithm (order 6)
- * @param phi Angle in radians
- * @param C Array of coefficients
- * @returns Transformed angle in radians
- */
-function applyCoefficients(phi: Radians, C: Float64Array): Radians {
-  const sinPhi = Math.sin(phi);
-  const cosPhi = Math.cos(phi);
-  const X = 2 * (cosPhi - sinPhi) * (cosPhi + sinPhi);
-  let u0, u1;
+export class AuthalicProjection {
+  /**
+   * Applies coefficients using Clenshaw summation algorithm (order 6)
+   * @param phi Angle in radians
+   * @param C Array of coefficients
+   * @returns Transformed angle in radians
+   */
+  private applyCoefficients(phi: Radians, C: Float64Array): Radians {
+    const sinPhi = Math.sin(phi);
+    const cosPhi = Math.cos(phi);
+    const X = 2 * (cosPhi - sinPhi) * (cosPhi + sinPhi);
+    let u0, u1;
 
-  u0 = X * C[5] + C[4];
-  u1 = X * u0 + C[3];
-  u0 = X * u1 - u0 + C[2];
-  u1 = X * u0 - u1 + C[1];
-  u0 = X * u1 - u0 + C[0];
+    u0 = X * C[5] + C[4];
+    u1 = X * u0 + C[3];
+    u0 = X * u1 - u0 + C[2];
+    u1 = X * u0 - u1 + C[1];
+    u0 = X * u1 - u0 + C[0];
 
-  return phi + 2 * sinPhi * cosPhi * u0 as Radians;
+    return phi + 2 * sinPhi * cosPhi * u0 as Radians;
+  }
+
+  /**
+   * Converts geodetic latitude to authalic latitude
+   * @param phi Geodetic latitude in radians
+   * @returns Authalic latitude in radians
+   */
+  forward(phi: Radians): Radians {
+    return this.applyCoefficients(phi, GEODETIC_TO_AUTHALIC);
+  }
+
+  /**
+   * Converts authalic latitude to geodetic latitude
+   * @param phi Authalic latitude in radians
+   * @returns Geodetic latitude in radians
+   */
+  inverse(phi: Radians): Radians {
+    return this.applyCoefficients(phi, AUTHALIC_TO_GEODETIC);
+  }
 } 
-
-export function geodeticToAuthalic(phi: Radians): Radians {
-  return applyCoefficients(phi, GEODETIC_TO_AUTHALIC);
-}
-
-export function authalicToGeodetic(phi: Radians): Radians {
-  return applyCoefficients(phi, AUTHALIC_TO_GEODETIC);
-}
