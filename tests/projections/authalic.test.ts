@@ -14,10 +14,10 @@ describe('AuthalicProjection forward', () => {
   });
 
   it('round trip forward projections', () => {
-    TEST_DATA.roundTrip.forEach((testCase, index) => {
+    TEST_DATA.forward.forEach((testCase, index) => {
       const input = testCase.input as Radians;
-      const forwardResult = authalic.forward(input);
-      const result = authalic.inverse(forwardResult);
+      const polar = authalic.forward(input);
+      const result = authalic.inverse(polar);
       expect(result).toBeCloseTo(input, 15);
     });
   });
@@ -32,20 +32,11 @@ describe('AuthalicProjection inverse', () => {
   });
 
   it('round trip inverse projections', () => {
-    TEST_DATA.roundTrip.forEach((testCase, index) => {
+    TEST_DATA.inverse.forEach((testCase, index) => {
       const input = testCase.input as Radians;
-      const forwardResult = authalic.forward(input);
-      const result = authalic.inverse(forwardResult);
+      const spherical = authalic.inverse(input);
+      const result = authalic.forward(spherical);
       expect(result).toBeCloseTo(input, 15);
-    });
-  });
-});
-
-describe('AuthalicProjection specific values', () => {
-  it('matches reference conversion values', () => {
-    TEST_DATA.specificValues.forEach((testCase, index) => {
-      const result = authalic.forward(testCase.geodeticRadians as Radians);
-      expect(result).toBeCloseTo(testCase.authalicRadians, 5);
     });
   });
 }); 

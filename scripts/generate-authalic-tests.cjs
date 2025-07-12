@@ -5,6 +5,11 @@ const path = require("path");
 const DATA_DIR = path.join(__dirname, "./../tests/projections/data");
 const TEST_DATA_PATH = path.join(DATA_DIR, "authalic-test-data.json");
 
+// Define specific test values at the top
+const SPECIFIC_LATITUDES = [
+  -90, -67.5, -45, -22.5, 0, 22.5, 45, 67.5, 90
+];
+
 function generateRandomLatitude() {
   // Generate random latitude in radians
   // Range: [-π/2, π/2] (from -90° to 90°)
@@ -15,13 +20,22 @@ function generateAuthalicTestData() {
   const authalic = new AuthalicProjection();
   const testData = {
     forward: [],
-    inverse: [],
-    roundTrip: [],
-    specificValues: []
+    inverse: []
   };
 
-  // Generate 100 random latitudes for forward tests (geodetic to authalic)
-  for (let i = 0; i < 100; i++) {
+  // Generate forward tests: include specific values + random data
+  const specificForwardCases = SPECIFIC_LATITUDES.map(deg => {
+    const latRad = (deg * Math.PI / 180);
+    const expected = authalic.forward(latRad);
+    return {
+      input: latRad,
+      expected: expected
+    };
+  });
+
+  // Fill remaining space with random data
+  const remainingForwardCases = 100 - specificForwardCases.length;
+  for (let i = 0; i < remainingForwardCases; i++) {
     const input = generateRandomLatitude();
     const expected = authalic.forward(input);
     
@@ -31,8 +45,23 @@ function generateAuthalicTestData() {
     });
   }
 
-  // Generate 100 random latitudes for inverse tests (authalic to geodetic)
-  for (let i = 0; i < 100; i++) {
+  // Add specific cases to the beginning
+  testData.forward.unshift(...specificForwardCases);
+
+  // Generate inverse tests: include specific values + random data
+  const specificInverseCases = SPECIFIC_LATITUDES.map(deg => {
+    const latRad = (deg * Math.PI / 180);
+    const authalicRad = authalic.forward(latRad); // Convert to authalic first
+    const expected = authalic.inverse(authalicRad);
+    return {
+      input: authalicRad,
+      expected: expected
+    };
+  });
+
+  // Fill remaining space with random data
+  const remainingInverseCases = 100 - specificInverseCases.length;
+  for (let i = 0; i < remainingInverseCases; i++) {
     const input = generateRandomLatitude();
     const expected = authalic.inverse(input);
     
@@ -42,36 +71,8 @@ function generateAuthalicTestData() {
     });
   }
 
-  // Generate round-trip test cases
-  for (let i = 0; i < 50; i++) {
-    const input = generateRandomLatitude();
-    const forwardResult = authalic.forward(input);
-    const roundTripResult = authalic.inverse(forwardResult);
-    
-    testData.roundTrip.push({
-      input: input,
-      forwardResult: forwardResult,
-      roundTripResult: roundTripResult
-    });
-  }
-
-  // Generate specific conversion values test cases
-  const specificLatitudes = [
-    -90, -67.5, -45, -22.5, 0, 22.5, 45, 67.5, 90
-  ];
-
-  specificLatitudes.forEach(deg => {
-    const latRad = (deg * Math.PI / 180);
-    const authalicRad = authalic.forward(latRad);
-    const authalicDeg = (authalicRad * 180 / Math.PI);
-    
-    testData.specificValues.push({
-      geodeticDegrees: deg,
-      geodeticRadians: latRad,
-      authalicDegrees: authalicDeg,
-      authalicRadians: authalicRad
-    });
-  });
+  // Add specific cases to the beginning
+  testData.inverse.unshift(...specificInverseCases);
 
   return testData;
 }
@@ -93,22 +94,6 @@ function updateExistingTestData(existingData) {
     });
   }
 
-  // Update round-trip test cases
-  if (existingData.roundTrip) {
-    existingData.roundTrip.forEach(testCase => {
-      testCase.forwardResult = authalic.forward(testCase.input);
-      testCase.roundTripResult = authalic.inverse(testCase.forwardResult);
-    });
-  }
-
-  // Update specific values test cases
-  if (existingData.specificValues) {
-    existingData.specificValues.forEach(testCase => {
-      testCase.authalicRadians = authalic.forward(testCase.geodeticRadians);
-      testCase.authalicDegrees = (testCase.authalicRadians * 180 / Math.PI);
-    });
-  }
-
   return existingData;
 }
 
@@ -125,7 +110,7 @@ function main() {
     } else {
       console.log("Generating new test data...");
       testData = generateAuthalicTestData();
-      console.log("Generated new test data with forward, inverse, round-trip, and specific value test cases");
+      console.log("Generated new test data with forward and inverse test cases");
     }
 
     // Ensure output directory exists
