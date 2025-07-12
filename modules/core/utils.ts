@@ -169,7 +169,11 @@ export class PentagonShape {
       vec3.add(center, center, point);
     }
     vec3.normalize(center, center);
-    let centerLon = toLonLat(toSpherical(center))[0];
+    let [centerLon, centerLat] = toLonLat(toSpherical(center));
+    if (centerLat > 89.99 || centerLat < -89.99) {
+      // Near poles, use first point's longitude
+      centerLon = contour[0][0] as Degrees;
+    }
 
     // Normalize center longitude to be in the range -180 to 180
     centerLon = ((centerLon + 180) % 360 + 360) % 360 - 180 as Degrees;
