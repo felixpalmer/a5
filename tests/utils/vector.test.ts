@@ -68,9 +68,7 @@ describe('slerp', () => {
     const result = slerp(out, A, B, 0.5)
     
     expect(result).toBe(out)
-    expect(result[0]).toBeCloseTo(1/Math.sqrt(2), 6)
-    expect(result[1]).toBeCloseTo(1/Math.sqrt(2), 6)
-    expect(result[2]).toBeCloseTo(0, 6)
+    expect(result).toBeCloseToArray([1/Math.sqrt(2), 1/Math.sqrt(2), 0], 6);
   })
 
   it('returns first vector at t=0', () => {
@@ -81,9 +79,7 @@ describe('slerp', () => {
     const result = slerp(out, A, B, 0)
     
     expect(result).toBe(out)
-    expect(result[0]).toBeCloseTo(1, 6)
-    expect(result[1]).toBeCloseTo(0, 6)
-    expect(result[2]).toBeCloseTo(0, 6)
+    expect(result).toBeCloseToArray([1, 0, 0], 6);
   })
 
   it('returns second vector at t=1', () => {
@@ -94,9 +90,7 @@ describe('slerp', () => {
     const result = slerp(out, A, B, 1)
     
     expect(result).toBe(out)
-    expect(result[0]).toBeCloseTo(0, 6)
-    expect(result[1]).toBeCloseTo(1, 6)
-    expect(result[2]).toBeCloseTo(0, 6)
+    expect(result).toBeCloseToArray([0, 1, 0], 6);
   })
 
   it('handles identical vectors', () => {
@@ -110,9 +104,7 @@ describe('slerp', () => {
     // For identical vectors, slerp should return the same vector
     // Note: The current implementation may have issues with identical vectors
     // due to division by zero in the angle calculation
-    expect(result[0]).toBeCloseTo(1, 6)
-    expect(result[1]).toBeCloseTo(0, 6)
-    expect(result[2]).toBeCloseTo(0, 6)
+    expect(result).toBeCloseToArray([1, 0, 0], 6);
   })
 
   it('interpolates at different t values', () => {

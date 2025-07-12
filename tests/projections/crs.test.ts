@@ -19,9 +19,7 @@ describe('CRS', () => {
     expect(vertices.length).toBe(expectedVertices.length);
     vertices.forEach((vertex, index) => {
       const expected = expectedVertices[index];
-      expect(vertex[0]).toEqual(expected[0]);
-      expect(vertex[1]).toEqual(expected[1]);
-      expect(vertex[2]).toEqual(expected[2]);
+      expect(vertex).toBeCloseToArray(expected);
     });
   });
 

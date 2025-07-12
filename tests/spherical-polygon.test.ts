@@ -53,9 +53,7 @@ describe('spherical-polygon.ts', () => {
         
         expect(result.length).toBe(expectedResults[i].length);
         result.forEach((point, j) => {
-          expect(point[0]).toBeCloseTo(expectedResults[i][j][0], 6);
-          expect(point[1]).toBeCloseTo(expectedResults[i][j][1], 6);
-          expect(point[2]).toBeCloseTo(expectedResults[i][j][2], 6);
+          expect(point).toBeCloseToArray(expectedResults[i][j], 6);
         });
       });
     });

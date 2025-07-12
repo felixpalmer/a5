@@ -31,8 +31,7 @@ interface GeoJSON {
 function compareCoordinates(actual: LonLat[], expected: number[][], precision = 6) {
   expect(actual.length).toBe(expected.length);
   for (let i = 0; i < actual.length; i++) {
-    expect(actual[i][0]).toBeCloseTo(expected[i][0], precision);
-    expect(actual[i][1]).toBeCloseTo(expected[i][1], precision);
+    expect(actual[i]).toBeCloseToArray(expected[i], precision);
   }
 }
 

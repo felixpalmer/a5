@@ -20,8 +20,7 @@ describe('Dodecahedron projection round trip', () => {
         const face = toFace([rho, beta as Radians] as Polar);
         const spherical = dodecahedron.inverse(face, origin.id);
         const result = dodecahedron.forward(spherical, origin.id);
-        expect(result[0]).toBeCloseTo(face[0]);
-        expect(result[1]).toBeCloseTo(face[1]);
+        expect([...result]).toBeCloseToArray([...face]);
       });
     });
   }); 

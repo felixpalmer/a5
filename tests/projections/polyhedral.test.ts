@@ -24,8 +24,7 @@ describe('Dodecahedron projections', () => {
         TEST_SPHERICAL_TRIANGLE);
       const projected = polyhedral.forward(unprojected, TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE);
       largestError = Math.max(largestError, projected[0] - point[0], projected[1] - point[1]);
-      expect(projected[0]).toBeCloseTo(point[0], TOLERANCE);
-      expect(projected[1]).toBeCloseTo(point[1], TOLERANCE); 
+      expect([...projected]).toBeCloseToArray([...point], TOLERANCE);
     });
   }
 

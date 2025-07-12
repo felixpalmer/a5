@@ -126,10 +126,7 @@ describe('pentagon.ts', () => {
       // Verify BASIS * BASIS_INVERSE = Identity
       const product = mat2.create();
       mat2.multiply(product, BASIS, BASIS_INVERSE);
-      expect(product[0]).toBeCloseTo(1, 10);
-      expect(product[1]).toBeCloseTo(0, 10);
-      expect(product[2]).toBeCloseTo(0, 10);
-      expect(product[3]).toBeCloseTo(1, 10);
+      expect(product).toBeCloseToArray([1, 0, 0, 1], 10);
     });
   });
 }); 

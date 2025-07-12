@@ -1,13 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { 
-  degToRad, 
-  radToDeg,
-  toCartesian,
-  toSpherical,
-  fromLonLat,
-  toLonLat,
-  faceToBarycentric,
-  barycentricToFace
+  degToRad, radToDeg, 
+  faceToBarycentric, barycentricToFace,
+  toCartesian, toSpherical,
+  fromLonLat, toLonLat
 } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat, Radians, Spherical, Face, Barycentric, FaceTriangle } from 'a5/core/coordinate-systems'
 import { TEST_POINTS } from './projections/data/polyhedral-test-data'
@@ -54,8 +50,7 @@ describe('barycentric coordinate functions', () => {
       const result = barycentricToFace(bary, TEST_TRIANGLE);
       
       // Check round-trip accuracy
-      expect(result[0]).toBeCloseTo(point[0], TOLERANCE);
-      expect(result[1]).toBeCloseTo(point[1], TOLERANCE);
+      expect([...result]).toBeCloseToArray([...point], TOLERANCE);
       
       // Check that barycentric coordinates sum to 1
       expect(bary[0] + bary[1] + bary[2]).toBeCloseTo(1, TOLERANCE);
@@ -86,9 +81,7 @@ describe('barycentric coordinate functions', () => {
       const resultBary = faceToBarycentric(face, TEST_TRIANGLE);
       
       // Check round-trip accuracy
-      expect(resultBary[0]).toBeCloseTo(bary[0], 12);
-      expect(resultBary[1]).toBeCloseTo(bary[1], 12);
-      expect(resultBary[2]).toBeCloseTo(bary[2], 12);
+      expect(resultBary).toBeCloseToArray(bary, 12);
       
       // Check that barycentric coordinates sum to 1
       expect(resultBary[0] + resultBary[1] + resultBary[2]).toBeCloseTo(1, 12);
@@ -108,14 +101,11 @@ describe('barycentric coordinate functions', () => {
       const bary = faceToBarycentric(vertices[i], TEST_TRIANGLE);
       
       // Check barycentric coordinates
-      expect(bary[0]).toBeCloseTo(expectedBary[i][0], 12);
-      expect(bary[1]).toBeCloseTo(expectedBary[i][1], 12);
-      expect(bary[2]).toBeCloseTo(expectedBary[i][2], 12);
+      expect(bary).toBeCloseToArray(expectedBary[i], 12);
       
       // Round-trip test
       const result = barycentricToFace(bary, TEST_TRIANGLE);
-      expect(result[0]).toBeCloseTo(vertices[i][0], 12);
-      expect(result[1]).toBeCloseTo(vertices[i][1], 12);
+      expect([...result]).toBeCloseToArray([...vertices[i]], 12);
     }
   });
   
@@ -136,14 +126,11 @@ describe('barycentric coordinate functions', () => {
       const bary = faceToBarycentric(edgeMidpoints[i], TEST_TRIANGLE);
       
       // Check barycentric coordinates
-      expect(bary[0]).toBeCloseTo(expectedBary[i][0], 12);
-      expect(bary[1]).toBeCloseTo(expectedBary[i][1], 12);
-      expect(bary[2]).toBeCloseTo(expectedBary[i][2], 12);
+      expect(bary).toBeCloseToArray(expectedBary[i], 12);
       
       // Round-trip test
       const result = barycentricToFace(bary, TEST_TRIANGLE);
-      expect(result[0]).toBeCloseTo(edgeMidpoints[i][0], 12);
-      expect(result[1]).toBeCloseTo(edgeMidpoints[i][1], 12);
+      expect([...result]).toBeCloseToArray([...edgeMidpoints[i]], 12);
     }
   });
 });
@@ -152,21 +139,15 @@ describe('coordinate conversions', () => {
   it('converts spherical to cartesian coordinates', () => {
     // Test north pole
     const northPole = toCartesian([0, 0] as Spherical)
-    expect(northPole[0]).toBeCloseTo(0)
-    expect(northPole[1]).toBeCloseTo(0)
-    expect(northPole[2]).toBeCloseTo(1)
+    expect(northPole).toBeCloseToArray([0, 0, 1]);
 
     // Test equator at 0 longitude
     const equator0 = toCartesian([0, Math.PI/2] as Spherical)
-    expect(equator0[0]).toBeCloseTo(1)
-    expect(equator0[1]).toBeCloseTo(0)
-    expect(equator0[2]).toBeCloseTo(0)
+    expect(equator0).toBeCloseToArray([1, 0, 0]);
 
     // Test equator at 90° longitude
     const equator90 = toCartesian([Math.PI/2, Math.PI/2] as Spherical)
-    expect(equator90[0]).toBeCloseTo(0)
-    expect(equator90[1]).toBeCloseTo(1)
-    expect(equator90[2]).toBeCloseTo(0)
+    expect(equator90).toBeCloseToArray([0, 1, 0]);
   })
 
   it('converts cartesian to spherical coordinates', () => {
@@ -175,8 +156,7 @@ describe('coordinate conversions', () => {
     const cartesian = toCartesian(original)
     const spherical = toSpherical(cartesian)
     
-    expect(spherical[0]).toBeCloseTo(original[0])
-    expect(spherical[1]).toBeCloseTo(original[1])
+    expect(spherical).toBeCloseToArray(original);
   })
 })
 
@@ -185,16 +165,15 @@ describe('LonLat to/from spherical', () => {
     // Test Greenwich equator
     const greenwich = fromLonLat([0, 0] as LonLat)
     // Match OFFSET_LON: 93
-    expect(greenwich[0]).toBeCloseTo(degToRad(93 as Degrees))
-    expect(greenwich[1]).toBeCloseTo(Math.PI/2)  // 90° colatitude = equator
+    expect(greenwich).toBeCloseToArray([degToRad(93 as Degrees), Math.PI/2]);
 
     // Test north pole
     const northPole = fromLonLat([0, 90] as LonLat)
-    expect(northPole[1]).toBeCloseTo(0)  // 0° colatitude = north pole
+    expect(northPole).toBeCloseToArray([degToRad(93 as Degrees), 0]);
 
     // Test south pole
     const southPole = fromLonLat([0, -90] as LonLat)
-    expect(southPole[1]).toBeCloseTo(Math.PI)  // 180° colatitude = south pole
+    expect(southPole).toBeCloseToArray([degToRad(93 as Degrees), Math.PI]);
   })
 
   it('converts spherical to longitude/latitude coordinates', () => {
@@ -203,8 +182,7 @@ describe('LonLat to/from spherical', () => {
       const spherical = fromLonLat([lon, lat] as LonLat)
       const [newLon, newLat] = toLonLat(spherical)
       
-      expect(newLon).toBeCloseTo(lon)
-      expect(newLat).toBeCloseTo(lat)
+      expect([newLon, newLat]).toBeCloseToArray([lon, lat]);
     })
   })
 });
