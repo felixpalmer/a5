@@ -54,7 +54,7 @@ export class DodecahedronProjection {
 
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
     let faceTriangle = this.getFaceTriangle(faceTriangleIndex);
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangle, origin.quat, origin.angle);
+    let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, false);
 
     return this.polyhedral.forward(unprojected, sphericalTriangle, faceTriangle);
   }
@@ -81,9 +81,8 @@ export class DodecahedronProjection {
     // In the reflected case, both are off the edge of the dodecahedron face,
     // with the squashed triangle unprojecing correctly onto the neighboring dodecahedron face.
     const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
-    const faceTriangleSquashed = this.getFaceTriangle(faceTriangleIndex, reflect, true);
 
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangleSquashed, origin.quat, origin.angle);
+    let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
     const unprojected = this.polyhedral.inverse(face, faceTriangle, sphericalTriangle);
     return toSpherical(unprojected);
   }
@@ -165,18 +164,20 @@ export class DodecahedronProjection {
   }
 
   /**
-   * Gets the spherical triangle for a given face triangle
-   * @param faceTriangle The face triangle
-   * @param originTransform Origin quaternion transform
-   * @param originRotation Origin rotation in radians
+   * Gets the spherical triangle for a given face triangle index and origin
+   * @param faceTriangleIndex Face triangle index
+   * @param originId Origin ID
    * @returns Spherical triangle
    */
-  private getSphericalTriangle(faceTriangle: FaceTriangle, originTransform: quat, originRotation: Radians): SphericalTriangle {
+  private getSphericalTriangle(faceTriangleIndex: FaceTriangleIndex, originId: OriginId, reflected: boolean = false): SphericalTriangle {
+    const origin = origins[originId];
+    const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflected, true);
+    
     const sphericalTriangle = faceTriangle.map((face: Face) => {
       const [rho, gamma] = toPolar(face);
-      const rotatedPolar = [rho, gamma + originRotation] as Polar;
+      const rotatedPolar = [rho, gamma + origin.angle] as Polar;
       const rotated = toCartesian(this.gnomonic.inverse(rotatedPolar));
-      vec3.transformQuat(rotated, rotated, originTransform);
+      vec3.transformQuat(rotated, rotated, origin.quat);
       
       const cachedVertex = this.findCachedVertex(rotated);
       if (cachedVertex) {
