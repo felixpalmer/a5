@@ -1,53 +1,45 @@
 import { describe, it, expect } from 'vitest'
 import { GnomonicProjection } from '../../modules/projections/gnomonic'
 import type { Polar, Spherical } from 'a5/core/coordinate-systems'
-import TEST_COORDS from '../test-polar-coordinates.json';
+import TEST_DATA from './data/gnomonic-test-data.json';
 
+const TOLERANCE = 12;
 const gnomonic = new GnomonicProjection();
 
-describe('projectGnomonic', () => {
-  const TEST_VALUES = [
-    {input: [0, 0.001] as Spherical, expected: [0.001, 0] as Polar},
-    {input: [0.321, 0.001] as Spherical, expected: [0.001, 0.321] as Polar},
-    {input: [Math.PI, Math.PI / 4] as Spherical, expected: [1, Math.PI] as Polar},
-    {input: [0.777, Math.atan(0.5)] as Spherical, expected: [0.5, 0.777] as Polar},
-  ];
-
-  for (const {input, expected} of TEST_VALUES) {
-    it(`projectGnomonic([${input[0]}, ${input[1]}]) returns expected values`, () => {
-      const result = gnomonic.forward(input);
-      expect(result[0]).toBeCloseTo(expected[0], 4);
-      expect(result[1]).toBeCloseTo(expected[1], 4);
+describe('GnomonicProjection forward', () => {
+  TEST_DATA.forward.forEach((testCase, index) => {
+    it(`forward test case ${index + 1}`, () => {
+      const result = gnomonic.forward(testCase.input as Spherical);
+      expect(result[0]).toBeCloseTo(testCase.expected[0], TOLERANCE);
+      expect(result[1]).toBeCloseTo(testCase.expected[1], TOLERANCE);
     });
-  }
 
-  for (const {input, expected} of TEST_VALUES) {
-    it(`unprojectGnomonic([${expected[0]}, ${expected[1]}]) returns expected values`, () => {
-      const result = gnomonic.inverse(expected);
-      expect(result[0]).toBeCloseTo(input[0], 4);
-      expect(result[1]).toBeCloseTo(input[1], 4);
-    });
-  }
-
-  it('round trips with projectGnomonic', () => {
-    const spherical = [0.3, 0.4] as Spherical;
-    const polar = gnomonic.forward(spherical);
-    const result = gnomonic.inverse(polar);
-    expect(result[0]).toBeCloseTo(spherical[0], 4);
-    expect(result[1]).toBeCloseTo(spherical[1], 4);
-  });
-});
-
-describe('polar coordinates round trip', () => {
-  it('tests all coordinates', () => {
-    TEST_COORDS.forEach((coord, i) => {
-      const spherical = [coord.beta, coord.rho] as Spherical;
+    it(`round trip forward test case ${index + 1}`, () => {
+      const spherical = testCase.input as Spherical;
       const polar = gnomonic.forward(spherical);
       const result = gnomonic.inverse(polar);
       
-      // Check that result values are close to original
-      expect(result[0]).toBeCloseTo(spherical[0]);
-      expect(result[1]).toBeCloseTo(spherical[1]);
+      expect(result[0]).toBeCloseTo(spherical[0], TOLERANCE);
+      expect(result[1]).toBeCloseTo(spherical[1], TOLERANCE);
+    });
+  });
+});
+
+describe('GnomonicProjection inverse', () => {
+  TEST_DATA.inverse.forEach((testCase, index) => {
+    it(`inverse test case ${index + 1}`, () => {
+      const result = gnomonic.inverse(testCase.input as Polar);
+      expect(result[0]).toBeCloseTo(testCase.expected[0], TOLERANCE);
+      expect(result[1]).toBeCloseTo(testCase.expected[1], TOLERANCE);
+    });
+
+    it(`round trip inverse test case ${index + 1}`, () => {
+      const polar = testCase.input as Polar;
+      const spherical = gnomonic.inverse(polar);
+      const result = gnomonic.forward(spherical);
+      
+      expect(result[0]).toBeCloseTo(polar[0], TOLERANCE);
+      expect(result[1]).toBeCloseTo(polar[1], TOLERANCE);
     });
   });
 }); 
