@@ -18,7 +18,7 @@ export const interhedralAngle = Math.PI - dihedralAngle as Radians; // Angle bet
 export const faceEdgeAngle = -0.5 * Math.PI + Math.acos(-1 / Math.sqrt(3 - φ)) as Radians; // = 58.28252558853899
 
 // Distance from center to edge of pentagon face
-export const distanceToEdge = 1 - Math.sqrt(5); // φ - 1;
+export const distanceToEdge = (Math.sqrt(5) - 1) / 2; // φ - 1;
 export const distanceToVertex = 3 - Math.sqrt(5); // 2 * (2 - φ);
 
 // Warping parameters

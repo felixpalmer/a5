@@ -1,6 +1,6 @@
 import { vec3, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { distanceToVertex } from "../core/constants";
+import { distanceToEdge, distanceToVertex } from "../core/constants";
 import type { Cartesian, Radians, Spherical } from "../core/coordinate-systems";
 import { toCartesian } from "../core/coordinate-transforms";
 import { origins } from "../core/origin";
@@ -11,7 +11,6 @@ export class CRS {
   constructor() {
     this.addFaceCenters();
     this.addVertices();
-    console.log(this.vertices);
   }
 
   private addFaceCenters(): void {
@@ -19,13 +18,22 @@ export class CRS {
   }
 
   private addVertices(): void {
-    const phi = Math.atan(distanceToVertex) as Radians;
+    const phiMidpoint = Math.atan(distanceToEdge) as Radians;
+    const phiVertex = Math.atan(distanceToVertex) as Radians;
+
     for (const origin of origins) {
       for (let i = 0; i < 5; i++) {
-      const theta = (2 * i + 1) * Math.PI / 5 as Radians;
-      const v = toCartesian([theta + origin.angle, phi] as Spherical);
-      vec3.transformQuat(v, v, origin.quat);
-      this.add(v);
+        // Midpoint
+        const thetaMidpoint = (2 * i) * Math.PI / 5 as Radians;
+        const midpoint = toCartesian([thetaMidpoint + origin.angle, phiMidpoint] as Spherical);
+        vec3.transformQuat(midpoint, midpoint, origin.quat);
+        this.add(midpoint);
+
+        // Vertex
+        const thetaVertex = (2 * i + 1) * Math.PI / 5 as Radians;
+        const vertex = toCartesian([thetaVertex + origin.angle, phiVertex] as Spherical);
+        vec3.transformQuat(vertex, vertex, origin.quat);
+        this.add(vertex);
       }
     }
   }
@@ -33,7 +41,7 @@ export class CRS {
   private add(newVertex: Cartesian): boolean {
     const existingVertex = this.vertices.find(existingVertex => vec3.distance(newVertex, existingVertex) < 1e-5);
     if (existingVertex) {
-      console.log("already added", newVertex);
+      //console.log("already added", newVertex);
       return false;
     }
     this.vertices.push(newVertex);
