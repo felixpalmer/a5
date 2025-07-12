@@ -11,7 +11,6 @@ interface TestCoord {
   beta: number;
 }
 
-// Create a single instance to avoid garbage collection
 const dodecahedron = new DodecahedronProjection();
 
 describe('Dodecahedron projection round trip', () => {

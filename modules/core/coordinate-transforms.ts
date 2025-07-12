@@ -8,7 +8,6 @@ import type { Degrees, Radians, Face, Polar, IJ, Cartesian, Spherical, LonLat, B
 import { BASIS_INVERSE, BASIS } from "./pentagon";
 import { AuthalicProjection } from "../projections/authalic";
 
-// Create a single instance to avoid garbage collection
 const authalic = new AuthalicProjection();
 
 export type Contour = LonLat[];
