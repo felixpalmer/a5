@@ -4,7 +4,7 @@
 
 import {vec2, mat2, mat2d, vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Radians, Spherical, Face, Degrees, LonLat } from './coordinate-systems';
+import type { Cartesian, Radians, Spherical, Face, Degrees, LonLat } from './coordinate-systems';
 import { Orientation } from "./hilbert";
 
 export type Origin = {
@@ -155,32 +155,7 @@ export class PentagonShape {
     return -1;
   }
 
-  /**
-   * Normalizes longitude values in a contour to handle antimeridian crossing
-   * @param contour Array of [longitude, latitude] points
-   * @returns Normalized contour with consistent longitude values
-   */
-  static normalizeLongitudes(contour: Contour): Contour {
-    const longitudes = contour.map(([lon]) => {
-      return ((lon + 180) % 360 + 360) % 360 - 180;
-    });
 
-    // Calculate center longitude
-    let centerLon = longitudes.reduce((sum, p) => sum + p, 0) / longitudes.length;
-    
-    // Normalize center longitude to be in the range -180 to 180
-    centerLon = ((centerLon + 180) % 360 + 360) % 360 - 180;
-    
-    // Normalize each point relative to center
-    return contour.map(point => {
-      let [longitude, latitude] = point;
-      
-      // Adjust longitude to be closer to center
-      while (longitude - centerLon > 180) longitude = longitude - 360 as Degrees;
-      while (longitude - centerLon < -180) longitude = longitude + 360 as Degrees;
-      return [longitude, latitude] as LonLat;
-    });
-  }
 
   /**
    * Splits each edge of the pentagon into the specified number of segments
@@ -233,4 +208,3 @@ export type A5Cell = {
    */
   resolution: number;
 }
-export type Contour = LonLat[];

@@ -6,7 +6,7 @@ import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type { Face, LonLat } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical, toPolar } from "./coordinate-transforms";
+import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical, toPolar, normalizeLongitudes } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { DodecahedronProjection } from "../projections/dodecahedron";
 import { A5Cell, PentagonShape } from "./utils";
@@ -117,7 +117,7 @@ export function cellToLonLat(cell: bigint): LonLat {
   const {S, segment, origin, resolution} = deserialize(cell);
   const pentagon = _getPentagon({S, segment, origin, resolution});
   const lonLat = projectPoint(pentagon.getCenter() as Face, origin, resolution);
-  return PentagonShape.normalizeLongitudes([lonLat])[0];
+  return normalizeLongitudes([lonLat])[0];
 }
 
 type CellToBoundaryOptions = {

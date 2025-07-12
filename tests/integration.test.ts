@@ -36,7 +36,7 @@ function compareCoordinates(actual: LonLat[], expected: number[][], precision = 
   }
 }
 
-describe.skip('wireframe integration tests', () => {
+describe('wireframe integration tests', () => {
   // Map of test data
   const testData: GeoJSON[] = [
     wireframe1, wireframe2, wireframe3, wireframe4,

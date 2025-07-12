@@ -26,6 +26,10 @@ jobs:
       - name: Install dependencies
         run: yarn
 
+      - name: Check for circular dependencies and print porting order
+        run: |
+          python3 analyze_imports.py modules
+
       - name: Build packages
         run: yarn build
 

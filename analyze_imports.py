@@ -1,5 +1,6 @@
-# This script analyzes the dependencies between files in the core directory and suggests a porting order.
-# python3 analyze_imports.py modules/core
+# This script analyzes the dependencies between files in the modules directory and suggests a porting order.
+# python3 analyze_imports.py modules
+# python3 analyze_imports.py modules --check-only
 
 import os
 import re
@@ -10,34 +11,70 @@ from pathlib import Path
 def extract_imports(file_path):
     with open(file_path, 'r') as f:
         content = f.read()
-    # Match import statements like 'import { ... } from "./foo"'
+    # Match import statements like 'import { ... } from "./foo"' or 'import { ... } from "../foo"'
     imports = re.findall(r'import\s+.*?from\s+[\'"]([^\'"]+)[\'"]', content)
-    # Only keep relative imports
+    # Keep all relative imports (both ./ and ../)
     return [imp for imp in imports if imp.startswith('.')]
+
+def resolve_import_path(import_path, current_file_path, base_dir):
+    """Resolve an import path to the actual file path."""
+    current_dir = os.path.dirname(current_file_path)
+    
+    # Handle relative imports
+    if import_path.startswith('./'):
+        # Same directory
+        target_file = os.path.join(current_dir, import_path[2:] + '.ts')
+    elif import_path.startswith('../'):
+        # Parent directory
+        target_file = os.path.join(current_dir, import_path + '.ts')
+    else:
+        return None
+    
+    # Normalize the path
+    target_file = os.path.normpath(target_file)
+    
+    # Check if the file exists
+    if os.path.exists(target_file):
+        return target_file
+    
+    return None
 
 def build_dependency_graph(directory):
     graph = defaultdict(set)
     files = {}
     file_sizes = {}
+    module_files = defaultdict(list)
     
-    # First pass: collect all .ts files
-    for filename in os.listdir(directory):
-        if filename.endswith('.ts'):
-            file_path = os.path.join(directory, filename)
-            module_name = os.path.splitext(filename)[0]
-            files[module_name] = file_path
-            file_sizes[module_name] = os.path.getsize(file_path)
+    # First pass: collect all .ts files recursively
+    for root, dirs, filenames in os.walk(directory):
+        for filename in filenames:
+            if filename.endswith('.ts'):
+                file_path = os.path.join(root, filename)
+                rel_path = os.path.relpath(file_path, directory)
+                module_name = os.path.splitext(rel_path)[0].replace(os.sep, '/')
+                
+                files[module_name] = file_path
+                file_sizes[module_name] = os.path.getsize(file_path)
+                
+                # Organize by module directory
+                module_dir = os.path.dirname(rel_path)
+                if module_dir == '.':
+                    module_dir = ''
+                module_files[module_dir].append(module_name)
     
     # Second pass: build dependency graph
     for module_name, file_path in files.items():
         imports = extract_imports(file_path)
         for imp in imports:
-            # Get the base name of the imported file
-            imp_base = os.path.splitext(os.path.basename(imp))[0]
-            if imp_base in files:
-                graph[module_name].add(imp_base)
+            resolved_path = resolve_import_path(imp, file_path, directory)
+            if resolved_path and resolved_path in files.values():
+                # Find the module name for the resolved path
+                for name, path in files.items():
+                    if path == resolved_path:
+                        graph[module_name].add(name)
+                        break
     
-    return graph, file_sizes
+    return graph, file_sizes, module_files
 
 def find_cycle(graph, start, visited, path):
     """Find a cycle in the graph starting from 'start' node."""
@@ -58,6 +95,21 @@ def find_cycle(graph, start, visited, path):
     
     path.pop()
     return None
+
+def check_circular_dependencies(graph):
+    """Check for circular dependencies and return any found cycles."""
+    cycles = []
+    visited = set()
+    
+    for node in graph.keys():
+        if node not in visited:
+            cycle = find_cycle(graph, node, set(), [])
+            if cycle:
+                cycles.append(cycle)
+                # Mark all nodes in the cycle as visited to avoid duplicate cycles
+                visited.update(cycle)
+    
+    return cycles
 
 def topological_sort(graph, file_sizes):
     visited = set()
@@ -93,12 +145,24 @@ def topological_sort(graph, file_sizes):
     return order
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python analyze_imports.py <core_directory>")
+    if len(sys.argv) < 2:
+        print("Usage: python analyze_imports.py <modules_directory> [--check-only]")
         sys.exit(1)
 
-    core_dir = sys.argv[1]
-    graph, file_sizes = build_dependency_graph(core_dir)
+    modules_dir = sys.argv[1]
+    check_only = len(sys.argv) > 2 and sys.argv[2] == '--check-only'
+    
+    graph, file_sizes, module_files = build_dependency_graph(modules_dir)
+    
+    cycles = check_circular_dependencies(graph)
+    if cycles:
+        print("Circular dependencies found:")
+        for i, cycle in enumerate(cycles, 1):
+            print(f"{i}. {' -> '.join(cycle)}")
+        sys.exit(1)
+
+    if check_only:
+        sys.exit(0)
     
     # Print dependency information
     print("\nDependencies for each file:")
