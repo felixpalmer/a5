@@ -20,6 +20,7 @@ type SphericalTriangle = [Cartesian, Cartesian, Cartesian];
 export class DodecahedronProjection {
   private vertices = new Set<Cartesian>();
   private faceTriangles: FaceTriangle[] = [];
+  private sphericalTriangles: SphericalTriangle[] = [];
   private polyhedral: PolyhedralProjection;
   private gnomonic: GnomonicProjection;
 
@@ -67,8 +68,6 @@ export class DodecahedronProjection {
    * @returns Spherical coordinates [theta, phi]
    */
   inverse(face: Face, originId: OriginId, resolution: number): Spherical {
-    const origin = origins[originId];
-
     const polar = toPolar(face);
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
@@ -170,6 +169,21 @@ export class DodecahedronProjection {
    * @returns Spherical triangle
    */
   private getSphericalTriangle(faceTriangleIndex: FaceTriangleIndex, originId: OriginId, reflected: boolean = false): SphericalTriangle {
+    let index = 10 * originId + faceTriangleIndex; // 0-119
+    if (reflected) {
+      index += 120;
+    }
+    if (this.sphericalTriangles[index]) {
+      return this.sphericalTriangles[index];
+    }
+
+    this.sphericalTriangles[index] = this._getSphericalTriangle(faceTriangleIndex, originId, reflected);
+    Object.freeze(this.sphericalTriangles[index]);
+    return this.sphericalTriangles[index];
+  }
+
+
+  private _getSphericalTriangle(faceTriangleIndex: FaceTriangleIndex, originId: OriginId, reflected: boolean = false): SphericalTriangle {
     const origin = origins[originId];
     const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflected, true);
     
