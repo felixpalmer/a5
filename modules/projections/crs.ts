@@ -19,8 +19,9 @@ export class CRS {
   private vertices: Cartesian[] = [];
 
   constructor() {
-    this.addFaceCenters();
-    this.addVertices();
+    this.addFaceCenters(); // 12 centers
+    this.addVertices(); // 20 vertices
+    this.addMidpoints(); // 30 midpoints
     if (this.vertices.length !== 62) {
       throw new Error("Failed to construct CRS: vertices length is not 62");
     }
@@ -42,8 +43,20 @@ export class CRS {
   }
 
   private addVertices(): void {
-    const phiMidpoint = Math.atan(distanceToEdge) as Radians;
     const phiVertex = Math.atan(distanceToVertex) as Radians;
+
+    for (const origin of origins) {
+      for (let i = 0; i < 5; i++) {
+        const thetaVertex = (2 * i + 1) * Math.PI / 5 as Radians;
+        const vertex = toCartesian([thetaVertex + origin.angle, phiVertex] as Spherical);
+        vec3.transformQuat(vertex, vertex, origin.quat);
+        this.add(vertex);
+      }
+    }
+  }
+
+  private addMidpoints(): void {
+    const phiMidpoint = Math.atan(distanceToEdge) as Radians;
 
     for (const origin of origins) {
       for (let i = 0; i < 5; i++) {
@@ -51,11 +64,6 @@ export class CRS {
         const midpoint = toCartesian([thetaMidpoint + origin.angle, phiMidpoint] as Spherical);
         vec3.transformQuat(midpoint, midpoint, origin.quat);
         this.add(midpoint);
-
-        const thetaVertex = (2 * i + 1) * Math.PI / 5 as Radians;
-        const vertex = toCartesian([thetaVertex + origin.angle, phiVertex] as Spherical);
-        vec3.transformQuat(vertex, vertex, origin.quat);
-        this.add(vertex);
       }
     }
   }
