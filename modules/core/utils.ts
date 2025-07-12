@@ -168,6 +168,13 @@ export class PentagonShape {
     // Calculate center longitude
     let centerLon = longitudes.reduce((sum, p) => sum + p, 0) / longitudes.length;
     
+    // If span is greater than 180 contour is spanning antimeridian, shift centerLon
+    const minLon = Math.min(...longitudes);
+    const maxLon = Math.max(...longitudes);
+    if (maxLon - minLon > 180) {
+      centerLon = -180;
+    }
+
     // Normalize center longitude to be in the range -180 to 180
     centerLon = ((centerLon + 180) % 360 + 360) % 360 - 180;
     
