@@ -1,4 +1,4 @@
-const { GnomonicProjection } = require("../dist/a5-test.cjs");
+const { GnomonicProjection } = require("./a5-test.cjs");
 const fs = require("fs");
 const path = require("path");
 

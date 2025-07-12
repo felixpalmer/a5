@@ -1,5 +1,6 @@
 build/
 dist/
+scripts/a5-test.cjs
 **/*.min.js
 node_modules/
 coverage/

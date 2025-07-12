@@ -33,6 +33,7 @@ export default defineConfig([
     external: [/^internal/],
     noExternal: ['gl-matrix'],
     target: 'es2020',
+    outDir: 'scripts',
     esbuildOptions(options) {
       options.supported = {
         'bigint': true
