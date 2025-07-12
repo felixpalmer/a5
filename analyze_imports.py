@@ -1,5 +1,6 @@
 # This script analyzes the dependencies between files in the modules directory and suggests a porting order.
 # python3 analyze_imports.py modules
+# python3 analyze_imports.py modules --check-only
 
 import os
 import re
@@ -73,7 +74,7 @@ def build_dependency_graph(directory):
                         graph[module_name].add(name)
                         break
     
-    return graph, file_sizes 
+    return graph, file_sizes, module_files
 
 def find_cycle(graph, start, visited, path):
     """Find a cycle in the graph starting from 'start' node."""
@@ -94,6 +95,21 @@ def find_cycle(graph, start, visited, path):
     
     path.pop()
     return None
+
+def check_circular_dependencies(graph):
+    """Check for circular dependencies and return any found cycles."""
+    cycles = []
+    visited = set()
+    
+    for node in graph.keys():
+        if node not in visited:
+            cycle = find_cycle(graph, node, set(), [])
+            if cycle:
+                cycles.append(cycle)
+                # Mark all nodes in the cycle as visited to avoid duplicate cycles
+                visited.update(cycle)
+    
+    return cycles
 
 def topological_sort(graph, file_sizes):
     visited = set()
@@ -129,12 +145,24 @@ def topological_sort(graph, file_sizes):
     return order
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python analyze_imports.py <modules_directory>")
+    if len(sys.argv) < 2:
+        print("Usage: python analyze_imports.py <modules_directory> [--check-only]")
         sys.exit(1)
 
     modules_dir = sys.argv[1]
-    graph, file_sizes = build_dependency_graph(modules_dir)
+    check_only = len(sys.argv) > 2 and sys.argv[2] == '--check-only'
+    
+    graph, file_sizes, module_files = build_dependency_graph(modules_dir)
+    
+    cycles = check_circular_dependencies(graph)
+    if cycles:
+        print("Circular dependencies found:")
+        for i, cycle in enumerate(cycles, 1):
+            print(f"{i}. {' -> '.join(cycle)}")
+        sys.exit(1)
+
+    if check_only:
+        sys.exit(0)
     
     # Print dependency information
     print("\nDependencies for each file:")
