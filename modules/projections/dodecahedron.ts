@@ -197,7 +197,8 @@ export class DodecahedronProjection {
       const rotated = toCartesian(this.gnomonic.inverse(rotatedPolar));
       vec3.transformQuat(rotated, rotated, origin.quat);
       
-      const cachedVertex = this._findCachedVertex(rotated);
+      // const cachedVertex = this._findCachedVertex(rotated);
+      const cachedVertex = crs.getVertex(rotated);
       if (cachedVertex) {
         return cachedVertex;
       }
