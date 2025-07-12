@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { Contour, Pentagon, PentagonShape } from 'a5/core/utils'
+import { Pentagon, PentagonShape } from 'a5/core/utils'
+import { normalizeLongitudes, type Contour } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat } from 'a5/core/coordinate-systems'
 
 describe('PentagonShape', () => {
@@ -83,7 +84,7 @@ describe('PentagonShape', () => {
         [0, 10] as LonLat,
         [0, 0] as LonLat
       ];
-      const normalized = PentagonShape.normalizeLongitudes(contour);
+      const normalized = normalizeLongitudes(contour);
       expect(normalized).toEqual(contour);
     });
 
@@ -95,7 +96,7 @@ describe('PentagonShape', () => {
         [-175, 0] as LonLat,  // This should become 185
         [-170, 0] as LonLat,  // This should become 190
       ];
-      const normalized = PentagonShape.normalizeLongitudes(contour);
+      const normalized = normalizeLongitudes(contour);
       expect(normalized[3][0]).toBeCloseTo(185 as Degrees);
       expect(normalized[4][0]).toBeCloseTo(190 as Degrees);
     });
@@ -108,7 +109,7 @@ describe('PentagonShape', () => {
         [175, 0] as LonLat,   // This should become -185
         [170, 0] as LonLat,   // This should become -190
       ];
-      const normalized = PentagonShape.normalizeLongitudes(contour);
+      const normalized = normalizeLongitudes(contour);
       expect(normalized[3][0]).toBeCloseTo(-185 as Degrees);
       expect(normalized[4][0]).toBeCloseTo(-190 as Degrees);
     });

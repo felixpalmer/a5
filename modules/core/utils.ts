@@ -5,7 +5,6 @@
 import {vec2, mat2, mat2d, vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Cartesian, Radians, Spherical, Face, Degrees, LonLat } from './coordinate-systems';
-import { toCartesian, fromLonLat, toLonLat, toSpherical } from './coordinate-transforms';
 import { Orientation } from "./hilbert";
 
 export type Origin = {
@@ -156,38 +155,7 @@ export class PentagonShape {
     return -1;
   }
 
-  /**
-   * Normalizes longitude values in a contour to handle antimeridian crossing
-   * @param contour Array of [longitude, latitude] points
-   * @returns Normalized contour with consistent longitude values
-   */
-  static normalizeLongitudes(contour: Contour): Contour {
-    // Calculate center in Cartesian space to avoid poles & antimeridian crossing issues
-    const points = contour.map(lonLat => toCartesian(fromLonLat(lonLat)));
-    const center = vec3.create() as Cartesian;
-    for (const point of points) {
-      vec3.add(center, center, point);
-    }
-    vec3.normalize(center, center);
-    let [centerLon, centerLat] = toLonLat(toSpherical(center));
-    if (centerLat > 89.99 || centerLat < -89.99) {
-      // Near poles, use first point's longitude
-      centerLon = contour[0][0] as Degrees;
-    }
 
-    // Normalize center longitude to be in the range -180 to 180
-    centerLon = ((centerLon + 180) % 360 + 360) % 360 - 180 as Degrees;
-    
-    // Normalize each point relative to center
-    return contour.map(point => {
-      let [longitude, latitude] = point;
-      
-      // Adjust longitude to be closer to center
-      while (longitude - centerLon > 180) longitude = longitude - 360 as Degrees;
-      while (longitude - centerLon < -180) longitude = longitude + 360 as Degrees;
-      return [longitude, latitude] as LonLat;
-    });
-  }
 
   /**
    * Splits each edge of the pentagon into the specified number of segments
@@ -240,4 +208,3 @@ export type A5Cell = {
    */
   resolution: number;
 }
-export type Contour = LonLat[];

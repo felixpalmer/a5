@@ -8,7 +8,7 @@ import { PentagonShape } from './utils';
 import { Origin } from './utils';
 import { DodecahedronProjection } from '../projections/dodecahedron';
 import type { Face, LonLat } from './coordinate-systems';
-import { toLonLat } from './coordinate-transforms';
+import { toLonLat, normalizeLongitudes } from './coordinate-transforms';
 
 const dodecahedron = new DodecahedronProjection();
 
@@ -22,6 +22,6 @@ export function projectPentagon(pentagon: PentagonShape, origin: Origin, resolut
   const rotatedVertices = vertices.map(vertex => projectPoint(vertex, origin, resolution));
 
   // Normalize longitudes to handle antimeridian crossing
-  const normalizedVertices = PentagonShape.normalizeLongitudes(rotatedVertices);
+  const normalizedVertices = normalizeLongitudes(rotatedVertices);
   return normalizedVertices;
 }

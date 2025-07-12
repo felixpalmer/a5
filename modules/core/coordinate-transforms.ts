@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, quat, glMatrix } from 'gl-matrix';
+import { vec2, quat, vec3, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Degrees, Radians, Face, Polar, IJ, Cartesian, Spherical, LonLat, Barycentric, FaceTriangle } from "./coordinate-systems";
 import { BASIS_INVERSE, BASIS } from "./pentagon";
@@ -10,6 +10,8 @@ import { AuthalicProjection } from "../projections/authalic";
 
 // Create a single instance to avoid garbage collection
 const authalic = new AuthalicProjection();
+
+export type Contour = LonLat[];
 
 export function degToRad(deg: Degrees): Radians {
   return deg * (Math.PI / 180) as Radians;
@@ -129,4 +131,37 @@ export function quatFromSpherical(axis: Spherical): quat {
   const Q = quat.create();
   quat.rotationTo(Q, [0, 0, 1] as Cartesian, cartesian);
   return Q;
+}
+
+/**
+ * Normalizes longitude values in a contour to handle antimeridian crossing
+ * @param contour Array of [longitude, latitude] points
+ * @returns Normalized contour with consistent longitude values
+ */
+export function normalizeLongitudes(contour: Contour): Contour {
+  // Calculate center in Cartesian space to avoid poles & antimeridian crossing issues
+  const points = contour.map(lonLat => toCartesian(fromLonLat(lonLat)));
+  const center = vec3.create() as Cartesian;
+  for (const point of points) {
+    vec3.add(center, center, point);
+  }
+  vec3.normalize(center, center);
+  let [centerLon, centerLat] = toLonLat(toSpherical(center));
+  if (centerLat > 89.99 || centerLat < -89.99) {
+    // Near poles, use first point's longitude
+    centerLon = contour[0][0] as Degrees;
+  }
+
+  // Normalize center longitude to be in the range -180 to 180
+  centerLon = ((centerLon + 180) % 360 + 360) % 360 - 180 as Degrees;
+  
+  // Normalize each point relative to center
+  return contour.map(point => {
+    let [longitude, latitude] = point;
+    
+    // Adjust longitude to be closer to center
+    while (longitude - centerLon > 180) longitude = longitude - 360 as Degrees;
+    while (longitude - centerLon < -180) longitude = longitude + 360 as Degrees;
+    return [longitude, latitude] as LonLat;
+  });
 }
