@@ -7,9 +7,9 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 import { toCartesian, toSpherical, toFace, toPolar } from "../core/coordinate-transforms";
 import type { Radians, Spherical, Cartesian, Polar, Face } from "../core/coordinate-systems";
 import { GnomonicProjection } from './gnomonic';
-import { distanceToEdge, interhedralAngle, TWO_PI_OVER_5 } from '../core/constants';
+import { distanceToEdge, interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from '../core/constants';
 import { PolyhedralProjection } from "./polyhedral";
-import { getQuintantPolar, getQuintantVertices } from "../core/tiling";
+import { getQuintantPolar, getQuintantVertices, getPolarTriangleIndex } from "../core/tiling";
 
 type VertexIndex = 0 | 1 | 2;
 type VertexOrder = [VertexIndex, VertexIndex, VertexIndex];
@@ -109,23 +109,34 @@ export class DodecahedronProjection {
   }
 
   /**
+   * Given a polar coordinate, returns the index of the face triangle it belongs to
+   * @param polar Polar coordinates
+   * @returns Face triangle index, value from 0 to 9
+   */
+  private getFaceTriangleIndex([_, gamma]: Polar): number {
+    return (Math.floor(gamma / PI_OVER_5) + 10) % 10;
+  }
+
+  /**
    * Gets the face triangle for a given polar coordinate
    * @param polar Polar coordinates
    * @returns Face triangle
    */
   private getFaceTriangle(polar: Polar): FaceTriangle {
-    const quintant = getQuintantPolar(polar);
+    const faceTriangleIndex = this.getFaceTriangleIndex(polar);
+    const quintant = Math.floor((faceTriangleIndex + 1) / 2) % 5;
+
     const [vCenter, vCorner1, vCorner2] = getQuintantVertices(quintant).getVertices();
     //const vVertex = [distanceToEdge, distanceToEdge] as Face;
     const vEdgeMidpoint = vec2.create() as Face;
     vec2.lerp(vEdgeMidpoint, vCorner1, vCorner2, 0.5);
 
     // Sign of gamma determines which triangle we want to use, and thus vertex order
-    const odd = this.normalizeGamma(polar[1]) > 0;
+    const even = faceTriangleIndex % 2 === 0;
 
     // Note: center & midpoint compared to DGGAL implementation are swapped
     // as we are using a dodecahedron, rather than a icosahedron.
-    let facePoints = odd ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
+    let facePoints = even ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
     const ia = VERTEX_ORDER[0];
     const ib = VERTEX_ORDER[1];
     const ic = VERTEX_ORDER[2];
