@@ -20,10 +20,13 @@ export class CRS {
 
   private addVertices(): void {
     const phi = Math.atan(distanceToVertex) as Radians;
-    for (let i = 0; i < 5; i++) {
+    for (const origin of origins) {
+      for (let i = 0; i < 5; i++) {
       const theta = (2 * i + 1) * Math.PI / 5 as Radians;
-      const v = toCartesian([theta, phi] as Spherical);
+      const v = toCartesian([theta + origin.angle, phi] as Spherical);
+      vec3.transformQuat(v, v, origin.quat);
       this.add(v);
+      }
     }
   }
 
