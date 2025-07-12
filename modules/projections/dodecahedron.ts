@@ -87,8 +87,8 @@ export class DodecahedronProjection {
 
     let faceTriangle2 = faceTriangle.map(face => vec2.clone(face)) as FaceTriangle;
     if (reflect) {
-      faceTriangle = this._getReflectedFaceTriangle(faceTriangleIndex, false);
-      faceTriangle2 = this._getReflectedFaceTriangle(faceTriangleIndex, true);
+      faceTriangle = this.getFaceTriangle(faceTriangleIndex, true, false);
+      faceTriangle2 = this.getFaceTriangle(faceTriangleIndex, true, true);
     }
 
     let sphericalTriangle = this.getSphericalTriangle(faceTriangle2, originTransform, originRotation);
@@ -110,15 +110,20 @@ export class DodecahedronProjection {
    * @param faceTriangleIndex Face triangle index, value from 0 to 9
    * @returns FaceTriangle: 3 vertices in counter-clockwise order
    */
-  private getFaceTriangle(faceTriangleIndex: FaceTriangleIndex, reflected: boolean = false): FaceTriangle {
-    //const index = reflected ? faceTriangleIndex + 10 : 0;
-    //if (this.faceTriangles[index]) {
-    //  return this.faceTriangles[index];
-    //}
-    const faceTriangle = this._getFaceTriangle(faceTriangleIndex);
-    //Object.freeze(faceTriangle);
-    //this.faceTriangles[faceTriangleIndex] = faceTriangle;
-    return faceTriangle;
+  private getFaceTriangle(faceTriangleIndex: FaceTriangleIndex, reflected: boolean = false, squashed: boolean = false): FaceTriangle {
+    let index = faceTriangleIndex;
+    if (reflected) {
+      index += squashed ? 20 : 10;
+    }
+    if (this.faceTriangles[index]) {
+      return this.faceTriangles[index];
+    }
+
+    this.faceTriangles[index] = reflected ?
+      this._getReflectedFaceTriangle(faceTriangleIndex, squashed) :
+      this._getFaceTriangle(faceTriangleIndex);
+    Object.freeze(this.faceTriangles[index]);
+    return this.faceTriangles[index];
   }
 
   private _getFaceTriangle(faceTriangleIndex: FaceTriangleIndex): FaceTriangle {
