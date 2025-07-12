@@ -2,51 +2,38 @@ const { cellToBoundary, bigIntToHex, cellToChildren } = require("../dist/a5.cjs"
 const fs = require("fs");
 const path = require("path");
 
-const INTEGRATION_TESTS_DIR = path.join(__dirname, "../a5-js/tests/integration");
+const INTEGRATION_TESTS_DIR = path.join(__dirname, "./../tests/integration");
 
-function generateWireframeTest(resolution, outputPath) {
-  console.log(`Generating wireframe test data for resolution ${resolution}...`);
-  const cells = [];
+function generateWireframeTest(resolution, segments = "auto") {
+  // Use .json extension to enable easier importing in tests
+  const filename = segments === "auto" ? `wireframe-auto-edges-${resolution}.json` : `wireframe-${resolution}.json`;
+  const outputPath = path.join(INTEGRATION_TESTS_DIR, filename);
+
+  const features = [];
   try {
-    // Calculate total number of cells at this resolution
+    // Generate all cells at a given resolution
     const cellIds = cellToChildren(0n, resolution);
-
-    // Generate all cells
     for (let cellId of cellIds) {
       const cellIdHex = bigIntToHex(cellId);
-      const boundary = cellToBoundary(cellId, {
-        closedRing: true,
-        segments: "auto",
-      });
+      const boundary = cellToBoundary(cellId, { closedRing: true, segments });
 
-      cells.push({
+      features.push({
         type: "Feature",
-        geometry: {
-          type: "Polygon",
-          coordinates: [boundary],
-        },
+        properties: { cellIdHex },
+        geometry: { type: "Polygon", coordinates: [boundary] }
       });
     }
 
-    // Create GeoJSON FeatureCollection
-    const geojson = {
-      type: "FeatureCollection",
-      features: cells,
-    };
+    const geojson = { type: "FeatureCollection", features };
 
     // Ensure output directory exists
     const outputDir = path.dirname(outputPath);
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
-
-    // Write to JSON file
     fs.writeFileSync(outputPath, JSON.stringify(geojson, null, 2));
 
-    console.log(
-      `Successfully generated ${cells.length} A5 cells at resolution ${resolution}`
-    );
-    console.log(`Output written to ${outputPath}`);
+    console.log(`Generated ${features.length} A5 cells at resolution ${resolution}: ${outputPath}`);
   } catch (error) {
     console.error(`Error generating cells for resolution ${resolution}:`, error);
     throw error;
@@ -54,10 +41,12 @@ function generateWireframeTest(resolution, outputPath) {
 }
 
 function main() {
-  // For now, just generate wireframe-1.json (resolution 1)
-  const outputPath = path.join(INTEGRATION_TESTS_DIR, "wireframe-1.json");
   try {
-    generateWireframeTest(1, outputPath);
+    // Generate files for resolutions 1-4 with both segment types
+    for (let resolution = 1; resolution <= 4; resolution++) {
+      generateWireframeTest(resolution, 1);
+      generateWireframeTest(resolution, "auto");
+    }
     console.log("Wireframe test data generation completed successfully!");
   } catch (error) {
     console.error("Failed to generate wireframe test data:", error);
