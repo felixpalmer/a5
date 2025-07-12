@@ -14,18 +14,6 @@ import { getQuintantVertices } from "../core/tiling";
 import { OriginId } from "a5/core/utils";
 
 type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-type VertexIndex = 0 | 1 | 2;
-type VertexOrder = [VertexIndex, VertexIndex, VertexIndex];
-const DODECAHEDRON_FACE_CENTER: VertexIndex = 0;
-const DODECAHEDRON_VERTEX: VertexIndex = 1;
-const DODECAHEDRON_EDGE_MIDPOINT: VertexIndex = 2;
-
-// The first index is always be passed first, the second & third are swapped based on the sign of gamma
-const IVEA: VertexOrder = [DODECAHEDRON_FACE_CENTER, DODECAHEDRON_VERTEX, DODECAHEDRON_EDGE_MIDPOINT];
-const ISEA: VertexOrder = [DODECAHEDRON_VERTEX, DODECAHEDRON_EDGE_MIDPOINT, DODECAHEDRON_FACE_CENTER];    
-const RTEA: VertexOrder = [DODECAHEDRON_EDGE_MIDPOINT, DODECAHEDRON_FACE_CENTER, DODECAHEDRON_VERTEX];    
-const VERTEX_ORDER: VertexOrder = IVEA;
-
 type FaceTriangle = [Face, Face, Face];
 type SphericalTriangle = [Cartesian, Cartesian, Cartesian];
 
@@ -143,12 +131,7 @@ export class DodecahedronProjection {
 
     // Note: center & midpoint compared to DGGAL implementation are swapped
     // as we are using a dodecahedron, rather than a icosahedron.
-    let facePoints = even ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
-    const ia = VERTEX_ORDER[0];
-    const ib = VERTEX_ORDER[1];
-    const ic = VERTEX_ORDER[2];
-
-    return [facePoints[ia], facePoints[ib], facePoints[ic]] as FaceTriangle; 
+    return even ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
   }
 
   private _getReflectedFaceTriangle(faceTriangleIndex: FaceTriangleIndex, squashed: boolean = false): FaceTriangle {
