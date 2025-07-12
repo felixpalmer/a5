@@ -11,6 +11,10 @@ export class CRS {
   constructor() {
     this.addFaceCenters();
     this.addVertices();
+    if (this.vertices.length !== 62) {
+      throw new Error("Failed to construct CRS: vertices length is not 62");
+    }
+    Object.freeze(this.vertices);
   }
 
   private addFaceCenters(): void {
@@ -39,12 +43,12 @@ export class CRS {
   }
 
   private add(newVertex: Cartesian): boolean {
-    const existingVertex = this.vertices.find(existingVertex => vec3.distance(newVertex, existingVertex) < 1e-5);
+    const normalized = vec3.normalize(vec3.create(), newVertex) as Cartesian;
+    const existingVertex = this.vertices.find(existingVertex => vec3.distance(normalized, existingVertex) < 1e-5);
     if (existingVertex) {
-      //console.log("already added", newVertex);
       return false;
     }
-    this.vertices.push(newVertex);
+    this.vertices.push(normalized);
     return true;
   }
 }
