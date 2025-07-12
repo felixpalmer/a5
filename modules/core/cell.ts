@@ -72,7 +72,7 @@ function _lonLatToEstimate(lonLat: LonLat, resolution: number): A5Cell {
   const spherical = fromLonLat(lonLat);
   const origin = {...findNearestOrigin(spherical)};
 
-  const dodecPoint = dodecahedron.forward(spherical, origin.id, resolution);
+  const dodecPoint = dodecahedron.forward(spherical, origin.id);
   const polar = toPolar(dodecPoint);
   const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);
@@ -115,7 +115,7 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
 export function cellToLonLat(cell: bigint): LonLat {
   const {S, segment, origin, resolution} = deserialize(cell);
   const pentagon = _getPentagon({S, segment, origin, resolution});
-  const point = dodecahedron.inverse(pentagon.getCenter() as Face, origin.id, resolution);
+  const point = dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);
   return toLonLat(point);
 }
 
@@ -146,7 +146,7 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
   const vertices = splitPentagon.getVertices();
 
   // Unproject to obtain lon/lat coordinates
-  const unprojectedVertices = vertices.map(vertex => dodecahedron.inverse(vertex, origin.id, resolution));
+  const unprojectedVertices = vertices.map(vertex => dodecahedron.inverse(vertex, origin.id));
   const boundary = unprojectedVertices.map(vertex => toLonLat(vertex));
 
   // Normalize longitudes to handle antimeridian crossing

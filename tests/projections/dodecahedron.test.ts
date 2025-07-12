@@ -14,23 +14,17 @@ interface TestCoord {
 const dodecahedron = new DodecahedronProjection();
 
 describe('Dodecahedron projection round trip', () => {
-  const resolutions = [1, 2, 3, 4, 5, 6];
-
-  for (const resolution of resolutions) {
-    describe(`with resolution ${resolution}`, () => {
-      it('round trip test', () => {
-        origins.forEach((origin) => {
-          (TEST_COORDS as TestCoord[]).forEach(({rho, beta}) => {
-            const face = toFace([rho, beta as Radians] as Polar);
-            const spherical = dodecahedron.inverse(face, origin.id, resolution);
-            const result = dodecahedron.forward(spherical, origin.id, resolution);
-            expect(result[0]).toBeCloseTo(face[0]);
-            expect(result[1]).toBeCloseTo(face[1]);
-          });
-        });
-      }); 
+  it('round trip test', () => {
+    origins.forEach((origin) => {
+      (TEST_COORDS as TestCoord[]).forEach(({rho, beta}) => {
+        const face = toFace([rho, beta as Radians] as Polar);
+        const spherical = dodecahedron.inverse(face, origin.id);
+        const result = dodecahedron.forward(spherical, origin.id);
+        expect(result[0]).toBeCloseTo(face[0]);
+        expect(result[1]).toBeCloseTo(face[1]);
+      });
     });
-  }
+  }); 
 });
 
 describe('normalizeGamma', () => {
