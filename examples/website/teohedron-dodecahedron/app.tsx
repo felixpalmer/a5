@@ -12,7 +12,7 @@ const RESOLUTION = 3;
 // Create a cache for geometries
 const geometryCache = new Map<number, BufferGeometry>();
 
-// Create a merged geometry from all pentagons
+// Create a merged geometry from all cells (triangles and pentagons)
 function createMergedGeometry(resolution: number) {
   const cells = generateWireframe(resolution);
   
@@ -22,6 +22,8 @@ function createMergedGeometry(resolution: number) {
   const uvs: number[] = [];
   const indices: number[] = [];
   
+  let vertexOffset = 0;
+  
   // Process each cell
   cells.forEach((cell, cellIndex) => {
     // Convert vertices to Cartesian coordinates
@@ -30,7 +32,7 @@ function createMergedGeometry(resolution: number) {
       return new Vector3(...cartesian);
     });
     
-    // Calculate normal for this pentagon
+    // Calculate normal for this cell (works for both triangles and pentagons)
     const v1 = vertices[1].clone().sub(vertices[0]);
     const v2 = vertices[2].clone().sub(vertices[0]);
     const normal = new Vector3().crossVectors(v1, v2).normalize();
@@ -43,20 +45,18 @@ function createMergedGeometry(resolution: number) {
     
     // Add UVs to uvs array (simple mapping for now)
     vertices.forEach((_, i) => {
-      const u = i / 5;
+      const u = i / vertices.length; // Use actual vertex count instead of hardcoded 5
       const v = 0;
       uvs.push(u, v);
     });
     
-    // Add indices for this pentagon
-    const vertexOffset = cellIndex * 5;
+    // Add indices for this cell
+    for (let i = 1; i < vertices.length - 1; i++) {
+      indices.push(vertexOffset, vertexOffset + i, vertexOffset + i + 1);
+    }
     
-    // Create triangles (0,1,2), (0,2,3), (0,3,4)
-    indices.push(
-      vertexOffset, vertexOffset + 1, vertexOffset + 2,
-      vertexOffset, vertexOffset + 2, vertexOffset + 3,
-      vertexOffset, vertexOffset + 3, vertexOffset + 4
-    );
+    // Update vertex offset for next cell
+    vertexOffset += vertices.length;
   });
   
   // Create the merged geometry

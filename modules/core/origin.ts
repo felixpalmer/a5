@@ -8,9 +8,7 @@ import { toCartesian, quatFromSpherical } from "./coordinate-transforms";
 import type { Radians, Spherical, Cartesian, Face } from "./coordinate-systems";
 import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5, distanceToEdge } from './constants';
 import { Orientation } from "./hilbert";
-import type { Origin } from './utils';
-
-const UP: vec3 = [0, 0, 1] as Cartesian;
+import type { Origin, OriginId } from './utils';
 
 // Quintant layouts (clockwise & counterclockwise)
 export const clockwiseFan = ['vu', 'uw', 'vw', 'vw', 'vw'] as Orientation[];
@@ -59,8 +57,11 @@ function generateOrigins(): void {
   addOrigin([0, Math.PI] as Spherical, 0 as Radians);
 }
 
-let originId = 0;
+let originId: OriginId = 0;
 function addOrigin(axis: Spherical, angle: Radians) {
+  if (originId > 11) {
+    throw new Error(`Too many origins: ${originId}`);
+  }
   const origin: Origin = {
     id: originId,
     axis,

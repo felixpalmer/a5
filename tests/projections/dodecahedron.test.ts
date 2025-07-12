@@ -11,7 +11,6 @@ interface TestCoord {
   beta: number;
 }
 
-// Create a single instance to avoid garbage collection
 const dodecahedron = new DodecahedronProjection();
 
 describe('Dodecahedron projection round trip', () => {
@@ -23,8 +22,8 @@ describe('Dodecahedron projection round trip', () => {
         origins.forEach((origin) => {
           (TEST_COORDS as TestCoord[]).forEach(({rho, beta}) => {
             const face = toFace([rho, beta as Radians] as Polar);
-            const spherical = dodecahedron.inverse(face, origin.quat, origin.angle, resolution);
-            const result = dodecahedron.forward(spherical, origin.quat, origin.angle, resolution);
+            const spherical = dodecahedron.inverse(face, origin.id, resolution);
+            const result = dodecahedron.forward(spherical, origin.id, resolution);
             expect(result[0]).toBeCloseTo(face[0]);
             expect(result[1]).toBeCloseTo(face[1]);
           });

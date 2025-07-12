@@ -7,27 +7,23 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 import { toCartesian, toSpherical, toFace, toPolar } from "../core/coordinate-transforms";
 import type { Radians, Spherical, Cartesian, Polar, Face } from "../core/coordinate-systems";
 import { GnomonicProjection } from './gnomonic';
-import { distanceToEdge, interhedralAngle, TWO_PI_OVER_5 } from '../core/constants';
+import { origins } from "../core/origin";
+import { distanceToEdge, interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from '../core/constants';
 import { PolyhedralProjection } from "./polyhedral";
-import { getQuintantPolar, getQuintantVertices } from "../core/tiling";
+import { getQuintantVertices } from "../core/tiling";
+import { OriginId } from "a5/core/utils";
+import { CRS } from "./crs";
 
-type VertexIndex = 0 | 1 | 2;
-type VertexOrder = [VertexIndex, VertexIndex, VertexIndex];
-const DODECAHEDRON_FACE_CENTER: VertexIndex = 0;
-const DODECAHEDRON_VERTEX: VertexIndex = 1;
-const DODECAHEDRON_EDGE_MIDPOINT: VertexIndex = 2;
-
-// The first index is always be passed first, the second & third are swapped based on the sign of gamma
-const IVEA: VertexOrder = [DODECAHEDRON_FACE_CENTER, DODECAHEDRON_VERTEX, DODECAHEDRON_EDGE_MIDPOINT];
-const ISEA: VertexOrder = [DODECAHEDRON_VERTEX, DODECAHEDRON_EDGE_MIDPOINT, DODECAHEDRON_FACE_CENTER];    
-const RTEA: VertexOrder = [DODECAHEDRON_EDGE_MIDPOINT, DODECAHEDRON_FACE_CENTER, DODECAHEDRON_VERTEX];    
-const VERTEX_ORDER: VertexOrder = IVEA;
-
+type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type FaceTriangle = [Face, Face, Face];
 type SphericalTriangle = [Cartesian, Cartesian, Cartesian];
 
+const crs = new CRS();
+
 export class DodecahedronProjection {
   private vertices = new Set<Cartesian>();
+  private faceTriangles: FaceTriangle[] = [];
+  private sphericalTriangles: SphericalTriangle[] = [];
   private polyhedral: PolyhedralProjection;
   private gnomonic: GnomonicProjection;
 
@@ -39,16 +35,17 @@ export class DodecahedronProjection {
   /**
    * Projects spherical coordinates to face coordinates using dodecahedron projection
    * @param spherical Spherical coordinates [theta, phi]
-   * @param originTransform Origin quaternion transform
-   * @param originRotation Origin rotation in radians
+   * @param originId Origin ID
    * @param resolution Resolution parameter
    * @returns Face coordinates [x, y]
    */
-  forward(spherical: Spherical, originTransform: quat, originRotation: Radians, resolution: number): Face {
+  forward(spherical: Spherical, originId: OriginId, resolution: number): Face {
+    const origin = origins[originId];
+
     // Transform back origin space
     const unprojected = toCartesian(spherical);
     const inverseQuat = quat.create();
-    quat.invert(inverseQuat, originTransform);
+    quat.invert(inverseQuat, origin.quat);
     const out = vec3.create() as Cartesian;
     vec3.transformQuat(out, unprojected, inverseQuat);
 
@@ -57,10 +54,11 @@ export class DodecahedronProjection {
     const polar = this.gnomonic.forward(projectedSpherical);
 
     // Rotate around face axis to remove origin rotation
-    polar[1] = (polar[1] - originRotation) as Radians;
+    polar[1] = (polar[1] - origin.angle) as Radians;
 
-    let faceTriangle = this.getFaceTriangle(polar);
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangle, originTransform, originRotation);
+    const faceTriangleIndex = this.getFaceTriangleIndex(polar);
+    let faceTriangle = this.getFaceTriangle(faceTriangleIndex);
+    let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, false);
 
     return this.polyhedral.forward(unprojected, sphericalTriangle, faceTriangle);
   }
@@ -68,107 +66,122 @@ export class DodecahedronProjection {
   /**
    * Unprojects face coordinates to spherical coordinates using dodecahedron projection
    * @param face Face coordinates [x, y]
-   * @param originTransform Origin quaternion transform
-   * @param originRotation Origin rotation in radians
+   * @param originId Origin ID
    * @param resolution Resolution parameter
    * @returns Spherical coordinates [theta, phi]
    */
-  inverse(face: Face, originTransform: quat, originRotation: Radians, resolution: number): Spherical {
+  inverse(face: Face, originId: OriginId, resolution: number): Spherical {
     const polar = toPolar(face);
-    let faceTriangle = this.getFaceTriangle(polar);
+    const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
+    // Detect when point is beyond the edge of the dodecahedron face
     const [rho, gamma] = polar;
-    const P = toFace([rho, this.normalizeGamma(gamma)] as Polar);
-    const reflect = P[0] > distanceToEdge;
+    const D = toFace([rho, this.normalizeGamma(gamma)] as Polar)[0];
+    const reflect = D > distanceToEdge;
 
-    const faceTriangle2 = faceTriangle.map(face => vec2.clone(face)) as FaceTriangle;
-    if (reflect) {
-      // Reflect dodecahedron center across edge
-      const odd = this.normalizeGamma(polar[1]) > 0;
-      vec2.negate(faceTriangle[0], faceTriangle[0]);
-      const midpoint = odd ? faceTriangle[1] : faceTriangle[2];
-      vec2.scaleAndAdd(faceTriangle[0], faceTriangle[0], midpoint, 2);
+    // In the standard case, both these are the same as we can unproject directly
+    // In the reflected case, both are off the edge of the dodecahedron face,
+    // with the squashed triangle unprojecing correctly onto the neighboring dodecahedron face.
+    const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
 
-      // Swap midpoint and corner to maintain correct vertex order
-      const temp = faceTriangle[1];
-      faceTriangle[1] = faceTriangle[2];
-      faceTriangle[2] = temp;
-
-      vec2.negate(faceTriangle2[0], faceTriangle2[0]);
-      vec2.scaleAndAdd(faceTriangle2[0], faceTriangle2[0], midpoint, 1 + 1 / Math.cos(interhedralAngle));
-
-      // Swap midpoint and corner to maintain correct vertex order
-      const temp2 = faceTriangle2[1];
-      faceTriangle2[1] = faceTriangle2[2];
-      faceTriangle2[2] = temp2;
-    }
-
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangle2, originTransform, originRotation);
+    let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
     const unprojected = this.polyhedral.inverse(face, faceTriangle, sphericalTriangle);
     return toSpherical(unprojected);
   }
 
   /**
-   * Gets the face triangle for a given polar coordinate
+   * Given a polar coordinate, returns the index of the face triangle it belongs to
    * @param polar Polar coordinates
-   * @returns Face triangle
+   * @returns Face triangle index, value from 0 to 9
    */
-  private getFaceTriangle(polar: Polar): FaceTriangle {
-    const quintant = getQuintantPolar(polar);
+  private getFaceTriangleIndex([_, gamma]: Polar): FaceTriangleIndex {
+    return (Math.floor(gamma / PI_OVER_5) + 10) % 10 as FaceTriangleIndex;
+  }
+
+  /**
+   * Gets the face triangle for a given polar coordinate
+   * @param faceTriangleIndex Face triangle index, value from 0 to 9
+   * @returns FaceTriangle: 3 vertices in counter-clockwise order
+   */
+  private getFaceTriangle(faceTriangleIndex: FaceTriangleIndex, reflected: boolean = false, squashed: boolean = false): FaceTriangle {
+    let index = faceTriangleIndex;
+    if (reflected) {
+      index += squashed ? 20 : 10;
+    }
+    if (this.faceTriangles[index]) {
+      return this.faceTriangles[index];
+    }
+
+    this.faceTriangles[index] = reflected ?
+      this._getReflectedFaceTriangle(faceTriangleIndex, squashed) :
+      this._getFaceTriangle(faceTriangleIndex);
+    Object.freeze(this.faceTriangles[index]);
+    return this.faceTriangles[index];
+  }
+
+  private _getFaceTriangle(faceTriangleIndex: FaceTriangleIndex): FaceTriangle {
+    const quintant = Math.floor((faceTriangleIndex + 1) / 2) % 5;
+
     const [vCenter, vCorner1, vCorner2] = getQuintantVertices(quintant).getVertices();
     //const vVertex = [distanceToEdge, distanceToEdge] as Face;
     const vEdgeMidpoint = vec2.create() as Face;
     vec2.lerp(vEdgeMidpoint, vCorner1, vCorner2, 0.5);
 
     // Sign of gamma determines which triangle we want to use, and thus vertex order
-    const odd = this.normalizeGamma(polar[1]) > 0;
+    const even = faceTriangleIndex % 2 === 0;
 
     // Note: center & midpoint compared to DGGAL implementation are swapped
     // as we are using a dodecahedron, rather than a icosahedron.
-    let facePoints = odd ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
-    const ia = VERTEX_ORDER[0];
-    const ib = VERTEX_ORDER[1];
-    const ic = VERTEX_ORDER[2];
+    return even ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
+  }
 
-    return [facePoints[ia], facePoints[ib], facePoints[ic]] as FaceTriangle; 
+  private _getReflectedFaceTriangle(faceTriangleIndex: FaceTriangleIndex, squashed: boolean = false): FaceTriangle {
+    // First obtain ordinary unreflected triangle
+    let [A, B, C] = this._getFaceTriangle(faceTriangleIndex).map(face => vec2.clone(face)) as FaceTriangle;
+
+    // Reflect dodecahedron center (A) across edge (BC)
+    const even = faceTriangleIndex % 2 === 0;
+    vec2.negate(A, A);
+    const midpoint = even ? B : C;
+
+    // Squashing is important. A squashed triangle when unprojected will yield the correct spherical triangle.
+    vec2.scaleAndAdd(A, A, midpoint, squashed ? 1 + 1 / Math.cos(interhedralAngle) : 2);
+
+    // Swap midpoint and corner to maintain correct vertex order
+    return [A, C, B] as FaceTriangle;
   }
 
   /**
-   * Finds a cached vertex that's close to the given vertex
-   * @param newVertex The vertex to find a match for
-   * @returns Cached vertex or null if not found
-   */
-  private findCachedVertex(newVertex: Cartesian): Cartesian | null {
-    for (const cachedVertex of this.vertices) {
-      if (vec3.distance(newVertex, cachedVertex) < 1e-5) {
-        return cachedVertex;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Gets the spherical triangle for a given face triangle
-   * @param faceTriangle The face triangle
-   * @param originTransform Origin quaternion transform
-   * @param originRotation Origin rotation in radians
+   * Gets the spherical triangle for a given face triangle index and origin
+   * @param faceTriangleIndex Face triangle index
+   * @param originId Origin ID
    * @returns Spherical triangle
    */
-  private getSphericalTriangle(faceTriangle: FaceTriangle, originTransform: quat, originRotation: Radians): SphericalTriangle {
+  private getSphericalTriangle(faceTriangleIndex: FaceTriangleIndex, originId: OriginId, reflected: boolean = false): SphericalTriangle {
+    let index = 10 * originId + faceTriangleIndex; // 0-119
+    if (reflected) {
+      index += 120;
+    }
+    if (this.sphericalTriangles[index]) {
+      return this.sphericalTriangles[index];
+    }
+
+    this.sphericalTriangles[index] = this._getSphericalTriangle(faceTriangleIndex, originId, reflected);
+    Object.freeze(this.sphericalTriangles[index]);
+    return this.sphericalTriangles[index];
+  }
+
+
+  private _getSphericalTriangle(faceTriangleIndex: FaceTriangleIndex, originId: OriginId, reflected: boolean = false): SphericalTriangle {
+    const origin = origins[originId];
+    const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflected, true);
+    
     const sphericalTriangle = faceTriangle.map((face: Face) => {
       const [rho, gamma] = toPolar(face);
-      const rotatedPolar = [rho, gamma + originRotation] as Polar;
+      const rotatedPolar = [rho, gamma + origin.angle] as Polar;
       const rotated = toCartesian(this.gnomonic.inverse(rotatedPolar));
-      vec3.transformQuat(rotated, rotated, originTransform);
-      
-      const cachedVertex = this.findCachedVertex(rotated);
-      if (cachedVertex) {
-        return cachedVertex;
-      }
-      
-      // Add new vertex to cache and return it
-      this.vertices.add(rotated);
-      return rotated;
+      vec3.transformQuat(rotated, rotated, origin.quat);
+      return crs.getVertex(rotated);
     });
     return sphericalTriangle as SphericalTriangle;
   }
@@ -178,7 +191,7 @@ export class DodecahedronProjection {
    * @param gamma The gamma value to normalize
    * @returns Normalized gamma value
    */
-  private normalizeGamma(gamma: Radians): Radians {
+  normalizeGamma(gamma: Radians): Radians {
     const segment = gamma / TWO_PI_OVER_5;
     const sCenter = Math.round(segment);
     const sOffset = segment - sCenter;
