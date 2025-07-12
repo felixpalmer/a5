@@ -27,10 +27,10 @@ const Controls: React.FC<{
   perimeterLimits: [number, number];
   tilingSystem: 'h3' | 'a5';
   onTilingSystemChange: (system: 'h3' | 'a5') => void;
-}> = ({areaLimits, authalicAverageArea, perimeterLimits, tilingSystem, onTilingSystemChange}) => {
+  isMobile?: boolean;
+}> = ({areaLimits, authalicAverageArea, perimeterLimits, tilingSystem, onTilingSystemChange, isMobile}) => {
   const [minArea, maxArea] = areaLimits;
   const [minPerimeter, maxPerimeter] = perimeterLimits;
-  const areaRatio = maxArea / minArea;
   const areaError = (maxArea / authalicAverageArea - 1) * 100; // Percent that largest cell is larger than authalic average
   const perimeterRatio = maxPerimeter / minPerimeter;
 
@@ -58,18 +58,18 @@ const Controls: React.FC<{
           <option value="a5">A5 (Pentagons)</option>
         </select>
       </div>
-      
-      <h3 style={{margin: '0 0 8px', fontSize: '14px'}}>Area Statistics</h3>
-      <div>Min Area: {minArea.toFixed(2)} km²</div>
-      <div>Max Area: {maxArea.toFixed(2)} km²</div>
-      <div>Area Ratio: {areaRatio.toFixed(4)}</div>
-      <div>Authalic Average Area: {authalicAverageArea.toFixed(2)} km²</div>
-      <div style={{fontWeight: 'bold'}}>Area Error: {areaError.toFixed(1)}%</div>
-      
-      <h3 style={{margin: '12px 0 8px', fontSize: '14px'}}>Area Statistics</h3>
-      <div>Min Perimeter: {minPerimeter.toFixed(2)} km</div>
-      <div>Max Perimeter: {maxPerimeter.toFixed(2)} km</div>
-      <div>Perimeter Ratio: {perimeterRatio.toFixed(4)}</div>
+
+      { isMobile ? (
+        <div style={{fontWeight: 'bold'}}>Area Error: {areaError.toFixed(1)}%</div> 
+      ) : (
+      <>
+        <h3 style={{margin: '0 0 8px', fontSize: '14px'}}>Area Statistics</h3>
+        <div>Min Area: {minArea.toFixed(2)} km²</div>
+        <div>Max Area: {maxArea.toFixed(2)} km²</div>
+        <div>Authalic Average Area: {authalicAverageArea.toFixed(2)} km²</div>
+        <div style={{fontWeight: 'bold'}}>Area Error: {areaError.toFixed(1)}%</div>
+      </>
+      )}
     </div>
   );
 };
@@ -663,6 +663,7 @@ const App: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
         perimeterLimits={perimeterLimits}
         tilingSystem={tilingSystem}
         onTilingSystemChange={handleTilingSystemChange}
+        isMobile={isMobile}
       />
       {!isMobile && (
         <CellVisualization 
