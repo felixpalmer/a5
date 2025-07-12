@@ -33,7 +33,8 @@
     "start": "tsup --watch",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "build": "tsup"
+    "build": "tsup",
+    "generate-fixtures": "node scripts/generate-wireframe-tests.cjs"
   },
   "dependencies": {
     "gl-matrix": "^3.4.3"
