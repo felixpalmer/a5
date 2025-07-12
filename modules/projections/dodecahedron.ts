@@ -7,9 +7,10 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 import { toCartesian, toSpherical, toFace, toPolar } from "../core/coordinate-transforms";
 import type { Radians, Spherical, Cartesian, Polar, Face } from "../core/coordinate-systems";
 import { GnomonicProjection } from './gnomonic';
+import { origins } from "../core/origin";
 import { distanceToEdge, interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from '../core/constants';
 import { PolyhedralProjection } from "./polyhedral";
-import { getQuintantPolar, getQuintantVertices, getPolarTriangleIndex } from "../core/tiling";
+import { getQuintantPolar, getQuintantVertices } from "../core/tiling";
 
 type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type VertexIndex = 0 | 1 | 2;
@@ -80,10 +81,14 @@ export class DodecahedronProjection {
     const polar = toPolar(face);
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
+    // Detect when point is beyond the edge of the dodecahedron face
     const [rho, gamma] = polar;
-    const P = toFace([rho, this.normalizeGamma(gamma)] as Polar);
-    const reflect = P[0] > distanceToEdge;
+    const D = toFace([rho, this.normalizeGamma(gamma)] as Polar)[0];
+    const reflect = D > distanceToEdge;
 
+    // In the standard case, both these are the same as we can unproject directly
+    // In the reflected case, both are off the edge of the dodecahedron face,
+    // with the squashed triangle unprojecing correctly onto the neighboring dodecahedron face.
     const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
     const faceTriangleSquashed = this.getFaceTriangle(faceTriangleIndex, reflect, true);
 
@@ -152,7 +157,7 @@ export class DodecahedronProjection {
     vec2.negate(A, A);
     const midpoint = even ? B : C;
 
-    // Squashing is important. A squashed triangle when unprojected will yeild the correct spherical triangle.
+    // Squashing is important. A squashed triangle when unprojected will yield the correct spherical triangle.
     vec2.scaleAndAdd(A, A, midpoint, squashed ? 1 + 1 / Math.cos(interhedralAngle) : 2);
 
     // Swap midpoint and corner to maintain correct vertex order
