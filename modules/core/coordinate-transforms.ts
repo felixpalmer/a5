@@ -85,7 +85,7 @@ export function toCartesian([theta, phi]: Spherical): Cartesian {
  * This is the angle between the Greenwich meridian and vector between the centers
  * of the first two origins (dodecahedron face centers)
  * 
- * It is chose such that the majority of the world's population, around 99.9% (and thus land mass) is located
+ * It is chosen such that the majority of the world's population, around 99.9% (and thus land mass) is located
  * in the first 8.5 dodecahedron faces, and thus come first along the Hilbert curve.
  */
 const LONGITUDE_OFFSET = 93 as Degrees;

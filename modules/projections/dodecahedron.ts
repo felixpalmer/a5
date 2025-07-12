@@ -12,10 +12,13 @@ import { distanceToEdge, interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from '../c
 import { PolyhedralProjection } from "./polyhedral";
 import { getQuintantVertices } from "../core/tiling";
 import { OriginId } from "a5/core/utils";
+import { CRS } from "./crs";
 
 type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type FaceTriangle = [Face, Face, Face];
 type SphericalTriangle = [Cartesian, Cartesian, Cartesian];
+
+const crs = new CRS();
 
 export class DodecahedronProjection {
   private vertices = new Set<Cartesian>();
@@ -149,11 +152,12 @@ export class DodecahedronProjection {
   }
 
   /**
-   * Finds a cached vertex that's close to the given vertex
+   * Finds a cached vertex that is close to a given vertex in the CRS.
+   * This is not very efficient, but as getSphericalTriangle is memoized, it doesn't matter.
    * @param newVertex The vertex to find a match for
    * @returns Cached vertex or null if not found
    */
-  private findCachedVertex(newVertex: Cartesian): Cartesian | null {
+  private _findCachedVertex(newVertex: Cartesian): Cartesian | null {
     for (const cachedVertex of this.vertices) {
       if (vec3.distance(newVertex, cachedVertex) < 1e-5) {
         return cachedVertex;
@@ -193,7 +197,7 @@ export class DodecahedronProjection {
       const rotated = toCartesian(this.gnomonic.inverse(rotatedPolar));
       vec3.transformQuat(rotated, rotated, origin.quat);
       
-      const cachedVertex = this.findCachedVertex(rotated);
+      const cachedVertex = this._findCachedVertex(rotated);
       if (cachedVertex) {
         return cachedVertex;
       }
