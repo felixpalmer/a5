@@ -79,19 +79,15 @@ export class DodecahedronProjection {
   inverse(face: Face, originTransform: quat, originRotation: Radians, resolution: number): Spherical {
     const polar = toPolar(face);
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
-    let faceTriangle = this.getFaceTriangle(faceTriangleIndex).map(face => vec2.clone(face)) as FaceTriangle;
 
     const [rho, gamma] = polar;
     const P = toFace([rho, this.normalizeGamma(gamma)] as Polar);
     const reflect = P[0] > distanceToEdge;
 
-    let faceTriangle2 = faceTriangle.map(face => vec2.clone(face)) as FaceTriangle;
-    if (reflect) {
-      faceTriangle = this.getFaceTriangle(faceTriangleIndex, true, false);
-      faceTriangle2 = this.getFaceTriangle(faceTriangleIndex, true, true);
-    }
+    const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
+    const faceTriangleSquashed = this.getFaceTriangle(faceTriangleIndex, reflect, true);
 
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangle2, originTransform, originRotation);
+    let sphericalTriangle = this.getSphericalTriangle(faceTriangleSquashed, originTransform, originRotation);
     const unprojected = this.polyhedral.inverse(face, faceTriangle, sphericalTriangle);
     return toSpherical(unprojected);
   }
