@@ -2,8 +2,8 @@ const { GnomonicProjection } = require("./a5-test.cjs");
 const fs = require("fs");
 const path = require("path");
 
-const PROJECTIONS_TESTS_DIR = path.join(__dirname, "./../tests/projections");
-const TEST_DATA_PATH = path.join(PROJECTIONS_TESTS_DIR, "gnomonic-test-data.json");
+const DATA_DIR = path.join(__dirname, "./../tests/projections/data");
+const TEST_DATA_PATH = path.join(DATA_DIR, "gnomonic-test-data.json");
 
 function generateRandomSpherical() {
   // Generate random spherical coordinates
