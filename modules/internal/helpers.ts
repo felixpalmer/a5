@@ -26,7 +26,7 @@ export function lonLatToFace(lonLat: LonLat, resolution: number, centroid?: LonL
   const ROTATIONS = [0, 0, 9, 6, 7, 6, 5, 4, 7, 7, 9, 0]; 
   mat2.fromRotation(rotation, ROTATIONS[origin.id] * PI_OVER_5 + origin.angle);
 
-  const dodecPoint = dodecahedron.forward(spherical, origin.quat, origin.angle, resolution);
+  const dodecPoint = dodecahedron.forward(spherical, origin.id, resolution);
   vec2.transformMat2(dodecPoint, dodecPoint, rotation);
 
   vec2.set(shift, 0, 0);

@@ -73,7 +73,7 @@ function _lonLatToEstimate(lonLat: LonLat, resolution: number): A5Cell {
   const spherical = fromLonLat(lonLat);
   const origin = {...findNearestOrigin(spherical)};
 
-  const dodecPoint = dodecahedron.forward(spherical, origin.quat, origin.angle, resolution);
+  const dodecPoint = dodecahedron.forward(spherical, origin.id, resolution);
   const polar = toPolar(dodecPoint);
   const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);

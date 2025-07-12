@@ -10,7 +10,8 @@ import { GnomonicProjection } from './gnomonic';
 import { origins } from "../core/origin";
 import { distanceToEdge, interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from '../core/constants';
 import { PolyhedralProjection } from "./polyhedral";
-import { getQuintantPolar, getQuintantVertices } from "../core/tiling";
+import { getQuintantVertices } from "../core/tiling";
+import { OriginId } from "a5/core/utils";
 
 type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type VertexIndex = 0 | 1 | 2;
@@ -42,16 +43,17 @@ export class DodecahedronProjection {
   /**
    * Projects spherical coordinates to face coordinates using dodecahedron projection
    * @param spherical Spherical coordinates [theta, phi]
-   * @param originTransform Origin quaternion transform
-   * @param originRotation Origin rotation in radians
+   * @param originId Origin ID
    * @param resolution Resolution parameter
    * @returns Face coordinates [x, y]
    */
-  forward(spherical: Spherical, originTransform: quat, originRotation: Radians, resolution: number): Face {
+  forward(spherical: Spherical, originId: OriginId, resolution: number): Face {
+    const origin = origins[originId];
+
     // Transform back origin space
     const unprojected = toCartesian(spherical);
     const inverseQuat = quat.create();
-    quat.invert(inverseQuat, originTransform);
+    quat.invert(inverseQuat, origin.quat);
     const out = vec3.create() as Cartesian;
     vec3.transformQuat(out, unprojected, inverseQuat);
 
@@ -60,11 +62,11 @@ export class DodecahedronProjection {
     const polar = this.gnomonic.forward(projectedSpherical);
 
     // Rotate around face axis to remove origin rotation
-    polar[1] = (polar[1] - originRotation) as Radians;
+    polar[1] = (polar[1] - origin.angle) as Radians;
 
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
     let faceTriangle = this.getFaceTriangle(faceTriangleIndex);
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangle, originTransform, originRotation);
+    let sphericalTriangle = this.getSphericalTriangle(faceTriangle, origin.quat, origin.angle);
 
     return this.polyhedral.forward(unprojected, sphericalTriangle, faceTriangle);
   }
@@ -72,12 +74,13 @@ export class DodecahedronProjection {
   /**
    * Unprojects face coordinates to spherical coordinates using dodecahedron projection
    * @param face Face coordinates [x, y]
-   * @param originTransform Origin quaternion transform
-   * @param originRotation Origin rotation in radians
+   * @param originId Origin ID
    * @param resolution Resolution parameter
    * @returns Spherical coordinates [theta, phi]
    */
-  inverse(face: Face, originTransform: quat, originRotation: Radians, resolution: number): Spherical {
+  inverse(face: Face, originId: OriginId, resolution: number): Spherical {
+    const origin = origins[originId];
+
     const polar = toPolar(face);
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
@@ -92,7 +95,7 @@ export class DodecahedronProjection {
     const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
     const faceTriangleSquashed = this.getFaceTriangle(faceTriangleIndex, reflect, true);
 
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangleSquashed, originTransform, originRotation);
+    let sphericalTriangle = this.getSphericalTriangle(faceTriangleSquashed, origin.quat, origin.angle);
     const unprojected = this.polyhedral.inverse(face, faceTriangle, sphericalTriangle);
     return toSpherical(unprojected);
   }
@@ -209,7 +212,7 @@ export class DodecahedronProjection {
    * @param gamma The gamma value to normalize
    * @returns Normalized gamma value
    */
-  private normalizeGamma(gamma: Radians): Radians {
+  normalizeGamma(gamma: Radians): Radians {
     const segment = gamma / TWO_PI_OVER_5;
     const sCenter = Math.round(segment);
     const sOffset = segment - sCenter;

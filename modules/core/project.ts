@@ -13,7 +13,7 @@ import { toLonLat, normalizeLongitudes } from './coordinate-transforms';
 const dodecahedron = new DodecahedronProjection();
 
 export function projectPoint(vertex: Face, origin: Origin, resolution: number): LonLat {
-  const point = dodecahedron.inverse(vertex, origin.quat, origin.angle, resolution);
+  const point = dodecahedron.inverse(vertex, origin.id, resolution);
   return toLonLat(point);
 }
 

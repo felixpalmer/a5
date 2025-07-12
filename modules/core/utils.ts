@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec2, mat2, mat2d, vec3, glMatrix, quat} from 'gl-matrix';
+import {vec2, mat2, mat2d, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Cartesian, Radians, Spherical, Face, Degrees, LonLat } from './coordinate-systems';
+import type { Radians, Spherical, Face, Degrees, LonLat } from './coordinate-systems';
 import { Orientation } from "./hilbert";
 
+export type OriginId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export type Origin = {
-  id: number;
+  id: OriginId;
   axis: Spherical;
   quat: quat;
   angle: Radians;
