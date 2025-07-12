@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    setupFiles: ['./tests/utils/matchers.ts']
   },
   resolve: {
     alias: {
