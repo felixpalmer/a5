@@ -4,7 +4,8 @@
 
 import {vec2, mat2, mat2d, vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Radians, Spherical, Face, Degrees, LonLat } from './coordinate-systems';
+import type { Cartesian, Radians, Spherical, Face, Degrees, LonLat } from './coordinate-systems';
+import { toCartesian, fromLonLat, toLonLat, toSpherical } from './coordinate-transforms';
 import { Orientation } from "./hilbert";
 
 export type Origin = {
@@ -161,22 +162,17 @@ export class PentagonShape {
    * @returns Normalized contour with consistent longitude values
    */
   static normalizeLongitudes(contour: Contour): Contour {
-    const longitudes = contour.map(([lon]) => {
-      return ((lon + 180) % 360 + 360) % 360 - 180;
-    });
-
-    // Calculate center longitude
-    let centerLon = longitudes.reduce((sum, p) => sum + p, 0) / longitudes.length;
-    
-    // If span is greater than 180 contour is spanning antimeridian, shift centerLon
-    const minLon = Math.min(...longitudes);
-    const maxLon = Math.max(...longitudes);
-    if (maxLon - minLon > 180) {
-      centerLon = -180;
+    // Calculate center in Cartesian space to avoid poles & antimeridian crossing issues
+    const points = contour.map(lonLat => toCartesian(fromLonLat(lonLat)));
+    const center = vec3.create() as Cartesian;
+    for (const point of points) {
+      vec3.add(center, center, point);
     }
+    vec3.normalize(center, center);
+    let centerLon = toLonLat(toSpherical(center))[0];
 
     // Normalize center longitude to be in the range -180 to 180
-    centerLon = ((centerLon + 180) % 360 + 360) % 360 - 180;
+    centerLon = ((centerLon + 180) % 360 + 360) % 360 - 180 as Degrees;
     
     // Normalize each point relative to center
     return contour.map(point => {
