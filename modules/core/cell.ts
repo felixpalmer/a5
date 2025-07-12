@@ -13,9 +13,8 @@ import { A5Cell, PentagonShape } from "./utils";
 import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
-import { projectPentagon, projectPoint } from "./project";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
-import { SphericalPolygonShape, SphericalPolygon } from "./spherical-polygon";
+import { SphericalPolygonShape } from "./spherical-polygon";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -116,8 +115,8 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
 export function cellToLonLat(cell: bigint): LonLat {
   const {S, segment, origin, resolution} = deserialize(cell);
   const pentagon = _getPentagon({S, segment, origin, resolution});
-  const lonLat = projectPoint(pentagon.getCenter() as Face, origin, resolution);
-  return normalizeLongitudes([lonLat])[0];
+  const point = dodecahedron.inverse(pentagon.getCenter() as Face, origin.id, resolution);
+  return toLonLat(point);
 }
 
 type CellToBoundaryOptions = {
@@ -144,15 +143,22 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
   // Split each edge into segments before projection
   // Important to do before projection to obtain equal area cells
   const splitPentagon = pentagon.splitEdges(segments);
-  const projectedPentagon = projectPentagon(splitPentagon, origin, resolution);
+  const vertices = splitPentagon.getVertices();
+
+  // Unproject to obtain lon/lat coordinates
+  const unprojectedVertices = vertices.map(vertex => dodecahedron.inverse(vertex, origin.id, resolution));
+  const boundary = unprojectedVertices.map(vertex => toLonLat(vertex));
+
+  // Normalize longitudes to handle antimeridian crossing
+  const normalizedBoundary = normalizeLongitudes(boundary);
 
   if (closedRing) {
-    projectedPentagon.push(projectedPentagon[0]);
+    normalizedBoundary.push(normalizedBoundary[0]);
   }
   // TODO: This is a patch to make the boundary CCW, but we should fix the winding order of the pentagon
   // throughout the whole codebase
-  projectedPentagon.reverse();
-  return projectedPentagon;
+  normalizedBoundary.reverse();
+  return normalizedBoundary;
 }
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
