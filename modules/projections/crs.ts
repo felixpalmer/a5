@@ -17,6 +17,7 @@ import { origins } from "../core/origin";
  */
 export class CRS {
   private vertices: Cartesian[] = [];
+  private invocations = 0;
 
   constructor() {
     this.addFaceCenters(); // 12 centers
@@ -29,6 +30,10 @@ export class CRS {
   }
 
   getVertex(point: Cartesian): Cartesian {
+    this.invocations++;
+    if (this.invocations === 10000) {
+      console.warn('Too many CRS invocations, results should be cached');
+    }
     for (const vertex of this.vertices) {
       if (vec3.distance(point, vertex) < 1e-5) {
         return vertex;

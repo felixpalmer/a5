@@ -152,21 +152,6 @@ export class DodecahedronProjection {
   }
 
   /**
-   * Finds a cached vertex that is close to a given vertex in the CRS.
-   * This is not very efficient, but as getSphericalTriangle is memoized, it doesn't matter.
-   * @param newVertex The vertex to find a match for
-   * @returns Cached vertex or null if not found
-   */
-  private _findCachedVertex(newVertex: Cartesian): Cartesian | null {
-    for (const cachedVertex of this.vertices) {
-      if (vec3.distance(newVertex, cachedVertex) < 1e-5) {
-        return cachedVertex;
-      }
-    }
-    return null;
-  }
-
-  /**
    * Gets the spherical triangle for a given face triangle index and origin
    * @param faceTriangleIndex Face triangle index
    * @param originId Origin ID
@@ -196,16 +181,7 @@ export class DodecahedronProjection {
       const rotatedPolar = [rho, gamma + origin.angle] as Polar;
       const rotated = toCartesian(this.gnomonic.inverse(rotatedPolar));
       vec3.transformQuat(rotated, rotated, origin.quat);
-      
-      // const cachedVertex = this._findCachedVertex(rotated);
-      const cachedVertex = crs.getVertex(rotated);
-      if (cachedVertex) {
-        return cachedVertex;
-      }
-      
-      // Add new vertex to cache and return it
-      this.vertices.add(rotated);
-      return rotated;
+      return crs.getVertex(rotated);
     });
     return sphericalTriangle as SphericalTriangle;
   }
