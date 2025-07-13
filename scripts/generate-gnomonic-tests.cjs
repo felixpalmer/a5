@@ -1,9 +1,5 @@
 const { GnomonicProjection } = require("./a5-test.cjs");
-const fs = require("fs");
-const path = require("path");
-
-const DATA_DIR = path.join(__dirname, "./../tests/projections/data");
-const TEST_DATA_PATH = path.join(DATA_DIR, "gnomonic-test-data.json");
+const { generateProjectionTests } = require("./generate-projection-tests.cjs");
 
 function generateRandomSpherical() {
   // Generate random spherical coordinates
@@ -23,88 +19,32 @@ function generateRandomPolar() {
   return [rho, gamma];
 }
 
-function generateGnomonicTestData() {
-  const gnomonic = new GnomonicProjection();
-  const testData = {
-    forward: [],
-    inverse: []
-  };
+// Define specific test values
+const SPECIFIC_SPHERICAL_INPUTS = [
+  [0, 0],           // North pole
+  [0, Math.PI/2],   // Equator at 0° longitude
+  [Math.PI/2, Math.PI/2], // Equator at 90° longitude
+  [Math.PI, Math.PI/2],   // Equator at 180° longitude
+  [Math.PI/4, Math.PI/4]  // Mid-latitude, mid-longitude
+];
 
-  // Generate 100 random spherical coordinates for forward tests
-  for (let i = 0; i < 100; i++) {
-    const input = generateRandomSpherical();
-    const expected = gnomonic.forward(input);
-    
-    testData.forward.push({
-      input: input,
-      expected: expected
-    });
-  }
+const SPECIFIC_POLAR_INPUTS = [
+  [0, 0],           // Origin
+  [1, 0],           // Unit distance, 0° angle
+  [1, Math.PI/2],   // Unit distance, 90° angle
+  [2, Math.PI],     // Distance 2, 180° angle
+  [0.5, Math.PI/4]  // Half unit distance, 45° angle
+];
 
-  // Generate 100 random polar coordinates for inverse tests
-  for (let i = 0; i < 100; i++) {
-    const input = generateRandomPolar();
-    const expected = gnomonic.inverse(input);
-    
-    testData.inverse.push({
-      input: input,
-      expected: expected
-    });
-  }
+const config = {
+  projectionName: 'gnomonic',
+  ProjectionClass: GnomonicProjection,
+  generateRandomForwardInput: generateRandomSpherical,
+  generateRandomInverseInput: generateRandomPolar,
+  specificForwardInputs: SPECIFIC_SPHERICAL_INPUTS,
+  specificInverseInputs: SPECIFIC_POLAR_INPUTS,
+  forwardTestCount: 100,
+  inverseTestCount: 100
+};
 
-  return testData;
-}
-
-function updateExistingTestData(existingData) {
-  const gnomonic = new GnomonicProjection();
-  
-  // Update expected values for forward tests
-  if (existingData.forward) {
-    existingData.forward.forEach(testCase => {
-      testCase.expected = gnomonic.forward(testCase.input);
-    });
-  }
-
-  // Update expected values for inverse tests
-  if (existingData.inverse) {
-    existingData.inverse.forEach(testCase => {
-      testCase.expected = gnomonic.inverse(testCase.input);
-    });
-  }
-
-  return existingData;
-}
-
-function main() {
-  try {
-    let testData;
-
-    // Check if test data file already exists
-    if (fs.existsSync(TEST_DATA_PATH)) {
-      console.log("Reading existing test data file...");
-      const existingData = JSON.parse(fs.readFileSync(TEST_DATA_PATH, 'utf8'));
-      testData = updateExistingTestData(existingData);
-      console.log("Updated expected values in existing test data");
-    } else {
-      console.log("Generating new test data...");
-      testData = generateGnomonicTestData();
-      console.log("Generated new test data with 100 forward and 100 inverse test cases");
-    }
-
-    // Ensure output directory exists
-    const outputDir = path.dirname(TEST_DATA_PATH);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
-
-    // Write test data to file
-    fs.writeFileSync(TEST_DATA_PATH, JSON.stringify(testData, null, 2));
-    console.log(`Test data written to: ${TEST_DATA_PATH}`);
-
-  } catch (error) {
-    console.error("Failed to generate gnomonic test data:", error);
-    process.exit(1);
-  }
-}
-
-main(); 
+generateProjectionTests(config); 
