@@ -22,7 +22,8 @@ function generateProjectionTestData(config) {
     specificForwardInputs = [],
     specificInverseInputs = [],
     forwardTestCount = 100,
-    inverseTestCount = 100
+    inverseTestCount = 100,
+    addStaticData
   } = config;
 
   const projection = new ProjectionClass();
@@ -78,6 +79,11 @@ function generateProjectionTestData(config) {
 
   // Add specific cases to the beginning
   testData.inverse.unshift(...specificInverseCases);
+
+  // Add static data if provided
+  if (addStaticData) {
+    testData = addStaticData(testData);
+  }
 
   return testData;
 }
