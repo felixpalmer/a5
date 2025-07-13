@@ -1,5 +1,5 @@
-const { GnomonicProjection } = require("./a5-test.cjs");
-const { generateProjectionTests } = require("./generate-projection-tests.cjs");
+const { GnomonicProjection } = require("../../a5-test.cjs");
+const { generateProjectionTests } = require("../projection-generator.cjs");
 
 function generateRandomSpherical() {
   // Generate random spherical coordinates

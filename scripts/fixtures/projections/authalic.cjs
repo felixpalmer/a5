@@ -1,5 +1,5 @@
-const { AuthalicProjection } = require("./a5-test.cjs");
-const { generateProjectionTests } = require("./generate-projection-tests.cjs");
+const { AuthalicProjection } = require("../../a5-test.cjs");
+const { generateProjectionTests } = require("../projection-generator.cjs");
 
 function generateRandomLatitude() {
   // Generate random latitude in radians

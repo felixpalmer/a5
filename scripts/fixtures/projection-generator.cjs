@@ -105,8 +105,8 @@ function updateExistingTestData(existingData, config) {
 
 function generateProjectionTests(config) {
   const { projectionName } = config;
-  const DATA_DIR = path.join(__dirname, "./../tests/projections/data");
-  const TEST_DATA_PATH = path.join(DATA_DIR, `${projectionName}-test-data.json`);
+  const DATA_DIR = path.join(__dirname, "./../../tests/projections/fixtures");
+  const TEST_DATA_PATH = path.join(DATA_DIR, `${projectionName}.json`);
 
   try {
     let testData;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { GnomonicProjection } from '../../modules/projections/gnomonic'
 import type { Polar, Spherical } from 'a5/core/coordinate-systems'
-import TEST_DATA from './data/gnomonic-test-data.json';
+import TEST_DATA from './fixtures/gnomonic.json';
 
 const gnomonic = new GnomonicProjection();
 

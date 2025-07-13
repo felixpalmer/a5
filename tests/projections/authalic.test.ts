@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { AuthalicProjection } from '../../modules/projections/authalic'
 import type { Radians } from 'a5/core/coordinate-systems'
-import TEST_DATA from './data/authalic-test-data.json'
+import TEST_DATA from './fixtures/authalic.json'
 
 const authalic = new AuthalicProjection();
 
