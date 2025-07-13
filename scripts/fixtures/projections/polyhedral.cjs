@@ -107,18 +107,9 @@ function generateRandomFacePoint() {
   return [x, y];
 }
 
+const polyhedral = new PolyhedralProjection();
 function generateRandomSphericalPoint() {
-  // Generate random spherical coordinates
-  const lat = (Math.random() - 0.5) * Math.PI;
-  const lon = Math.random() * 2 * Math.PI;
-  
-  // Convert to Cartesian
-  const cosLat = Math.cos(lat);
-  return [
-    cosLat * Math.cos(lon),
-    cosLat * Math.sin(lon),
-    Math.sin(lat)
-  ];
+  return polyhedral.inverse(generateRandomFacePoint(), TEST_FACE_TRIANGLE, TEST_SPHERICAL_TRIANGLE);
 }
 
 // Custom configuration for polyhedral projection
