@@ -109,7 +109,7 @@ export class PolyhedralProjection {
     const P = slerp(vec3.create() as Cartesian, B, C, q);
     const K = vectorDifference(A, P);
     const t = this.safeAcos(h * K) / this.safeAcos(K);
-    const out = slerp(vec3.create() as Cartesian, A, P, t);
+    const out = slerp([0, 0, 0] as Cartesian, A, P, t);
     return out;
   }
 

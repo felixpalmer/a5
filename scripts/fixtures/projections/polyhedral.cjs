@@ -130,10 +130,12 @@ const config = {
   specificInverseInputs: ALL_SPECIFIC_POINTS,
   forwardTestCount: 50,
   inverseTestCount: 50,
-  addStaticData: (testData) => {
+  forwardParams: [TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE],
+  inverseParams: [TEST_FACE_TRIANGLE, TEST_SPHERICAL_TRIANGLE],
+  postGenerate: (testData) => {
     testData.static = {
-      testSphericalTriangle: TEST_SPHERICAL_TRIANGLE,
-      testFaceTriangle: TEST_FACE_TRIANGLE
+      TEST_SPHERICAL_TRIANGLE,
+      TEST_FACE_TRIANGLE
     };
     return testData;
   }
