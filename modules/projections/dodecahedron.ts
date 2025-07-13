@@ -21,7 +21,6 @@ type SphericalTriangle = [Cartesian, Cartesian, Cartesian];
 const crs = new CRS();
 
 export class DodecahedronProjection {
-  private vertices = new Set<Cartesian>();
   private faceTriangles: FaceTriangle[] = [];
   private sphericalTriangles: SphericalTriangle[] = [];
   private polyhedral: PolyhedralProjection;
@@ -36,10 +35,9 @@ export class DodecahedronProjection {
    * Projects spherical coordinates to face coordinates using dodecahedron projection
    * @param spherical Spherical coordinates [theta, phi]
    * @param originId Origin ID
-   * @param resolution Resolution parameter
    * @returns Face coordinates [x, y]
    */
-  forward(spherical: Spherical, originId: OriginId, resolution: number): Face {
+  forward(spherical: Spherical, originId: OriginId): Face {
     const origin = origins[originId];
 
     // Transform back origin space
@@ -67,10 +65,9 @@ export class DodecahedronProjection {
    * Unprojects face coordinates to spherical coordinates using dodecahedron projection
    * @param face Face coordinates [x, y]
    * @param originId Origin ID
-   * @param resolution Resolution parameter
    * @returns Spherical coordinates [theta, phi]
    */
-  inverse(face: Face, originId: OriginId, resolution: number): Spherical {
+  inverse(face: Face, originId: OriginId): Spherical {
     const polar = toPolar(face);
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 

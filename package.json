@@ -34,7 +34,7 @@
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "build": "tsup",
-    "generate-fixtures": "yarn build && node scripts/generate-wireframe-tests.cjs"
+    "generate-fixtures": "yarn build && node scripts/generate-fixtures.cjs"
   },
   "dependencies": {
     "gl-matrix": "^3.4.3"
