@@ -7,7 +7,7 @@ import {lonLatToCell, cellToBoundary, cellToChildren, cellToParent} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 
-const MAX_RESOLUTION = 31;
+const MAX_RESOLUTION = 30;
 
 const INITIAL_VIEW_STATE = { longitude: -0.1276, latitude: 51.50735, zoom: 10, minZoom: 2, maxZoom: 27 };
 
@@ -34,7 +34,7 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
   }, []);
 
   // Calculate resolution based on zoom level
-  let resolution = Math.min(Math.floor(2 * viewState.zoom - 4), Math.floor(viewState.zoom + 1));
+  let resolution = Math.min(Math.floor(2 * viewState.zoom - 5), Math.floor(viewState.zoom));
   resolution = Math.max(1, Math.min(MAX_RESOLUTION, resolution));
 
   // Memoize the entire cells calculation

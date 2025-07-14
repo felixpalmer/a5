@@ -30,7 +30,7 @@ const App: React.FC = () => {
   // Handle map clicks
   const handleClick = useCallback((info, event) => {
     if (!info.coordinate) return;
-    const resolution = Math.max(1, Math.min(28, Math.floor(zoomRef.current + 2)));
+    const resolution = Math.max(1, Math.min(28, Math.floor(zoomRef.current + 1)));
     const cell = lonLatToCell(info.coordinate, resolution);
     setCellsSet(prevSet => {
       const newSet = new Set(prevSet);
