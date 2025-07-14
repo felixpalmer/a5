@@ -11,8 +11,7 @@ export {cellToBoundary, cellToLonLat, lonLatToCell} from './core/cell';
 export {hexToBigInt, bigIntToHex} from './core/hex';
 
 // Hierarchy
-export {cellToParent, cellToChildren, getResolution} from './core/serialization';
-export {getRes0Cells} from './core/cell-info';
+export {cellToParent, cellToChildren, getResolution, getRes0Cells} from './core/serialization';
 
 // Types
 export type {Degrees, Radians} from './core/coordinate-systems';

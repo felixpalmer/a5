@@ -1,9 +1,10 @@
 import { describe, it, expect, test } from 'vitest'
-import { getResolution, serialize, deserialize, MAX_RESOLUTION, REMOVAL_MASK, FIRST_HILBERT_RESOLUTION } from 'a5/core/serialization';
+import { getResolution, serialize, deserialize, MAX_RESOLUTION, REMOVAL_MASK, FIRST_HILBERT_RESOLUTION, getRes0Cells } from 'a5/core/serialization';
 import { A5Cell } from 'a5/core/utils';
 import { origins } from 'a5/core/origin';
 import TEST_IDS from './test-ids.json';
 import { cellToParent, cellToChildren } from 'a5/core/serialization';
+import { bigIntToHex } from 'a5/core/hex';
 
 const RESOLUTION_MASKS = [
   // Non-Hilbert resolutions
@@ -223,6 +224,39 @@ describe('hierarchy', () => {
       // Update current cells for next iteration
       currentCells = allChildren;
     }
+  });
+});
+
+describe('getRes0Cells', () => {
+  test('returns 12 resolution 0 cells', () => {
+    const res0Cells = getRes0Cells();
+    expect(res0Cells.length).toBe(12);
+    
+    // Each cell should have resolution 0
+    res0Cells.forEach(cell => {
+      expect(getResolution(cell)).toBe(0);
+    });
+    
+    // Expected hex values for the 12 resolution 0 cells
+    const expectedHexValues = [
+      '200000000000000',
+      '600000000000000',
+      'a00000000000000',
+      'e00000000000000',
+      '1200000000000000',
+      '1600000000000000',
+      '1a00000000000000',
+      '1e00000000000000',
+      '2200000000000000',
+      '2600000000000000',
+      '2a00000000000000',
+      '2e00000000000000'
+    ];
+    
+    // Verify each cell matches the expected hex value
+    res0Cells.forEach((cell, index) => {
+      expect(bigIntToHex(cell)).toBe(expectedHexValues[index]);
+    });
   });
 });
 
