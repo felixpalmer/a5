@@ -2,26 +2,53 @@
 
 Functions for working with A5 cell information and metadata.
 
-### getRes0Cells
+### getNumCells
 
-Resolution 0 cells are the foundational cells of the A5 system, serving as a starting point for all higher-resolution subdivisions in the hierarchy.
+Returns the number of cells at a given resolution level.
 
 ```ts
-function getRes0Cells(): bigint[];
+function getNumCells(resolution: number): number;
 ```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
 
 #### Return value
 
-- **(bigint[])** Array of 12 A5 cell identifiers representing the dodecahedron faces
+- **(number)** Number of cells at the given resolution
 
 #### Example
 
 ```ts
-import { getRes0Cells, cellToChildren } from 'a5-js';
+import { getNumCells } from 'a5-js';
 
-const res0Cells = getRes0Cells();
-const res1Cells= res0Cells.flatMap(cell => cellToChildren(cell, 1));
-
+console.log(getNumCells(0)); // 12
+console.log(getNumCells(1)); // 60
+console.log(getNumCells(2)); // 240
+console.log(getNumCells(3)); // 960
 ```
 
-## Resolution 0 Cells
+### cellArea
+
+Returns the area of a cell at a given resolution in square kilometers.
+
+```ts
+function cellArea(resolution: number): number;
+```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
+
+#### Return value
+
+- **(number)** Area of a cell in square meters
+
+#### Example
+
+```ts
+import { cellArea } from 'a5-js';
+
+console.log(cellArea(0)); // ~42,506,000 km² 1 12th of world's surface
+```
