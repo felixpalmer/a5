@@ -8,9 +8,10 @@ const cellInfoData = { numCells: [], cellArea: [] };
 
 for (let resolution = 0; resolution <= 30; resolution++) {
   const count = getNumCells(resolution);
+  const countBigInt = getNumCells(BigInt(resolution));
   const areaM2 = cellArea(resolution);
   
-  cellInfoData.numCells.push({ resolution, count });
+  cellInfoData.numCells.push({ resolution, count, countBigInt: countBigInt.toString() });
   cellInfoData.cellArea.push({ resolution, areaM2 });
 }
 

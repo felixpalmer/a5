@@ -6,6 +6,7 @@ describe('getNumCells', () => {
   test('returns correct number of cells for all resolutions', () => {
     cellInfoFixtures.numCells.forEach(fixture => {
       expect(getNumCells(fixture.resolution)).toBe(fixture.count);
+      expect(getNumCells(BigInt(fixture.resolution)).toString()).toBe(fixture.countBigInt);
     });
   });
 });
@@ -13,7 +14,7 @@ describe('getNumCells', () => {
 describe('cellArea', () => {
   test('returns correct area for all resolutions', () => {
     cellInfoFixtures.cellArea.forEach(fixture => {
-      expect(cellArea(fixture.resolution)).toBeCloseTo(fixture.areaM2, 0);
+      expect(cellArea(fixture.resolution)).toBe(fixture.areaM2);
     });
   });
 }); 
