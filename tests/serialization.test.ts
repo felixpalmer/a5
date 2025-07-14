@@ -238,20 +238,8 @@ describe('getRes0Cells', () => {
     });
     
     // Expected hex values for the 12 resolution 0 cells
-    const expectedHexValues = [
-      '200000000000000',
-      '600000000000000',
-      'a00000000000000',
-      'e00000000000000',
-      '1200000000000000',
-      '1600000000000000',
-      '1a00000000000000',
-      '1e00000000000000',
-      '2200000000000000',
-      '2600000000000000',
-      '2a00000000000000',
-      '2e00000000000000'
-    ];
+    const expectedHexValues = ['2', '6', 'a', 'e', '12', '16', '1a', '1e', '22', '26', '2a', '2e']
+      .map((hex, i) => hex.padEnd(i < 4 ? 15 : 16, '0'));
     
     // Verify each cell matches the expected hex value
     res0Cells.forEach((cell, index) => {
