@@ -21,7 +21,7 @@ export const ALL_ONES = 0xffffffffffffffffn;
 
 export function getResolution(index: bigint): number {
   // Find resolution from position of first non-00 bits from the right
-  let resolution = MAX_RESOLUTION- 1;
+  let resolution = MAX_RESOLUTION - 1;
   let shifted = index >> 1n; // TODO check if non-zero for point level
   while (resolution > -1 && (shifted & 0b1n) === 0n) {
     resolution -= 1;
@@ -59,7 +59,6 @@ export function deserialize(index: bigint): A5Cell {
   }
 
   if (!origin) {
-    debugger;
     throw new Error(`Could not parse origin: ${top6Bits}`);
   }
 
