@@ -81,7 +81,7 @@ describe('serialize', () => {
 
   test('encodes origin, segment and S correctly', () => {
     // Origin 0 has first quintant 4, so start use segment 4 to obtain start of Hilbert curve
-    const cell: A5Cell = { origin: origin0, segment: 4, S: 0n, resolution: 30 };
+    const cell: A5Cell = { origin: origin0, segment: 4, S: 0n, resolution: MAX_RESOLUTION - 1 };
     const serialized = serialize(cell);
     expect(serialized).toBe(0b10n)
   });
@@ -208,9 +208,9 @@ describe('hierarchy', () => {
 
   test('base cell division counts', () => {
     // Start with the base cell (resolution 0)
-    const baseCell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 0});
+    const baseCell = serialize({origin: origin0, segment: 0, S: 0n, resolution: -1});
     let currentCells = [baseCell];
-    const expectedCounts = [1, 12, 60, 240, 960]; // 1, 12, 12*5, 12*5*4, 12*5*4*4
+    const expectedCounts = [12, 60, 240, 960]; // 12, 12*5, 12*5*4, 12*5*4*4
 
     // Test each resolution level up to 4
     for (let resolution = 0; resolution < 4; resolution++) {
@@ -218,7 +218,7 @@ describe('hierarchy', () => {
       const allChildren = currentCells.flatMap(cell => cellToChildren(cell));
       
       // Verify the total number of cells matches expected
-      expect(allChildren.length).toBe(expectedCounts[resolution + 1]);
+      expect(allChildren.length).toBe(expectedCounts[resolution]);
       
       // Update current cells for next iteration
       currentCells = allChildren;
