@@ -40,6 +40,7 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
   // Memoize the entire cells calculation
   const data = useMemo(() => {
     const cellId = lonLatToCell(cellLocation, resolution);
+    console.log(cellId.toString(2));
     const children = showChildren ? cellToChildren(cellId) : [];
     const parent = showParent ? cellToParent(cellId) : null;
     return {cellId, children: [cellId, ...children, ...(parent ? [parent] : [])]};
@@ -85,7 +86,7 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
   const originSegmentBits = 6;
 
   // Then follow bits to encode the position along the hilbert curve
-  const hilbertBits = (2 * Math.max(0, resolution - 2)) + originSegmentBits;
+  const hilbertBits = (2 * Math.max(0, resolution - 1)) + originSegmentBits;
 
   // Then two bits to encode the resolution
   const resolutionBits = 2 + hilbertBits;

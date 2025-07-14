@@ -48,10 +48,8 @@ export function deserialize(index: bigint): A5Cell {
   // Find origin and segment that multiply to give this product
   let origin: Origin, segment: number;
 
-  console.log(resolution)
   if (resolution === 0) {
     const originId: number = top6Bits;
-    console.log('originId', originId);
     origin = origins[originId];
     segment = 0;
   } else {
