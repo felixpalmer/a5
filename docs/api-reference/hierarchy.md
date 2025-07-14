@@ -1,10 +1,10 @@
 # Hierarchy
 
-The A5 tiling system supports subdividing the world all the way from a single cell for the whole planet to milimeter-scale leaf cells.
+The A5 tiling system supports subdividing the world all the way from the 12 dodecahedron faces at resolution 0 to milimeter-scale leaf cells.
 
 The cells are arranged in a logical hierarchy, with each cell having an integer resolution. Each cell has exactly 4 child cells, at the next resolution level, and one parent cell at the previous resolution level.
 
-Naturally the single resolution 0 cell, representing the whole world has no parent and similarly leaf cells no children.
+Naturally the 12 resolution 0 cells, representing the dodecahedron faces, have no parent and similarly leaf cells no children.
 
 ### getResolution
 

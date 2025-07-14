@@ -7,7 +7,7 @@ import { generateWireframe } from 'a5-internal/wireframe';
 
 import {fromLonLat, toCartesian} from 'a5/core/coordinate-transforms';
 
-const RESOLUTION = 3;
+const RESOLUTION = 2;
 
 // Create a cache for geometries
 const geometryCache = new Map<number, BufferGeometry>();

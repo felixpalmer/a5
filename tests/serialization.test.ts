@@ -7,7 +7,6 @@ import { cellToParent, cellToChildren } from 'a5/core/serialization';
 
 const RESOLUTION_MASKS = [
   // Non-Hilbert resolutions
-  '0000000000000000000000000000000000000000000000000000000000000000', // Globe
   '0000001000000000000000000000000000000000000000000000000000000000', // Dodecahedron faces
   '0000000100000000000000000000000000000000000000000000000000000000', // Quintants
   // Hilbert resolutions
@@ -91,11 +90,11 @@ describe('serialize', () => {
     const cell: A5Cell = {
       origin: origin0,
       segment: 0,
-      S: 16n, // Too large for resolution 2 (max is 15)
-      resolution: 4
+      S: 16n, // Too large for resolution 1 (max is 15)
+      resolution: 3
     };
     
-    expect(() => serialize(cell)).toThrow('S (16) is too large for resolution level 4');
+    expect(() => serialize(cell)).toThrow('S (16) is too large for resolution level 3');
   });
 
   test('throws error when resolution exceeds maximum', () => {
@@ -157,8 +156,8 @@ describe('hierarchy', () => {
   });
 
   test('non-Hilbert to non-Hilbert hierarchy', () => {
-    // Test resolution 1 to 2 (both non-Hilbert)
-    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 1});
+    // Test resolution 0 to 1 (both non-Hilbert)
+    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 0});
     const children = cellToChildren(cell);
     expect(children.length).toBe(5);
     children.forEach(child => {
@@ -168,8 +167,8 @@ describe('hierarchy', () => {
   });
 
   test('non-Hilbert to Hilbert hierarchy', () => {
-    // Test resolution 2 to 3 (non-Hilbert to Hilbert)
-    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 2});
+    // Test resolution 1 to 2 (non-Hilbert to Hilbert)
+    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 1});
     const children = cellToChildren(cell);
     expect(children.length).toBe(4);
     children.forEach(child => {
@@ -179,9 +178,9 @@ describe('hierarchy', () => {
   });
 
   test('Hilbert to non-Hilbert hierarchy', () => {
-    // Test resolution 3 to 2 (Hilbert to non-Hilbert)
-    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 3});
-    const parent = cellToParent(cell, 2);
+    // Test resolution 2 to 1 (Hilbert to non-Hilbert)
+    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 2});
+    const parent = cellToParent(cell, 1);
     const children = cellToChildren(parent);
     expect(children.length).toBe(4);
     expect(children).toContain(cell);

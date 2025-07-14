@@ -43,7 +43,7 @@ function generateWireframeTest(resolution, segments = "auto") {
 function main() {
   try {
     // Generate files for resolutions 1-4 with both segment types
-    for (let resolution = 1; resolution <= 4; resolution++) {
+    for (let resolution = 0; resolution <= 4; resolution++) {
       generateWireframeTest(resolution, 1);
       generateWireframeTest(resolution, "auto");
     }

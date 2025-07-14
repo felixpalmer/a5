@@ -47,7 +47,7 @@ function Scene({ resolution }: { resolution: number }) {
 }
 
 const App: React.FC = () => {
-  const [resolution, setResolution] = useState(3);
+  const [resolution, setResolution] = useState(2);
 
   return (
     <div style={{

@@ -11,7 +11,7 @@ export function generateWireframe(resolution: number, {segments = 1}: {segments?
   let cells: LonLat[][] = [];
   let baseCells = 1;
   let stamp = 0n;
-  if (resolution === 1) {
+  if (resolution === 0) {
     baseCells = 12;
     stamp = 0b10n << 56n;
   } else {

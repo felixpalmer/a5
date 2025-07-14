@@ -6,7 +6,7 @@ import { A5Cell } from "./utils";
 import { Origin } from './utils';
 import { origins } from "./origin";
 
-export const FIRST_HILBERT_RESOLUTION = 3;
+export const FIRST_HILBERT_RESOLUTION = 2;
 export const MAX_RESOLUTION = 31;
 export const HILBERT_START_BIT = 58n; // 64 - 6 bits for origin & segment
 

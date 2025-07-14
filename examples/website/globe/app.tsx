@@ -6,7 +6,7 @@ import { DoubleSide, TextureLoader, RepeatWrapping, MOUSE, BufferGeometry, Buffe
 import { generateWireframe } from 'a5-internal/wireframe';
 import { lonLatToFace } from 'a5-internal/helpers';
 
-const RESOLUTION = 3;
+const RESOLUTION = 2;
 
 // Create a cache outside the component
 const geometryCache = new Map<number, BufferGeometry>();
