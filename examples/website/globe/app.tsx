@@ -6,7 +6,7 @@ import { DoubleSide, TextureLoader, RepeatWrapping, MOUSE, BufferGeometry, Buffe
 import { generateWireframe } from 'a5-internal/wireframe';
 import { lonLatToFace } from 'a5-internal/helpers';
 
-const RESOLUTION = 2;
+const RESOLUTION = 4;
 
 // Create a cache outside the component
 const geometryCache = new Map<number, BufferGeometry>();
@@ -165,7 +165,7 @@ const App: React.FC = () => {
         <input
           type="range"
           min="2"
-          max="7"
+          max="6"
           value={resolution}
           onChange={(e) => setResolution(Number(e.target.value))}
           style={{ width: '300px' }}

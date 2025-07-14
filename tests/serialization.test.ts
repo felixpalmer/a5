@@ -102,7 +102,7 @@ describe('serialize', () => {
       origin: origin0,
       segment: 0,
       S: 0n,
-      resolution: 32 // MAX_RESOLUTION is 31
+      resolution: 31 // MAX_RESOLUTION is 30
     }
 
     expect(() => serialize(cell)).toThrow('Resolution (32) is too large');

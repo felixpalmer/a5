@@ -16,7 +16,7 @@ const OSLO_DATA = '/data/oslo.json';
 
 const COLOR_RANGE = [ [211, 242, 163], [151, 225, 150], [108, 192, 139], [76, 155, 130], [33, 122, 121], [16, 89, 101], [7, 64, 80] ] as Color[];
 
-const A5_RESOLUTION = 14;
+const A5_RESOLUTION = 13;
 const H3_RESOLUTION = 8;
 
 const INITIAL_VIEW_STATE = {

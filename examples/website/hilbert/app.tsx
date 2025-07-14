@@ -11,11 +11,11 @@ import {DataFilterExtension} from '@deck.gl/extensions';
 import RangeInput from './range-input';
 
 const INITIAL_VIEW_STATE = { longitude: 0, latitude: 60, zoom: 1.5 };
-const RESOLUTION = 3;
+const RESOLUTION = 4;
 const CELLS_PER_SEGMENT = Math.pow(4, RESOLUTION);
 const CELLS_PER_FACE = 5 * CELLS_PER_SEGMENT;
 
-const DATA = generateWireframe(RESOLUTION + 2);
+const DATA = generateWireframe(RESOLUTION + 1);
 
 // End of high-density region in final resolution level
 const HD_CUTOFF = DATA.length * (32 + 8 + 2 + 0.5) / 60;

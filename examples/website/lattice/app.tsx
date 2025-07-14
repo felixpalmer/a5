@@ -40,7 +40,7 @@ function crossCheck(cells: Cell[], cells2: Cell[]) {
 }
 
 const App: React.FC = () => {
-  const [resolution, setResolution] = useState(2);
+  const [resolution, setResolution] = useState(3);
   const [layerVisibility, setLayerVisibility] = useState({
     triangles: true,
     path: true,

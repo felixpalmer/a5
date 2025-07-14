@@ -9,7 +9,7 @@ import { LonLat } from 'a5';
 import { Color, Position } from '@deck.gl/core';
 const PLACES = '/data/ne_10m_populated_places_simple.geojson';
 const INITIAL_VIEW_STATE = { longitude: -5, latitude: 50, zoom: 5 };
-const RESOLUTION = 9;
+const RESOLUTION = 8;
 
 type A5CellWithPopulation = { id: bigint, point: Position, population: number };
 type SourcePoint = { point: Position, population: number };

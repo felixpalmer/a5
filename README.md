@@ -6,7 +6,7 @@
 
 ## Introduction
   
-A5 is a geospatial index that partitions the world into [pentagonal cells](https://a5geo.org/examples/teohedron-dodecahedron). The cells are available at [32 different resolution levels](https://a5geo.org/examples/hierarchy), with the largest cell covering the whole world, and the smallest less than 30mm². Within each resolution level the cells have [equal area](https://a5geo.org/examples/area), as per the [OGC definition](https://docs.ogc.org/as/20-040r3/20-040r3.html#toc29).
+A5 is a geospatial index that partitions the world into [pentagonal cells](https://a5geo.org/examples/teohedron-dodecahedron). The cells are available at [31 different resolution levels](https://a5geo.org/examples/hierarchy), with the largest cell covering the whole world, and the smallest less than 30mm². Within each resolution level the cells have [equal area](https://a5geo.org/examples/area), as per the [OGC definition](https://docs.ogc.org/as/20-040r3/20-040r3.html#toc29).
 
 A5 cells provide simple way to represent spatial data as a collection of cells, which together represent regions on the globe. These can be anything, from city districts to parcels of land. Once data is in a cell-based format, it becomes much simpler to perform analysis such as calculating the correlation between different variables - for example elevation and crop yield.
 

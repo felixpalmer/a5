@@ -151,8 +151,8 @@ const App: React.FC = () => {
         </div>
         <input
           type="range"
-          min="1"
-          max="5"
+          min="0"
+          max="4"
           value={resolution}
           onChange={(e) => setResolution(Number(e.target.value))}
           style={{ 
