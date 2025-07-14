@@ -14,7 +14,7 @@ const AUTHALIC_AREA = 4 * Math.PI * AUTHALIC_RADIUS * AUTHALIC_RADIUS; // m^2
 export function getNumCells(resolution: number): number {
   if (resolution < 0) return 0;
   if (resolution === 0) return 12;
-  return 60 * Math.pow(4, resolution - 1);
+  return 60 * (4 ** (resolution - 1));
 }
 
 /**

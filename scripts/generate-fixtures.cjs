@@ -1,6 +1,9 @@
 const path = require("path");
 
-// Import all projection generators
+// Core tests
+require("./fixtures/core/cell-info.cjs");
+
+// Projection generators
 require("./fixtures/projections/gnomonic.cjs");
 require("./fixtures/projections/authalic.cjs");
 require("./fixtures/projections/polyhedral.cjs");
