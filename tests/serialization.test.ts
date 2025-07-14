@@ -105,7 +105,7 @@ describe('serialize', () => {
       resolution: 31 // MAX_RESOLUTION is 30
     }
 
-    expect(() => serialize(cell)).toThrow('Resolution (32) is too large');
+    expect(() => serialize(cell)).toThrow('Resolution (31) is too large');
   });
 
   describe('round trip', () => {

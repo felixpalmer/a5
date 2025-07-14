@@ -19,6 +19,10 @@ export const ORIGIN_SEGMENT_MASK = 0xfc00000000000000n;
 // All 64 bits 1
 export const ALL_ONES = 0xffffffffffffffffn;
 
+// Abstract cell that contains the whole world, has resolution -1 and 12 children,
+// which are the res0 cells.
+export const WORLD_CELL = 0n;
+
 export function getResolution(index: bigint): number {
   // Find resolution from position of first non-00 bits from the right
   let resolution = MAX_RESOLUTION - 1;
@@ -80,7 +84,7 @@ export function serialize(cell: A5Cell): bigint {
     throw new Error(`Resolution (${resolution}) is too large`);
   }
 
-  if (resolution === -1) return 0n;
+  if (resolution === -1) return WORLD_CELL;
 
   // Position of resolution marker as bit shift from LSB
   let R;
