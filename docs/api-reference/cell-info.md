@@ -1,6 +1,6 @@
 # Cell Info
 
-Functions for working with A5 cell information and metadata.
+Functions for obtaining information about A5 cells.
 
 ### getNumCells
 
@@ -31,7 +31,8 @@ console.log(getNumCells(3)); // 960
 
 ### cellArea
 
-Returns the area of a cell at a given resolution in square kilometers.
+Returns the area of a cell at a given resolution in square kilometers. Within a resolution level, all cells
+have exactly the same area.
 
 ```ts
 function cellArea(resolution: number): number;
@@ -50,5 +51,5 @@ function cellArea(resolution: number): number;
 ```ts
 import { cellArea } from 'a5-js';
 
-console.log(cellArea(0)); // ~42,506,000 km² 1 12th of world's surface
+console.log(cellArea(20)); // ~30 m²
 ```

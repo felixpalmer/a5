@@ -1,4 +1,4 @@
-import { describe, it, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { getNumCells, cellArea } from 'a5/core/cell-info';
 import cellInfoFixtures from './fixtures/cell-info.json';
 
