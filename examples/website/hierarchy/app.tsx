@@ -35,7 +35,7 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
 
   // Calculate resolution based on zoom level
   let resolution = Math.min(Math.floor(2 * viewState.zoom - 5), Math.floor(viewState.zoom));
-  resolution = Math.max(1, Math.min(MAX_RESOLUTION, resolution));
+  resolution = Math.max(0, Math.min(MAX_RESOLUTION, resolution));
 
   // Memoize the entire cells calculation
   const data = useMemo(() => {

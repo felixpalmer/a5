@@ -87,7 +87,7 @@ export function serialize(cell: A5Cell): bigint {
   let R;
   if (resolution < FIRST_HILBERT_RESOLUTION) {
     // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
-    R = BigInt(resolution);
+    R = BigInt(resolution + 1);
   } else {
     // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
     const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
