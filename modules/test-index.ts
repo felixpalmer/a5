@@ -12,5 +12,10 @@ export { DodecahedronProjection } from './projections/dodecahedron';
 export { PolyhedralProjection } from './projections/polyhedral';
 export { CRS } from './projections/crs';
 
+// Export geometry classes for testing
+export { SphericalPolygonShape } from './geometry/spherical-polygon';
+export { SphericalTriangleShape } from './geometry/spherical-triangle';
+export { PentagonShape } from './geometry/pentagon';
+
 // Export core types needed for projections
 export type { Polar, Spherical } from './core/coordinate-systems'; 

@@ -2,58 +2,42 @@ import { describe, it, expect } from 'vitest'
 import { SphericalPolygonShape, type SphericalPolygon } from 'a5/geometry/spherical-polygon'
 import type { Cartesian } from 'a5/core/coordinate-systems'
 import { vec3 } from 'gl-matrix'
+import fixtures from './fixtures/spherical-polygon.json'
 
 describe('spherical-polygon.ts', () => {
-  const testPolygons: SphericalPolygon[] = [
-    // Simple triangle near north pole
-    [
-      [0.11043152607484655, 0, 0.9938837346736189] as Cartesian,
-      [-0.05521344008179805, 0.0960713857423286, 0.9938419214723649] as Cartesian,
-      [-0.05521344008179805, -0.0960713857423286, 0.9938419214723649] as Cartesian
-    ],
-    // Pentagon around equator
-    [
-      [1, 0, 0] as Cartesian,
-      [0.3090182326136022, 0.9510561139661348, 0] as Cartesian,
-      [-0.8089090028554804, 0.58793386116072, 0] as Cartesian,
-      [-0.8089090028554804, -0.58793386116072, 0] as Cartesian,
-      [0.3090182326136022, -0.9510561139661348, 0] as Cartesian
-    ]
-  ];
+  // Helper function to convert object with "0", "1", "2" properties to array
+  function objToArray(obj: any): number[] {
+    if (Array.isArray(obj)) return obj;
+    return [obj["0"], obj["1"], obj["2"]];
+  }
 
   describe('getBoundary', () => {
     it('returns boundary points with different segment counts', () => {
-      const expectedResults = [
-        // Triangle with 1 segment
-        [
-          [0.11043152956009886, 0, 0.9938837342863687],
-          [-0.055213440211813215, 0.0960713848509679, 0.9938419215513068],
-          [-0.055213440211813215, -0.0960713848509679, 0.9938419215513068],
-          [0.11043152956009886, 0, 0.9938837342863687]
-        ],
-        // Pentagon with 2 segments
-        [
-          [0.9999999999999998, 0, 2.220446049250313e-16],
-          [0.8090173744213622, 0.5877847292031038, -2.220446049250313e-16],
-          [0.3090182226643831, 0.9510561171988461, -5.868212804571726e-9],
-          [-0.3089290367688098, 0.9510850909572153, -5.868212582527121e-9],
-          [-0.8089090123512248, 0.5879338480959965, 1.6546987779975098e-8],
-          [-1.0000000000000002, -6.600235413767308e-9, 1.6546987668952795e-8],
-          [-0.8089090123512248, -0.5879338480959965, 1.6546987779975098e-8],
-          [-0.30892902454635696, -0.9510850949272814, 1.6546988224064307e-8],
-          [0.3090182226643831, -0.9510561171988461, -5.868212804571726e-9],
-          [0.8090173734529743, -0.5877847305359768, -5.868213026616331e-9],
-          [0.9999999999999998, 0, 2.220446049250313e-16]
-        ]
-      ];
-
-      testPolygons.forEach((vertices, i) => {
-        const polygon = new SphericalPolygonShape(vertices);
-        const result = polygon.getBoundary(i + 1, true);
+      (fixtures as any[]).forEach((fixture: any, i: number) => {
+        const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
         
-        expect(result.length).toBe(expectedResults[i].length);
-        result.forEach((point, j) => {
-          expect(point).toBeCloseToArray(expectedResults[i][j], 6);
+        // Test boundary with 1 segment
+        const boundary1 = polygon.getBoundary(1, true);
+        expect(boundary1.length).toBe(fixture.boundary1.length);
+        boundary1.forEach((point: any, j: number) => {
+          const expected = objToArray(fixture.boundary1[j]);
+          expect(point).toBeCloseToArray(expected, 6);
+        });
+
+        // Test boundary with 2 segments
+        const boundary2 = polygon.getBoundary(2, true);
+        expect(boundary2.length).toBe(fixture.boundary2.length);
+        boundary2.forEach((point: any, j: number) => {
+          const expected = objToArray(fixture.boundary2[j]);
+          expect(point).toBeCloseToArray(expected, 6);
+        });
+
+        // Test boundary with 3 segments
+        const boundary3 = polygon.getBoundary(3, true);
+        expect(boundary3.length).toBe(fixture.boundary3.length);
+        boundary3.forEach((point: any, j: number) => {
+          const expected = objToArray(fixture.boundary3[j]);
+          expect(point).toBeCloseToArray(expected, 6);
         });
       });
     });
@@ -61,70 +45,45 @@ describe('spherical-polygon.ts', () => {
 
   describe('slerp', () => {
     it('interpolates between vertices', () => {
-      const testCases = testPolygons.map((vertices) => ({
-        polygon: new SphericalPolygonShape(vertices),
-        tValues: [0, 0.25, 0.5, 0.75, 1.0, 1.5]
-      }));
-
-      for (const testCase of testCases) {
-        const results = testCase.tValues.map(t => {
-          const result = testCase.polygon.slerp(t);
-          return { t, result };
-        });
+      (fixtures as any[]).forEach((fixture: any) => {
+        const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
         
-        results.forEach(({ result }) => {
-          expect(result).toBeDefined();
-          expect(result.length).toBe(3);
+        fixture.slerpTests.forEach(({ t, result }: any) => {
+          const actual = polygon.slerp(t);
+          const expected = objToArray(result);
+          expect(actual).toBeCloseToArray(expected, 6);
           // Should be normalized
-          expect(Math.abs(vec3.length(result) - 1)).toBeLessThan(1e-10);
+          expect(Math.abs(vec3.length(actual) - 1)).toBeLessThan(1e-10);
         });
-      }
+      });
     });
   });
 
   describe('containsPoint', () => {
     it('correctly identifies points inside and outside polygon', () => {
-      const expectedResults = [
-        // Triangle results
-        [
-          -6.298927875819649e-9,   // Point on edge
-          0.4975161666370207,      // North pole
-          -0.027744911851070468    // South pole
-        ],
-        // Pentagon results
-        [
-          -2.9067971274991057e-16, // Point on edge
-          0.5719850412819585,      // North pole
-          -0.5720993058152115      // South pole
-        ]
-      ];
-
-      testPolygons.forEach((vertices, i) => {
-        const polygon = new SphericalPolygonShape(vertices);
-        const points = [
-          polygon.slerp(0.5), // Point on edge
-          [0, 0, 1] as Cartesian, // North pole
-          [0, 0, -1] as Cartesian, // South pole
-        ];
-
-        points.forEach((point, j) => {
-          const result = polygon.containsPoint(point);
-          expect(result).toBeCloseTo(expectedResults[i][j], 6);
+      (fixtures as any[]).forEach((fixture: any) => {
+        const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
+        
+        fixture.containsPointTests.forEach(({ point, result }: any) => {
+          const actual = polygon.containsPoint(objToArray(point) as Cartesian);
+          expect(actual).toBeCloseTo(result, 6);
         });
       });
     });
   });
 
   describe('getArea', () => {
-    it('returns positive area for triangle and pentagon', () => {
-      // TODO fix case of polygon with vertices on equator
-      for (const vertices of [testPolygons[0]]) {
-        const polygon = new SphericalPolygonShape(vertices);
+    it('returns correct area for all polygons', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
         const area = polygon.getArea();
-        expect(area).toBeGreaterThan(0);
-        expect(area).toBeLessThanOrEqual(2 * Math.PI);
-      }
+        expect(area).toBeCloseTo(fixture.area, 6);
+        // Area can be negative for some winding orders, so check absolute value
+        expect(Math.abs(area)).toBeGreaterThan(0);
+        expect(Math.abs(area)).toBeLessThanOrEqual(2 * Math.PI);
+      });
     });
+
     it('returns 0 for degenerate polygons', () => {
       expect(new SphericalPolygonShape([]).getArea()).toBe(0);
       expect(new SphericalPolygonShape([[1,0,0] as Cartesian]).getArea()).toBe(0);

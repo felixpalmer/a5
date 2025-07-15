@@ -2,78 +2,140 @@ import { describe, it, expect } from 'vitest'
 import { Pentagon, PentagonShape } from 'a5/geometry/pentagon'
 import { normalizeLongitudes, type Contour } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat } from 'a5/core/coordinate-systems'
+import fixtures from './fixtures/pentagon.json'
 
 describe('PentagonShape', () => {
   describe('containsPoint', () => {
-    // Create a simple pentagon for testing
-    const pentagon = new PentagonShape([
-      [0, 2],   // top
-      [2, 1],   // upper right
-      [1, -2],  // lower right
-      [-1, -2], // lower left
-      [-2, 1],  // upper left
-    ] as Pentagon);
-
-    it('returns true for points inside pentagon', () => {
-      // Test center
-      expect(pentagon.containsPoint([0, 0])).toBe(-1)
-      
-      // Test points in different triangular regions
-      expect(pentagon.containsPoint([0, 1.5])).toBe(-1)  // Upper triangle
-      expect(pentagon.containsPoint([1, 0])).toBe(-1)    // Right triangle
-      expect(pentagon.containsPoint([-1, 0])).toBe(-1)   // Left triangle
-    })
-
-    it('returns number outside pentagon', () => {
-      // Test points clearly outside
-      expect(pentagon.containsPoint([0, 3])).toBe(2)
-      expect(pentagon.containsPoint([3, 0])).toBeCloseTo(2.82842)
-      expect(pentagon.containsPoint([0, -3])).toBeCloseTo(1.41421)
-      expect(pentagon.containsPoint([-3, 0])).toBeCloseTo(1.41421)
-      
-      // Test points just outside edges
-      expect(pentagon.containsPoint([0, 2.1])).toBe(2)
-      expect(pentagon.containsPoint([2.1, 1])).toBeCloseTo(0.042993)
-    })
-
-    it('handles edge cases correctly', () => {
-      // Points on vertices
-      expect(pentagon.containsPoint([0, 2])).toBe(-1)
-      expect(pentagon.containsPoint([1.9999, 0.9999])).toBe(-1)
-      
-      // Points on edges
-      expect(pentagon.containsPoint([1, 1.49999])).toBe(-1)  // Right edge
-      expect(pentagon.containsPoint([-1, 1.49999])).toBe(-1) // Left edge
-    })
-
-    it('containsPointSmall', () => {
-      const smallPentagon = new PentagonShape([
-        [0.005584805117118508, 0.007421763173983242],
-        [0.007142475800174408, 0.01035468366141623],
-        [0.010413195654227048, 0.01092979424101126],
-        [0.011970866337282948, 0.00799687375357827],
-        [0.008855524971171091, 0.006846652594388214]
-      ] as Pentagon);
-
-      const redPoint = [ 0.008777835727200756, 0.007709318463780757 ];
-      expect(smallPentagon.containsPoint(redPoint as any)).toBe(-1);
+    it('returns correct results for all test cases', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const pentagon = new PentagonShape(fixture.vertices as Pentagon);
+        
+        fixture.containsPointTests.forEach(({ point, result }: any) => {
+          const actual = pentagon.containsPoint(point);
+          expect(actual).toBeCloseTo(result, 6);
+        });
+      });
     });
 
-    it('containsPointOnEdge', () => {
-      // Singapore pentagon, resolution 4 (in Face coordiantes, origin 8)
-      const singaporePentagon = new PentagonShape([
-        [0.24999999999999994, -0.406149620291133],
-        [0.1761431542833664, -0.48255778435927743],
-        [0.19098300562505247, -0.5877852522924732],
-        [0.29564604095473646, -0.6061887908395137],
-        [0.2998454618577896, -0.500003075888989]
+    it('handles edge cases correctly', () => {
+      // Create a simple pentagon for testing
+      const pentagon = new PentagonShape([
+        [0, 2],   // top
+        [2, 1],   // upper right
+        [1, -2],  // lower right
+        [-1, -2], // lower left
+        [-2, 1],  // upper left
       ] as Pentagon);
 
-      const singapore = [0.22395879916296305, -0.5770707674730963];
-      expect(singaporePentagon.containsPoint(singapore as any)).toBe(-1);
+      // Points on vertices
+      expect(pentagon.containsPoint([0, 2])).toBe(-1);
+      expect(pentagon.containsPoint([1.9999, 0.9999])).toBe(-1);
+      
+      // Points on edges
+      expect(pentagon.containsPoint([1, 1.49999])).toBe(-1);  // Right edge
+      expect(pentagon.containsPoint([-1, 1.49999])).toBe(-1); // Left edge
     });
   });
 
+  describe('getArea', () => {
+    it('returns correct area for all pentagons', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const pentagon = new PentagonShape(fixture.vertices as Pentagon);
+        const area = pentagon.getArea();
+        expect(area).toBeCloseTo(fixture.area, 6);
+      });
+    });
+  });
+
+  describe('getCenter', () => {
+    it('returns correct center for all pentagons', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const pentagon = new PentagonShape(fixture.vertices as Pentagon);
+        const center = pentagon.getCenter();
+        const expected = fixture.center;
+        expect(center[0]).toBeCloseTo(expected[0], 6);
+        expect(center[1]).toBeCloseTo(expected[1], 6);
+      });
+    });
+  });
+
+  describe('transformations', () => {
+    it('scale transformation works correctly', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const pentagon = new PentagonShape(fixture.vertices as Pentagon);
+        const scaled = pentagon.clone().scale(2);
+        const vertices = scaled.getVertices();
+        
+        fixture.transformTests.scale.forEach((expected: any, i: number) => {
+          expect(vertices[i][0]).toBeCloseTo(expected[0], 6);
+          expect(vertices[i][1]).toBeCloseTo(expected[1], 6);
+        });
+      });
+    });
+
+    it('rotate180 transformation works correctly', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const pentagon = new PentagonShape(fixture.vertices as Pentagon);
+        const rotated = pentagon.clone().rotate180();
+        const vertices = rotated.getVertices();
+        
+        fixture.transformTests.rotate180.forEach((expected: any, i: number) => {
+          expect(vertices[i][0]).toBeCloseTo(expected[0], 6);
+          expect(vertices[i][1]).toBeCloseTo(expected[1], 6);
+        });
+      });
+    });
+
+    it('reflectY transformation works correctly', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const pentagon = new PentagonShape(fixture.vertices as Pentagon);
+        const reflected = pentagon.clone().reflectY();
+        const vertices = reflected.getVertices();
+        
+        fixture.transformTests.reflectY.forEach((expected: any, i: number) => {
+          expect(vertices[i][0]).toBeCloseTo(expected[0], 6);
+          expect(vertices[i][1]).toBeCloseTo(expected[1], 6);
+        });
+      });
+    });
+
+    it('translate transformation works correctly', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const pentagon = new PentagonShape(fixture.vertices as Pentagon);
+        const translated = pentagon.clone().translate([1, 1]);
+        const vertices = translated.getVertices();
+        
+        fixture.transformTests.translate.forEach((expected: any, i: number) => {
+          expect(vertices[i][0]).toBeCloseTo(expected[0], 6);
+          expect(vertices[i][1]).toBeCloseTo(expected[1], 6);
+        });
+      });
+    });
+  });
+
+  describe('splitEdges', () => {
+    it('splits edges correctly', () => {
+      (fixtures as any[]).forEach((fixture: any) => {
+        const pentagon = new PentagonShape(fixture.vertices as Pentagon);
+        
+        // Test 2 segments
+        const split2 = pentagon.clone().splitEdges(2);
+        const vertices2 = split2.getVertices();
+        fixture.splitEdgesTests.segments2.forEach((expected: any, i: number) => {
+          expect(vertices2[i][0]).toBeCloseTo(expected[0], 6);
+          expect(vertices2[i][1]).toBeCloseTo(expected[1], 6);
+        });
+
+        // Test 3 segments
+        const split3 = pentagon.clone().splitEdges(3);
+        const vertices3 = split3.getVertices();
+        fixture.splitEdgesTests.segments3.forEach((expected: any, i: number) => {
+          expect(vertices3[i][0]).toBeCloseTo(expected[0], 6);
+          expect(vertices3[i][1]).toBeCloseTo(expected[1], 6);
+        });
+      });
+    });
+  });
 
   describe('normalizeLongitudes', () => {
     it('handles simple contour without wrapping', () => {
