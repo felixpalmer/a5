@@ -27,34 +27,29 @@ function generateGeometryFixtures(config) {
   const outputPath = path.join(outputDir, `${name}.json`);
   
   let fixtures = [];
+  let existingFixtures = [];
   
   // Try to read existing fixtures
   if (fs.existsSync(outputPath)) {
     console.log(`Reading existing ${name} fixtures...`);
-    fixtures = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+    existingFixtures = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+    fixtures = [...existingFixtures];
   }
   
-  // If no existing fixtures, generate new ones
-  if (fixtures.length === 0) {
-    console.log(`Generating new ${name} fixtures...`);
-    for (let i = 0; i < count; i++) {
+  // Generate new fixtures if needed
+  if (fixtures.length < count) {
+    console.log(`Generating ${count - fixtures.length} new ${name} fixtures...`);
+    for (let i = fixtures.length; i < count; i++) {
       const vertices = generateRandomInput(vertexCount);
-      fixtures.push({ vertices });
+      const geometry = new GeometryClass(vertices);
+      const testPoints = generateTestPoints(geometry);
+      
+      fixtures.push({
+        vertices,
+        ...computeExpected(geometry, testPoints)
+      });
     }
   }
-
-  // Update computed values for each fixture
-  fixtures = fixtures.map(fixture => {
-    const geometry = new GeometryClass(fixture.vertices);
-    const testPoints = generateTestPoints(geometry);
-    
-    const result = {
-      vertices: fixture.vertices,
-      ...computeExpected(geometry, testPoints)
-    };
-
-    return result;
-  });
 
   // Ensure output directory exists
   if (!fs.existsSync(outputDir)) {
