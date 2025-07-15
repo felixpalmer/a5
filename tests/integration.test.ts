@@ -4,14 +4,14 @@ import { hexToBigInt } from 'a5/core/hex'
 import type { LonLat } from 'a5/core/coordinate-systems'
 
 // Import test data
+import wireframe0 from './integration/wireframe-0.json'
 import wireframe1 from './integration/wireframe-1.json'
 import wireframe2 from './integration/wireframe-2.json'
 import wireframe3 from './integration/wireframe-3.json'
-import wireframe4 from './integration/wireframe-4.json'
+import wireframeAuto0 from './integration/wireframe-auto-edges-0.json'
 import wireframeAuto1 from './integration/wireframe-auto-edges-1.json'
 import wireframeAuto2 from './integration/wireframe-auto-edges-2.json'
 import wireframeAuto3 from './integration/wireframe-auto-edges-3.json'
-import wireframeAuto4 from './integration/wireframe-auto-edges-4.json'
 
 interface GeoJSON {
   type: string;
@@ -38,8 +38,8 @@ function compareCoordinates(actual: LonLat[], expected: number[][], precision = 
 describe('wireframe integration tests', () => {
   // Map of test data
   const testData: GeoJSON[] = [
-    wireframe1, wireframe2, wireframe3, wireframe4,
-    wireframeAuto1, wireframeAuto2, wireframeAuto3, wireframeAuto4
+    wireframe0, wireframe1, wireframe2, wireframe3,
+    wireframeAuto0, wireframeAuto1, wireframeAuto2, wireframeAuto3
   ];
 
   for (let i = 0; i < testData.length; i++) {

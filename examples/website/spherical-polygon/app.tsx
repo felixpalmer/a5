@@ -2,7 +2,7 @@ import React, { Suspense, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { hexToBigInt, cellToChildren, cellToParent } from 'a5/index';
+import { cellToChildren } from 'a5/index';
 import { A5Pentagon, Marker, Sphere, sphericalPentagonFromCell } from './components';
 import { toCartesian } from 'a5/core/coordinate-transforms';
 import { Cartesian, Spherical } from 'a5/core/coordinate-systems';
@@ -13,14 +13,11 @@ const initialPoint = toCartesian(initialSpherical);
 const camera = toCartesian(initialSpherical);
 vec3.scale(camera, camera, 2);
 
-const a5CellHex = '1200000000000000';
-const a5cell = hexToBigInt(a5CellHex);
-
 function Scene({ resolution }: { resolution: number }) {
   const [point, setPoint] = useState<Cartesian>(initialPoint);
 
   // Get cells at current resolution
-  const a5cells = cellToChildren(cellToParent(a5cell), resolution);
+  const a5cells = cellToChildren(0n, resolution);
 
   // Filter cells based on current point
   const filteredCells = a5cells.filter(cell => {
@@ -47,7 +44,7 @@ function Scene({ resolution }: { resolution: number }) {
 }
 
 const App: React.FC = () => {
-  const [resolution, setResolution] = useState(3);
+  const [resolution, setResolution] = useState(2);
 
   return (
     <div style={{

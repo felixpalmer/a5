@@ -6,8 +6,8 @@ import { A5Cell } from "./utils";
 import { Origin } from './utils';
 import { origins } from "./origin";
 
-export const FIRST_HILBERT_RESOLUTION = 3;
-export const MAX_RESOLUTION = 31;
+export const FIRST_HILBERT_RESOLUTION = 2;
+export const MAX_RESOLUTION = 30;
 export const HILBERT_START_BIT = 58n; // 64 - 6 bits for origin & segment
 
 // First 6 bits 0, remaining 58 bits 1
@@ -19,11 +19,15 @@ export const ORIGIN_SEGMENT_MASK = 0xfc00000000000000n;
 // All 64 bits 1
 export const ALL_ONES = 0xffffffffffffffffn;
 
+// Abstract cell that contains the whole world, has resolution -1 and 12 children,
+// which are the res0 cells.
+export const WORLD_CELL = 0n;
+
 export function getResolution(index: bigint): number {
   // Find resolution from position of first non-00 bits from the right
   let resolution = MAX_RESOLUTION - 1;
   let shifted = index >> 1n; // TODO check if non-zero for point level
-  while (resolution > 0 && (shifted & 0b1n) === 0n) {
+  while (resolution > -1 && (shifted & 0b1n) === 0n) {
     resolution -= 1;
     // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
     // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
@@ -36,7 +40,9 @@ export function getResolution(index: bigint): number {
 export function deserialize(index: bigint): A5Cell {
   const resolution = getResolution(index);
 
-  if (resolution === 0) {
+  // Technically not a resolution, but can be useful to think of as an
+  // abstract cell that contains the whole world
+  if (resolution === -1) {
     return { origin: origins[0], segment: 0, S: 0n, resolution };
   }
 
@@ -46,7 +52,7 @@ export function deserialize(index: bigint): A5Cell {
   // Find origin and segment that multiply to give this product
   let origin: Origin, segment: number;
 
-  if (resolution === 1) {
+  if (resolution === 0) {
     const originId: number = top6Bits;
     origin = origins[originId];
     segment = 0;
@@ -78,13 +84,13 @@ export function serialize(cell: A5Cell): bigint {
     throw new Error(`Resolution (${resolution}) is too large`);
   }
 
-  if (resolution === 0) return 0n;
+  if (resolution === -1) return WORLD_CELL;
 
   // Position of resolution marker as bit shift from LSB
   let R;
   if (resolution < FIRST_HILBERT_RESOLUTION) {
     // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
-    R = BigInt(resolution);
+    R = BigInt(resolution + 1);
   } else {
     // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
     const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
@@ -95,7 +101,7 @@ export function serialize(cell: A5Cell): bigint {
   const segmentN = (segment - origin.firstQuintant + 5) % 5;
 
   let index; 
-  if (resolution === 1) {
+  if (resolution === 0) {
     index = BigInt(origin.id) << 58n;
   } else {
     index = BigInt(5 * origin.id + segmentN) << 58n;
@@ -133,12 +139,12 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
 
   let newOrigins: Origin[] = [origin];
   let newSegments: number[] = [segment];
-  if (currentResolution === 0) {
+  if (currentResolution === -1) {
     newOrigins = origins;
   }
   if (
-    (currentResolution === 0 && newResolution > 1)
-    || currentResolution === 1
+    (currentResolution === -1 && newResolution > 0)
+    || currentResolution === 0
     ) {
     newSegments = [0, 1, 2, 3, 4];
   }
@@ -174,4 +180,14 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
   const resolutionDiff = currentResolution - newResolution;
   const shiftedS = S >> BigInt(2 * resolutionDiff);
   return serialize({origin, segment, S: shiftedS, resolution: newResolution});
+}
+
+/**
+ * Returns resolution 0 cells of the A5 system, which serve as a starting point
+ * for all higher-resolution subdivisions in the hierarchy.
+ * 
+ * @returns Array of 12 cell indices
+ */
+export function getRes0Cells(): bigint[] {
+  return cellToChildren(WORLD_CELL, 0);
 }

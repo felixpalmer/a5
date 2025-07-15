@@ -135,7 +135,7 @@ type CellToBoundaryOptions = {
 export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}): LonLat[] {
   const {S, segment, origin, resolution} = deserialize(cellId);
   if (segments === 'auto') {
-    segments = Math.max(1,  Math.pow(2, 7 - resolution));
+    segments = Math.max(1,  Math.pow(2, 6 - resolution));
   }
 
   const pentagon = _getPentagon({S, segment, origin, resolution});

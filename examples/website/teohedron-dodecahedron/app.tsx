@@ -7,7 +7,7 @@ import { generateWireframe } from 'a5-internal/wireframe';
 
 import {fromLonLat, toCartesian} from 'a5/core/coordinate-transforms';
 
-const RESOLUTION = 3;
+const RESOLUTION = 2;
 
 // Create a cache for geometries
 const geometryCache = new Map<number, BufferGeometry>();
@@ -151,8 +151,8 @@ const App: React.FC = () => {
         </div>
         <input
           type="range"
-          min="1"
-          max="5"
+          min="0"
+          max="4"
           value={resolution}
           onChange={(e) => setResolution(Number(e.target.value))}
           style={{ 

@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
+// Re-export public API
+export * from './index';
+
 // Export projections for testing
 export { GnomonicProjection } from './projections/gnomonic';
 export { AuthalicProjection } from './projections/authalic';

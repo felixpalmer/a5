@@ -59,14 +59,14 @@
             shininess: 30,
             side: THREE.DoubleSide
         });
-        let currentResolution = 1;
+        let currentResolution = 0;
 
         function generateWireframe(resolution) {
             let cells = [];
             let baseCells = 1;
             let stamp = 0n;
             
-            if (resolution === 1) {
+            if (resolution === 0) {
                 baseCells = 12;
                 stamp = 0b10n << 56n;
             } else {
@@ -77,7 +77,7 @@
             for (let i = 0; i < baseCells; i++) {
                 const segment = BigInt(i) << 58n;
                 const index = segment | stamp;
-                if (resolution < 3) {
+                if (resolution < 2) {
                     cells.push(A5.cellToBoundary(index));
                 } else {
                     const children = A5.cellToChildren(index, resolution);

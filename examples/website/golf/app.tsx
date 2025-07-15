@@ -20,7 +20,7 @@ const dimpleParams = {
 
 // Convert A5 cells to dimple positions (centers of pentagons)
 function getCellCenters(resolution: number): DimplePosition[] {
-  const cells = generateWireframe(resolution + 2);
+  const cells = generateWireframe(resolution + 1);
   
   return cells.map(cell => {
     // Calculate center of pentagon
@@ -45,7 +45,7 @@ function getCellCenters(resolution: number): DimplePosition[] {
 
 // Get unique vertices from all pentagon vertices
 function getCellVertices(resolution: number): DimplePosition[] {
-  const cells = generateWireframe(resolution + 2);
+  const cells = generateWireframe(resolution + 1);
   
   // Extract all vertices from all pentagons
   const allVertices = cells.flat();

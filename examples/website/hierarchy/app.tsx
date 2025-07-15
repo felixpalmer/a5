@@ -7,7 +7,7 @@ import {lonLatToCell, cellToBoundary, cellToChildren, cellToParent} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 
-const MAX_RESOLUTION = 31;
+const MAX_RESOLUTION = 30;
 
 const INITIAL_VIEW_STATE = { longitude: -0.1276, latitude: 51.50735, zoom: 10, minZoom: 2, maxZoom: 27 };
 
@@ -34,12 +34,13 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
   }, []);
 
   // Calculate resolution based on zoom level
-  let resolution = Math.min(Math.floor(2 * viewState.zoom - 4), Math.floor(viewState.zoom + 1));
-  resolution = Math.max(1, Math.min(MAX_RESOLUTION, resolution));
+  let resolution = Math.min(Math.floor(2 * viewState.zoom - 5), Math.floor(viewState.zoom));
+  resolution = Math.max(0, Math.min(MAX_RESOLUTION, resolution));
 
   // Memoize the entire cells calculation
   const data = useMemo(() => {
     const cellId = lonLatToCell(cellLocation, resolution);
+    console.log(cellId.toString(2));
     const children = showChildren ? cellToChildren(cellId) : [];
     const parent = showParent ? cellToParent(cellId) : null;
     return {cellId, children: [cellId, ...children, ...(parent ? [parent] : [])]};
@@ -85,7 +86,7 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
   const originSegmentBits = 6;
 
   // Then follow bits to encode the position along the hilbert curve
-  const hilbertBits = (2 * Math.max(0, resolution - 2)) + originSegmentBits;
+  const hilbertBits = (2 * Math.max(0, resolution - 1)) + originSegmentBits;
 
   // Then two bits to encode the resolution
   const resolutionBits = 2 + hilbertBits;

@@ -12,7 +12,7 @@ import {colorContinuous} from '@deck.gl/carto';
 import {SphericalPolygonShape} from 'a5/core/spherical-polygon';
 
 const H3_RESOLUTION = 1; // 1
-const A5_RESOLUTION = 4; // 4
+const A5_RESOLUTION = 3; // 3
 
 const AUTHALIC_RADIUS = 6371.0072; // km
 const AUTHALIC_AREA = 4 * Math.PI * AUTHALIC_RADIUS * AUTHALIC_RADIUS;

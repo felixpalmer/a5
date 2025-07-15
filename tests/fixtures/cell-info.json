@@ -1,0 +1,285 @@
+{
+  "numCells": [
+    {
+      "resolution": 0,
+      "count": 12,
+      "countBigInt": "12"
+    },
+    {
+      "resolution": 1,
+      "count": 60,
+      "countBigInt": "60"
+    },
+    {
+      "resolution": 2,
+      "count": 240,
+      "countBigInt": "240"
+    },
+    {
+      "resolution": 3,
+      "count": 960,
+      "countBigInt": "960"
+    },
+    {
+      "resolution": 4,
+      "count": 3840,
+      "countBigInt": "3840"
+    },
+    {
+      "resolution": 5,
+      "count": 15360,
+      "countBigInt": "15360"
+    },
+    {
+      "resolution": 6,
+      "count": 61440,
+      "countBigInt": "61440"
+    },
+    {
+      "resolution": 7,
+      "count": 245760,
+      "countBigInt": "245760"
+    },
+    {
+      "resolution": 8,
+      "count": 983040,
+      "countBigInt": "983040"
+    },
+    {
+      "resolution": 9,
+      "count": 3932160,
+      "countBigInt": "3932160"
+    },
+    {
+      "resolution": 10,
+      "count": 15728640,
+      "countBigInt": "15728640"
+    },
+    {
+      "resolution": 11,
+      "count": 62914560,
+      "countBigInt": "62914560"
+    },
+    {
+      "resolution": 12,
+      "count": 251658240,
+      "countBigInt": "251658240"
+    },
+    {
+      "resolution": 13,
+      "count": 1006632960,
+      "countBigInt": "1006632960"
+    },
+    {
+      "resolution": 14,
+      "count": 4026531840,
+      "countBigInt": "4026531840"
+    },
+    {
+      "resolution": 15,
+      "count": 16106127360,
+      "countBigInt": "16106127360"
+    },
+    {
+      "resolution": 16,
+      "count": 64424509440,
+      "countBigInt": "64424509440"
+    },
+    {
+      "resolution": 17,
+      "count": 257698037760,
+      "countBigInt": "257698037760"
+    },
+    {
+      "resolution": 18,
+      "count": 1030792151040,
+      "countBigInt": "1030792151040"
+    },
+    {
+      "resolution": 19,
+      "count": 4123168604160,
+      "countBigInt": "4123168604160"
+    },
+    {
+      "resolution": 20,
+      "count": 16492674416640,
+      "countBigInt": "16492674416640"
+    },
+    {
+      "resolution": 21,
+      "count": 65970697666560,
+      "countBigInt": "65970697666560"
+    },
+    {
+      "resolution": 22,
+      "count": 263882790666240,
+      "countBigInt": "263882790666240"
+    },
+    {
+      "resolution": 23,
+      "count": 1055531162664960,
+      "countBigInt": "1055531162664960"
+    },
+    {
+      "resolution": 24,
+      "count": 4222124650659840,
+      "countBigInt": "4222124650659840"
+    },
+    {
+      "resolution": 25,
+      "count": 16888498602639360,
+      "countBigInt": "16888498602639360"
+    },
+    {
+      "resolution": 26,
+      "count": 67553994410557440,
+      "countBigInt": "67553994410557440"
+    },
+    {
+      "resolution": 27,
+      "count": 270215977642229760,
+      "countBigInt": "270215977642229760"
+    },
+    {
+      "resolution": 28,
+      "count": 1080863910568919000,
+      "countBigInt": "1080863910568919040"
+    },
+    {
+      "resolution": 29,
+      "count": 4323455642275676000,
+      "countBigInt": "4323455642275676160"
+    },
+    {
+      "resolution": 30,
+      "count": 17293822569102705000,
+      "countBigInt": "17293822569102704640"
+    }
+  ],
+  "cellArea": [
+    {
+      "resolution": 0,
+      "areaM2": 42505468731619.93
+    },
+    {
+      "resolution": 1,
+      "areaM2": 8501093746323.985
+    },
+    {
+      "resolution": 2,
+      "areaM2": 2125273436580.9963
+    },
+    {
+      "resolution": 3,
+      "areaM2": 531318359145.2491
+    },
+    {
+      "resolution": 4,
+      "areaM2": 132829589786.31227
+    },
+    {
+      "resolution": 5,
+      "areaM2": 33207397446.578068
+    },
+    {
+      "resolution": 6,
+      "areaM2": 8301849361.644517
+    },
+    {
+      "resolution": 7,
+      "areaM2": 2075462340.4111292
+    },
+    {
+      "resolution": 8,
+      "areaM2": 518865585.1027823
+    },
+    {
+      "resolution": 9,
+      "areaM2": 129716396.27569558
+    },
+    {
+      "resolution": 10,
+      "areaM2": 32429099.068923894
+    },
+    {
+      "resolution": 11,
+      "areaM2": 8107274.767230974
+    },
+    {
+      "resolution": 12,
+      "areaM2": 2026818.6918077434
+    },
+    {
+      "resolution": 13,
+      "areaM2": 506704.67295193585
+    },
+    {
+      "resolution": 14,
+      "areaM2": 126676.16823798396
+    },
+    {
+      "resolution": 15,
+      "areaM2": 31669.04205949599
+    },
+    {
+      "resolution": 16,
+      "areaM2": 7917.260514873998
+    },
+    {
+      "resolution": 17,
+      "areaM2": 1979.3151287184994
+    },
+    {
+      "resolution": 18,
+      "areaM2": 494.82878217962485
+    },
+    {
+      "resolution": 19,
+      "areaM2": 123.70719554490621
+    },
+    {
+      "resolution": 20,
+      "areaM2": 30.926798886226553
+    },
+    {
+      "resolution": 21,
+      "areaM2": 7.731699721556638
+    },
+    {
+      "resolution": 22,
+      "areaM2": 1.9329249303891596
+    },
+    {
+      "resolution": 23,
+      "areaM2": 0.4832312325972899
+    },
+    {
+      "resolution": 24,
+      "areaM2": 0.12080780814932247
+    },
+    {
+      "resolution": 25,
+      "areaM2": 0.03020195203733062
+    },
+    {
+      "resolution": 26,
+      "areaM2": 0.007550488009332655
+    },
+    {
+      "resolution": 27,
+      "areaM2": 0.0018876220023331637
+    },
+    {
+      "resolution": 28,
+      "areaM2": 0.0004719055005832909
+    },
+    {
+      "resolution": 29,
+      "areaM2": 0.00011797637514582273
+    },
+    {
+      "resolution": 30,
+      "areaM2": 0.000029494093786455682
+    }
+  ]
+}

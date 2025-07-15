@@ -1,13 +1,13 @@
 import { describe, it, expect, test } from 'vitest'
-import { getResolution, serialize, deserialize, MAX_RESOLUTION, REMOVAL_MASK, FIRST_HILBERT_RESOLUTION } from 'a5/core/serialization';
+import { getResolution, serialize, deserialize, MAX_RESOLUTION, REMOVAL_MASK, FIRST_HILBERT_RESOLUTION, getRes0Cells } from 'a5/core/serialization';
 import { A5Cell } from 'a5/core/utils';
 import { origins } from 'a5/core/origin';
 import TEST_IDS from './test-ids.json';
 import { cellToParent, cellToChildren } from 'a5/core/serialization';
+import { bigIntToHex } from 'a5/core/hex';
 
 const RESOLUTION_MASKS = [
   // Non-Hilbert resolutions
-  '0000000000000000000000000000000000000000000000000000000000000000', // Globe
   '0000001000000000000000000000000000000000000000000000000000000000', // Dodecahedron faces
   '0000000100000000000000000000000000000000000000000000000000000000', // Quintants
   // Hilbert resolutions
@@ -82,7 +82,7 @@ describe('serialize', () => {
 
   test('encodes origin, segment and S correctly', () => {
     // Origin 0 has first quintant 4, so start use segment 4 to obtain start of Hilbert curve
-    const cell: A5Cell = { origin: origin0, segment: 4, S: 0n, resolution: 30 };
+    const cell: A5Cell = { origin: origin0, segment: 4, S: 0n, resolution: MAX_RESOLUTION - 1 };
     const serialized = serialize(cell);
     expect(serialized).toBe(0b10n)
   });
@@ -91,11 +91,11 @@ describe('serialize', () => {
     const cell: A5Cell = {
       origin: origin0,
       segment: 0,
-      S: 16n, // Too large for resolution 2 (max is 15)
-      resolution: 4
+      S: 16n, // Too large for resolution 1 (max is 15)
+      resolution: 3
     };
     
-    expect(() => serialize(cell)).toThrow('S (16) is too large for resolution level 4');
+    expect(() => serialize(cell)).toThrow('S (16) is too large for resolution level 3');
   });
 
   test('throws error when resolution exceeds maximum', () => {
@@ -103,10 +103,10 @@ describe('serialize', () => {
       origin: origin0,
       segment: 0,
       S: 0n,
-      resolution: 32 // MAX_RESOLUTION is 31
+      resolution: 31 // MAX_RESOLUTION is 30
     }
 
-    expect(() => serialize(cell)).toThrow('Resolution (32) is too large');
+    expect(() => serialize(cell)).toThrow('Resolution (31) is too large');
   });
 
   describe('round trip', () => {
@@ -157,8 +157,8 @@ describe('hierarchy', () => {
   });
 
   test('non-Hilbert to non-Hilbert hierarchy', () => {
-    // Test resolution 1 to 2 (both non-Hilbert)
-    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 1});
+    // Test resolution 0 to 1 (both non-Hilbert)
+    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 0});
     const children = cellToChildren(cell);
     expect(children.length).toBe(5);
     children.forEach(child => {
@@ -168,8 +168,8 @@ describe('hierarchy', () => {
   });
 
   test('non-Hilbert to Hilbert hierarchy', () => {
-    // Test resolution 2 to 3 (non-Hilbert to Hilbert)
-    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 2});
+    // Test resolution 1 to 2 (non-Hilbert to Hilbert)
+    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 1});
     const children = cellToChildren(cell);
     expect(children.length).toBe(4);
     children.forEach(child => {
@@ -179,9 +179,9 @@ describe('hierarchy', () => {
   });
 
   test('Hilbert to non-Hilbert hierarchy', () => {
-    // Test resolution 3 to 2 (Hilbert to non-Hilbert)
-    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 3});
-    const parent = cellToParent(cell, 2);
+    // Test resolution 2 to 1 (Hilbert to non-Hilbert)
+    const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 2});
+    const parent = cellToParent(cell, 1);
     const children = cellToChildren(parent);
     expect(children.length).toBe(4);
     expect(children).toContain(cell);
@@ -209,9 +209,9 @@ describe('hierarchy', () => {
 
   test('base cell division counts', () => {
     // Start with the base cell (resolution 0)
-    const baseCell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 0});
+    const baseCell = serialize({origin: origin0, segment: 0, S: 0n, resolution: -1});
     let currentCells = [baseCell];
-    const expectedCounts = [1, 12, 60, 240, 960]; // 1, 12, 12*5, 12*5*4, 12*5*4*4
+    const expectedCounts = [12, 60, 240, 960]; // 12, 12*5, 12*5*4, 12*5*4*4
 
     // Test each resolution level up to 4
     for (let resolution = 0; resolution < 4; resolution++) {
@@ -219,11 +219,32 @@ describe('hierarchy', () => {
       const allChildren = currentCells.flatMap(cell => cellToChildren(cell));
       
       // Verify the total number of cells matches expected
-      expect(allChildren.length).toBe(expectedCounts[resolution + 1]);
+      expect(allChildren.length).toBe(expectedCounts[resolution]);
       
       // Update current cells for next iteration
       currentCells = allChildren;
     }
+  });
+});
+
+describe('getRes0Cells', () => {
+  test('returns 12 resolution 0 cells', () => {
+    const res0Cells = getRes0Cells();
+    expect(res0Cells.length).toBe(12);
+    
+    // Each cell should have resolution 0
+    res0Cells.forEach(cell => {
+      expect(getResolution(cell)).toBe(0);
+    });
+    
+    // Expected hex values for the 12 resolution 0 cells
+    const expectedHexValues = ['2', '6', 'a', 'e', '12', '16', '1a', '1e', '22', '26', '2a', '2e']
+      .map((hex, i) => hex.padEnd(i < 4 ? 15 : 16, '0'));
+    
+    // Verify each cell matches the expected hex value
+    res0Cells.forEach((cell, index) => {
+      expect(bigIntToHex(cell)).toBe(expectedHexValues[index]);
+    });
   });
 });
 

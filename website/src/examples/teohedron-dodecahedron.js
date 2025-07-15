@@ -16,11 +16,11 @@ class TeohedronDodecahedronDemo extends Component {
       <div>
         <p>Geometric solids used by the A5 system.</p>
         <h3>Resolution levels:</h3>
-        <h4>1: Dodecahedron</h4>
+        <h4>0: Dodecahedron</h4>
         <p>12 regular pentagon primitives.</p>
-        <h4>2: Pentakis Dodecahedron</h4>
+        <h4>1: Pentakis Dodecahedron</h4>
         <p>60 isosceles triangle primitives (quintiles).</p>
-        <h4>3+: Teohedron</h4>
+        <h4>2+: Teohedron</h4>
         <p>240+ irregular pentagon primitives.</p>
       </div>
     );
