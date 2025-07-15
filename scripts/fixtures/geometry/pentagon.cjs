@@ -18,12 +18,28 @@ function generateRandomPentagon() {
 }
 
 function generatePentagonFixtures() {
-  const fixtures = [];
+  const outputDir = path.join(__dirname, './../../../tests/geometry/fixtures');
+  const outputPath = path.join(outputDir, 'pentagon.json');
+  
+  let fixtures = [];
+  
+  // Try to read existing fixtures
+  if (fs.existsSync(outputPath)) {
+    fixtures = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+  }
+  
+  // If no existing fixtures, generate new ones
+  if (fixtures.length === 0) {
+    // Generate 10 different pentagon instances
+    for (let i = 0; i < 10; i++) {
+      const vertices = generateRandomPentagon();
+      fixtures.push({ vertices });
+    }
+  }
 
-  // Generate 10 different pentagon instances
-  for (let i = 0; i < 10; i++) {
-    const vertices = generateRandomPentagon();
-    const pentagon = new PentagonShape(vertices);
+  // Update computed values for each fixture
+  fixtures = fixtures.map(fixture => {
+    const pentagon = new PentagonShape(fixture.vertices);
 
     // Test points for containsPoint
     const center = pentagon.getCenter();
@@ -35,28 +51,26 @@ function generatePentagonFixtures() {
       generateRandomFace() // Random point
     ];
 
-    const fixture = {
-      vertices: vertices,
+    return {
+      vertices: fixture.vertices,
       area: pentagon.getArea(),
-      center: pentagon.getCenter(),
+      center: [...pentagon.getCenter()],
       containsPointTests: testPoints.map(point => ({
         point: [...point],
         result: pentagon.containsPoint(point)
       })),
       transformTests: {
-        scale: pentagon.clone().scale(2).getVertices(),
-        rotate180: pentagon.clone().rotate180().getVertices(),
-        reflectY: pentagon.clone().reflectY().getVertices(),
-        translate: pentagon.clone().translate([1, 1]).getVertices()
+        scale: pentagon.clone().scale(2).getVertices().map(v => [...v]),
+        rotate180: pentagon.clone().rotate180().getVertices().map(v => [...v]),
+        reflectY: pentagon.clone().reflectY().getVertices().map(v => [...v]),
+        translate: pentagon.clone().translate([1, 1]).getVertices().map(v => [...v])
       },
       splitEdgesTests: {
-        segments2: pentagon.clone().splitEdges(2).getVertices(),
-        segments3: pentagon.clone().splitEdges(3).getVertices()
+        segments2: pentagon.clone().splitEdges(2).getVertices().map(v => [...v]),
+        segments3: pentagon.clone().splitEdges(3).getVertices().map(v => [...v])
       }
     };
-
-    fixtures.push(fixture);
-  }
+  });
 
   return fixtures;
 }

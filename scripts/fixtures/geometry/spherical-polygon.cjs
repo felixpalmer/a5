@@ -20,13 +20,29 @@ function generateRandomPolygon(vertexCount) {
 }
 
 function generateSphericalPolygonFixtures() {
-  const fixtures = [];
+  const outputDir = path.join(__dirname, './../../../tests/geometry/fixtures');
+  const outputPath = path.join(outputDir, 'spherical-polygon.json');
+  
+  let fixtures = [];
+  
+  // Try to read existing fixtures
+  if (fs.existsSync(outputPath)) {
+    fixtures = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+  }
+  
+  // If no existing fixtures, generate new ones
+  if (fixtures.length === 0) {
+    // Generate 10 different polygon instances
+    for (let i = 0; i < 10; i++) {
+      const vertexCount = 5;
+      const vertices = generateRandomPolygon(vertexCount);
+      fixtures.push({ vertices });
+    }
+  }
 
-  // Generate 10 different polygon instances
-  for (let i = 0; i < 10; i++) {
-    const vertexCount = Math.floor(Math.random() * 5) + 3; // 3-7 vertices
-    const vertices = generateRandomPolygon(vertexCount);
-    const polygon = new SphericalPolygonShape(vertices);
+  // Update computed values for each fixture
+  fixtures = fixtures.map(fixture => {
+    const polygon = new SphericalPolygonShape(fixture.vertices);
 
     // Test points for containsPoint
     const testPoints = [
@@ -37,28 +53,26 @@ function generateSphericalPolygonFixtures() {
       generateRandomCartesian()  // Another random point
     ];
 
-    const fixture = {
-      vertices: vertices,
+    return {
+      vertices: fixture.vertices,
       area: polygon.getArea(),
-      boundary1: polygon.getBoundary(1, true),
-      boundary2: polygon.getBoundary(2, true),
-      boundary3: polygon.getBoundary(3, true),
+      boundary1: polygon.getBoundary(1, true).map(p => [...p]),
+      boundary2: polygon.getBoundary(2, true).map(p => [...p]),
+      boundary3: polygon.getBoundary(3, true).map(p => [...p]),
       slerpTests: [
-        { t: 0, result: polygon.slerp(0) },
-        { t: 0.25, result: polygon.slerp(0.25) },
-        { t: 0.5, result: polygon.slerp(0.5) },
-        { t: 0.75, result: polygon.slerp(0.75) },
-        { t: 1.0, result: polygon.slerp(1.0) },
-        { t: 1.5, result: polygon.slerp(1.5) }
+        { t: 0, result: [...polygon.slerp(0)] },
+        { t: 0.25, result: [...polygon.slerp(0.25)] },
+        { t: 0.5, result: [...polygon.slerp(0.5)] },
+        { t: 0.75, result: [...polygon.slerp(0.75)] },
+        { t: 1.0, result: [...polygon.slerp(1.0)] },
+        { t: 1.5, result: [...polygon.slerp(1.5)] }
       ],
       containsPointTests: testPoints.map(point => ({
         point: [...point],
         result: polygon.containsPoint(point)
       }))
     };
-
-    fixtures.push(fixture);
-  }
+  });
 
   return fixtures;
 }

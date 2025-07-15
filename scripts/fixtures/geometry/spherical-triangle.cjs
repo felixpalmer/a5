@@ -20,12 +20,28 @@ function generateRandomTriangle() {
 }
 
 function generateSphericalTriangleFixtures() {
-  const fixtures = [];
+  const outputDir = path.join(__dirname, './../../../tests/geometry/fixtures');
+  const outputPath = path.join(outputDir, 'spherical-triangle.json');
+  
+  let fixtures = [];
+  
+  // Try to read existing fixtures
+  if (fs.existsSync(outputPath)) {
+    fixtures = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+  }
+  
+  // If no existing fixtures, generate new ones
+  if (fixtures.length === 0) {
+    // Generate 10 different triangle instances
+    for (let i = 0; i < 10; i++) {
+      const vertices = generateRandomTriangle();
+      fixtures.push({ vertices });
+    }
+  }
 
-  // Generate 10 different triangle instances
-  for (let i = 0; i < 10; i++) {
-    const vertices = generateRandomTriangle();
-    const triangle = new SphericalTriangleShape(vertices);
+  // Update computed values for each fixture
+  fixtures = fixtures.map(fixture => {
+    const triangle = new SphericalTriangleShape(fixture.vertices);
 
     // Test points for containsPoint
     const testPoints = [
@@ -36,28 +52,26 @@ function generateSphericalTriangleFixtures() {
       generateRandomCartesian()  // Another random point
     ];
 
-    const fixture = {
-      vertices: vertices,
+    return {
+      vertices: fixture.vertices,
       area: triangle.getArea(),
-      boundary1: triangle.getBoundary(1, true),
-      boundary2: triangle.getBoundary(2, true),
-      boundary3: triangle.getBoundary(3, true),
+      boundary1: triangle.getBoundary(1, true).map(p => [...p]),
+      boundary2: triangle.getBoundary(2, true).map(p => [...p]),
+      boundary3: triangle.getBoundary(3, true).map(p => [...p]),
       slerpTests: [
-        { t: 0, result: triangle.slerp(0) },
-        { t: 0.25, result: triangle.slerp(0.25) },
-        { t: 0.5, result: triangle.slerp(0.5) },
-        { t: 0.75, result: triangle.slerp(0.75) },
-        { t: 1.0, result: triangle.slerp(1.0) },
-        { t: 1.5, result: triangle.slerp(1.5) }
+        { t: 0, result: [...triangle.slerp(0)] },
+        { t: 0.25, result: [...triangle.slerp(0.25)] },
+        { t: 0.5, result: [...triangle.slerp(0.5)] },
+        { t: 0.75, result: [...triangle.slerp(0.75)] },
+        { t: 1.0, result: [...triangle.slerp(1.0)] },
+        { t: 1.5, result: [...triangle.slerp(1.5)] }
       ],
       containsPointTests: testPoints.map(point => ({
         point: [...point],
         result: triangle.containsPoint(point)
       }))
     };
-
-    fixtures.push(fixture);
-  }
+  });
 
   return fixtures;
 }
