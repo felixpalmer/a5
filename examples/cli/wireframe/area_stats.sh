@@ -10,7 +10,12 @@ WITH stats AS (
   SELECT
     $KM_PER_M * MIN(ST_Area(geometry,1)) as min_area,
     $KM_PER_M * MAX(ST_Area(geometry,1)) as max_area,
-    $AUTHALIC_EARTH_AREA / COUNT(geometry) as authalic_average
+    $AUTHALIC_EARTH_AREA / (
+      CASE 
+        WHEN $1 = 0 THEN 12
+        ELSE 60 * POWER(4, $1 - 1)
+      END
+    ) as authalic_average
   FROM cells
 ),
 error_calc AS (
