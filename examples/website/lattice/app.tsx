@@ -8,7 +8,7 @@ import { vec2 } from 'gl-matrix';
 
 import { Orientation } from 'a5/core/hilbert';
 import { Anchor, sToAnchor } from 'a5/core/hilbert';
-import { Pentagon, PentagonShape } from 'a5/core/utils';
+import { Pentagon, PentagonShape } from 'a5/geometry/pentagon';
 import { getPentagonVertices } from 'a5/core/tiling';
 import { BASIS } from 'a5/core/pentagon';
 

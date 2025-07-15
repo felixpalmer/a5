@@ -4,7 +4,7 @@
 
 import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { Pentagon, PentagonShape } from "./utils";
+import { Pentagon, PentagonShape } from "../geometry/pentagon";
 import { BASIS, PENTAGON, TRIANGLE, v, w } from "./pentagon";
 import { TWO_PI_OVER_5 } from "./constants";
 import { NO, Anchor, YES } from "./hilbert";

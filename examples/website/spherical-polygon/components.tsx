@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { BufferGeometry, Float32BufferAttribute, DoubleSide, Vector3, Raycaster, Sphere as ThreeSphere } from 'three';
-import { SphericalPolygonShape } from 'a5/core/spherical-polygon';
+import { SphericalPolygonShape } from 'a5/geometry/spherical-polygon';
 import { toCartesian, fromLonLat, toSpherical } from 'a5/core/coordinate-transforms';
 import { cellToBoundary } from 'a5/index';
 import type { Spherical, Radians, Cartesian } from 'a5/core/coordinate-systems';

@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { PentagonShape, Pentagon } from 'a5/core/utils';
+import { PentagonShape } from 'a5/geometry/pentagon';
+import type { Pentagon } from 'a5/geometry/pentagon';
 import { Orientation } from 'a5/core/hilbert';
 import { sToAnchor } from 'a5/core/hilbert';
 import { getPentagonVertices } from 'a5/core/tiling';
 import { vec2 } from 'gl-matrix';
 
-function generateCells(resolution: number, orientation: Orientation): vec2[][] {
+function generateCells(resolution: number, orientation: Orientation): Pentagon[] {
   const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
   const anchors = sequence.map(s => sToAnchor(s, resolution, orientation));
   return anchors.map(anchor => 
@@ -22,7 +23,7 @@ function verifyHierarchy(resolution: number, orientation: Orientation): void {
   for (let i = 0; i < level2Cells.length; i++) {
     const child = level2Cells[i];
     const parent = level1Cells[Math.floor(i / 4)];
-    const pentagon = new PentagonShape(parent as Pentagon);
+    const pentagon = new PentagonShape(parent);
     let contained = false;
     for (const vertex of child) {
       if (pentagon.containsPoint(vertex) < 0) {

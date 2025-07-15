@@ -9,12 +9,13 @@ import type { Face, LonLat } from "./coordinate-systems";
 import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical, toPolar, normalizeLongitudes } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { DodecahedronProjection } from "../projections/dodecahedron";
-import { A5Cell, PentagonShape } from "./utils";
+import { A5Cell } from "./utils";
+import { PentagonShape } from "../geometry/pentagon";
 import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
-import { SphericalPolygonShape } from "./spherical-polygon";
+import { SphericalPolygonShape } from "../geometry/spherical-polygon";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
