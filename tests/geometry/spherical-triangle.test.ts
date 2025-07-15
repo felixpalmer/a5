@@ -5,12 +5,6 @@ import { vec3 } from 'gl-matrix'
 import fixtures from './fixtures/spherical-triangle.json'
 
 describe('spherical-triangle.ts', () => {
-  // Helper function to convert object with "0", "1", "2" properties to array
-  function objToArray(obj: any): number[] {
-    if (Array.isArray(obj)) return obj;
-    return [obj["0"], obj["1"], obj["2"]];
-  }
-
   describe('constructor', () => {
     it('requires exactly 3 vertices', () => {
       expect(() => new SphericalTriangleShape([])).toThrow('SphericalTriangleShape requires exactly 3 vertices');
@@ -28,28 +22,14 @@ describe('spherical-triangle.ts', () => {
       (fixtures as any[]).forEach((fixture: any, i: number) => {
         const triangle = new SphericalTriangleShape(fixture.vertices as Cartesian[]);
         
-        // Test boundary with 1 segment
-        const boundary1 = triangle.getBoundary(1, true);
-        expect(boundary1.length).toBe(fixture.boundary1.length);
-        boundary1.forEach((point: any, j: number) => {
-          const expected = objToArray(fixture.boundary1[j]);
-          expect(point).toBeCloseToArray(expected, 6);
-        });
-
-        // Test boundary with 2 segments
-        const boundary2 = triangle.getBoundary(2, true);
-        expect(boundary2.length).toBe(fixture.boundary2.length);
-        boundary2.forEach((point: any, j: number) => {
-          const expected = objToArray(fixture.boundary2[j]);
-          expect(point).toBeCloseToArray(expected, 6);
-        });
-
-        // Test boundary with 3 segments
-        const boundary3 = triangle.getBoundary(3, true);
-        expect(boundary3.length).toBe(fixture.boundary3.length);
-        boundary3.forEach((point: any, j: number) => {
-          const expected = objToArray(fixture.boundary3[j]);
-          expect(point).toBeCloseToArray(expected, 6);
+        // Test boundaries with 1-3 segments
+        [1, 2, 3].forEach(nSegments => {
+          const boundary = triangle.getBoundary(nSegments, true);
+          const expectedBoundary = fixture[`boundary${nSegments}`];
+          expect(boundary.length).toBe(expectedBoundary.length);
+          boundary.forEach((point: any, j: number) => {
+            expect(point).toBeCloseToArray(expectedBoundary[j], 6);
+          });
         });
       });
     });
@@ -62,8 +42,7 @@ describe('spherical-triangle.ts', () => {
         
         fixture.slerpTests.forEach(({ t, result }: any) => {
           const actual = triangle.slerp(t);
-          const expected = objToArray(result);
-          expect(actual).toBeCloseToArray(expected, 6);
+          expect(actual).toBeCloseToArray(result, 6);
           // Should be normalized
           expect(Math.abs(vec3.length(actual) - 1)).toBeLessThan(1e-10);
         });
@@ -77,7 +56,7 @@ describe('spherical-triangle.ts', () => {
         const triangle = new SphericalTriangleShape(fixture.vertices as Cartesian[]);
         
         fixture.containsPointTests.forEach(({ point, result }: any) => {
-          const actual = triangle.containsPoint(objToArray(point) as Cartesian);
+          const actual = triangle.containsPoint(point as Cartesian);
           expect(actual).toBeCloseTo(result, 6);
         });
       });

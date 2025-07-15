@@ -5,39 +5,19 @@ import { vec3 } from 'gl-matrix'
 import fixtures from './fixtures/spherical-polygon.json'
 
 describe('spherical-polygon.ts', () => {
-  // Helper function to convert object with "0", "1", "2" properties to array
-  function objToArray(obj: any): number[] {
-    if (Array.isArray(obj)) return obj;
-    return [obj["0"], obj["1"], obj["2"]];
-  }
-
   describe('getBoundary', () => {
     it('returns boundary points with different segment counts', () => {
       (fixtures as any[]).forEach((fixture: any, i: number) => {
         const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
         
-        // Test boundary with 1 segment
-        const boundary1 = polygon.getBoundary(1, true);
-        expect(boundary1.length).toBe(fixture.boundary1.length);
-        boundary1.forEach((point: any, j: number) => {
-          const expected = objToArray(fixture.boundary1[j]);
-          expect(point).toBeCloseToArray(expected, 6);
-        });
-
-        // Test boundary with 2 segments
-        const boundary2 = polygon.getBoundary(2, true);
-        expect(boundary2.length).toBe(fixture.boundary2.length);
-        boundary2.forEach((point: any, j: number) => {
-          const expected = objToArray(fixture.boundary2[j]);
-          expect(point).toBeCloseToArray(expected, 6);
-        });
-
-        // Test boundary with 3 segments
-        const boundary3 = polygon.getBoundary(3, true);
-        expect(boundary3.length).toBe(fixture.boundary3.length);
-        boundary3.forEach((point: any, j: number) => {
-          const expected = objToArray(fixture.boundary3[j]);
-          expect(point).toBeCloseToArray(expected, 6);
+        // Test boundaries with 1-3 segments
+        [1, 2, 3].forEach(nSegments => {
+          const boundary = polygon.getBoundary(nSegments, true);
+          const expectedBoundary = fixture[`boundary${nSegments}`];
+          expect(boundary.length).toBe(expectedBoundary.length);
+          boundary.forEach((point: any, j: number) => {
+            expect(point).toBeCloseToArray(expectedBoundary[j], 6);
+          });
         });
       });
     });
@@ -50,8 +30,7 @@ describe('spherical-polygon.ts', () => {
         
         fixture.slerpTests.forEach(({ t, result }: any) => {
           const actual = polygon.slerp(t);
-          const expected = objToArray(result);
-          expect(actual).toBeCloseToArray(expected, 6);
+          expect(actual).toBeCloseToArray(result, 6);
           // Should be normalized
           expect(Math.abs(vec3.length(actual) - 1)).toBeLessThan(1e-10);
         });
@@ -65,7 +44,7 @@ describe('spherical-polygon.ts', () => {
         const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
         
         fixture.containsPointTests.forEach(({ point, result }: any) => {
-          const actual = polygon.containsPoint(objToArray(point) as Cartesian);
+          const actual = polygon.containsPoint(point as Cartesian);
           expect(actual).toBeCloseTo(result, 6);
         });
       });
