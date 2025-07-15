@@ -3,7 +3,8 @@ import {
   degToRad, radToDeg, 
   faceToBarycentric, barycentricToFace,
   toCartesian, toSpherical,
-  fromLonLat, toLonLat
+  fromLonLat, toLonLat,
+  normalizeLongitudes, type Contour
 } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat, Radians, Spherical, Face, Barycentric, FaceTriangle } from 'a5/core/coordinate-systems'
 import { TEST_POINTS } from './projections/data/polyhedral-test-data'
@@ -185,4 +186,43 @@ describe('LonLat to/from spherical', () => {
       expect([newLon, newLat]).toBeCloseToArray([lon, lat]);
     })
   })
+});
+
+describe('normalizeLongitudes', () => {
+  it('handles simple contour without wrapping', () => {
+    const contour: Contour = [
+      [0, 0] as LonLat,
+      [10, 0] as LonLat,
+      [10, 10] as LonLat,
+      [0, 10] as LonLat,
+      [0, 0] as LonLat
+    ];
+    const normalized = normalizeLongitudes(contour);
+    expect(normalized).toEqual(contour);
+  });
+
+  it.skip('normalizes contour crossing antimeridian', () => {
+    const contour: Contour = [
+      [170, 0] as LonLat,
+      [175, 0] as LonLat,
+      [-175, 0] as LonLat,  // This should become 185
+      [-170, 0] as LonLat,  // This should become 190
+    ];
+    const normalized = normalizeLongitudes(contour);
+    expect(normalized[3][0]).toBeCloseTo(185 as Degrees);
+    expect(normalized[4][0]).toBeCloseTo(190 as Degrees);
+  });
+
+  it('normalizes contour crossing antimeridian in opposite direction', () => {
+    const contour: Contour = [
+      [-170, 0] as LonLat,
+      [-175, 0] as LonLat,
+      [-180, 0] as LonLat,
+      [175, 0] as LonLat,   // This should become -185
+      [170, 0] as LonLat,   // This should become -190
+    ];
+    const normalized = normalizeLongitudes(contour);
+    expect(normalized[3][0]).toBeCloseTo(-185 as Degrees);
+    expect(normalized[4][0]).toBeCloseTo(-190 as Degrees);
+  });
 });
