@@ -4,7 +4,7 @@
 
 import {vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Cartesian, Radians } from './coordinate-systems';
+import type { Cartesian, Radians } from '../core/coordinate-systems';
 import { SphericalPolygonShape } from './spherical-polygon';
 
 // Pre-allocated vectors for midpoints. midA is the midpoint opposite the vertex A

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PentagonShape, Pentagon } from 'a5/core/utils';
+import { PentagonShape, Pentagon } from 'a5/geometry/pentagon';
 import { Orientation } from 'a5/core/hilbert';
 import { sToAnchor } from 'a5/core/hilbert';
 import { getPentagonVertices } from 'a5/core/tiling';

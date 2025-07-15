@@ -36,7 +36,7 @@ import { vec3, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Cartesian, Face, Barycentric, FaceTriangle, SphericalTriangle } from "../core/coordinate-systems";
 import { faceToBarycentric, barycentricToFace } from "../core/coordinate-transforms";
-import { SphericalTriangleShape } from "../core/spherical-triangle";
+import { SphericalTriangleShape } from "../geometry/spherical-triangle";
 import { vectorDifference, quadrupleProduct, slerp } from "../utils/vector";
 
 export class PolyhedralProjection {

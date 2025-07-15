@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SphericalPolygonShape, type SphericalPolygon } from 'a5/core/spherical-polygon'
+import { SphericalPolygonShape, type SphericalPolygon } from 'a5/geometry/spherical-polygon'
 import type { Cartesian } from 'a5/core/coordinate-systems'
 import { vec3 } from 'gl-matrix'
 

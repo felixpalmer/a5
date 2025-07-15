@@ -4,7 +4,7 @@
 
 import {vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Cartesian, Radians } from './coordinate-systems';
+import type { Cartesian, Radians } from '../core/coordinate-systems';
 import { slerp, tripleProduct } from '../utils/vector';
 
 // Pre-allocated vectors for midpoints. midA is the midpoint opposite the vertex A
@@ -201,4 +201,4 @@ export class SphericalPolygonShape {
       debugger;
     }
   }
-}
+} 

@@ -16,7 +16,7 @@ import { CRS } from "./crs";
 
 type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type FaceTriangle = [Face, Face, Face];
-type SphericalTriangle = [Cartesian, Cartesian, Cartesian];
+import type { SphericalTriangle } from '../core/coordinate-systems';
 
 const crs = new CRS();
 

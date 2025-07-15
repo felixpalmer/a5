@@ -5,8 +5,8 @@
 import { vec2, mat2, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import {distanceToEdge, PI_OVER_10, PI_OVER_5} from './constants';    
-import {PentagonShape} from './utils';
-import type { Face, LonLat, Degrees } from "./coordinate-systems";
+import {PentagonShape} from '../geometry/pentagon';
+import type { Face, Degrees } from "./coordinate-systems";
 
 // Pentagon vertex angles
 const A = 72 as Degrees;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Pentagon, PentagonShape } from 'a5/core/utils'
+import { Pentagon, PentagonShape } from 'a5/geometry/pentagon'
 import { normalizeLongitudes, type Contour } from 'a5/core/coordinate-transforms'
 import type { Degrees, LonLat } from 'a5/core/coordinate-systems'
 

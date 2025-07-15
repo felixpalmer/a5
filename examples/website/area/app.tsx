@@ -9,7 +9,7 @@ import {cellArea, getRes0Cells, cellToChildren, cellToVertexes, vertexToLatLng, 
 import {generateWireframe} from 'a5-internal/wireframe';
 import {toCartesian, fromLonLat} from 'a5/core/coordinate-transforms';
 import {colorContinuous} from '@deck.gl/carto';
-import {SphericalPolygonShape} from 'a5/core/spherical-polygon';
+import {SphericalPolygonShape} from 'a5/geometry/spherical-polygon';
 
 const H3_RESOLUTION = 1; // 1
 const A5_RESOLUTION = 3; // 3
