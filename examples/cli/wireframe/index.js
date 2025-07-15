@@ -17,14 +17,31 @@ if (!outputFile || isNaN(resolution)) {
 const cells = [];
 try {
   // Calculate total number of cells at this resolution
-  const cellIds = cellToChildren(0n, resolution);
+  const LIMIT = 10000;
+  let cellIds = cellToChildren(0n, 1);
+  let r = 1;
+  while (r < resolution) {
+    r++;
+    const newCellIds = [];
+    const probability = LIMIT / (cellIds.length * 4);
+    for (const c of cellIds) {
+      let children = cellToChildren(c, r);
+      for (const c of children) {
+        if (Math.random() < probability) {
+          newCellIds.push(c);
+        }
+      }
+    }
+
+    cellIds = newCellIds;
+  }
 
   // Generate all cells
   for (let cellId of cellIds) {
     const cellIdHex = bigIntToHex(cellId);
     const boundary = cellToBoundary(cellId, {
       closedRing: true,
-      segments: "auto",
+      segments: 10,
     });
 
     cells.push({
