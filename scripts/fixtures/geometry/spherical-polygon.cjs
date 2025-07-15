@@ -52,7 +52,7 @@ function generateSphericalPolygonFixtures() {
         { t: 1.5, result: polygon.slerp(1.5) }
       ],
       containsPointTests: testPoints.map(point => ({
-        point: point,
+        point: [...point],
         result: polygon.containsPoint(point)
       }))
     };
@@ -65,7 +65,7 @@ function generateSphericalPolygonFixtures() {
 
 // Generate and save fixtures
 const fixtures = generateSphericalPolygonFixtures();
-const outputDir = path.join(__dirname, '../../../modules/geometry/__tests__/fixtures');
+const outputDir = path.join(__dirname, './../../../tests/geometry/fixtures');
 const outputPath = path.join(outputDir, 'spherical-polygon.json');
 
 // Ensure output directory exists

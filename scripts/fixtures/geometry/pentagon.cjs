@@ -40,7 +40,7 @@ function generatePentagonFixtures() {
       area: pentagon.getArea(),
       center: pentagon.getCenter(),
       containsPointTests: testPoints.map(point => ({
-        point: point,
+        point: [...point],
         result: pentagon.containsPoint(point)
       })),
       transformTests: {
@@ -63,7 +63,7 @@ function generatePentagonFixtures() {
 
 // Generate and save fixtures
 const fixtures = generatePentagonFixtures();
-const outputDir = path.join(__dirname, '../../../modules/geometry/__tests__/fixtures');
+const outputDir = path.join(__dirname, './../../../tests/geometry/fixtures');
 const outputPath = path.join(outputDir, 'pentagon.json');
 
 // Ensure output directory exists

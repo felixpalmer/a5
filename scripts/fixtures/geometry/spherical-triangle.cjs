@@ -51,7 +51,7 @@ function generateSphericalTriangleFixtures() {
         { t: 1.5, result: triangle.slerp(1.5) }
       ],
       containsPointTests: testPoints.map(point => ({
-        point: point,
+        point: [...point],
         result: triangle.containsPoint(point)
       }))
     };
@@ -64,7 +64,7 @@ function generateSphericalTriangleFixtures() {
 
 // Generate and save fixtures
 const fixtures = generateSphericalTriangleFixtures();
-const outputDir = path.join(__dirname, '../../../modules/geometry/__tests__/fixtures');
+const outputDir = path.join(__dirname, './../../../tests/geometry/fixtures');
 const outputPath = path.join(outputDir, 'spherical-triangle.json');
 
 // Ensure output directory exists
