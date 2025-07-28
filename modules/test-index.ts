@@ -5,6 +5,8 @@
 // Re-export public API
 export * from './index';
 
+export {origins} from './core/origin';
+
 // Export projections for testing
 export { GnomonicProjection } from './projections/gnomonic';
 export { AuthalicProjection } from './projections/authalic';
