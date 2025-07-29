@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, glMatrix } from 'gl-matrix';
+import { quat, vec2, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 // Dodecahedron face centeres (origins)can be defined exactly using trigonometry
@@ -30,17 +30,17 @@ const faceCenters = [
     [-cos36, -sin36],
     [cos72, -sin72],
 
-    [-cos0, -sin0],
-    [-cos72, -sin72],
-    [cos36, -sin36],
-    [cos36, sin36],
-    [-cos72, sin72],
+    [cos72, sin72],
+    [-cos36, sin36],
+    [-cos36, -sin36],
+    [cos72, -sin72],
+    [cos0, sin0],
 
     [0, 0]
 ] as vec2[];
 
 // Obtain by cross product with the z-axis
-const axes = faceCenters.map(([x, y]) => [y, -x]) as vec2[];
+const axes = faceCenters.map(([x, y]) => [-y, x]) as vec2[];
 
 // Sin/cosine of half angle (alpha) of rotation from pole to first ring
 const sinAlpha = Math.sqrt((1 - INV_SQRT5) / 2);
@@ -54,10 +54,10 @@ const quaternions = axes.map((axis, i) => {
       return [...vec2.scale([0, 0], axis, sinAlpha), 0, cosAlpha]
     } else {
       // TODO incorrect!
-      return [...vec2.scale([0, 0], axis, sinAlpha), 0, cosAlpha]
+      return [...vec2.scale([0, 0], axis, -cosAlpha), 0, sinAlpha]
     }
 
 
-});
+}) as quat[];
 
 export { quaternions };

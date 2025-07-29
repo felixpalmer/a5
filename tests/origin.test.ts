@@ -51,11 +51,12 @@ describe.only('dodecaplex', () => {
   it('should match expected quaternions from fixture', () => {
     expect(quaternions.length).toBe(expectedOrigins.length)
 
-    origins.forEach((origin, index) => {
+    origins.forEach((origin) => {
       const computed = origin.quat
-      const exact = quaternions[index];
-      console.log(computed, exact)
-      expect(computed).toBeCloseToArray(exact)
+      const exact = origin.exactQuat
+      console.log('old  :', ...computed);
+      console.log('exact:', ...exact);
+      expect(computed).toBeCloseToArray(exact as any, 6)
     })
   })
 });

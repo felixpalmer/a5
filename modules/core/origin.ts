@@ -9,6 +9,7 @@ import type { Radians, Spherical, Cartesian, Face } from "./coordinate-systems";
 import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5, distanceToEdge } from './constants';
 import { Orientation } from "./hilbert";
 import type { Origin, OriginId } from './utils';
+import { quaternions } from './dodecaplex';
 
 // Quintant layouts (clockwise & counterclockwise)
 export const clockwiseFan = ['vu', 'uw', 'vw', 'vw', 'vw'] as Orientation[];
@@ -43,22 +44,22 @@ const ORIGIN_ORDER = [0, 1, 2,  4, 3, 5,  7, 8, 6,  11, 10, 9];
 const origins: Origin[] = [];
 function generateOrigins(): void {
   // North pole
-  addOrigin([0, 0] as Spherical, 0 as Radians);
+  addOrigin([0, 0] as Spherical, 0 as Radians, quaternions[0]);
 
   // Middle band
   for (let i = 0; i < 5; i++) {
     const alpha = i * TWO_PI_OVER_5 as Radians;
     const alpha2 = alpha + PI_OVER_5 as Radians;
-    addOrigin([alpha, interhedralAngle] as Spherical, PI_OVER_5);
-    addOrigin([alpha2, Math.PI - interhedralAngle] as Spherical, PI_OVER_5);
+    addOrigin([alpha, interhedralAngle] as Spherical, PI_OVER_5, quaternions[i + 1]);
+    addOrigin([alpha2, Math.PI - interhedralAngle] as Spherical, PI_OVER_5, quaternions[(i + 2) % 5 + 6]);
   }
 
   // South pole
-  addOrigin([0, Math.PI] as Spherical, 0 as Radians);
+  addOrigin([0, Math.PI] as Spherical, 0 as Radians, quaternions[11]);
 }
 
 let originId: OriginId = 0;
-function addOrigin(axis: Spherical, angle: Radians) {
+function addOrigin(axis: Spherical, angle: Radians, exactQuat: quat) {
   if (originId > 11) {
     throw new Error(`Too many origins: ${originId}`);
   }
@@ -66,6 +67,7 @@ function addOrigin(axis: Spherical, angle: Radians) {
     id: originId,
     axis,
     quat: quatFromSpherical(axis),
+    exactQuat,
     angle,
     orientation: QUINTANT_ORIENTATIONS[originId],
     firstQuintant: QUINTANT_FIRST[originId]
