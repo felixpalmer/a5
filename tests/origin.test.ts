@@ -13,6 +13,7 @@ import { distanceToEdge, PI_OVER_5, TWO_PI_OVER_5 } from 'a5/core/constants'
 import type { Face, Radians, Spherical } from 'a5/core/coordinate-systems'
 import { toCartesian } from 'a5/core/coordinate-transforms'
 import expectedOrigins from './fixtures/origins.json'
+import { quaternions } from 'a5/core/dodecaplex'
 
 describe('origin constants', () => {
   it('has 12 origins for dodecahedron faces', () => {
@@ -45,6 +46,19 @@ describe('origin constants', () => {
     })
   })
 })
+
+describe.only('dodecaplex', () => {
+  it('should match expected quaternions from fixture', () => {
+    expect(quaternions.length).toBe(expectedOrigins.length)
+
+    origins.forEach((origin, index) => {
+      const computed = origin.quat
+      const exact = quaternions[index];
+      console.log(computed, exact)
+      expect(computed).toBeCloseToArray(exact)
+    })
+  })
+});
 
 describe('origin properties', () => {
   it('each origin has required properties', () => {
