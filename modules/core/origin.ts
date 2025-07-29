@@ -59,14 +59,14 @@ function generateOrigins(): void {
 }
 
 let originId: OriginId = 0;
-function addOrigin(axis: Spherical, angle: Radians, exactQuat: quat) {
+function addOrigin(axis: Spherical, angle: Radians, quat: quat) {
   if (originId > 11) {
     throw new Error(`Too many origins: ${originId}`);
   }
   const origin: Origin = {
     id: originId,
     axis,
-    quat: exactQuat,
+    quat,
     angle,
     orientation: QUINTANT_ORIENTATIONS[originId],
     firstQuintant: QUINTANT_FIRST[originId]
