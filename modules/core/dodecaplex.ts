@@ -30,11 +30,11 @@ const faceCenters = [
     [-cos36, -sin36],
     [cos72, -sin72],
 
+    [cos0, sin0],
     [cos72, sin72],
     [-cos36, sin36],
     [-cos36, -sin36],
     [cos72, -sin72],
-    [cos0, sin0],
 
     [0, 0]
 ] as vec2[];

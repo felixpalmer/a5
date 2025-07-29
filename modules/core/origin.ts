@@ -51,7 +51,7 @@ function generateOrigins(): void {
     const alpha = i * TWO_PI_OVER_5 as Radians;
     const alpha2 = alpha + PI_OVER_5 as Radians;
     addOrigin([alpha, interhedralAngle] as Spherical, PI_OVER_5, quaternions[i + 1]);
-    addOrigin([alpha2, Math.PI - interhedralAngle] as Spherical, PI_OVER_5, quaternions[(i + 2) % 5 + 6]);
+    addOrigin([alpha2, Math.PI - interhedralAngle] as Spherical, PI_OVER_5, quaternions[(i + 3) % 5 + 6]);
   }
 
   // South pole
