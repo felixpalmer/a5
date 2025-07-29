@@ -9,7 +9,6 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 const SQRT5 = Math.sqrt(5);
 const INV_SQRT5 = Math.sqrt(0.2);
 
-const cos0 = 1;
 const cos36 = (SQRT5 + 1) / 4;
 const cos72 = (SQRT5 - 1) / 4;
 const sin0 = 0;
@@ -31,6 +30,15 @@ const sin36sinAlpha = 0;
 const cos36cosAlpha = cosAlpha;
 const sin36cosAlpha = 0;
 
+const A = 0.5; // sin72 * sinAlpha or sin36 * cosAlpha 
+const B = Math.sqrt((5 - 2 * SQRT5) / 20); // cos72 * sinAlpha 
+const C = Math.sqrt((5 + 2 * SQRT5) / 20); // cos36 * cosAlpha
+const D = Math.sqrt((1 + INV_SQRT5) / 8); // cos36 * sinAlpha
+const E = Math.sqrt((1 - INV_SQRT5) / 8); // cos72 * cosAlpha
+const F = Math.sqrt((3 - SQRT5) / 8); // sin36 * sinAlpha
+const G = Math.sqrt((3 + SQRT5) / 8); // sin72 * cosAlpha
+
+
 // Face centers projected onto the z=0 plane & normalized
 // 0: North pole,
 // 1-5: First pentagon ring
@@ -39,17 +47,17 @@ const sin36cosAlpha = 0;
 const faceCenters = [
   [0, 0], // Doesn't actually matter as rotation is 0
 
-  [cos0 * sinAlpha, sin0 * sinAlpha],
-  [cos72 * sinAlpha, sin72 * sinAlpha],
-  [-cos36 * sinAlpha, sin36 * sinAlpha],
-  [-cos36 * sinAlpha, -sin36 * sinAlpha],
-  [cos72 * sinAlpha, -sin72 * sinAlpha],
+  [sinAlpha, 0],
+  [B, A],
+  [-D, F],
+  [-D, -F],
+  [B, -A],
 
-  [-cos0 * cosAlpha, -sin0 * cosAlpha],
-  [-cos72 * cosAlpha, -sin72 * cosAlpha],
-  [cos36 * cosAlpha, -sin36 * cosAlpha],
-  [cos36 * cosAlpha, sin36 * cosAlpha],
-  [-cos72 * cosAlpha, sin72 * cosAlpha],
+  [-cosAlpha, 0],
+  [-E, -G],
+  [C, -A],
+  [C, A],
+  [-E, G],
 
   [0, 0]
 ] as vec2[];
