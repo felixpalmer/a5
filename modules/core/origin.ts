@@ -66,9 +66,7 @@ function addOrigin(axis: Spherical, angle: Radians, exactQuat: quat) {
   const origin: Origin = {
     id: originId,
     axis,
-    //quat: quatFromSpherical(axis),
     quat: exactQuat,
-    exactQuat,
     angle,
     orientation: QUINTANT_ORIENTATIONS[originId],
     firstQuintant: QUINTANT_FIRST[originId]
