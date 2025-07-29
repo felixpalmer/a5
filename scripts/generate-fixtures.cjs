@@ -2,6 +2,7 @@ const path = require("path");
 
 // Core tests
 require("./fixtures/core/cell-info.cjs");
+require("./fixtures/core/origins.cjs");
 
 // Geometry generators
 require("./fixtures/geometry/spherical-polygon.cjs");

@@ -56,7 +56,7 @@ describe.only('dodecaplex', () => {
       const exact = origin.exactQuat
       console.log('old  :', ...computed);
       console.log('exact:', ...exact);
-      expect(computed).toBeCloseToArray(exact as any, 6)
+      expect(computed).toBeCloseToArray(exact as any, 15)
     })
   })
 });

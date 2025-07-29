@@ -22,21 +22,21 @@ const sin72 = Math.sqrt(10 + 2 * SQRT5) / 4;
 // 6-10: Second pentagon ring
 // 11: South pole
 const faceCenters = [
-    [0, 0], // Doesn't actually matter as rotation is 0
+  [0, 0], // Doesn't actually matter as rotation is 0
 
-    [cos0, sin0],
-    [cos72, sin72],
-    [-cos36, sin36],
-    [-cos36, -sin36],
-    [cos72, -sin72],
+  [cos0, sin0],
+  [cos72, sin72],
+  [-cos36, sin36],
+  [-cos36, -sin36],
+  [cos72, -sin72],
 
-    [cos0, sin0],
-    [cos72, sin72],
-    [-cos36, sin36],
-    [-cos36, -sin36],
-    [cos72, -sin72],
+  [cos0, sin0],
+  [cos72, sin72],
+  [-cos36, sin36],
+  [-cos36, -sin36],
+  [cos72, -sin72],
 
-    [0, 0]
+  [0, 0]
 ] as vec2[];
 
 // Obtain by cross product with the z-axis
@@ -48,16 +48,13 @@ const cosAlpha = Math.sqrt((1 + INV_SQRT5) / 2);
 
 // Quaternions are obtained from axis of rotation & angle of rotation
 const quaternions = axes.map((axis, i) => {
-    if (i === 0) return [0, 0, 0, 1];
-    if (i === 11) return [0, -1, 0, 0]; // TODO better to use 1, 0, 0, 0?
-    if (i < 6) {
-      return [...vec2.scale([0, 0], axis, sinAlpha), 0, cosAlpha]
-    } else {
-      // TODO incorrect!
-      return [...vec2.scale([0, 0], axis, -cosAlpha), 0, sinAlpha]
-    }
-
-
+  if (i === 0) return [0, 0, 0, 1];
+  if (i === 11) return [0, -1, 0, 0]; // TODO better to use 1, 0, 0, 0?
+  if (i < 6) {
+    return [...vec2.scale([0, 0], axis, sinAlpha), 0, cosAlpha]
+  } else {
+    return [...vec2.scale([0, 0], axis, -cosAlpha), 0, sinAlpha]
+  }
 }) as quat[];
 
 export { quaternions };
