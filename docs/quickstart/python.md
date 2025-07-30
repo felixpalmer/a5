@@ -1,10 +1,10 @@
 # Python Quickstart
 
-Get started with A5 in Python by installing the package and running a simple example.
+Get started with A5 in Python by installing the [package](https://pypi.org/project/pya5/) and running a simple example.
 
 ## Installation
 
-Install the A5 package using pip:
+Install the [A5 package](https://pypi.org/project/pya5/) using pip:
 
 ```bash
 pip install pya5

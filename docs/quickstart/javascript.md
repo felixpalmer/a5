@@ -1,10 +1,10 @@
 # JavaScript Quickstart
 
-Get started with A5 in JavaScript by installing the package and running a simple example.
+Get started with A5 in JavaScript by installing the [package](https://www.npmjs.com/package/a5-js) and running a simple example.
 
 ## Installation
 
-Install the A5 package using npm:
+Install the [A5 package](https://www.npmjs.com/package/a5-js) using npm:
 
 ```bash
 npm install a5-js
