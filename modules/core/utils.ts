@@ -12,6 +12,7 @@ export type Origin = {
   id: OriginId;
   axis: Spherical;
   quat: quat;
+  inverseQuat: quat;
   angle: Radians;
   orientation: Orientation[];
   firstQuintant: number;

@@ -42,10 +42,8 @@ export class DodecahedronProjection {
 
     // Transform back origin space
     const unprojected = toCartesian(spherical);
-    const inverseQuat = quat.create();
-    quat.invert(inverseQuat, origin.quat);
     const out = vec3.create() as Cartesian;
-    vec3.transformQuat(out, unprojected, inverseQuat);
+    vec3.transformQuat(out, unprojected, origin.inverseQuat);
 
     // Unproject gnomonically to polar coordinates in origin space
     const projectedSpherical = toSpherical(out);
