@@ -58,14 +58,17 @@ function generateOrigins(): void {
 }
 
 let originId: OriginId = 0;
-function addOrigin(axis: Spherical, angle: Radians, quat: quat) {
+function addOrigin(axis: Spherical, angle: Radians, quaternion: quat) {
   if (originId > 11) {
     throw new Error(`Too many origins: ${originId}`);
   }
+  const inverseQuat = quat.create() as quat;
+  quat.conjugate(inverseQuat, quaternion); // quaternion is a unit quaternion, so conjugate is the inverse
   const origin: Origin = {
     id: originId,
     axis,
-    quat,
+    quat: quaternion,
+    inverseQuat,
     angle,
     orientation: QUINTANT_ORIENTATIONS[originId],
     firstQuintant: QUINTANT_FIRST[originId]

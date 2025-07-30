@@ -26,7 +26,7 @@ function verifyHierarchy(resolution: number, orientation: Orientation): void {
     const pentagon = new PentagonShape(parent);
     let contained = false;
     for (const vertex of child) {
-      if (pentagon.containsPoint(vertex) < 0) {
+      if (pentagon.containsPoint(vertex) > 0) {
         contained = true;
         break;
       }

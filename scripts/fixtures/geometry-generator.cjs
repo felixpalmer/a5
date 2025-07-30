@@ -36,19 +36,17 @@ function generateGeometryFixtures(config) {
     fixtures = [...existingFixtures];
   }
   
-  // Generate new fixtures if needed
-  if (fixtures.length < count) {
-    console.log(`Generating ${count - fixtures.length} new ${name} fixtures...`);
-    for (let i = fixtures.length; i < count; i++) {
-      const vertices = generateRandomInput(vertexCount);
-      const geometry = new GeometryClass(vertices);
-      const testPoints = generateTestPoints(geometry);
-      
-      fixtures.push({
-        vertices,
-        ...computeExpected(geometry, testPoints)
-      });
-    }
+  // Generate new fixtures if needed and update data
+  for (let i = 0; i < count; i++) {
+    const existingFixture = fixtures[i];
+    const vertices = existingFixture.vertices || generateRandomInput(vertexCount);
+    const geometry = new GeometryClass(vertices);
+    const testPoints = existingFixture ? existingFixture.containsPointTests.map(p => p.point) : generateTestPoints(geometry);
+    
+    fixtures[i] = {
+      vertices,
+      ...computeExpected(geometry, testPoints)
+    };
   }
 
   // Ensure output directory exists

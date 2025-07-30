@@ -42,10 +42,8 @@ export class DodecahedronProjection {
 
     // Transform back origin space
     const unprojected = toCartesian(spherical);
-    const inverseQuat = quat.create();
-    quat.invert(inverseQuat, origin.quat);
     const out = vec3.create() as Cartesian;
-    vec3.transformQuat(out, unprojected, inverseQuat);
+    vec3.transformQuat(out, unprojected, origin.inverseQuat);
 
     // Unproject gnomonically to polar coordinates in origin space
     const projectedSpherical = toSpherical(out);
@@ -53,11 +51,11 @@ export class DodecahedronProjection {
 
     // Rotate around face axis to remove origin rotation
     polar[1] = (polar[1] - origin.angle) as Radians;
-
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
-    let faceTriangle = this.getFaceTriangle(faceTriangleIndex);
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, false);
 
+    const reflect = this.shouldReflect(polar);
+    let faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
+    let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
     return this.polyhedral.forward(unprojected, sphericalTriangle, faceTriangle);
   }
 
@@ -71,19 +69,26 @@ export class DodecahedronProjection {
     const polar = toPolar(face);
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
-    // Detect when point is beyond the edge of the dodecahedron face
-    const [rho, gamma] = polar;
-    const D = toFace([rho, this.normalizeGamma(gamma)] as Polar)[0];
-    const reflect = D > distanceToEdge;
-
-    // In the standard case, both these are the same as we can unproject directly
-    // In the reflected case, both are off the edge of the dodecahedron face,
-    // with the squashed triangle unprojecing correctly onto the neighboring dodecahedron face.
+    const reflect = this.shouldReflect(polar);
     const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
-
-    let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
+    const sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
     const unprojected = this.polyhedral.inverse(face, faceTriangle, sphericalTriangle);
     return toSpherical(unprojected);
+  }
+
+  /**
+   * Detects when point is beyond the edge of the dodecahedron face
+   * In the standard case (reflect = false), the face and spherical triangle can be
+   * used directly.
+   * In the reflected case (reflect = true), the point is beyond the edge of the dodecahedron face,
+   * and so the face triangle is squashed to unproject correctly onto the neighboring dodecahedron face.
+   * @param polar Polar coordinates
+   * @returns True if point is beyond the edge of the dodecahedron face
+   */
+  private shouldReflect(polar: Polar): boolean {
+    const [rho, gamma] = polar;
+    const D = toFace([rho, this.normalizeGamma(gamma)] as Polar)[0];
+    return D > distanceToEdge;
   }
 
   /**
