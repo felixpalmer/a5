@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, vec3, quat, glMatrix } from 'gl-matrix';
+import { quat, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { toCartesian, quatFromSpherical } from "./coordinate-transforms";
-import type { Radians, Spherical, Cartesian, Face } from "./coordinate-systems";
-import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5, distanceToEdge } from './constants';
+import type { Radians, Spherical } from "./coordinate-systems";
+import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from './constants';
 import { Orientation } from "./hilbert";
 import type { Origin, OriginId } from './utils';
-import { quaternions } from './dodecaplex';
+import { quaternions } from './dodecahedron-quaternions';
 
 // Quintant layouts (clockwise & counterclockwise)
 export const clockwiseFan = ['vu', 'uw', 'vw', 'vw', 'vw'] as Orientation[];
@@ -78,7 +77,7 @@ generateOrigins();
 
 // Reorder origins to match the order of the hilbert curve
 origins.sort((a, b) => ORIGIN_ORDER.indexOf(a.id) - ORIGIN_ORDER.indexOf(b.id));
-origins.forEach((origin, i) => origin.id = i);
+origins.forEach((origin, i) => origin.id = i as OriginId);
 
 export { origins };
 
