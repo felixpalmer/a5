@@ -164,9 +164,7 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
 
 export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
   const pentagon = _getPentagon(cell);
-  
   const spherical = fromLonLat(point);
   const projectedPoint = dodecahedron.forward(spherical, cell.origin.id);
-  
   return pentagon.containsPoint(projectedPoint);
 }
