@@ -40,7 +40,6 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
   // Memoize the entire cells calculation
   const data = useMemo(() => {
     const cellId = lonLatToCell(cellLocation, resolution);
-    console.log(cellId.toString(2));
     const children = showChildren ? cellToChildren(cellId) : [];
     const parent = showParent ? cellToParent(cellId) : null;
     return {cellId, children: [cellId, ...children, ...(parent ? [parent] : [])]};
