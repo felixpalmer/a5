@@ -168,8 +168,5 @@ export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
   const spherical = fromLonLat(point);
   const projectedPoint = dodecahedron.forward(spherical, cell.origin.id);
   
-  const result = pentagon.containsPoint(projectedPoint);
-  // Pentagon.containsPoint returns -1 when inside, positive when outside
-  // We want to return positive when inside, negative when outside
-  return -result;
+  return pentagon.containsPoint(projectedPoint);
 }
