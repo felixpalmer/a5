@@ -1,0 +1,12 @@
+{
+  "name": "a5-cross-check-cli",
+  "version": "1.0.0",
+  "description": "CLI tool to cross-check TypeScript and Python A5 implementations",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "a5-js": "latest"
+  }
+}
