@@ -7,6 +7,9 @@ export * from './index';
 
 export {origins} from './core/origin';
 
+// Export tiling functions for testing
+export { getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPolar } from './core/tiling';
+
 // Export projections for testing
 export { GnomonicProjection } from './projections/gnomonic';
 export { AuthalicProjection } from './projections/authalic';
