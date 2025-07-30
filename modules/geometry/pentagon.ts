@@ -2,30 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec2, mat2, mat2d, glMatrix, quat} from 'gl-matrix';
+import {vec2, mat2, mat2d, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Radians, Spherical, Face, Degrees, LonLat } from '../core/coordinate-systems';
-import { Orientation } from "../core/hilbert";
-
-export type OriginId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
-export type Origin = {
-  id: OriginId;
-  axis: Spherical;
-  quat: quat;
-  angle: Radians;
-  orientation: Orientation[];
-  firstQuintant: number;
-};
+import type { Face } from '../core/coordinate-systems';
 
 export type Pentagon = [Face, Face, Face, Face, Face];
 
 export class PentagonShape {
   private vertices: Pentagon;
-  public id: {i: number, j: number, k: number, resolution: number, segment?: number, origin?: Origin};
 
   constructor(vertices: Pentagon) {
     this.vertices = vertices;
-    this.id = {i: 0, j: 0, k: 0, resolution: 1};
     if (!this.isWindingCorrect()) {
       this.vertices.reverse();
     }
