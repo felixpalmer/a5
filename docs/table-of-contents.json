@@ -9,6 +9,14 @@
   },
   {
     "type": "category",
+    "label": "Quickstart",
+    "items": [
+      "quickstart/javascript",
+      "quickstart/python"
+    ]
+  },
+  {
+    "type": "category",
     "label": "Technical Details",
     "items": [
       "technical/dggs",

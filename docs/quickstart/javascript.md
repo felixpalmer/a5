@@ -1,0 +1,61 @@
+# JavaScript Quickstart
+
+Get started with A5 in JavaScript by installing the package and running a simple example.
+
+## Installation
+
+Install the A5 package using npm:
+
+```bash
+npm install a5-js
+```
+
+Or using yarn:
+
+```bash
+yarn add a5-js
+```
+
+## Example: Generate A5 Cells
+
+Here's a complete example that generates A5 cells at a specified resolution and outputs them as GeoJSON:
+
+```javascript
+import { cellToBoundary, bigIntToHex, cellToChildren } from "a5-js";
+
+// Generate all cells at the specified resolution
+const resolution = 2;
+const cells = [];
+const cellIds = cellToChildren(0n, resolution);
+
+// Generate boundary for each cell
+for (let cellId of cellIds) {
+  const cellIdHex = bigIntToHex(cellId);
+  const boundary = cellToBoundary(cellId);
+
+  cells.push({
+    type: "Feature",
+    geometry: { type: "Polygon", coordinates: [boundary] },
+    properties: { cellIdHex }
+  });
+}
+
+// Create GeoJSON FeatureCollection
+const geojson = { type: "FeatureCollection", features: cells };
+```
+
+## CLI Usage
+
+The code above in CLI form is available [here](https://github.com/felixpalmer/a5/tree/main/examples/cli/wireframe).
+
+```bash
+node index.js 2 a5.geojson
+```
+
+This will generate A5 cells at resolution 2 and save them as GeoJSON in `a5.geojson`.
+
+## Next Steps
+
+- Learn more about [A5 indexing](../api-reference/indexing.md)
+- Explore [cell hierarchy](../api-reference/hierarchy.md)
+- Check out more [examples](../../examples/)
