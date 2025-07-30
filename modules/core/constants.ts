@@ -21,30 +21,6 @@ export const faceEdgeAngle = -0.5 * Math.PI + Math.acos(-1 / Math.sqrt(3 - φ)) 
 export const distanceToEdge = (Math.sqrt(5) - 1) / 2; // φ - 1;
 export const distanceToVertex = 3 - Math.sqrt(5); // 2 * (2 - φ);
 
-// Warping parameters
-export type WarpType = 'high' | 'low';
-export type WarpFactors = {
-  BETA_SCALE: number;
-  RHO_SHIFT: number;
-  RHO_SCALE: number;
-  RHO_SCALE2: number;
-}
-
-export const WARP_FACTORS: Record<WarpType, WarpFactors> = {
-  'high': {
-    BETA_SCALE: 0.5115918059668587,
-    RHO_SHIFT: 0.9461616498962347,
-    RHO_SCALE: 0.04001633808056544,
-    RHO_SCALE2: 0.008305829720486808,
-  },
-  'low': {
-    BETA_SCALE: 0.5170052913652168,
-    RHO_SHIFT: 0.939689240972851,
-    RHO_SCALE: 0.008891290305379163,
-    RHO_SCALE2: 0.03962853541477156,
-  }
-}
-
 // Dodecahedron sphere radii (normalized to unit radius for inscribed sphere)
 /**
  * Radius of the inscribed sphere in dodecahedron
