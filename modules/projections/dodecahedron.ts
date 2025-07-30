@@ -55,14 +55,7 @@ export class DodecahedronProjection {
     polar[1] = (polar[1] - origin.angle) as Radians;
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
-    // Detect when point is beyond the edge of the dodecahedron face
-    const [rho, gamma] = polar;
-    const D = toFace([rho, this.normalizeGamma(gamma)] as Polar)[0];
-    const reflect = D > distanceToEdge;
-
-    // In the standard case, both these are the same as we can unproject directly
-    // In the reflected case, both are off the edge of the dodecahedron face,
-    // with the squashed triangle unprojecting correctly onto the neighboring dodecahedron face.
+    const reflect = this.shouldReflect(polar);
     let faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
     let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
     return this.polyhedral.forward(unprojected, sphericalTriangle, faceTriangle);
@@ -78,15 +71,26 @@ export class DodecahedronProjection {
     const polar = toPolar(face);
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
-    // Detect when point is beyond the edge of the dodecahedron face
-    const [rho, gamma] = polar;
-    const D = toFace([rho, this.normalizeGamma(gamma)] as Polar)[0];
-    const reflect = D > distanceToEdge;
-
+    const reflect = this.shouldReflect(polar);
     const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
     const sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
     const unprojected = this.polyhedral.inverse(face, faceTriangle, sphericalTriangle);
     return toSpherical(unprojected);
+  }
+
+  /**
+   * Detects when point is beyond the edge of the dodecahedron face
+   * In the standard case (reflect = false), the face and spherical triangle can be
+   * used directly.
+   * In the reflected case (reflect = true), the point is beyond the edge of the dodecahedron face,
+   * and so the face triangle is squashed to unproject correctly onto the neighboring dodecahedron face.
+   * @param polar Polar coordinates
+   * @returns True if point is beyond the edge of the dodecahedron face
+   */
+  private shouldReflect(polar: Polar): boolean {
+    const [rho, gamma] = polar;
+    const D = toFace([rho, this.normalizeGamma(gamma)] as Polar)[0];
+    return D > distanceToEdge;
   }
 
   /**
