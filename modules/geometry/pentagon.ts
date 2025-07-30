@@ -130,6 +130,7 @@ export class PentagonShape {
     }
 
     const N = this.vertices.length;
+    let dMin = -1;
     for (let i = 0; i < N; i++) {
       const v1 = this.vertices[i];
       const v2 = this.vertices[(i + 1) % N];
@@ -149,11 +150,11 @@ export class PentagonShape {
         // Only normalize by distance of point to edge as we can assume the edges of the
         // pentagon are all the same length
         const pLength = Math.sqrt(px * px + py * py);
-        return crossProduct / pLength;
+        dMin = Math.max(dMin, crossProduct / pLength);
       }
     }
     
-    return -1;
+    return dMin;
   }
 
   /**
