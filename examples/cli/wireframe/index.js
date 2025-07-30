@@ -48,8 +48,9 @@ try {
       type: "Feature",
       geometry: {
         type: "Polygon",
-        coordinates: [boundary],
+        coordinates: [boundary]
       },
+      properties: {cellIdHex}
     });
   }
 
