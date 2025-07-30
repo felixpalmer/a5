@@ -98,10 +98,9 @@ export class PentagonShape {
   }
 
   getCenter(): Face {
-    return this.vertices.reduce(
-      (sum, v) => [sum[0] + v[0] / 5, sum[1] + v[1] / 5],
-      [0, 0]
-    ) as Face;
+    const n = this.vertices.length;
+    const sum = this.vertices.reduce((sum, v) => [sum[0] + v[0] / n, sum[1] + v[1] / n], [0, 0]);
+    return sum as Face;
   }
 
   /**
