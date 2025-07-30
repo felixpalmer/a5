@@ -120,19 +120,6 @@ export function toLonLat([theta, phi]: Spherical): LonLat {
 }
 
 /**
- * Creates a quaternion representing a rotation
- * from the north pole to a given axis.
- * @param axis Spherical coordinate of axis to rotate to
- * @returns quaternion
- */
-export function quatFromSpherical(axis: Spherical): quat {
-  const cartesian = toCartesian(axis);
-  const Q = quat.create();
-  quat.rotationTo(Q, [0, 0, 1] as Cartesian, cartesian);
-  return Q;
-}
-
-/**
  * Normalizes longitude values in a contour to handle antimeridian crossing
  * @param contour Array of [longitude, latitude] points
  * @returns Normalized contour with consistent longitude values
