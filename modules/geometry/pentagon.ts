@@ -121,7 +121,7 @@ export class PentagonShape {
    * Tests if a point is inside the pentagon by checking if it's on the correct side of all edges.
    * Assumes consistent winding order (counter-clockwise).
    * @param point The point to test
-   * @returns -1 if point is inside, otherwise a value proportional to the distance from the point to the edge
+   * @returns 1 if point is inside, otherwise a negative value proportional to the distance from the point to the edge
    */
   containsPoint(point: vec2): number {
     // TODO later we can likely remove this, but for now it's useful for debugging
@@ -130,7 +130,7 @@ export class PentagonShape {
     }
 
     const N = this.vertices.length;
-    let dMin = -1;
+    let dMax = 1;
     for (let i = 0; i < N; i++) {
       const v1 = this.vertices[i];
       const v2 = this.vertices[(i + 1) % N];
@@ -150,11 +150,11 @@ export class PentagonShape {
         // Only normalize by distance of point to edge as we can assume the edges of the
         // pentagon are all the same length
         const pLength = Math.sqrt(px * px + py * py);
-        dMin = Math.max(dMin, crossProduct / pLength);
+        dMax = Math.min(dMax, -crossProduct / pLength);
       }
     }
     
-    return dMin;
+    return dMax;
   }
 
   /**
