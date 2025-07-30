@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { Pentagon, PentagonShape } from 'a5/geometry/pentagon'
-import type { Degrees } from 'a5/core/coordinate-systems'
 import fixtures from './fixtures/pentagon.json'
 
 describe('PentagonShape', () => {
