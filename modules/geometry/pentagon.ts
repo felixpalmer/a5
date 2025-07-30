@@ -136,9 +136,9 @@ export class PentagonShape {
       const v2 = this.vertices[(i + 1) % N];
       
       // Calculate the cross product to determine which side of the line the point is on
-      // (v2 - v1) × (point - v1)
-      const dx = v2[0] - v1[0];
-      const dy = v2[1] - v1[1];
+      // (v1 - v2) × (point - v1)
+      const dx = v1[0] - v2[0];
+      const dy = v1[1] - v2[1];
       const px = point[0] - v1[0];
       const py = point[1] - v1[1];
       
@@ -146,11 +146,11 @@ export class PentagonShape {
       // If positive, point is on the wrong side
       // If negative, point is on the correct side
       const crossProduct = (dx * py - dy * px);
-      if (crossProduct > 0) {
+      if (crossProduct < 0) {
         // Only normalize by distance of point to edge as we can assume the edges of the
         // pentagon are all the same length
         const pLength = Math.sqrt(px * px + py * py);
-        dMax = Math.min(dMax, -crossProduct / pLength);
+        dMax = Math.min(dMax, crossProduct / pLength);
       }
     }
     
