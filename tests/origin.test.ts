@@ -1,18 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { vec2, vec3, quat } from 'gl-matrix'
+import { vec3, quat } from 'gl-matrix'
 import {
   origins,
-  Origin,
   findNearestOrigin,
   haversine,
   quintantToSegment,
   segmentToQuintant,
   isNearestOrigin,
 } from 'a5/core/origin'
-import { distanceToEdge, PI_OVER_5, TWO_PI_OVER_5 } from 'a5/core/constants'
-import type { Face, Radians, Spherical } from 'a5/core/coordinate-systems'
+import { PI_OVER_5 } from 'a5/core/constants'
+import type { Spherical } from 'a5/core/coordinate-systems'
 import { toCartesian } from 'a5/core/coordinate-transforms'
 import expectedOrigins from './fixtures/origins.json'
+import { Origin } from 'a5/core/utils'
 
 describe('origin constants', () => {
   it('has 12 origins for dodecahedron faces', () => {
