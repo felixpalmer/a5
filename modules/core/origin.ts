@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, vec3, quat, glMatrix } from 'gl-matrix';
+import { quat, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { toCartesian, quatFromSpherical } from "./coordinate-transforms";
-import type { Radians, Spherical, Cartesian, Face } from "./coordinate-systems";
-import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5, distanceToEdge } from './constants';
+import type { Radians, Spherical } from "./coordinate-systems";
+import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from './constants';
 import { Orientation } from "./hilbert";
 import type { Origin, OriginId } from './utils';
+import { quaternions } from './dodecahedron-quaternions';
 
 // Quintant layouts (clockwise & counterclockwise)
 export const clockwiseFan = ['vu', 'uw', 'vw', 'vw', 'vw'] as Orientation[];
@@ -43,29 +43,29 @@ const ORIGIN_ORDER = [0, 1, 2,  4, 3, 5,  7, 8, 6,  11, 10, 9];
 const origins: Origin[] = [];
 function generateOrigins(): void {
   // North pole
-  addOrigin([0, 0] as Spherical, 0 as Radians);
+  addOrigin([0, 0] as Spherical, 0 as Radians, quaternions[0]);
 
   // Middle band
   for (let i = 0; i < 5; i++) {
     const alpha = i * TWO_PI_OVER_5 as Radians;
     const alpha2 = alpha + PI_OVER_5 as Radians;
-    addOrigin([alpha, interhedralAngle] as Spherical, PI_OVER_5);
-    addOrigin([alpha2, Math.PI - interhedralAngle] as Spherical, PI_OVER_5);
+    addOrigin([alpha, interhedralAngle] as Spherical, PI_OVER_5, quaternions[i + 1]);
+    addOrigin([alpha2, Math.PI - interhedralAngle] as Spherical, PI_OVER_5, quaternions[(i + 3) % 5 + 6]);
   }
 
   // South pole
-  addOrigin([0, Math.PI] as Spherical, 0 as Radians);
+  addOrigin([0, Math.PI] as Spherical, 0 as Radians, quaternions[11]);
 }
 
 let originId: OriginId = 0;
-function addOrigin(axis: Spherical, angle: Radians) {
+function addOrigin(axis: Spherical, angle: Radians, quat: quat) {
   if (originId > 11) {
     throw new Error(`Too many origins: ${originId}`);
   }
   const origin: Origin = {
     id: originId,
     axis,
-    quat: quatFromSpherical(axis),
+    quat,
     angle,
     orientation: QUINTANT_ORIENTATIONS[originId],
     firstQuintant: QUINTANT_FIRST[originId]
@@ -77,7 +77,7 @@ generateOrigins();
 
 // Reorder origins to match the order of the hilbert curve
 origins.sort((a, b) => ORIGIN_ORDER.indexOf(a.id) - ORIGIN_ORDER.indexOf(b.id));
-origins.forEach((origin, i) => origin.id = i);
+origins.forEach((origin, i) => origin.id = i as OriginId);
 
 export { origins };
 

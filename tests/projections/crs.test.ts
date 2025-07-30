@@ -2,7 +2,7 @@ import { vec3 } from "gl-matrix";
 import { describe, it, expect } from 'vitest';
 import { CRS } from 'a5/projections/crs';
 import type { Cartesian } from 'a5/core/coordinate-systems';
-import expectedVertices from './data/crs-vertices.json';
+import expectedVertices from '../fixtures/crs-vertices.json';
 
 describe('CRS', () => {
   it('should have exactly 62 vertices', () => {
