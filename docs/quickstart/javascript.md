@@ -16,7 +16,7 @@ Or using yarn:
 yarn add a5-js
 ```
 
-## Example: Generate A5 Cells
+## Code Example: Generate A5 Cells
 
 Here's a complete example that generates A5 cells at a specified resolution and outputs them as GeoJSON:
 
@@ -43,6 +43,18 @@ for (let cellId of cellIds) {
 // Create GeoJSON FeatureCollection
 const geojson = { type: "FeatureCollection", features: cells };
 ```
+
+## Example Output
+
+The above code will produce a collection of cells that cover the whole world.
+
+_Note that the cells all have the same area (approximately) shape - they are just warped by the map projection_
+
+import WireframeDemo from 'website-examples/wireframe/app';
+
+<div style={{margin: '20px 0'}}>
+  <WireframeDemo />
+</div>
 
 ## CLI Usage
 

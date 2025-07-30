@@ -21,11 +21,6 @@ uv add pya5
 Here's a complete example that generates A5 cells at a specified resolution and outputs them as GeoJSON:
 
 ```python
-#!/usr/bin/env python3
-
-import sys
-import json
-
 from a5 import bigint_to_hex, cell_to_boundary, cell_to_children
 
 # Generate all cells at the specified resolution
@@ -46,6 +41,18 @@ for cell_id in cell_ids:
 # Create GeoJSON FeatureCollection
 geojson = { "type": "FeatureCollection", "features": cells }
 ```
+
+## Example Output
+
+The above code will produce a collection of cells that cover the whole world.
+
+_Note that the cells all have the same area (approximately) shape - they are just warped by the map projection_
+
+import WireframeDemo from 'website-examples/wireframe/app';
+
+<div style={{margin: '20px 0'}}>
+  <WireframeDemo />
+</div>
 
 ## Usage
 
