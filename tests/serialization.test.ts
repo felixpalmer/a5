@@ -156,6 +156,78 @@ describe('hierarchy', () => {
     });
   });
 
+  test('cellToChildren with same resolution returns original cell', () => {
+    TEST_IDS.forEach(id => {
+      const cell = BigInt(`0x${id}`);
+      const currentResolution = getResolution(cell);
+      
+      // Test with explicit childResolution equal to current resolution
+      const children = cellToChildren(cell, currentResolution);
+      
+      // Should return array with just the original cell
+      expect(children.length).toBe(1);
+      expect(children[0]).toBe(cell);
+    });
+  });
+
+  test('cellToChildren with same resolution for different resolution levels', () => {
+    // Test with different resolution levels
+    const testCases = [
+      {origin: origin0, segment: 0, S: 0n, resolution: 0},
+      {origin: origin0, segment: 0, S: 0n, resolution: 1},
+      {origin: origin0, segment: 0, S: 0n, resolution: 2},
+      {origin: origin0, segment: 0, S: 15n, resolution: 3},
+      {origin: origin0, segment: 0, S: 63n, resolution: 4}
+    ];
+    
+    testCases.forEach(testCase => {
+      const cell = serialize(testCase);
+      const children = cellToChildren(cell, testCase.resolution);
+      
+      // Should return array with just the original cell
+      expect(children.length).toBe(1);
+      expect(children[0]).toBe(cell);
+      
+      // Verify the returned cell has the same resolution
+      expect(getResolution(children[0])).toBe(testCase.resolution);
+    });
+  });
+
+  test('cellToParent with same resolution returns original cell', () => {
+    TEST_IDS.forEach(id => {
+      const cell = BigInt(`0x${id}`);
+      const currentResolution = getResolution(cell);
+      
+      // Test with explicit parentResolution equal to current resolution
+      const parent = cellToParent(cell, currentResolution);
+      
+      // Should return the original cell
+      expect(parent).toBe(cell);
+    });
+  });
+
+  test('cellToParent with same resolution for different resolution levels', () => {
+    // Test with different resolution levels
+    const testCases = [
+      {origin: origin0, segment: 0, S: 0n, resolution: 0},
+      {origin: origin0, segment: 0, S: 0n, resolution: 1},
+      {origin: origin0, segment: 0, S: 0n, resolution: 2},
+      {origin: origin0, segment: 0, S: 15n, resolution: 3},
+      {origin: origin0, segment: 0, S: 63n, resolution: 4}
+    ];
+    
+    testCases.forEach(testCase => {
+      const cell = serialize(testCase);
+      const parent = cellToParent(cell, testCase.resolution);
+      
+      // Should return the original cell
+      expect(parent).toBe(cell);
+      
+      // Verify the returned cell has the same resolution
+      expect(getResolution(parent)).toBe(testCase.resolution);
+    });
+  });
+
   test('non-Hilbert to non-Hilbert hierarchy', () => {
     // Test resolution 0 to 1 (both non-Hilbert)
     const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 0});

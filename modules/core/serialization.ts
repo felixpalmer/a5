@@ -128,14 +128,18 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
   const {origin, segment, S, resolution: currentResolution} = deserialize(index);
   const newResolution = childResolution ?? currentResolution + 1;
 
-  if (newResolution <= currentResolution) {
-    throw new Error(`Target resolution (${newResolution}) must be greater than current resolution (${currentResolution})`);
+  if (newResolution < currentResolution) {
+    throw new Error(`Target resolution (${newResolution}) must be equal to or greater than current resolution (${currentResolution})`);
   }
 
   if (newResolution > MAX_RESOLUTION) {
     throw new Error(`Target resolution (${newResolution}) exceeds maximum resolution (${MAX_RESOLUTION})`);
   }
 
+  // If target resolution equals current resolution, return the original cell
+  if (newResolution === currentResolution) {
+    return [index];
+  }
 
   let newOrigins: Origin[] = [origin];
   let newSegments: number[] = [segment];
@@ -173,11 +177,14 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
     throw new Error(`Target resolution (${newResolution}) cannot be negative`);
   }
 
-  if (newResolution >= currentResolution) {
-    throw new Error(`Target resolution (${newResolution}) must be less than current resolution (${currentResolution})`);
+  if (newResolution > currentResolution) {
+    throw new Error(`Target resolution (${newResolution}) must be equal to or less than current resolution (${currentResolution})`);
   }
 
   const resolutionDiff = currentResolution - newResolution;
+  if (resolutionDiff === 0) {
+    return index;
+  }
   const shiftedS = S >> BigInt(2 * resolutionDiff);
   return serialize({origin, segment, S: shiftedS, resolution: newResolution});
 }
