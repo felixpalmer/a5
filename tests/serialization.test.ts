@@ -156,6 +156,33 @@ describe('hierarchy', () => {
     });
   });
 
+  test('cellToChildren with same resolution returns original cell', () => {
+    TEST_IDS.forEach(id => {
+      const cell = BigInt(`0x${id}`);
+      const currentResolution = getResolution(cell);
+
+      // Test with explicit childResolution equal to current resolution
+      const children = cellToChildren(cell, currentResolution);
+
+      // Should return array with just the original cell
+      expect(children.length).toBe(1);
+      expect(children[0]).toBe(cell);
+    });
+  });
+
+  test('cellToParent with same resolution returns original cell', () => {
+    TEST_IDS.forEach(id => {
+      const cell = BigInt(`0x${id}`);
+      const currentResolution = getResolution(cell);
+
+      // Test with explicit parentResolution equal to current resolution
+      const parent = cellToParent(cell, currentResolution);
+
+      // Should return the original cell
+      expect(parent).toBe(cell);
+    });
+  });
+  
   test('non-Hilbert to non-Hilbert hierarchy', () => {
     // Test resolution 0 to 1 (both non-Hilbert)
     const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 0});
