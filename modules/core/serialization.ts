@@ -181,10 +181,11 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
     throw new Error(`Target resolution (${newResolution}) must be equal to or less than current resolution (${currentResolution})`);
   }
 
-  const resolutionDiff = currentResolution - newResolution;
-  if (resolutionDiff === 0) {
+  if (newResolution === currentResolution) {
     return index;
   }
+
+  const resolutionDiff = currentResolution - newResolution;
   const shiftedS = S >> BigInt(2 * resolutionDiff);
   return serialize({origin, segment, S: shiftedS, resolution: newResolution});
 }
