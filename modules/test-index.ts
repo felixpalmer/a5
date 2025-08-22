@@ -6,6 +6,22 @@
 export * from './index';
 
 export {origins} from './core/origin';
+export {quaternions} from './core/dodecahedron-quaternions';
+export {
+  φ,
+  TWO_PI,
+  TWO_PI_OVER_5,
+  PI_OVER_5,
+  PI_OVER_10,
+  dihedralAngle,
+  interhedralAngle,
+  faceEdgeAngle,
+  distanceToEdge,
+  distanceToVertex,
+  Rinscribed,
+  Rmidedge,
+  Rcircumscribed
+} from './core/constants';
 
 // Export tiling functions for testing
 export { getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPolar } from './core/tiling';
