@@ -1,0 +1,200 @@
+{
+  "φ": {
+    "value": 1.618033988749895,
+    "expectedValue": 1.618033988749895,
+    "properties": {
+      "goldenRatioSquared": 2.618033988749895,
+      "goldenRatioPlusOne": 2.618033988749895,
+      "reciprocal": 0.6180339887498948,
+      "reciprocalMinusOne": 0.6180339887498949
+    }
+  },
+  "angles": {
+    "TWO_PI": {
+      "value": 6.283185307179586,
+      "expectedValue": 6.283185307179586
+    },
+    "TWO_PI_OVER_5": {
+      "value": 1.2566370614359172,
+      "expectedValue": 1.2566370614359172,
+      "degrees": 72
+    },
+    "PI_OVER_5": {
+      "value": 0.6283185307179586,
+      "expectedValue": 0.6283185307179586,
+      "degrees": 36
+    },
+    "PI_OVER_10": {
+      "value": 0.3141592653589793,
+      "expectedValue": 0.3141592653589793,
+      "degrees": 18
+    }
+  },
+  "dodecahedronAngles": {
+    "dihedralAngle": {
+      "value": 2.0344439357957027,
+      "expectedValue": 2.0344439357957027,
+      "degrees": 116.56505117707799
+    },
+    "interhedralAngle": {
+      "value": 1.1071487177940904,
+      "expectedValue": 1.1071487177940904,
+      "degrees": 63.43494882292201
+    },
+    "faceEdgeAngle": {
+      "value": 1.0172219678978514,
+      "expectedValue": 1.0172219678978514,
+      "degrees": 58.282525588538995
+    },
+    "angleSum": 3.141592653589793
+  },
+  "distances": {
+    "distanceToEdge": {
+      "value": 0.6180339887498949,
+      "expectedValue": 0.6180339887498949,
+      "alternativeFormula": 0.6180339887498949
+    },
+    "distanceToVertex": {
+      "value": 0.7639320225002102,
+      "expectedValue": 0.7639320225002102,
+      "alternativeFormula": 0.7639320225002102
+    }
+  },
+  "sphereRadii": {
+    "Rinscribed": {
+      "value": 1,
+      "expectedValue": 1
+    },
+    "Rmidedge": {
+      "value": 1.1755705045849463,
+      "expectedValue": 1.1755705045849463
+    },
+    "Rcircumscribed": {
+      "value": 1.2584085723648188,
+      "expectedValue": 1.2584085723648188
+    },
+    "relationships": {
+      "inscribedLessThanMidedge": true,
+      "midedgeLessThanCircumscribed": true
+    }
+  },
+  "validationTests": {
+    "finiteNumbers": [
+      {
+        "value": 1.618033988749895,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 6.283185307179586,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 1.2566370614359172,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 0.6283185307179586,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 0.3141592653589793,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 2.0344439357957027,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 1.1071487177940904,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 1.0172219678978514,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 0.6180339887498949,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 0.7639320225002102,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 1,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 1.1755705045849463,
+        "isFinite": true,
+        "isNaN": false
+      },
+      {
+        "value": 1.2584085723648188,
+        "isFinite": true,
+        "isNaN": false
+      }
+    ],
+    "positiveConstants": [
+      {
+        "value": 1.618033988749895,
+        "isPositive": true
+      },
+      {
+        "value": 6.283185307179586,
+        "isPositive": true
+      },
+      {
+        "value": 1.2566370614359172,
+        "isPositive": true
+      },
+      {
+        "value": 0.6283185307179586,
+        "isPositive": true
+      },
+      {
+        "value": 0.3141592653589793,
+        "isPositive": true
+      },
+      {
+        "value": 2.0344439357957027,
+        "isPositive": true
+      },
+      {
+        "value": 1.1071487177940904,
+        "isPositive": true
+      },
+      {
+        "value": 0.6180339887498949,
+        "isPositive": true
+      },
+      {
+        "value": 0.7639320225002102,
+        "isPositive": true
+      },
+      {
+        "value": 1,
+        "isPositive": true
+      },
+      {
+        "value": 1.1755705045849463,
+        "isPositive": true
+      },
+      {
+        "value": 1.2584085723648188,
+        "isPositive": true
+      }
+    ]
+  }
+}

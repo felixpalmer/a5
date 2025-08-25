@@ -5,6 +5,8 @@ require("./fixtures/core/cell-info.cjs");
 require("./fixtures/core/crs-vertices.cjs");
 require("./fixtures/core/origins.cjs");
 require("./fixtures/core/tiling.cjs");
+require("./fixtures/core/constants.cjs");
+require("./fixtures/core/dodecahedron-quaternions.cjs");
 
 // Geometry generators
 require("./fixtures/geometry/spherical-polygon.cjs");
