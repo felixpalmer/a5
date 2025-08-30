@@ -46,7 +46,7 @@ geojson = { "type": "FeatureCollection", "features": cells }
 
 The above code will produce a collection of cells that cover the whole world.
 
-_Note that the cells all have the same area (approximately) shape - they are just warped by the map projection_
+_Note that the cells all have the same area, they are just warped by the map projection_
 
 import WireframeDemo from 'website-examples/wireframe/app';
 
