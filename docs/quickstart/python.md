@@ -21,7 +21,7 @@ uv add pya5
 Here's a complete example that generates A5 cells at a specified resolution and outputs them as GeoJSON:
 
 ```python
-from a5 import bigint_to_hex, cell_to_boundary, cell_to_children
+from a5 import u64_to_hex, cell_to_boundary, cell_to_children
 
 # Generate all cells at the specified resolution
 resolution = 2
@@ -35,7 +35,7 @@ for cell_id in cell_ids:
     cells.append({
         "type": "Feature",
         "geometry": { "type": "Polygon", "coordinates": [boundary] },
-        "properties": { "cellIdHex": bigint_to_hex(cell_id) },
+        "properties": { "cellIdHex": u64_to_hex(cell_id) },
     })
 
 # Create GeoJSON FeatureCollection

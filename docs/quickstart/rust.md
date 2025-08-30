@@ -23,7 +23,7 @@ cargo add a5 serde_json
 Here's a complete example that generates A5 cells at a specified resolution and outputs them as GeoJSON:
 
 ```rust
-use a5::core::{cell::cell_to_boundary, serialization::cell_to_children, hex::u64_to_hex};
+use a5::{cell_to_boundary, cell_to_children, u64_to_hex};
 use serde_json::json;
 
 fn main() {
