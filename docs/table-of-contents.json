@@ -12,7 +12,8 @@
     "label": "Quickstart",
     "items": [
       "quickstart/javascript",
-      "quickstart/python"
+      "quickstart/python",
+      "quickstart/rust"
     ]
   },
   {
