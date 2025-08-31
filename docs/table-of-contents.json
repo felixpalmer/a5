@@ -18,6 +18,14 @@
   },
   {
     "type": "category",
+    "label": "Ecosystem",
+    "items": [
+      "ecosystem/README",
+      "ecosystem/polyglot-mirroring"
+    ]
+  },
+  {
+    "type": "category",
     "label": "Technical Details",
     "items": [
       "technical/dggs",
