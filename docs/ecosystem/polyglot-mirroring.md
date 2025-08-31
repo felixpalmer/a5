@@ -1,6 +1,8 @@
 # Polyglot Mirroring
 
-A5 is developed using a technique called **Polyglot Mirroring** - maintaining functionally equivalent implementations across multiple programming languages with automated synchronization of changes using LLMs. 3 version of the codebase: [TypeScript](https://github.com/felixpalmer/a5), [Python](https://github.com/felixpalmer/a5-py) & [Rust](https://github.com/felixpalmer/a5-rs), are currently maintained.
+A5 is developed using a technique called **Polyglot Mirroring** - maintaining functionally equivalent implementations across multiple programming languages with automated synchronization of changes using LLMs.
+
+3 versions of the codebase: [TypeScript](https://github.com/felixpalmer/a5), [Python](https://github.com/felixpalmer/a5-py) & [Rust](https://github.com/felixpalmer/a5-rs), are currently maintained. Every time a change is made in one, the change is propagated to the others using LLM tools.
 
 ![Polyglot Mirroring Diagram](polyglot-mirroring.svg)
 
@@ -17,26 +19,28 @@ The **Polyglot Mirroring** technique relies on using LLMs to keep multiple mirro
 
 ### Granular unit tests
 
-- The code base needs to have small, well-tested functions with clear inputs and outputs.
-- Tests should be driven by external fixtures (e.g. JSON files) so the inputs & outputs can be easily moved between codebases.
+- The code base needs to have small, well-tested functions with clear inputs and outputs
+- Tests should be driven by external fixtures (e.g. JSON files) so the inputs & outputs can be easily moved between codebases
 
 ### Minimal dependencies
 
-- The codebase should not have any large external dependencies, as this will create friction with the ports.
-- An exception is if the dependencies are also available in all the mirror langauges.
+- The codebase should not have any large external dependencies, as this will create friction with the ports
+- An exception is if the dependencies are also available in all the mirror langauges
 
 ### Clear source file hierarchy
 
 - Circular imports are not allowed (many languages do not support them)
-- A [helper script](https://github.com/felixpalmer/a5/blob/main/analyze_imports.py) is used to extract a porting order, useful for giving the LLM
+- A [helper script](https://github.com/felixpalmer/a5/blob/main/analyze_imports.py) is used to extract a porting order, so the LLM knows where best to start
 
-### Clear specification for LLMs
+### Specification for LLMs
 
-A5 uses [Claude Code](https://www.anthropic.com/claude-code) tool to perform the mirroring of the codebases. The spec should:
+A5 uses [Claude Code](https://www.anthropic.com/claude-code) tool to perform the mirroring of the codebases. The spec:
 
-- Explain the concept of **Polyglot Mirroring** and the goal of keeping all codebases in sync
-- Give the locations of all the mirrors so the tool knows where to find the code
-- List how each codebase can be built, tested, linted and formatted using command line tools
+- Explains the concept of **Polyglot Mirroring** and the goal of keeping all codebases in sync
+- Gives the locations of all the mirrors so the tool knows where to find the code
+- Lists how each codebase can be built, tested, linted and formatted using command line tools
+
+The required change can then be mirrored either by asking the tool to check to see what has changed, or by referencing a pull request or git commit.
 
 ## Benefits
 
