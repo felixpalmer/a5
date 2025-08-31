@@ -1,46 +1,54 @@
 # Polyglot Mirroring
 
-A5 is developed using a **polyglot mirroring** - maintaining functionally equivalent implementations across multiple programming languages with automated synchronization of changes using LLMs.
-
-## The A5 Ecosystem
-
-The A5 project maintains three parallel implementations:
-
-- [**a5**](https://github.com/felixpalmer/a5) - TypeScript/JavaScript (npm)
-- [**a5-py**](https://github.com/felixpalmer/a5-py) - Python (PyPI) 
-- [**a5-rs**](https://github.com/felixpalmer/a5-rs) - Rust (crates.io)
-
-While the TypeScript version was written manually, the Python and Rust implementations were initially ported using Large Language Models (LLMs). Going forward, all three languages are treated as equal citizens in the ecosystem.
-
-## How It Works
-
-When a bugfix, feature, or improvement is contributed to any implementation:
-
-1. **Changes are identified** in the source language
-2. **LLMs translate** the changes to the other languages, preserving:
-   - Functional behavior
-   - API consistency
-   - Language-specific idioms and patterns
-3. **All implementations** are updated to maintain feature parity
-
-This approach ensures that users of any language binding get the same functionality and benefit from improvements regardless of which implementation they originated from.
-
-## Benefits
-
-- **Consistent user experience** across all supported languages
-- **Faster feature propagation** - improvements reach all users quickly
-- **Reduced maintenance burden** - changes don't need to be manually ported
-- **Language equality** - no "second-class citizen" implementations
-
-## Challenges
-
-- **API design complexity** - ensuring changes work idiomatically across languages
-- **Testing synchronization** - maintaining equivalent test coverage
-- **Version coordination** - keeping releases aligned across repositories
-- **Quality assurance** - verifying automated translations preserve correctness
+A5 is developed using a technique called **Polyglot Mirroring** - maintaining functionally equivalent implementations across multiple programming languages with automated synchronization of changes using LLMs. 3 version of the codebase: [TypeScript](https://github.com/felixpalmer/a5), [Python](https://github.com/felixpalmer/a5-py) & [Rust](https://github.com/felixpalmer/a5-rs), are currently maintained.
 
 ## Philosophy
 
-Polyglot mirroring embodies the principle that **the choice of programming language should not limit access to functionality**. By treating all language implementations as equals, A5 ensures that developers can use their preferred language without compromising on features or stability.
+**Polyglot mirroring** embodies the principle that **the choice of programming language should not limit access to functionality**. By treating all language implementations as equals, A5 ensures that developers can use their preferred language without compromising on features or stability. It also means that contributions to the project can come from any language, with the mirroring to the other langauges being automated.
 
-This approach leverages modern AI tooling to make multi-language library maintenance practical and sustainable, enabling broader adoption while maintaining high quality standards across all implementations.
+This approach leverages modern LLM tooling to make multi-language library maintenance practical and sustainable, enabling broader adoption while maintaining high quality standards across all implementations.
+
+
+## Key requirements for success
+
+The **Polyglot Mirroring** technique relies on using LLMs to keep multiple mirrors of a codebase in sync. In order to be effective, the code needs to be organized such that the LLM can work with it effectively. Many of these are already accepted as good programming practice.
+
+### Granular unit tests
+
+- The code base needs to have small, well-tested functions with clear inputs and outputs.
+- Tests should be driven by external fixtures (e.g. JSON files) so the inputs & outputs can be easily moved between codebases.
+
+### Minimal dependencies
+
+- The codebase should not have any large external dependencies, as this will create friction with the ports.
+- An exception is if the dependencies are also available in all the mirror langauges.
+
+### Clear source file hierachy
+
+- Circular imports are not allowed (many languages not support them)
+- A [helper script](https://github.com/felixpalmer/a5/blob/main/analyze_imports.py) is used to extract a porting order, useful for giving the LLM
+
+### Clear specification for LLMs
+
+A5 uses [Claude Code](https://www.anthropic.com/claude-code) tool to perform the mirroring of the codebases. The spec should:
+
+- Explain the concept of **Polyglot Mirroring** and the goal of keeping all codebases in sync
+- Give the locations of all the mirrors so the tool knows where to find the code
+- List how each codebase can be built, tested, linted and formatted using command line tools
+
+## Benefits
+
+- **Consistent user experience** - all mirrors have same familiar API
+- **Inclusive ecosystem** - contributions can come from any language
+- **Faster feature propagation** - improvements reach all users quickly
+- **Reduced maintenance burden** - changes don't need to be manually ported
+- **Code quality** - mirror implementations can reveal bugs/precision issues that might otherwise be missed
+
+## Why not use bindings?
+
+A traditional approach would be to use bindings, to bind the high level API written in one langauge to invoke the function implementation in another. There are several downsides to using bindings:
+
+- Performance overhead and API limitations
+- Core functionality is a "black box", making it much harder for developers to contribute to the project
+- Harder to debug crashes/bugs
+- Larger code footprint, by bundling a built binary
