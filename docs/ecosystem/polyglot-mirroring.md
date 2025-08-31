@@ -4,6 +4,8 @@ A5 is developed using a technique called **Polyglot Mirroring** - maintaining fu
 
 3 versions of the codebase: [TypeScript](https://github.com/felixpalmer/a5), [Python](https://github.com/felixpalmer/a5-py) & [Rust](https://github.com/felixpalmer/a5-rs), are currently maintained. Every time a change is made in one, the change is propagated to the others using LLM tools.
 
+Becuase all the mirror codebase share the same high-level structure (function names, variables etc), LLM tools are very effective at adding new code or making changes as they have an example of a working implementation and an established set of patterns to match against.
+
 ![Polyglot Mirroring Diagram](polyglot-mirroring.svg)
 
 ## Philosophy
@@ -38,9 +40,9 @@ A5 uses [Claude Code](https://www.anthropic.com/claude-code) tool to perform the
 
 - Explains the concept of **Polyglot Mirroring** and the goal of keeping all codebases in sync
 - Gives the locations of all the mirrors so the tool knows where to find the code
-- Lists how each codebase can be built, tested, linted and formatted using command line tools
+- Lists how each codebase can be built, tested, linted and formatted using command line tools. This enables the tool to iterate until it has a working solution.
 
-The required change can then be mirrored either by asking the tool to check to see what has changed, or by referencing a pull request or git commit.
+A new change can then be mirrored either by asking the tool to check to see what has changed, or by referencing a pull request or git commit.
 
 ## Benefits
 
