@@ -2,17 +2,36 @@
 
 A5 is developed using a technique called **Polyglot Mirroring** - maintaining functionally equivalent implementations across multiple programming languages with automated synchronization of changes using LLMs.
 
-3 versions of the codebase: [TypeScript](https://github.com/felixpalmer/a5), [Python](https://github.com/felixpalmer/a5-py) & [Rust](https://github.com/felixpalmer/a5-rs), are currently maintained. Every time a change is made in one, the change is propagated to the others using LLM tools.
-
-Becuase all the mirror codebases share the same high-level structure (function names, variables etc), LLM tools are very effective at adding new code or making changes as they have an example of a working implementation and an established set of patterns to match against.
-
-![Polyglot Mirroring Diagram](polyglot-mirroring.svg)
-
 ## Philosophy
 
 **Polyglot mirroring** embodies the principle that **the choice of programming language should not limit access to functionality**. By treating all language implementations as equals, developers can use their preferred language without compromising on features or stability. It also means that contributions to the project can come from any language, with the mirroring to the other languages being automated.
 
-## Key requirements for success
+## How it works
+
+3 versions of the codebase: [TypeScript](https://github.com/felixpalmer/a5), [Python](https://github.com/felixpalmer/a5-py) & [Rust](https://github.com/felixpalmer/a5-rs), are currently maintained. Every time a change is made in one, the change is propagated to the others using LLM tools.
+
+Becuase all the mirror codebases share the same high-level structure (function names, variables etc), LLM tools are very effective at adding new code or making changes as they have an example of a working implementation and an established set of patterns to match against.
+
+![Polyglot Mirroring Diagram](polyglot-mirroring.png)
+
+## Benefits
+
+- **Consistent user experience** - all mirrors have same familiar API
+- **Inclusive ecosystem** - contributions can come from any language
+- **Faster feature propagation** - improvements reach all users quickly
+- **Reduced maintenance burden** - changes don't need to be manually ported
+- **Code quality** - mirror implementations can reveal bugs/precision issues that might otherwise be missed
+
+## Why not use bindings?
+
+A traditional approach would be to use bindings, to bind the high level API written in one language to invoke the function implementation in another. There are several downsides to using bindings:
+
+- Performance overhead and API limitations
+- Core functionality is a "black box", making it much harder for developers to contribute to the project
+- Harder to debug crashes/bugs
+- Larger code footprint, by bundling a built binary
+
+## Implementation tips
 
 The **Polyglot Mirroring** technique relies on using LLMs to keep multiple mirrors of a codebase in sync. In order to be effective, the code needs to be organized such that the LLM can work with it effectively. Many of these are already accepted as good programming practices.
 
@@ -40,20 +59,3 @@ A5 uses [Claude Code](https://www.anthropic.com/claude-code) tool to perform the
 - Lists how each codebase can be built, tested, linted and formatted using command line tools. This enables the tool to iterate until it has a working solution.
 
 A new change can then be mirrored either by asking the tool to check to see what has changed, or by referencing a pull request or git commit.
-
-## Benefits
-
-- **Consistent user experience** - all mirrors have same familiar API
-- **Inclusive ecosystem** - contributions can come from any language
-- **Faster feature propagation** - improvements reach all users quickly
-- **Reduced maintenance burden** - changes don't need to be manually ported
-- **Code quality** - mirror implementations can reveal bugs/precision issues that might otherwise be missed
-
-## Why not use bindings?
-
-A traditional approach would be to use bindings, to bind the high level API written in one language to invoke the function implementation in another. There are several downsides to using bindings:
-
-- Performance overhead and API limitations
-- Core functionality is a "black box", making it much harder for developers to contribute to the project
-- Harder to debug crashes/bugs
-- Larger code footprint, by bundling a built binary
