@@ -2,9 +2,11 @@
 
 A5 is developed using a technique called **Polyglot Mirroring** - maintaining functionally equivalent implementations across multiple programming languages with automated synchronization of changes using LLMs. 3 version of the codebase: [TypeScript](https://github.com/felixpalmer/a5), [Python](https://github.com/felixpalmer/a5-py) & [Rust](https://github.com/felixpalmer/a5-rs), are currently maintained.
 
+![Polyglot Mirroring Diagram](polyglot-mirroring.svg)
+
 ## Philosophy
 
-**Polyglot mirroring** embodies the principle that **the choice of programming language should not limit access to functionality**. By treating all language implementations as equals, A5 ensures that developers can use their preferred language without compromising on features or stability. It also means that contributions to the project can come from any language, with the mirroring to the other langauges being automated.
+**Polyglot mirroring** embodies the principle that **the choice of programming language should not limit access to functionality**. By treating all language implementations as equals, A5 ensures that developers can use their preferred language without compromising on features or stability. It also means that contributions to the project can come from any language, with the mirroring to the other languages being automated.
 
 This approach leverages modern LLM tooling to make multi-language library maintenance practical and sustainable, enabling broader adoption while maintaining high quality standards across all implementations.
 
@@ -23,9 +25,9 @@ The **Polyglot Mirroring** technique relies on using LLMs to keep multiple mirro
 - The codebase should not have any large external dependencies, as this will create friction with the ports.
 - An exception is if the dependencies are also available in all the mirror langauges.
 
-### Clear source file hierachy
+### Clear source file hierarchy
 
-- Circular imports are not allowed (many languages not support them)
+- Circular imports are not allowed (many languages do not support them)
 - A [helper script](https://github.com/felixpalmer/a5/blob/main/analyze_imports.py) is used to extract a porting order, useful for giving the LLM
 
 ### Clear specification for LLMs
@@ -46,7 +48,7 @@ A5 uses [Claude Code](https://www.anthropic.com/claude-code) tool to perform the
 
 ## Why not use bindings?
 
-A traditional approach would be to use bindings, to bind the high level API written in one langauge to invoke the function implementation in another. There are several downsides to using bindings:
+A traditional approach would be to use bindings, to bind the high level API written in one language to invoke the function implementation in another. There are several downsides to using bindings:
 
 - Performance overhead and API limitations
 - Core functionality is a "black box", making it much harder for developers to contribute to the project
