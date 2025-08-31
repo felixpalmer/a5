@@ -12,7 +12,9 @@ A5 is developed using a technique called **Polyglot Mirroring** - maintaining fu
 
 Becuase all the mirror codebases share the same high-level structure (function names, variables etc), LLM tools are very effective at adding new code or making changes as they have an example of a working implementation and an established set of patterns to match against.
 
-![Polyglot Mirroring Diagram](polyglot-mirroring.png)
+import PolyglotDiagram from './polyglot-mirroring.png';
+
+<img src={PolyglotDiagram} style={{width: "100%", maxWidth: "400px"}}/>
 
 ## Benefits
 
