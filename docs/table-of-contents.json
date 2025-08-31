@@ -34,5 +34,13 @@
       "api-reference/hierarchy",
       "api-reference/cell-info"
     ]
+  },
+  {
+    "type": "category",
+    "label": "Ecosystem",
+    "items": [
+      "ecosystem/README",
+      "ecosystem/polyglot-mirroring"
+    ]
   }
 ]
