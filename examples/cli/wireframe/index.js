@@ -1,6 +1,6 @@
 const {
   cellToBoundary,
-  bigIntToHex,
+  u64ToHex,
   cellToChildren,
 } = require("../../../dist/a5.cjs");
 const fs = require("fs");
@@ -38,7 +38,7 @@ try {
 
   // Generate all cells
   for (let cellId of cellIds) {
-    const cellIdHex = bigIntToHex(cellId);
+    const cellIdHex = u64ToHex(cellId);
     const boundary = cellToBoundary(cellId, {
       closedRing: true,
       segments: 10,

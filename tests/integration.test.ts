@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { cellToBoundary } from 'a5/core/cell'
-import { hexToBigInt } from 'a5/core/hex'
+import { hexToU64 } from 'a5/core/hex'
 import type { LonLat } from 'a5/core/coordinate-systems'
 
 // Import test data
@@ -53,7 +53,7 @@ describe('wireframe integration tests', () => {
         const expectedBoundary = feature.geometry.coordinates[0];
         
         // Get the boundary from cellToBoundary
-        const cellId = hexToBigInt(cellIdHex);
+        const cellId = hexToU64(cellIdHex);
         const actualBoundary = cellToBoundary(cellId, { closedRing: true, segments });
 
         // Compare the boundaries

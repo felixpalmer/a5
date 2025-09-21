@@ -4,7 +4,7 @@ import { A5Cell } from 'a5/core/utils';
 import { origins } from 'a5/core/origin';
 import TEST_IDS from './test-ids.json';
 import { cellToParent, cellToChildren } from 'a5/core/serialization';
-import { bigIntToHex } from 'a5/core/hex';
+import { u64ToHex } from 'a5/core/hex';
 
 const RESOLUTION_MASKS = [
   // Non-Hilbert resolutions
@@ -270,7 +270,7 @@ describe('getRes0Cells', () => {
     
     // Verify each cell matches the expected hex value
     res0Cells.forEach((cell, index) => {
-      expect(bigIntToHex(cell)).toBe(expectedHexValues[index]);
+      expect(u64ToHex(cell)).toBe(expectedHexValues[index]);
     });
   });
 });

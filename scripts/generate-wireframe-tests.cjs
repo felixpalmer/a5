@@ -1,4 +1,4 @@
-const { cellToBoundary, bigIntToHex, cellToChildren } = require("../dist/a5.cjs");
+const { cellToBoundary, u64ToHex, cellToChildren } = require("../dist/a5.cjs");
 const fs = require("fs");
 const path = require("path");
 
@@ -14,7 +14,7 @@ function generateWireframeTest(resolution, segments = "auto") {
     // Generate all cells at a given resolution
     const cellIds = cellToChildren(0n, resolution);
     for (let cellId of cellIds) {
-      const cellIdHex = bigIntToHex(cellId);
+      const cellIdHex = u64ToHex(cellId);
       const boundary = cellToBoundary(cellId, { closedRing: true, segments });
 
       features.push({

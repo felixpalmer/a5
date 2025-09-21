@@ -1,5 +1,5 @@
 const { parse } = require('csv-parse/sync');
-const { lonLatToCell, cellToLonLat, bigIntToHex } = require('a5-js');
+const { lonLatToCell, cellToLonLat, u64ToHex } = require('a5-js');
 const fs = require('fs');
 
 // Read and parse the CSV file
@@ -34,7 +34,7 @@ try {
     }
 
     const cellId = lonLatToCell([lng, lat], resolution);
-    const cellIdHex = bigIntToHex(cellId);
+    const cellIdHex = u64ToHex(cellId);
 
     if (!aggregatedData.has(cellIdHex)) {
       aggregatedData.set(cellIdHex, {

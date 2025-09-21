@@ -3,7 +3,7 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map} from 'react-map-gl/maplibre';
 import {PolygonLayer} from '@deck.gl/layers';
-import {cellToBoundary, bigIntToHex, cellToChildren} from 'a5';
+import {cellToBoundary, u64ToHex, cellToChildren} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 
@@ -34,7 +34,7 @@ const App: React.FC<{showControls?: boolean}> = ({showControls = true}) => {
       const boundary = cellToBoundary(cellId);
       return {
         polygon: [boundary],
-        cellId: bigIntToHex(cellId)
+        cellId: u64ToHex(cellId)
       };
     });
   }, [resolution]);

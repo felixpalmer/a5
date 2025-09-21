@@ -8,7 +8,7 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 // PUBLIC API
 // Indexing
 export {cellToBoundary, cellToLonLat, lonLatToCell} from './core/cell';
-export {hexToBigInt, bigIntToHex} from './core/hex';
+export {hexToU64, u64ToHex} from './core/hex';
 
 // Hierarchy
 export {cellToParent, cellToChildren, getResolution, getRes0Cells} from './core/serialization';
