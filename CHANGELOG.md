@@ -2,7 +2,7 @@
 
 All notable changes to A5 will be documented in this file.
 
-For the latest documentation, visit [A5 Documentation](https://a5.felixpalmer.com)
+For the latest documentation, visit [A5 Documentation](https://a5geo.org)
 
 <!--
 Each version should:
