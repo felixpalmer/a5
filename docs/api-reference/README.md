@@ -9,8 +9,8 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [lonLatToCell](./api-reference/indexing#lonlattocell)
 - [cellToLonLat](./api-reference/indexing#celltolonlat)
 - [cellToBoundary](./api-reference/indexing#celltoboundary)
-- [bigIntToHex](./api-reference/indexing#biginttohex)
-- [hexToBigInt](./api-reference/indexing#hextobigint)
+- [u64ToHex](./api-reference/indexing#u64tohex)
+- [hexToU64](./api-reference/indexing#hextou64)
 
 ### Hierarchy
 

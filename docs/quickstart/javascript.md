@@ -21,7 +21,7 @@ yarn add a5-js
 Here's a complete example that generates A5 cells at a specified resolution and outputs them as GeoJSON:
 
 ```javascript
-import { cellToBoundary, bigIntToHex, cellToChildren } from "a5-js";
+import { cellToBoundary, u64ToHex, cellToChildren } from "a5-js";
 
 // Generate all cells at the specified resolution
 const resolution = 2;
@@ -30,7 +30,7 @@ const cellIds = cellToChildren(0n, resolution);
 
 // Generate boundary for each cell
 for (let cellId of cellIds) {
-  const cellIdHex = bigIntToHex(cellId);
+  const cellIdHex = u64ToHex(cellId);
   const boundary = cellToBoundary(cellId);
 
   cells.push({

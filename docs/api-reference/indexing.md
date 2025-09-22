@@ -65,10 +65,10 @@ A5 cells are stored as 64 bit integers, for performance and to provide a compact
 
 For best performance it is recommened to use this representation, but it is also possible to convert them into hexidecimal, for example to encode them in JSON (which does _not_ support 64 bit integers). Two helper functions are provided for this conversion.
 
-### bigIntToHex
+### u64ToHex
 
 ```ts
-function bigIntToHex(index: bigint): string;
+function u64ToHex(index: bigint): string;
 ```
 
 #### Parameters
@@ -79,10 +79,10 @@ function bigIntToHex(index: bigint): string;
 
 - **(string)** Hexadecimal string representation of the cell identifier
 
-### hexToBigInt
+### hexToU64
 
 ```ts
-function hexToBigInt(hex: string): bigint;
+function hexToU64(hex: string): bigint;
 ```
 
 #### Parameters

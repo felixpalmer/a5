@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type {Degrees,LonLat } from "a5/core/coordinate-systems";
 import { cellToBoundary, cellToLonLat, lonLatToCell,a5cellContainsPoint } from 'a5/core/cell'
 import { deserialize, MAX_RESOLUTION } from 'a5/core/serialization';
-import { hexToBigInt } from 'a5/core/hex';
+import { hexToU64 } from 'a5/core/hex';
 import populatedPlaces from './data/ne_50m_populated_places_nameonly.json';
 
 interface GeoJSONFeature {
@@ -70,7 +70,7 @@ describe('Antimeridian Cell Tests', () => {
     it('Antimeridian cell should have longitude span less than 180 degrees', () => {
         for (const cellId of antimeridianCells) {
             for (const segment of segments) {
-                const cellIdBigInt = hexToBigInt(cellId);
+                const cellIdBigInt = hexToU64(cellId);
                 const boundary = cellToBoundary(cellIdBigInt, {segments: segment as number});
 
                 // Check for antimeridian crossing

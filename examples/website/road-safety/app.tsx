@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
-import { cellToBoundary, hexToBigInt } from 'a5';
+import { cellToBoundary, hexToU64 } from 'a5';
 import { Color } from '@deck.gl/core';
 
 const HEATMAP_DATA = '/data/heatmap-data.json';
@@ -25,7 +25,7 @@ const App: React.FC = () => {
   const cellLayer = new PolygonLayer<A5CellWithCount>({
     data: HEATMAP_DATA,
     id: 'cell-polygon',
-    getPolygon: d => cellToBoundary(hexToBigInt(d.cellId)),
+    getPolygon: d => cellToBoundary(hexToU64(d.cellId)),
     getFillColor: (d: A5CellWithCount) => {
       // Interpolate between A5 green and white based on sqrt of count
       const scale = Math.sqrt(d.count / MAX_COUNT);
