@@ -16,25 +16,51 @@ LOAD a5;
 ```sql
 -- Get the A5 Cell for Spain's Kilometer zero
 -- https://en.wikipedia.org/wiki/Kilometre_zero
-SELECT a5_cell(40.41677, -3.7037, 10);
+SELECT a5_cell(-3.7037, 40.41677, 10);
 ┌────────────────────────────────┐
-│ a5_cell(40.41677, -3.7037, 10) │
+│ a5_cell(-3.7037, 40.41677, 10) │
 │             uint64             │
 ├────────────────────────────────┤
-│      8049560361075998720       │
-│       (8.05 quintillion)       │
+│      5907253213819568128       │
+│       (5.91 quintillion)       │
 └────────────────────────────────┘
 
 -- Get the center of the A5 cell previously returned
 -- since cells cover a greater area, the returned lon/lat
 -- will be different.
-SELECT a5_lon_lat(8049560361075998720);
+SELECT a5_lon_lat();
 ┌──────────────────────────────────────────┐
-│     a5_lon_lat(8049560361075998720)      │
+│     a5_lon_lat(5907253213819568128)      │
 │                double[2]                 │
 ├──────────────────────────────────────────┤
-│ [40.40010129326899, -3.6951233546411504] │
+│ [-3.6889861184034345, 40.42315634154009] │
 └──────────────────────────────────────────┘
+```
+
+
+## Code Example: Generate GeoJSON for Cell
+
+To generate a GeoJSON polygon for the A5 cell above use this SQL along with DuckDB's spatial extension:
+
+```sql
+SELECT
+    ST_AsGeoJSON(
+        ST_MakePolygon(
+            ST_MakeLine(
+                list_transform(
+                    a5_boundary(
+                        a5_cell(-3.7037, 40.41677, 10)
+                    ),
+                    x -> ST_Point(x[1], x[2])
+                )
+            )
+        )
+    );
+{"type":"Polygon","coordinates":[[[-3.639321611065313,40.44502900567739],[-3.6973300524360155,40.44427170464865],[-3.7459288918337563,40.424159040292615],[-3.70791029038422,40.394201800420205],[-3.654438659632305,40.4080830654645],[-3.639321611065313,40.44502900567739]]]}
+```
+
+```geojson
+{"type":"Polygon","coordinates":[[[-3.639321611065313,40.44502900567739],[-3.6973300524360155,40.44427170464865],[-3.7459288918337563,40.424159040292615],[-3.70791029038422,40.394201800420205],[-3.654438659632305,40.4080830654645],[-3.639321611065313,40.44502900567739]]]}
 ```
 
 ## Code Example: Generate A5 Cells
