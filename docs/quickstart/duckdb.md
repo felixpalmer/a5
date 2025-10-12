@@ -11,11 +11,38 @@ INSTALL a5 from community;
 LOAD a5;
 ```
 
+## Code Example: Translate Lat/Lon to A5 Cell and back
+
+```sql
+-- Get the A5 Cell for Spain's Kilometer zero
+-- https://en.wikipedia.org/wiki/Kilometre_zero
+SELECT a5_cell(40.41677, -3.7037, 10);
+┌────────────────────────────────┐
+│ a5_cell(40.41677, -3.7037, 10) │
+│             uint64             │
+├────────────────────────────────┤
+│      8049560361075998720       │
+│       (8.05 quintillion)       │
+└────────────────────────────────┘
+
+-- Get the center of the A5 cell previously returned
+-- since cells cover a greater area, the returned lon/lat
+-- will be different.
+SELECT a5_lon_lat(8049560361075998720);
+┌──────────────────────────────────────────┐
+│     a5_lon_lat(8049560361075998720)      │
+│                double[2]                 │
+├──────────────────────────────────────────┤
+│ [40.40010129326899, -3.6951233546411504] │
+└──────────────────────────────────────────┘
+```
+
 ## Code Example: Generate A5 Cells
 
-Here's a complete example that generates A5 cells at a specified resolution and creates a Polygon.
+Here's a complete example that generates A5 cells at a specified resolution and creates a Polygon using DuckDB's spatial extension.
 
-```SQL
+```sql
+INSTALL spatial;
 LOAD spatial;
 
 select unnest(a5_children(0, 1));
