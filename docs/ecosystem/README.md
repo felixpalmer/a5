@@ -14,6 +14,10 @@ The A5 project consists of multiple language implementations and integrations, m
 
 ## Integrations
 
+### DuckDB
+📖 [Quickstart](../quickstart/duckdb.md) • 📦 [Extension](https://query.farm/duckdb_extension_a5.html) • 🔗 [Source](https://github.com/Query-farm/a5)
+
+### Other
 - [geotoolkit](https://github.com/Geomatys/geotoolkit) Java language library for developing geospatial applications with support for [A5](https://github.com/Geomatys/geotoolkit/tree/main/geotk-dggs/src/main/java/org/geotoolkit/dggs/a5)
 - [vgrid libraries](https://github.com/opengeoshub) A5 tools & utilies for [MapLibre](https://gishub.vn/pages/dggs/a5/), [pandas](https://vgridpandas.gishub.vn/notebooks/03_a5/), [QGIS](https://plugins.qgis.org/plugins/vgridtools/) & more
 

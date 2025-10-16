@@ -11,6 +11,7 @@
     "type": "category",
     "label": "Quickstart",
     "items": [
+      "quickstart/duckdb",
       "quickstart/javascript",
       "quickstart/python",
       "quickstart/rust"
