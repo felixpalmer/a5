@@ -16,24 +16,23 @@ LOAD a5;
 ```sql
 -- Get the A5 Cell for Spain's Kilometer zero
 -- https://en.wikipedia.org/wiki/Kilometre_zero
-SELECT a5_cell(40.41677, -3.7037, 10);
-┌────────────────────────────────┐
-│ a5_cell(40.41677, -3.7037, 10) │
-│             uint64             │
-├────────────────────────────────┤
-│      5907253213819568128       │
-└────────────────────────────────┘
-
+SELECT a5_lonlat_to_cell(-3.7037, 40.41677, 10) as cell;
+┌─────────────────────┐
+│        cell         │
+│       uint64        │
+├─────────────────────┤
+│ 5907253213819568128 │
+└─────────────────────┘
 
 -- Get the center of the A5 cell previously returned
 -- since cells cover a greater area, the returned lon/lat
 -- will be different.
-SELECT a5_lat_lon(5907253213819568128);
+SELECT a5_cell_to_lonlat(5907253213819568128);
 ┌──────────────────────────────────────────┐
-│     a5_lat_lon(5907253213819568128)      │
+│  a5_cell_to_lonlat(5907253213819568128)  │
 │                double[2]                 │
 ├──────────────────────────────────────────┤
-│ [40.42315634154009, -3.6889861184034345] │
+│ [-3.6889861184034345, 40.42315634154009] │
 └──────────────────────────────────────────┘
 ```
 
@@ -48,10 +47,10 @@ SELECT
         ST_MakePolygon(
             ST_MakeLine(
                 list_transform(
-                    a5_boundary(
-                        a5_cell(40.41677, -3.7037, 10)
+                    a5_cell_to_boundary(
+                        a5_lonlat_to_cell(-3.7037, 40.41677, 10)
                     ),
-                    x -> ST_Point(x[2], x[1])
+                    x -> ST_Point(x[1], x[2])
                 )
             )
         )
@@ -102,26 +101,26 @@ Here's a complete example that generates A5 cells at a specified resolution and 
 INSTALL spatial;
 LOAD spatial;
 
-select unnest(a5_children(0, 1));
-┌───────────────────────────┐
-│ unnest(a5_children(0, 0)) │
-│          uint64           │
-├───────────────────────────┤
-│        144115188075855872 │
-│        432345564227567616 │
-│        720575940379279360 │
-│       1008806316530991104 │
-│       1297036692682702848 │
-│       1585267068834414592 │
-│       1873497444986126336 │
-│       2161727821137838080 │
-│       2449958197289549824 │
-│       2738188573441261568 │
-│       3026418949592973312 │
-│       3314649325744685056 │
-├───────────────────────────┤
-│          12 rows          │
-└───────────────────────────┘
+select unnest(a5_cell_to_children(0, 0));
+┌───────────────────────────────────┐
+│ unnest(a5_cell_to_children(0, 0)) │
+│              uint64               │
+├───────────────────────────────────┤
+│                144115188075855872 │
+│                432345564227567616 │
+│                720575940379279360 │
+│               1008806316530991104 │
+│               1297036692682702848 │
+│               1585267068834414592 │
+│               1873497444986126336 │
+│               2161727821137838080 │
+│               2449958197289549824 │
+│               2738188573441261568 │
+│               3026418949592973312 │
+│               3314649325744685056 │
+├───────────────────────────────────┤
+│              12 rows              │
+└───────────────────────────────────┘
 
 -- For each cell now create a polygon for the boundary of the cell
 SELECT
@@ -129,11 +128,11 @@ cell_id,
 ST_MakePolygon(
     ST_MakeLine(
         list_transform(
-            a5_boundary(cell_id),
-            x-> ST_Point(x[2], x[1])
+            a5_cell_to_boundary(cell_id),
+            x-> ST_Point(x[1], x[2])
         )
     )
-) FROM (SELECT unnest(a5_children(5907253213819568128, 11)) as cell_id);
+) FROM (SELECT unnest(a5_cell_to_children(5907253213819568128, 11)) as cell_id);
 ┌─────────────────────┬───────────────────────────────────────────────────────────┐
 │       cell_id       │ st_makepolygon(st_makeline(list_transform(a5_boundary(c…  │
 │       uint64        │                         geometry                          │
@@ -159,12 +158,12 @@ ST_Area(
     ST_MakePolygon(
         ST_MakeLine(
             list_transform(
-                a5_boundary(cell_id),
-                x-> ST_Point(x[2], x[1])
+                a5_cell_to_boundary(cell_id),
+                x-> ST_Point(x[1], x[2])
             )
         )
     )
-) as area FROM (SELECT unnest(a5_children(5907253213819568128, 11)) as cell_id);
+) as area FROM (SELECT unnest(a5_cell_to_children(5907253213819568128, 11)) as cell_id);
 ┌─────────────────────┬───────────────────────┐
 │       cell_id       │         area          │
 │       uint64        │        double         │
