@@ -1,4 +1,4 @@
-# Rust Quickstart
+# DuckDB Quickstart
 
 Get started with A5 in Duckdb by installing the [extension](https://query.farm/duckdb_extension_a5.html) and running a simple example.
 
