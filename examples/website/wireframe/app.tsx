@@ -19,7 +19,14 @@ const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json
 
 const A5_GREEN = [0, 170, 85] as [number, number, number];
 
-const App: React.FC<{showControls?: boolean}> = ({showControls = true}) => {
+type WireframeDemoOptions = {
+  cellIds?: bigint[],
+  showControls?: boolean
+}
+const App: React.FC<WireframeDemoOptions> = ({
+  cellIds, 
+  showControls = true
+}: WireframeDemoOptions) => {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [resolution, setResolution] = useState(2);
 
@@ -28,8 +35,10 @@ const App: React.FC<{showControls?: boolean}> = ({showControls = true}) => {
   }, []);
 
   // Generate cells with sampling for higher resolutions
+  if (cellIds === undefined) {
+    cellIds = cellToChildren(0n, resolution);
+  }
   const polygons = useMemo(() => {
-    let cellIds = cellToChildren(0n, resolution);
     return cellIds.map((cellId: bigint) => {
       const boundary = cellToBoundary(cellId);
       return {
@@ -37,7 +46,7 @@ const App: React.FC<{showControls?: boolean}> = ({showControls = true}) => {
         cellId: u64ToHex(cellId)
       };
     });
-  }, [resolution]);
+  }, [cellIds, resolution]);
 
   const polygonLayer = new PolygonLayer({
     id: 'a5-cells',

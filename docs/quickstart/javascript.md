@@ -53,7 +53,7 @@ _Note that the cells all have the same area, they are just warped by the map pro
 import WireframeDemo from 'website-examples/wireframe/app';
 
 <div style={{margin: '20px 0'}}>
-  <WireframeDemo />
+  <WireframeDemo cellIds={[1585267068834414592n]}/>
 </div>
 
 ## CLI Usage
