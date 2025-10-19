@@ -27,19 +27,25 @@ const App: React.FC<WireframeDemoOptions> = ({
   cellIds, 
   showControls = true
 }: WireframeDemoOptions) => {
+  const initialViewState = {...INITIAL_VIEW_STATE};
   if (cellIds) {
-    const cell = cellIds[0];
-    const [lon, lat] = cellToLonLat(cell);
-    const resolution = getResolution(cell);
-    const zoom = resolution + 1;
-    INITIAL_VIEW_STATE.longitude = lon;
-    INITIAL_VIEW_STATE.latitude = lat;
-    INITIAL_VIEW_STATE.zoom = Math.max(0, Math.min(24, zoom));
-    INITIAL_VIEW_STATE.minZoom = Math.max(0, zoom - 3);
-    INITIAL_VIEW_STATE.maxZoom = Math.min(24, zoom + 3);
+    let [lon, lat] = [0, 0];
+    for (const cell of cellIds) {
+      const [_lon, _lat] = cellToLonLat(cell);
+      lon += _lon / cellIds.length;
+      lat += _lat / cellIds.length;
+    }
+
+    const resolution = getResolution(cellIds[0]);
+    const zoom = resolution + 1 - Math.log2(cellIds.length) / 2;
+    initialViewState.longitude = lon;
+    initialViewState.latitude = lat;
+    initialViewState.zoom = Math.max(0, Math.min(24, zoom));
+    initialViewState.minZoom = Math.max(0, zoom - 3);
+    initialViewState.maxZoom = Math.min(24, zoom + 3);
     showControls = false;
   }
-  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
+  const [viewState, setViewState] = useState(initialViewState);
   const [resolution, setResolution] = useState(2);
 
   const onViewStateChange = useCallback(({viewState}) => {

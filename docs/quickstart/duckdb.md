@@ -15,7 +15,7 @@ INSTALL spatial;
 LOAD spatial;
 ```
 
-## Code Example: Translate Lat/Lon to A5 Cell and back
+## Example: Translate Lat/Lon to A5 Cell and back
 
 ```sql
 -- Get the A5 Cell for London
@@ -35,12 +35,12 @@ SELECT a5_cell_to_lonlat(7161034019553935360) AS lonlat;
 │                  lonlat                   │
 │                 double[2]                 │
 ├───────────────────────────────────────────┤
-│ [-0.13854896867275238, 51.50219202041626] │
+│ [-0.15971839880376137, 51.511842921513406]│
 └───────────────────────────────────────────┘
 ```
 
 
-## Code Example: Generate GeoJSON for Cell
+## Example: Generate GeoJSON for Cell
 
 To generate a GeoJSON polygon for the A5 cell above use this SQL along with DuckDB's spatial extension:
 
@@ -50,9 +50,7 @@ SELECT
         ST_MakePolygon(
             ST_MakeLine(
                 list_transform(
-                    a5_cell_to_boundary(
-                        a5_lonlat_to_cell(-0.1276, 51.50735, 10)
-                    ),
+                    a5_cell_to_boundary(7161034019553935360),
                     x -> ST_Point(x[1], x[2])
                 )
             )
@@ -64,17 +62,17 @@ This produces:
 
 ```
 {
-    "type":"Polygon",
-    "coordinates":[
-        [
-            [-0.19250141916919006,51.51946462334752],
-            [-0.20078615946991363,51.47558191837641],
-            [-0.13985206278343298,51.484723450471634],
-            [-0.11104984728311251,51.524381518108164],
-            [-0.1543657759712005,51.55503847320052],
-            [-0.19250141916919006,51.51946462334752]
-        ]
+  "type":"Polygon",
+  "coordinates":[
+    [
+      [-0.19250141916919006, 51.51946462334752],
+      [-0.20078615946991363, 51.47558191837641],
+      [-0.13985206278343298, 51.48472345047163],
+      [-0.11104984728311251, 51.52438151810816],
+      [-0.15436577597120050, 51.55503847320052],
+      [-0.19250141916919006, 51.51946462334752]
     ]
+  ]
 }
 ```
 
@@ -91,58 +89,35 @@ import WireframeDemo from 'website-examples/wireframe/app';
 Here's a complete example that generates A5 cells at a specified resolution and creates a Polygon using DuckDB's spatial extension.
 
 ```sql
-INSTALL spatial;
-LOAD spatial;
 
-SELECT unnest(a5_cell_to_children(0, 0)) AS cell_id;
+SELECT unnest(a5_cell_to_children(7161034019553935360, 13)) AS cell_id;
 ┌─────────────────────┐
 │       cell_id       │
 │       uint64        │
 ├─────────────────────┤
-│ 144115188075855872  │
-│ 432345564227567616  │
-│ 720575940379279360  │
-│ 1008806316530991104 │
-│ 1297036692682702848 │
-│ 1585267068834414592 │
-│ 1873497444986126336 │
-│ 2161727821137838080 │
-│ 2449958197289549824 │
-│ 2738188573441261568 │
-│ 3026418949592973312 │
-│ 3314649325744685056 │
+│ 7161033478388056064 │
+│ 7161033495567925248 │
+│ 7161033512747794432 │
+│ 7161033529927663616 │
+│ 7161033547107532800 │
+│ 7161033564287401984 │
+│ ...                 │
 ├─────────────────────┤
-│ 12 rows             │
+│ 64 rows             │
 └─────────────────────┘
-
--- For each cell now create a polygon for the boundary of the cell
-SELECT
-    cell_id,
-    ST_MakePolygon(
-        ST_MakeLine(
-            list_transform(
-                a5_cell_to_boundary(cell_id),
-                x-> ST_Point(x[1], x[2])
-            )
-        )
-    ) AS polygon
-FROM (SELECT unnest(a5_cell_to_children(7161034019553935360, 11)) AS cell_id);
-┌─────────────────────┬───────────────────────────────────────────────────────────┐
-│       cell_id       │                          polygon                          │
-│       uint64        │                         geometry                          │
-├─────────────────────┼───────────────────────────────────────────────────────────┤
-│ 7161033607237074944 │ POLYGON ((-0.200786159469914 51.47558191837641, -0.1864…  │
-│ 7161033882114981888 │ POLYGON ((-0.17344169494659 51.53725280984687, -0.18782…  │
-│ 7161034156992888832 │ POLYGON ((-0.214181510157616 51.53477935054404, -0.2183…  │
-│ 7161034431870795776 │ POLYGON ((-0.151776640306934 51.52192983825872, -0.1559…  │
-└─────────────────────┴───────────────────────────────────────────────────────────┘
 ```
+
+import {cellToChildren} from 'a5';
+
+<div style={{margin: '20px 0'}}>
+  <WireframeDemo cellIds={cellToChildren(7161034019553935360n, 13)}/>
+</div>
 
 ## Code Example: Compare Cell Areas
 
-This example demonstrates how to compare the exact area (from `a5_cell_area`) with the estimated area calculated from the cell boundary.
+This example show how to obtain the cell area, cross-checking against the value from `ST_Area_Spheroid()`.
 
-_Note that cells at the same resolution have the same area_
+_Note that all cells at the same resolution have the exact same area. In general `a5_cell_area()` should always be used rather than manually computing the area_
 
 ```sql
 -- Compare the exact area (from a5_cell_area) with the estimated area
@@ -161,11 +136,11 @@ areas AS (
         ST_MakeLine(
           list_transform(
             a5_cell_to_boundary(a5_lonlat_to_cell(-0.1276, 51.50735, resolution)),
-            x-> ST_Point(x[2], x[1])  -- Swap to [lat, lon] order
+            x-> ST_Point(x[2], x[1]) -- Swap to [lat, lon] for ST_Area_Spheroid
           )
         )
       )
-    ) as estimated_area -- Quantized boundary will slightly differ from exact area
+    ) as estimated_area -- Quantized boundary will yield only estimate of area
   FROM cells
 )
 SELECT
