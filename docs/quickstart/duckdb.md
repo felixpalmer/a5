@@ -9,6 +9,10 @@ Install and load the [A5](https://query.farm/duckdb_extension_a5.html) extension
 ```sql
 INSTALL a5 from community;
 LOAD a5;
+
+-- Optional: Install spatial extension for geometry operations
+INSTALL spatial;
+LOAD spatial;
 ```
 
 ## Code Example: Translate Lat/Lon to A5 Cell and back
@@ -134,7 +138,7 @@ ST_MakePolygon(
     )
 ) FROM (SELECT unnest(a5_cell_to_children(5907253213819568128, 11)) as cell_id);
 ┌─────────────────────┬───────────────────────────────────────────────────────────┐
-│       cell_id       │ st_makepolygon(st_makeline(list_transform(a5_boundary(c…  │
+│       cell_id       │ st_makepolygon(st_makeline(list_transform(a5_cell_to_b…  │
 │       uint64        │                         geometry                          │
 ├─────────────────────┼───────────────────────────────────────────────────────────┤
 │ 5907252801502707712 │ POLYGON ((-3.729164086498955 40.41574337140931, -3.7559…  │
@@ -144,11 +148,11 @@ ST_MakePolygon(
 └─────────────────────┴───────────────────────────────────────────────────────────┘
 ```
 
-## Example Output
+## Code Example: Compare Cell Areas
 
-The above code will produce a collection of cells that cover the whole world.
+This example demonstrates how to compare the exact area (from `a5_cell_area`) with the estimated area calculated from the cell boundary.
 
-_Note that the cells all have the same area, they are just warped by the map projection_
+_Note that cells at the same resolution have the same area_
 
 ```sql
 -- Compare the exact area (from a5_cell_area) with the estimated area
