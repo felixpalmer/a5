@@ -3,7 +3,7 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map} from 'react-map-gl/maplibre';
 import {PolygonLayer} from '@deck.gl/layers';
-import {cellToBoundary, u64ToHex, cellToChildren} from 'a5';
+import {cellToBoundary, cellToChildren, cellToLonLat, getResolution, u64ToHex} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 
@@ -12,15 +12,40 @@ const INITIAL_VIEW_STATE = {
   latitude: 20, 
   zoom: 1.5, 
   minZoom: 0, 
-  maxZoom: 10 
+  maxZoom: 5 
 };
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
 const A5_GREEN = [0, 170, 85] as [number, number, number];
 
-const App: React.FC<{showControls?: boolean}> = ({showControls = true}) => {
-  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
+type WireframeDemoOptions = {
+  cellIds?: bigint[],
+  showControls?: boolean
+}
+const App: React.FC<WireframeDemoOptions> = ({
+  cellIds, 
+  showControls = true
+}: WireframeDemoOptions) => {
+  const initialViewState = {...INITIAL_VIEW_STATE};
+  if (cellIds) {
+    let [lon, lat] = [0, 0];
+    for (const cell of cellIds) {
+      const [_lon, _lat] = cellToLonLat(cell);
+      lon += _lon / cellIds.length;
+      lat += _lat / cellIds.length;
+    }
+
+    const resolution = getResolution(cellIds[0]);
+    const zoom = resolution + 1 - Math.log2(cellIds.length) / 2;
+    initialViewState.longitude = lon;
+    initialViewState.latitude = lat;
+    initialViewState.zoom = Math.max(0, Math.min(24, zoom));
+    initialViewState.minZoom = Math.max(0, zoom - 3);
+    initialViewState.maxZoom = Math.min(24, zoom + 3);
+    showControls = false;
+  }
+  const [viewState, setViewState] = useState(initialViewState);
   const [resolution, setResolution] = useState(2);
 
   const onViewStateChange = useCallback(({viewState}) => {
@@ -28,8 +53,10 @@ const App: React.FC<{showControls?: boolean}> = ({showControls = true}) => {
   }, []);
 
   // Generate cells with sampling for higher resolutions
+  if (cellIds === undefined) {
+    cellIds = cellToChildren(0n, resolution);
+  }
   const polygons = useMemo(() => {
-    let cellIds = cellToChildren(0n, resolution);
     return cellIds.map((cellId: bigint) => {
       const boundary = cellToBoundary(cellId);
       return {
@@ -37,7 +64,7 @@ const App: React.FC<{showControls?: boolean}> = ({showControls = true}) => {
         cellId: u64ToHex(cellId)
       };
     });
-  }, [resolution]);
+  }, [cellIds, resolution]);
 
   const polygonLayer = new PolygonLayer({
     id: 'a5-cells',
@@ -64,7 +91,6 @@ const App: React.FC<{showControls?: boolean}> = ({showControls = true}) => {
       >
         <Map 
           mapStyle={MAP_STYLE} 
-          maxZoom={5}
         />
       </DeckGL>
       

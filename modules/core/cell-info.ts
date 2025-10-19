@@ -26,8 +26,8 @@ export function getNumCells(resolution: number | bigint): number | bigint {
 }
 
 /**
- * Returns the area of a cell at a given resolution in square kilometers.
- * 
+ * Returns the area of a cell at a given resolution in square meters.
+ *
  * @param resolution The resolution level
  * @returns Area of a cell in square meters
  */

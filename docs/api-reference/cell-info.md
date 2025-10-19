@@ -31,7 +31,7 @@ console.log(getNumCells(3)); // 960
 
 ### cellArea
 
-Returns the area of a cell at a given resolution in square kilometers. Within a resolution level, all cells
+Returns the area of a cell at a given resolution in square meters. Within a resolution level, all cells
 have exactly the same area.
 
 ```ts
