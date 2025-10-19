@@ -151,28 +151,54 @@ The above code will produce a collection of cells that cover the whole world.
 _Note that the cells all have the same area, they are just warped by the map projection_
 
 ```sql
--- Call ST_Area on each polygon to check its size
-SELECT
-cell_id,
-ST_Area(
-    ST_MakePolygon(
+-- Compare the exact area (from a5_cell_area) with the estimated area
+-- calculated from the cell boundary using ST_Area_Spheroid
+WITH cells AS (
+  SELECT
+    unnest(generate_series(0, 10))::INTEGER AS resolution
+),
+areas AS (
+  SELECT
+    resolution,
+    a5_lonlat_to_cell(-3.7037, 40.41677, resolution) AS cell,
+    a5_cell_area(resolution) AS exact_area, -- Area constant within resolution level
+    ST_Area_Spheroid(
+      ST_MakePolygon(
         ST_MakeLine(
-            list_transform(
-                a5_cell_to_boundary(cell_id),
-                x-> ST_Point(x[1], x[2])
-            )
+          list_transform(
+            a5_cell_to_boundary(a5_lonlat_to_cell(-3.7037, 40.41677, resolution)),
+            x-> ST_Point(x[2], x[1])  -- Swap to [lat, lon] order
+          )
         )
-    )
-) as area FROM (SELECT unnest(a5_cell_to_children(5907253213819568128, 11)) as cell_id);
-┌─────────────────────┬───────────────────────┐
-│       cell_id       │         area          │
-│       uint64        │        double         │
-├─────────────────────┼───────────────────────┤
-│ 5907252801502707712 │ 0.0008601018180336114 │
-│ 5907253076380614656 │ 0.0008603089490585902 │
-│ 5907253351258521600 │ 0.0008605839802151684 │
-│ 5907253626136428544 │ 0.0008604669232268964 │
-└─────────────────────┴───────────────────────┘
+      )
+    ) as estimated_area -- Quantized boundary will slightly differ from exact area
+  FROM cells
+)
+SELECT
+  resolution,
+  cell,
+  exact_area,
+  estimated_area,
+  printf('%.4g%%', 100 * (estimated_area - exact_area) / exact_area) as area_error
+FROM areas;
+┌────────────┬─────────────────────┬────────────────────┬────────────────────┬────────────┐
+│ resolution │        cell         │     exact_area     │   estimated_area   │ area_error │
+│   int32    │       uint64        │       double       │       double       │  varchar   │
+├────────────┼─────────────────────┼────────────────────┼────────────────────┼────────────┤
+│          0 │ 1297036692682702848 │  42505468731619.93 │  42505469418157.65 │ 1.615e-06% │
+│          1 │ 5836665117072162816 │  8501093746323.985 │ 8501094074144.6045 │ 3.856e-06% │
+│          2 │ 5872693914091126784 │ 2125273436580.9963 │ 2125324816390.5122 │ 0.002418%  │
+│          3 │ 5989787504402759680 │  531318359145.2491 │ 531308810698.25244 │ -0.001797% │
+│          4 │ 5983032104961703936 │ 132829589786.31229 │ 132819721996.68843 │ -0.007429% │
+│          5 │ 5907033861249826816 │ 33207397446.578068 │  33214561445.47316 │ 0.02157%   │
+│          6 │ 5907456073714892800 │  8301849361.644517 │  8305306011.021866 │ 0.04164%   │
+│          7 │ 5907280151854448640 │ 2075462340.4111292 │  2075087734.505165 │ -0.01805%  │
+│          8 │ 5907288947947470848 │  518865585.1027823 │  518818116.3252411 │ -0.009149% │
+│          9 │ 5907295545017237504 │ 129716396.27569558 │ 129710367.99714851 │ -0.004647% │
+│         10 │ 5907253213819568128 │ 32429099.068923894 │ 32429865.853837967 │ 0.002364%  │
+├────────────┴─────────────────────┴────────────────────┴────────────────────┴────────────┤
+│ 11 rows                                                                       5 columns │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Next Steps
