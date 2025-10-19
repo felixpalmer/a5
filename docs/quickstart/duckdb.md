@@ -81,21 +81,11 @@ This produces:
 
 Visualizing that A5 cell shows:
 
-```geojson
-{
-    "type":"Polygon",
-    "coordinates":[
-        [
-            [-3.639321611065313,40.44502900567739],
-            [-3.6973300524360155,40.44427170464865],
-            [-3.7459288918337563,40.424159040292615],
-            [-3.70791029038422,40.394201800420205],
-            [-3.654438659632305,40.4080830654645],
-            [-3.639321611065313,40.44502900567739]
-        ]
-    ]
-}
-```
+import WireframeDemo from 'website-examples/wireframe/app';
+
+<div style={{margin: '20px 0'}}>
+  <WireframeDemo cellIds={[5907253213819568128n]}/>
+</div>
 
 ## Code Example: Generate A5 Cells
 

@@ -3,7 +3,7 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map} from 'react-map-gl/maplibre';
 import {PolygonLayer} from '@deck.gl/layers';
-import {cellToBoundary, u64ToHex, cellToChildren} from 'a5';
+import {cellToBoundary, cellToChildren, cellToLonLat, getResolution, u64ToHex} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 
@@ -12,7 +12,7 @@ const INITIAL_VIEW_STATE = {
   latitude: 20, 
   zoom: 1.5, 
   minZoom: 0, 
-  maxZoom: 10 
+  maxZoom: 5 
 };
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
@@ -27,6 +27,18 @@ const App: React.FC<WireframeDemoOptions> = ({
   cellIds, 
   showControls = true
 }: WireframeDemoOptions) => {
+  if (cellIds) {
+    const cell = cellIds[0];
+    const [lon, lat] = cellToLonLat(cell);
+    const resolution = getResolution(cell);
+    const zoom = resolution + 1;
+    INITIAL_VIEW_STATE.longitude = lon;
+    INITIAL_VIEW_STATE.latitude = lat;
+    INITIAL_VIEW_STATE.zoom = Math.max(0, Math.min(24, zoom));
+    INITIAL_VIEW_STATE.minZoom = Math.max(0, zoom - 3);
+    INITIAL_VIEW_STATE.maxZoom = Math.min(24, zoom + 3);
+    showControls = false;
+  }
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [resolution, setResolution] = useState(2);
 
@@ -73,7 +85,6 @@ const App: React.FC<WireframeDemoOptions> = ({
       >
         <Map 
           mapStyle={MAP_STYLE} 
-          maxZoom={5}
         />
       </DeckGL>
       
