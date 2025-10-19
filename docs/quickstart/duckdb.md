@@ -84,7 +84,7 @@ import WireframeDemo from 'website-examples/wireframe/app';
   <WireframeDemo cellIds={[7161034019553935360n]}/>
 </div>
 
-## Code Example: Generate A5 Cells
+## Example: Generate A5 Cells
 
 Here's a complete example that generates A5 cells at a specified resolution and creates a Polygon using DuckDB's spatial extension.
 
@@ -113,7 +113,7 @@ import {cellToChildren} from 'a5';
   <WireframeDemo cellIds={cellToChildren(7161034019553935360n, 13)}/>
 </div>
 
-## Code Example: Compare Cell Areas
+## Example: Compare Cell Areas
 
 This example show how to obtain the cell area, cross-checking against the value from `ST_Area_Spheroid()`.
 
