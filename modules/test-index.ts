@@ -7,6 +7,10 @@ export * from './index';
 
 export {origins} from './core/origin';
 export {serialize, WORLD_CELL} from './core/serialization';
+
+// Export naive implementations for benchmarking
+export {compact as compactNaive, uncompact as uncompactNaive} from './core/compact.naive';
+export {compact as compactOptimized, uncompact as uncompactOptimized} from './core/compact.optimized';
 export {quaternions} from './core/dodecahedron-quaternions';
 export {
   φ,
