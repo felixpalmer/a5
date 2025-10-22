@@ -1,0 +1,212 @@
+{
+  "compact": [
+    {
+      "name": "four_siblings_res3",
+      "description": "Four sibling cells at resolution 3 compact to parent at resolution 2",
+      "input": [
+        "420000000000000",
+        "460000000000000",
+        "4a0000000000000",
+        "4e0000000000000"
+      ],
+      "expectedOutput": [
+        "480000000000000"
+      ]
+    },
+    {
+      "name": "three_of_four_siblings",
+      "description": "Three sibling cells cannot be compacted (missing one sibling)",
+      "input": [
+        "420000000000000",
+        "460000000000000",
+        "4a0000000000000"
+      ],
+      "expectedOutput": [
+        "420000000000000",
+        "460000000000000",
+        "4a0000000000000"
+      ]
+    },
+    {
+      "name": "five_segments_res1",
+      "description": "All 5 segments at resolution 1 compact to parent at resolution 0",
+      "input": [
+        "500000000000000",
+        "900000000000000",
+        "d00000000000000",
+        "1100000000000000",
+        "100000000000000"
+      ],
+      "expectedOutput": [
+        "200000000000000"
+      ]
+    },
+    {
+      "name": "twelve_res0_cells",
+      "description": "All 12 resolution 0 cells compact to world cell",
+      "input": [
+        "200000000000000",
+        "600000000000000",
+        "a00000000000000",
+        "e00000000000000",
+        "1200000000000000",
+        "1600000000000000",
+        "1a00000000000000",
+        "1e00000000000000",
+        "2200000000000000",
+        "2600000000000000",
+        "2a00000000000000",
+        "2e00000000000000"
+      ],
+      "expectedOutput": [
+        "0"
+      ]
+    },
+    {
+      "name": "mixed_resolutions",
+      "description": "Cells at different resolutions with no sibling relationships",
+      "input": [
+        "1458000000000000",
+        "342a000000000000"
+      ],
+      "expectedOutput": [
+        "1458000000000000",
+        "342a000000000000"
+      ]
+    },
+    {
+      "name": "nested_compaction_res4_to_res2",
+      "description": "16 cells at resolution 4 compact through res 3 to single cell at res 2",
+      "input": [
+        "4008000000000000",
+        "4018000000000000",
+        "4028000000000000",
+        "4038000000000000",
+        "4048000000000000",
+        "4058000000000000",
+        "4068000000000000",
+        "4078000000000000",
+        "4088000000000000",
+        "4098000000000000",
+        "40a8000000000000",
+        "40b8000000000000",
+        "40c8000000000000",
+        "40d8000000000000",
+        "40e8000000000000",
+        "40f8000000000000"
+      ],
+      "expectedOutput": [
+        "4080000000000000"
+      ]
+    },
+    {
+      "name": "empty_array",
+      "description": "Empty input returns empty output",
+      "input": [],
+      "expectedOutput": []
+    },
+    {
+      "name": "single_cell",
+      "description": "Single cell remains unchanged",
+      "input": [
+        "7407800000000000"
+      ],
+      "expectedOutput": [
+        "7407800000000000"
+      ]
+    },
+    {
+      "name": "duplicate_cells",
+      "description": "Duplicate cells are removed",
+      "input": [
+        "7407800000000000",
+        "7407800000000000",
+        "7407800000000000"
+      ],
+      "expectedOutput": [
+        "7407800000000000"
+      ]
+    },
+    {
+      "name": "partial_compaction",
+      "description": "One complete sibling group compacts, one incomplete group does not",
+      "input": [
+        "420000000000000",
+        "460000000000000",
+        "4a0000000000000",
+        "4e0000000000000",
+        "520000000000000",
+        "560000000000000"
+      ],
+      "expectedOutput": [
+        "480000000000000",
+        "520000000000000",
+        "560000000000000"
+      ]
+    }
+  ],
+  "uncompact": [
+    {
+      "name": "expand_res2_to_res3",
+      "description": "Single cell at resolution 2 expands to 4 cells at resolution 3",
+      "input": [
+        "480000000000000"
+      ],
+      "targetResolution": 3,
+      "expectedCount": 4
+    },
+    {
+      "name": "expand_res2_to_res4",
+      "description": "Single cell at resolution 2 expands to 16 cells at resolution 4",
+      "input": [
+        "480000000000000"
+      ],
+      "targetResolution": 4,
+      "expectedCount": 16
+    },
+    {
+      "name": "expand_res0_to_res1",
+      "description": "Resolution 0 cell expands to 5 segments at resolution 1",
+      "input": [
+        "200000000000000"
+      ],
+      "targetResolution": 1,
+      "expectedCount": 5
+    },
+    {
+      "name": "expand_world_to_res0",
+      "description": "World cell expands to 12 resolution 0 cells",
+      "input": [
+        "0"
+      ],
+      "targetResolution": 0,
+      "expectedCount": 12
+    },
+    {
+      "name": "mixed_input_to_res5",
+      "description": "Cells at resolutions 3 and 4 both expand to resolution 5",
+      "input": [
+        "24a0000000000000",
+        "3858000000000000"
+      ],
+      "targetResolution": 5,
+      "expectedCount": 20
+    },
+    {
+      "name": "already_at_target",
+      "description": "Cell already at target resolution remains unchanged",
+      "input": [
+        "540a800000000000"
+      ],
+      "targetResolution": 6,
+      "expectedCount": 1
+    },
+    {
+      "name": "empty_array",
+      "description": "Empty input returns empty output",
+      "input": [],
+      "targetResolution": 5,
+      "expectedCount": 0
+    }
+  ]
+}
