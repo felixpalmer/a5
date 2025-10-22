@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { serialize, cellToChildren, WORLD_CELL, u64ToHex } = require('../../a5-test.cjs');
+const { serialize, cellToChildren, WORLD_CELL, u64ToHex, compact, uncompact } = require('../../a5-test.cjs');
 const { origins } = require('../../a5-test.cjs');
 
 function generateCompactFixtures() {
@@ -101,6 +101,25 @@ function generateCompactFixtures() {
     expectedOutput: [u64ToHex(parent1), ...children2].map(c => u64ToHex(c))
   });
 
+  // Test case 11: Incomplete set of resolution 0 cells (only 10 of 12)
+  const incompleteRes0 = worldChildren.slice(0, 10);
+  fixtures.push({
+    name: 'incomplete_res0_cells',
+    description: 'Only 10 of 12 resolution 0 cells - should not compact to world cell',
+    input: incompleteRes0.map(c => u64ToHex(c)),
+    expectedOutput: incompleteRes0.map(c => u64ToHex(c))
+  });
+
+  // Test case 12: Cross-origin compaction (cells from different origins that don't form sibling groups)
+  const origin0Cell = serialize({ origin: origins[0], segment: 2, S: 3n, resolution: 4 });
+  const origin1Cell = serialize({ origin: origins[1], segment: 2, S: 3n, resolution: 4 });
+  fixtures.push({
+    name: 'cross_origin_no_compact',
+    description: 'Cells from different origins with same segment/S should not compact',
+    input: [u64ToHex(origin0Cell), u64ToHex(origin1Cell)],
+    expectedOutput: [u64ToHex(origin0Cell), u64ToHex(origin1Cell)]
+  });
+
   return fixtures;
 }
 
@@ -175,21 +194,84 @@ function generateUncompactFixtures() {
     expectedCount: 0
   });
 
+  // Test case 8: Error case - trying to uncompact to lower resolution
+  const highResCell = serialize({ origin: origins[3], segment: 1, S: 15n, resolution: 5 });
+  fixtures.push({
+    name: 'uncompact_to_lower_resolution',
+    description: 'Attempting to uncompact to lower resolution should throw error',
+    input: [u64ToHex(highResCell)],
+    targetResolution: 3,
+    expectedError: true
+  });
+
+  return fixtures;
+}
+
+function generateRoundTripFixtures() {
+  const fixtures = [];
+
+  // Test case 1: Basic round-trip - compact then uncompact maintains coverage
+  const parent = serialize({ origin: origins[0], segment: 1, S: 5n, resolution: 3 });
+  const children = cellToChildren(parent, 6);
+  const compacted = compact(children);
+  fixtures.push({
+    name: 'roundtrip_basic',
+    description: 'Compact then uncompact should maintain cell coverage',
+    initialCells: children.map(c => u64ToHex(c)),
+    afterCompact: compacted.map(c => u64ToHex(c)),
+    targetResolution: 6,
+    afterUncompact: children.map(c => u64ToHex(c)).sort()
+  });
+
+  // Test case 2: Mixed resolutions round-trip
+  const mixedCells = [
+    serialize({ origin: origins[0], segment: 0, S: 0n, resolution: 2 }),
+    serialize({ origin: origins[1], segment: 1, S: 2n, resolution: 4 }),
+    serialize({ origin: origins[2], segment: 2, S: 5n, resolution: 5 })
+  ];
+  const compactedMixed = compact(mixedCells);
+  const uncompactedMixed = uncompact(compactedMixed, 5);
+  fixtures.push({
+    name: 'roundtrip_mixed_resolutions',
+    description: 'Mixed resolutions maintain coverage through compact/uncompact cycle',
+    initialCells: mixedCells.map(c => u64ToHex(c)),
+    afterCompact: compactedMixed.map(c => u64ToHex(c)),
+    targetResolution: 5,
+    expectedCount: uncompactedMixed.length
+  });
+
+  // Test case 3: Cell coverage verification
+  const coverageParent = serialize({ origin: origins[3], segment: 2, S: 10n, resolution: 4 });
+  const coverageCells = cellToChildren(coverageParent, 7);
+  const compactedCoverage = compact(coverageCells);
+  fixtures.push({
+    name: 'roundtrip_cell_coverage',
+    description: 'Verify cell count is preserved through operations',
+    initialCells: coverageCells.map(c => u64ToHex(c)),
+    initialCount: coverageCells.length,
+    afterCompact: compactedCoverage.map(c => u64ToHex(c)),
+    targetResolution: 7,
+    expectedFinalCount: coverageCells.length
+  });
+
   return fixtures;
 }
 
 // Generate and write fixtures
 const compactFixtures = generateCompactFixtures();
 const uncompactFixtures = generateUncompactFixtures();
+const roundTripFixtures = generateRoundTripFixtures();
 
 const fixturesDir = path.join(__dirname, './../../../tests/fixtures');
 const outputPath = path.join(fixturesDir, 'compact.json');
 const output = {
   compact: compactFixtures,
-  uncompact: uncompactFixtures
+  uncompact: uncompactFixtures,
+  roundTrip: roundTripFixtures
 };
 
 fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
 console.log(`Generated compact/uncompact fixtures: ${outputPath}`);
 console.log(`  - ${compactFixtures.length} compact test cases`);
 console.log(`  - ${uncompactFixtures.length} uncompact test cases`);
+console.log(`  - ${roundTripFixtures.length} round-trip test cases`);

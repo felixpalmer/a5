@@ -128,6 +128,66 @@ console.log(`  Optimized: ${formatTime(optTime6)}`);
 console.log(`  Speedup:   ${(naiveTime6 / optTime6).toFixed(2)}x`);
 console.log('');
 
+// Benchmark 7: 1,000 cells
+console.log('7. Compact: 1,000 mixed cells');
+const large1k = [];
+for (let i = 0; i < 1000; i++) {
+  const res = 2 + (i % 6);
+  const origin = origins[i % 12];
+  const segment = i % 5;
+  const hilbertLevels = res - 2 + 1;
+  const maxS = (1 << (2 * hilbertLevels)) - 1;
+  const S = BigInt(i % maxS);
+  large1k.push(serialize({ origin, segment, S, resolution: res }));
+}
+const naiveTime7 = benchmark('compact_1k_naive', () => naive.compact(large1k), 10);
+const optTime7 = benchmark('compact_1k_opt', () => optimized.compact(large1k), 10);
+results.push({ name: 'Compact 1k cells', naive: naiveTime7, optimized: optTime7, speedup: naiveTime7 / optTime7 });
+console.log(`  Naive:     ${formatTime(naiveTime7)}`);
+console.log(`  Optimized: ${formatTime(optTime7)}`);
+console.log(`  Speedup:   ${(naiveTime7 / optTime7).toFixed(2)}x`);
+console.log('');
+
+// Benchmark 8: 10,000 cells
+console.log('8. Compact: 10,000 mixed cells');
+const large10k = [];
+for (let i = 0; i < 10000; i++) {
+  const res = 2 + (i % 7);
+  const origin = origins[i % 12];
+  const segment = i % 5;
+  const hilbertLevels = res - 2 + 1;
+  const maxS = (1 << (2 * hilbertLevels)) - 1;
+  const S = BigInt(i % maxS);
+  large10k.push(serialize({ origin, segment, S, resolution: res }));
+}
+const naiveTime8 = benchmark('compact_10k_naive', () => naive.compact(large10k), 5);
+const optTime8 = benchmark('compact_10k_opt', () => optimized.compact(large10k), 5);
+results.push({ name: 'Compact 10k cells', naive: naiveTime8, optimized: optTime8, speedup: naiveTime8 / optTime8 });
+console.log(`  Naive:     ${formatTime(naiveTime8)}`);
+console.log(`  Optimized: ${formatTime(optTime8)}`);
+console.log(`  Speedup:   ${(naiveTime8 / optTime8).toFixed(2)}x`);
+console.log('');
+
+// Benchmark 9: 100,000 cells
+console.log('9. Compact: 100,000 mixed cells');
+const large100k = [];
+for (let i = 0; i < 100000; i++) {
+  const res = 2 + (i % 8);
+  const origin = origins[i % 12];
+  const segment = i % 5;
+  const hilbertLevels = res - 2 + 1;
+  const maxS = (1 << (2 * hilbertLevels)) - 1;
+  const S = BigInt(i % maxS);
+  large100k.push(serialize({ origin, segment, S, resolution: res }));
+}
+const naiveTime9 = benchmark('compact_100k_naive', () => naive.compact(large100k), 3);
+const optTime9 = benchmark('compact_100k_opt', () => optimized.compact(large100k), 3);
+results.push({ name: 'Compact 100k cells', naive: naiveTime9, optimized: optTime9, speedup: naiveTime9 / optTime9 });
+console.log(`  Naive:     ${formatTime(naiveTime9)}`);
+console.log(`  Optimized: ${formatTime(optTime9)}`);
+console.log(`  Speedup:   ${(naiveTime9 / optTime9).toFixed(2)}x`);
+console.log('');
+
 // Summary
 console.log('='.repeat(80));
 console.log('Summary');
