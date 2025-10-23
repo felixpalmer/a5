@@ -1,13 +1,13 @@
 import React, {Component} from 'react';
 import {GITHUB_TREE} from '../constants/defaults';
-import App from 'website-examples/compact/app';
+import App from 'website-examples/compaction/app';
 
 import {makeExample} from '../components';
 
-class CompactDemo extends Component {
-  static title = 'Cell Compaction';
+class CompactionDemo extends Component {
+  static title = 'Compaction';
 
-  static code = `${GITHUB_TREE}/examples/website/compact`;
+  static code = `${GITHUB_TREE}/examples/website/compaction`;
 
   static parameters = {};
 
@@ -29,4 +29,4 @@ class CompactDemo extends Component {
   }
 }
 
-export default makeExample(CompactDemo);
+export default makeExample(CompactionDemo);
