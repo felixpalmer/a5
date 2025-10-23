@@ -7,7 +7,7 @@ import {PolygonLayer} from '@deck.gl/layers';
 import { cellToBoundary, uncompact, compact } from 'a5';
 import {parquetMetadataAsync, parquetRead} from 'hyparquet';
 
-const INITIAL_VIEW_STATE = { longitude: -0.1278, latitude: 51.5074, zoom: 10 };
+const INITIAL_VIEW_STATE = { longitude: -0.1278, latitude: 51.5074, zoom: 11 };
 const RESOLUTION = 16;
 
 // Define interface for the DeckGLOverlay props
@@ -17,12 +17,12 @@ interface DeckGLOverlayProps {
 }
 
 const App: React.FC = () => {
-  const [compactedCells, setCompactedCells] = useState<Set<bigint>>(new Set());
-  const [uncompactedCells, setUncompactedCells] = useState<Set<bigint>>(new Set());
+  const [compactedCells, setCompactedCells] = useState<bigint[]>([]);
+  const [uncompactedCells, setUncompactedCells] = useState<bigint[]>([]);
   const [showCompacted, setShowCompacted] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Load parquet file
+  // Load parquet file and uncompact once
   useEffect(() => {
     async function loadData() {
       try {
@@ -42,12 +42,12 @@ const App: React.FC = () => {
           }
         });
 
-        // Extract cell IDs from the rows and store as Sets
-        const compactedSet = new Set(allRows.map(row => row[0]));
-        const uncompactedSet = new Set(uncompact(Array.from(compactedSet), RESOLUTION));
+        // Extract cell IDs and uncompact once
+        const compacted = allRows.map(row => row[0]);
+        const uncompacted = uncompact(compacted, RESOLUTION);
 
-        setCompactedCells(compactedSet);
-        setUncompactedCells(uncompactedSet);
+        setCompactedCells(compacted);
+        setUncompactedCells(uncompacted);
         setLoading(false);
       } catch (error) {
         console.error('Error loading parquet file:', error);
@@ -57,22 +57,33 @@ const App: React.FC = () => {
     loadData();
   }, []);
 
-  // Convert Sets to arrays for deck.gl
-  const cellsToDisplay = showCompacted
-    ? Array.from(compactedCells)
-    : Array.from(uncompactedCells);
-
-  const polygonLayer = new PolygonLayer({
-    id: 'polygons',
-    data: cellsToDisplay,
+  const compactedLayer = new PolygonLayer({
+    id: 'compacted-polygons',
+    data: compactedCells,
     getPolygon: d => cellToBoundary(d),
-    getFillColor: showCompacted ? [255, 170, 0, 100] : [0, 170, 85, 100],
+    getFillColor: [255, 170, 0, 100],
     getLineColor: [255, 255, 255],
     lineWidthUnits: 'pixels',
     getLineWidth: 0.5,
     filled: true,
     stroked: true,
     pickable: false,
+    visible: showCompacted,
+    beforeId: 'watername_ocean'
+  });
+
+  const uncompactedLayer = new PolygonLayer({
+    id: 'uncompacted-polygons',
+    data: uncompactedCells,
+    getPolygon: d => cellToBoundary(d),
+    getFillColor: [0, 170, 85, 100],
+    getLineColor: [255, 255, 255],
+    lineWidthUnits: 'pixels',
+    getLineWidth: 0.5,
+    filled: true,
+    stroked: true,
+    pickable: false,
+    visible: !showCompacted,
     beforeId: 'watername_ocean'
   });
 
@@ -93,7 +104,7 @@ const App: React.FC = () => {
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
         renderWorldCopies={true}
       >
-        <DeckGLOverlay layers={[polygonLayer]} interleaved />
+        <DeckGLOverlay layers={[compactedLayer, uncompactedLayer]} interleaved />
       </Map>
 
       {/* Toggle control */}
@@ -102,40 +113,36 @@ const App: React.FC = () => {
           position: 'absolute',
           top: '20px',
           left: '20px',
-          background: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '15px 20px',
-          borderRadius: '8px',
-          fontFamily: 'monospace',
-          fontSize: '14px',
-          zIndex: 1000
+          background: 'white',
+          padding: '10px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          zIndex: 1
         }}
       >
         {loading ? (
           <div>Loading...</div>
         ) : (
           <>
-            <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>
-              London 10km Radius - Resolution {RESOLUTION}
+            <div style={{ marginBottom: '10px' }}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showCompacted}
+                  onChange={(e) => setShowCompacted(e.target.checked)}
+                />
+                {' '}Show Compacted
+              </label>
             </div>
-            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={showCompacted}
-                onChange={(e) => setShowCompacted(e.target.checked)}
-                style={{ marginRight: '10px', cursor: 'pointer' }}
-              />
-              Show Compacted ({showCompacted ? compactedCells.size : uncompactedCells.size} cells)
-            </label>
-            <div style={{ marginTop: '10px', fontSize: '12px', color: '#aaa' }}>
+            <div style={{ fontSize: '12px', color: '#666' }}>
               {showCompacted ? (
-                <span style={{ color: '#ffaa00' }}>Compacted: {compactedCells.size} cells</span>
+                <div>Compacted: {compactedCells.length} cells</div>
               ) : (
-                <span style={{ color: '#00aa55' }}>Uncompacted: {uncompactedCells.size} cells</span>
+                <div>Uncompacted: {uncompactedCells.length} cells</div>
               )}
             </div>
-            <div style={{ marginTop: '5px', fontSize: '12px', color: '#aaa' }}>
-              Compression ratio: {(uncompactedCells.size / compactedCells.size).toFixed(2)}x
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              Ratio: {(uncompactedCells.length / compactedCells.length).toFixed(2)}x
             </div>
           </>
         )}

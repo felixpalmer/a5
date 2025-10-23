@@ -5,7 +5,7 @@ import App from 'website-examples/compact/app';
 import {makeExample} from '../components';
 
 class CompactDemo extends Component {
-  static title = 'Compact Cells';
+  static title = 'Cell Compaction';
 
   static code = `${GITHUB_TREE}/examples/website/compact`;
 
@@ -14,8 +14,8 @@ class CompactDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
-        <p>Toggle between compacted and uncompacted cells to see how compaction reduces the number of cells needed to represent a region.</p>
-        <p>This example loads compacted A5 cells for a 10km radius around London from a Parquet file and allows you to toggle between viewing the compacted representation (128 cells) and the full uncompacted set (638 cells).</p>
+        <p>When cells have a common parent, they can be "compacted", that is represented solely by their parent cell. To retrieve the original cells, the compacted cells are uncompacted</p>
+        <p>The gaps in the compacted view are expected, as compacted cells represent children logically, not spatially.</p>
       </div>
     );
   }
