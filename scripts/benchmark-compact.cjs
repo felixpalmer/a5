@@ -2,10 +2,11 @@
 // Run with: node scripts/benchmark-compact.cjs
 
 const a5Test = require('./a5-test.cjs');
-const { serialize, cellToChildren, WORLD_CELL, origins, compactNaive, uncompactNaive, compactOptimized, uncompactOptimized } = a5Test;
+const { serialize, cellToChildren, WORLD_CELL, origins, compactNaive, uncompactNaive, compactOptimized, uncompactOptimized, compactForwardScan } = a5Test;
 
 const naive = { compact: compactNaive, uncompact: uncompactNaive };
 const optimized = { compact: compactOptimized, uncompact: uncompactOptimized };
+const forwardScan = { compact: compactForwardScan };
 
 function benchmark(name, fn, iterations) {
   // Warm up
@@ -79,10 +80,13 @@ const parent = serialize({ origin: origins[0], segment: 0, S: 0n, resolution: 2 
 const children = cellToChildren(parent, 3);
 const naiveTime3 = benchmark('compact_4_siblings_naive', () => naive.compact(children), 10000);
 const optTime3 = benchmark('compact_4_siblings_opt', () => optimized.compact(children), 10000);
-results.push({ name: 'Compact 4 siblings', naive: naiveTime3, optimized: optTime3, speedup: naiveTime3 / optTime3 });
-console.log(`  Naive:     ${formatTime(naiveTime3)}`);
-console.log(`  Optimized: ${formatTime(optTime3)}`);
-console.log(`  Speedup:   ${(naiveTime3 / optTime3).toFixed(2)}x`);
+const fwdTime3 = benchmark('compact_4_siblings_fwd', () => forwardScan.compact(children), 10000);
+results.push({ name: 'Compact 4 siblings', naive: naiveTime3, optimized: optTime3, forwardScan: fwdTime3, speedup: naiveTime3 / optTime3, fwdSpeedup: optTime3 / fwdTime3 });
+console.log(`  Naive:       ${formatTime(naiveTime3)}`);
+console.log(`  Optimized:   ${formatTime(optTime3)}`);
+console.log(`  ForwardScan: ${formatTime(fwdTime3)}`);
+console.log(`  Speedup (naive→opt): ${(naiveTime3 / optTime3).toFixed(2)}x`);
+console.log(`  Speedup (opt→fwd):   ${(optTime3 / fwdTime3).toFixed(2)}x`);
 console.log('');
 
 // Benchmark 4: Compact deeply nested cells
@@ -91,10 +95,12 @@ const deepParent = serialize({ origin: origins[1], segment: 2, S: 3n, resolution
 const deepChildren = cellToChildren(deepParent, 5);
 const naiveTime4 = benchmark('compact_64_nested_naive', () => naive.compact(deepChildren), 1000);
 const optTime4 = benchmark('compact_64_nested_opt', () => optimized.compact(deepChildren), 1000);
-results.push({ name: 'Compact 64 nested cells', naive: naiveTime4, optimized: optTime4, speedup: naiveTime4 / optTime4 });
-console.log(`  Naive:     ${formatTime(naiveTime4)}`);
-console.log(`  Optimized: ${formatTime(optTime4)}`);
-console.log(`  Speedup:   ${(naiveTime4 / optTime4).toFixed(2)}x`);
+const fwdTime4 = benchmark('compact_64_nested_fwd', () => forwardScan.compact(deepChildren), 1000);
+results.push({ name: 'Compact 64 nested cells', naive: naiveTime4, optimized: optTime4, forwardScan: fwdTime4, speedup: naiveTime4 / optTime4, fwdSpeedup: optTime4 / fwdTime4 });
+console.log(`  Naive:       ${formatTime(naiveTime4)}`);
+console.log(`  Optimized:   ${formatTime(optTime4)}`);
+console.log(`  ForwardScan: ${formatTime(fwdTime4)}`);
+console.log(`  Speedup (opt→fwd): ${(optTime4 / fwdTime4).toFixed(2)}x`);
 console.log('');
 
 // Benchmark 5: Compact all 12 res-0 cells to world cell
@@ -122,10 +128,11 @@ for (let i = 0; i < 100; i++) {
 }
 const naiveTime6 = benchmark('compact_100_mixed_naive', () => naive.compact(largeMixed), 100);
 const optTime6 = benchmark('compact_100_mixed_opt', () => optimized.compact(largeMixed), 100);
-results.push({ name: 'Compact 100 mixed cells', naive: naiveTime6, optimized: optTime6, speedup: naiveTime6 / optTime6 });
-console.log(`  Naive:     ${formatTime(naiveTime6)}`);
-console.log(`  Optimized: ${formatTime(optTime6)}`);
-console.log(`  Speedup:   ${(naiveTime6 / optTime6).toFixed(2)}x`);
+const fwdTime6 = benchmark('compact_100_mixed_fwd', () => forwardScan.compact(largeMixed), 100);
+results.push({ name: 'Compact 100 mixed cells', naive: naiveTime6, optimized: optTime6, forwardScan: fwdTime6, speedup: naiveTime6 / optTime6, fwdSpeedup: optTime6 / fwdTime6 });
+console.log(`  Optimized:   ${formatTime(optTime6)}`);
+console.log(`  ForwardScan: ${formatTime(fwdTime6)}`);
+console.log(`  Speedup (opt→fwd): ${(optTime6 / fwdTime6).toFixed(2)}x`);
 console.log('');
 
 // Benchmark 7: 1,000 cells
@@ -140,12 +147,12 @@ for (let i = 0; i < 1000; i++) {
   const S = BigInt(i % maxS);
   large1k.push(serialize({ origin, segment, S, resolution: res }));
 }
-const naiveTime7 = benchmark('compact_1k_naive', () => naive.compact(large1k), 10);
 const optTime7 = benchmark('compact_1k_opt', () => optimized.compact(large1k), 10);
-results.push({ name: 'Compact 1k cells', naive: naiveTime7, optimized: optTime7, speedup: naiveTime7 / optTime7 });
-console.log(`  Naive:     ${formatTime(naiveTime7)}`);
-console.log(`  Optimized: ${formatTime(optTime7)}`);
-console.log(`  Speedup:   ${(naiveTime7 / optTime7).toFixed(2)}x`);
+const fwdTime7 = benchmark('compact_1k_fwd', () => forwardScan.compact(large1k), 10);
+results.push({ name: 'Compact 1k cells', naive: null, optimized: optTime7, forwardScan: fwdTime7, speedup: null, fwdSpeedup: optTime7 / fwdTime7 });
+console.log(`  Optimized:   ${formatTime(optTime7)}`);
+console.log(`  ForwardScan: ${formatTime(fwdTime7)}`);
+console.log(`  Speedup (opt→fwd): ${(optTime7 / fwdTime7).toFixed(2)}x`);
 console.log('');
 
 // Benchmark 8: 10,000 cells
@@ -160,12 +167,12 @@ for (let i = 0; i < 10000; i++) {
   const S = BigInt(i % maxS);
   large10k.push(serialize({ origin, segment, S, resolution: res }));
 }
-const naiveTime8 = benchmark('compact_10k_naive', () => naive.compact(large10k), 5);
 const optTime8 = benchmark('compact_10k_opt', () => optimized.compact(large10k), 5);
-results.push({ name: 'Compact 10k cells', naive: naiveTime8, optimized: optTime8, speedup: naiveTime8 / optTime8 });
-console.log(`  Naive:     ${formatTime(naiveTime8)}`);
-console.log(`  Optimized: ${formatTime(optTime8)}`);
-console.log(`  Speedup:   ${(naiveTime8 / optTime8).toFixed(2)}x`);
+const fwdTime8 = benchmark('compact_10k_fwd', () => forwardScan.compact(large10k), 5);
+results.push({ name: 'Compact 10k cells', naive: null, optimized: optTime8, forwardScan: fwdTime8, speedup: null, fwdSpeedup: optTime8 / fwdTime8 });
+console.log(`  Optimized:   ${formatTime(optTime8)}`);
+console.log(`  ForwardScan: ${formatTime(fwdTime8)}`);
+console.log(`  Speedup (opt→fwd): ${(optTime8 / fwdTime8).toFixed(2)}x`);
 console.log('');
 
 // Benchmark 9: 100,000 cells
@@ -180,12 +187,12 @@ for (let i = 0; i < 100000; i++) {
   const S = BigInt(i % maxS);
   large100k.push(serialize({ origin, segment, S, resolution: res }));
 }
-const naiveTime9 = benchmark('compact_100k_naive', () => naive.compact(large100k), 3);
 const optTime9 = benchmark('compact_100k_opt', () => optimized.compact(large100k), 3);
-results.push({ name: 'Compact 100k cells', naive: naiveTime9, optimized: optTime9, speedup: naiveTime9 / optTime9 });
-console.log(`  Naive:     ${formatTime(naiveTime9)}`);
-console.log(`  Optimized: ${formatTime(optTime9)}`);
-console.log(`  Speedup:   ${(naiveTime9 / optTime9).toFixed(2)}x`);
+const fwdTime9 = benchmark('compact_100k_fwd', () => forwardScan.compact(large100k), 3);
+results.push({ name: 'Compact 100k cells', naive: null, optimized: optTime9, forwardScan: fwdTime9, speedup: null, fwdSpeedup: optTime9 / fwdTime9 });
+console.log(`  Optimized:   ${formatTime(optTime9)}`);
+console.log(`  ForwardScan: ${formatTime(fwdTime9)}`);
+console.log(`  Speedup (opt→fwd): ${(optTime9 / fwdTime9).toFixed(2)}x`);
 console.log('');
 
 // Summary

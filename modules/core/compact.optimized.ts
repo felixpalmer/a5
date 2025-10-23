@@ -12,7 +12,9 @@
 import {
   getResolution,
   cellToChildren,
-  cellToParent
+  cellToParent,
+  FIRST_HILBERT_RESOLUTION,
+  HILBERT_START_BIT
 } from './serialization';
 
 import { getNumChildren } from './cell-info';
@@ -59,6 +61,133 @@ export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: nu
 }
 
 /**
+ * Compact a set of cells using forward-scanning algorithm.
+ *
+ * Key optimizations:
+ * 1. Single sort at the start
+ * 2. Forward scan detects complete sibling groups
+ * 3. Multiple passes, but no re-sorting (parents maintain sort order)
+ *
+ * @param cells - Array or TypedArray of cell indices to compact
+ * @returns BigUint64Array of compacted cell indices (typically smaller)
+ */
+export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64Array {
+  if (cells.length === 0) {
+    return new BigUint64Array(0);
+  }
+
+  // Single sort and dedup
+  let currentCells = Array.from(new Set(cells)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+
+  // Helper to get expected sibling count from cell resolution
+  function getExpectedChildCount(cellResolution: number): number {
+    if (cellResolution === 0) return 12;  // parent is -1 (world cell)
+    if (cellResolution === 1) return 5;   // parent is 0
+    return 4;                              // parent is 1+ (Hilbert)
+  }
+
+  // Helper to get parent pattern via bit shift (for Hilbert resolutions)
+  // This masks out the child-specific bits to check if cells share the same parent
+  function getParentPattern(cell: bigint, resolution: number): bigint {
+    if (resolution < FIRST_HILBERT_RESOLUTION) {
+      // For non-Hilbert resolutions, use full cellToParent
+      return cellToParent(cell);
+    }
+
+    // For Hilbert resolutions: shift right by 2 bits to remove child index,
+    // then shift back to get parent pattern
+    const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
+    const hilbertBits = BigInt(2 * hilbertLevels);
+    const sPosition = HILBERT_START_BIT - hilbertBits;
+
+    // Mask out the bottom 2 bits of S (the child-specific bits)
+    const childBitsMask = (3n << sPosition);
+    return cell & ~childBitsMask;
+  }
+
+  // Compact until no more changes
+  // No re-sorting needed - parents maintain sorted order!
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const result: bigint[] = [];
+    let i = 0;
+
+    while (i < currentCells.length) {
+      const cell = currentCells[i];
+      const resolution = getResolution(cell);
+
+      // Can't compact below resolution 0
+      if (resolution < 0) {
+        result.push(cell);
+        i++;
+        continue;
+      }
+
+      // Special case: resolution 0 → world cell
+      if (resolution === 0) {
+        if (i + 12 <= currentCells.length) {
+          let allRes0 = true;
+          for (let j = 0; j < 12; j++) {
+            if (getResolution(currentCells[i + j]) !== 0) {
+              allRes0 = false;
+              break;
+            }
+          }
+          if (allRes0) {
+            result.push(0n);
+            i += 12;
+            changed = true;
+            continue;
+          }
+        }
+        result.push(cell);
+        i++;
+        continue;
+      }
+
+      // Check for complete sibling group
+      const expectedChildren = getExpectedChildCount(resolution);
+
+      if (i + expectedChildren <= currentCells.length) {
+        // Use bit operations to check if cells share same parent
+        const parentPattern = getParentPattern(cell, resolution);
+        let hasAllSiblings = true;
+
+        for (let j = 1; j < expectedChildren; j++) {
+          const siblingResolution = getResolution(currentCells[i + j]);
+          if (siblingResolution !== resolution ||
+              getParentPattern(currentCells[i + j], resolution) !== parentPattern) {
+            hasAllSiblings = false;
+            break;
+          }
+        }
+
+        if (hasAllSiblings) {
+          // Compute parent only once when needed
+          const parent = cellToParent(cell);
+          result.push(parent);
+          i += expectedChildren;
+          changed = true;
+          continue;
+        }
+      }
+
+      result.push(cell);
+      i++;
+    }
+
+    currentCells = result;
+  }
+
+  const finalResult = new BigUint64Array(currentCells.length);
+  for (let i = 0; i < currentCells.length; i++) {
+    finalResult[i] = currentCells[i];
+  }
+  return finalResult;
+}
+
+/**
  * Compact a set of cells using bit-based sibling detection.
  *
  * This optimized version uses bit patterns to identify sibling relationships
@@ -93,9 +222,19 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
 
       const resolution = getResolution(cell);
 
-      // Resolution 0 cells can't be compacted further
-      if (resolution < 1) {
+      // Cells below resolution 0 can't be compacted
+      if (resolution < 0) {
         nextSet.add(cell);
+        processed.add(cell);
+        continue;
+      }
+
+      // Special handling for resolution 0 cells - they all compact to world cell (0n)
+      if (resolution === 0) {
+        if (!parentMap.has(0n)) {
+          parentMap.set(0n, []);
+        }
+        parentMap.get(0n)!.push(cell);
         processed.add(cell);
         continue;
       }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { compact, uncompact } from 'a5/core/compact';
+import { compactForwardScan } from 'a5/core/compact.optimized';
 import { hexToU64 } from 'a5/core/hex';
 import { deserialize } from 'a5/core/serialization';
 import compactFixtures from './fixtures/compact.json';
@@ -40,6 +41,35 @@ describe('compact', () => {
       const result = compact(input);
 
       expect(Array.from(result)).toEqual(expected);
+    }
+  });
+});
+
+describe('compactForwardScan', () => {
+  it('should produce same results as compact on all fixture test cases', () => {
+    for (const testCase of compactFixtures.compact) {
+      const input = testCase.input.map(hexToU64);
+      const expected = testCase.expectedOutput.map(hexToU64).sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+
+      const resultOriginal = compact(input);
+      const resultForwardScan = compactForwardScan(input);
+
+      // Both should produce same output
+      expect(Array.from(resultForwardScan)).toEqual(Array.from(resultOriginal));
+      expect(Array.from(resultForwardScan)).toEqual(expected);
+    }
+  });
+
+  it('should handle round-trip test cases', () => {
+    for (const testCase of compactFixtures.roundTrip) {
+      const initialCells = testCase.initialCells.map(hexToU64);
+
+      const resultOriginal = compact(initialCells);
+      const resultForwardScan = compactForwardScan(initialCells);
+
+      // Both should produce same output
+      expect(Array.from(resultForwardScan).sort((a, b) => a < b ? -1 : a > b ? 1 : 0))
+        .toEqual(Array.from(resultOriginal).sort((a, b) => a < b ? -1 : a > b ? 1 : 0));
     }
   });
 });
