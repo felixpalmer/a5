@@ -21,22 +21,24 @@ import {
 /**
  * Uncompact a set of cells to a target resolution using cellToChildren.
  *
- * @param cells - Array of cell indices to uncompact
+ * @param cells - Array or TypedArray of cell indices to uncompact
  * @param targetResolution - Resolution to expand all cells to
- * @returns Array of cell indices all at the target resolution
+ * @returns BigUint64Array of cell indices all at the target resolution
  */
-export function uncompact(cells: bigint[], targetResolution: number): bigint[] {
-  const result: bigint[] = [];
+export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: number): BigUint64Array {
+  // Collect results in a temporary array
+  const tempResults: bigint[] = [];
 
-  for (const cell of cells) {
+  for (let i = 0; i < cells.length; i++) {
+    const cell = cells[i];
     const resolution = getResolution(cell);
 
     if (resolution === targetResolution) {
       // Already at target resolution
-      result.push(cell);
+      tempResults.push(cell);
     } else if (resolution < targetResolution) {
       // Need to expand - use cellToChildren
-      result.push(...cellToChildren(cell, targetResolution));
+      tempResults.push(...cellToChildren(cell, targetResolution));
     } else {
       throw new Error(
         `Cannot uncompact cell at resolution ${resolution} to lower resolution ${targetResolution}`
@@ -44,6 +46,11 @@ export function uncompact(cells: bigint[], targetResolution: number): bigint[] {
     }
   }
 
+  // Convert to BigUint64Array
+  const result = new BigUint64Array(tempResults.length);
+  for (let i = 0; i < tempResults.length; i++) {
+    result[i] = tempResults[i];
+  }
   return result;
 }
 
@@ -53,16 +60,19 @@ export function uncompact(cells: bigint[], targetResolution: number): bigint[] {
  * This optimized version uses bit patterns to identify sibling relationships
  * without full deserialization.
  *
- * @param cells - Array of cell indices to compact
- * @returns Compacted array of cell indices (typically smaller)
+ * @param cells - Array or TypedArray of cell indices to compact
+ * @returns BigUint64Array of compacted cell indices (typically smaller)
  */
-export function compact(cells: bigint[]): bigint[] {
+export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
   if (cells.length === 0) {
-    return [];
+    return new BigUint64Array(0);
   }
 
   // Remove duplicates
-  let currentSet = new Set(Array.from(new Set(cells)));
+  let currentSet = new Set<bigint>();
+  for (let i = 0; i < cells.length; i++) {
+    currentSet.add(cells[i]);
+  }
 
   // Keep compacting until no more changes
   let changed = true;
@@ -123,7 +133,13 @@ export function compact(cells: bigint[]): bigint[] {
     currentSet = nextSet;
   }
 
-  return Array.from(currentSet).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  // Convert Set to sorted BigUint64Array
+  const sortedArray = Array.from(currentSet).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const result = new BigUint64Array(sortedArray.length);
+  for (let i = 0; i < sortedArray.length; i++) {
+    result[i] = sortedArray[i];
+  }
+  return result;
 }
 
 /**

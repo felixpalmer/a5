@@ -17,3 +17,8 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [getResolution](./api-reference/hierarchy#getresolution)
 - [cellToParent](./api-reference/hierarchy#celltoparent)
 - [cellToChildren](./api-reference/hierarchy#celltochildren)
+
+### Compaction
+
+- [compact](./api-reference/compaction#compact)
+- [uncompact](./api-reference/compaction#uncompact)

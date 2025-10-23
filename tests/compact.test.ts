@@ -39,7 +39,7 @@ describe('compact', () => {
       const expected = testCase.expectedOutput.map(hexToU64).sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
       const result = compact(input);
 
-      expect(result).toEqual(expected);
+      expect(Array.from(result)).toEqual(expected);
     }
   });
 });
@@ -52,7 +52,7 @@ describe('compact/uncompact round-trip', () => {
 
       // Verify compact result matches fixture
       const compactResult = compact(initialCells);
-      expect(compactResult.sort((a, b) => a < b ? -1 : a > b ? 1 : 0))
+      expect(Array.from(compactResult).sort((a, b) => a < b ? -1 : a > b ? 1 : 0))
         .toEqual(afterCompact.sort((a, b) => a < b ? -1 : a > b ? 1 : 0));
 
       // Verify uncompact restores coverage
