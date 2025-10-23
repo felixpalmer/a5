@@ -15,6 +15,8 @@ import {
   cellToParent
 } from './serialization';
 
+import { getNumChildren } from './cell-info';
+
 export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: number): BigUint64Array {
   // Collect results in a temporary array
   const tempResults: bigint[] = [];
@@ -32,8 +34,8 @@ export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: nu
       );
     }
 
-    resolutions[i] = resolutionDiff;
-    n += 4 ** resolutionDiff;
+    resolutions[i] = resolution;
+    n += getNumChildren(resolution, targetResolution);
   }
 
   // Write directly into pre-allocated array
@@ -41,15 +43,16 @@ export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: nu
   let offset = 0;
   for (let i = 0; i < cells.length; i++) {
     const cell = cells[i];
-    const resolutionDiff = resolutions[i];
+    const resolution = resolutions[i];
 
-    if (resolutionDiff === 0) {
+    const numChildren = getNumChildren(resolution, targetResolution);
+    if (numChildren === 1) {
       result[offset] = cell;
     } else {
       result.set(cellToChildren(cell, targetResolution), offset);
     }
 
-    offset += 4 ** resolutionDiff;
+    offset += numChildren;
   }
 
   return result;

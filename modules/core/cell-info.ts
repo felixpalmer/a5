@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
+import {FIRST_HILBERT_RESOLUTION} from './serialization';
+
 const AUTHALIC_RADIUS = 6371007.2; // m
 const AUTHALIC_AREA = 4 * Math.PI * AUTHALIC_RADIUS * AUTHALIC_RADIUS; // m^2
 
@@ -23,6 +25,19 @@ export function getNumCells(resolution: number | bigint): number | bigint {
     if (resolution === 0) return 12;
     return 60 * (4 ** (resolution - 1));
   }
+}
+
+export function getNumChildren(parentResolution: number, childResolution: number): number {
+  if (childResolution < parentResolution) return 0;
+  if (childResolution === parentResolution) return 1;
+  if (parentResolution >= FIRST_HILBERT_RESOLUTION) {
+    // Between levels of constant aperture of 4, relation simplifies
+    return 4 ** (childResolution - parentResolution);
+  }
+
+  const parentCount = getNumCells(parentResolution) || 1;
+  const childCount = getNumCells(childResolution);
+  return childCount / parentCount;
 }
 
 /**
