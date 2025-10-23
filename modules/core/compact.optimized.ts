@@ -15,39 +15,43 @@ import {
   cellToParent
 } from './serialization';
 
-/**
- * Uncompact a set of cells to a target resolution using cellToChildren.
- *
- * @param cells - Array or TypedArray of cell indices to uncompact
- * @param targetResolution - Resolution to expand all cells to
- * @returns BigUint64Array of cell indices all at the target resolution
- */
 export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: number): BigUint64Array {
   // Collect results in a temporary array
   const tempResults: bigint[] = [];
 
+  // First calculate how much space is needed
+  let n = 0;
+  const resolutions = new Uint8Array(cells.length);
   for (let i = 0; i < cells.length; i++) {
     const cell = cells[i];
     const resolution = getResolution(cell);
-
-    if (resolution === targetResolution) {
-      // Already at target resolution
-      tempResults.push(cell);
-    } else if (resolution < targetResolution) {
-      // Need to expand - use cellToChildren
-      tempResults.push(...cellToChildren(cell, targetResolution));
-    } else {
+    const resolutionDiff = targetResolution - resolution;
+    if (resolutionDiff < 0) {
       throw new Error(
         `Cannot uncompact cell at resolution ${resolution} to lower resolution ${targetResolution}`
       );
     }
+
+    resolutions[i] = resolutionDiff;
+    n += 4 ** resolutionDiff;
   }
 
-  // Convert to BigUint64Array
-  const result = new BigUint64Array(tempResults.length);
-  for (let i = 0; i < tempResults.length; i++) {
-    result[i] = tempResults[i];
+  // Write directly into pre-allocated array
+  const result = new BigUint64Array(n);
+  let offset = 0;
+  for (let i = 0; i < cells.length; i++) {
+    const cell = cells[i];
+    const resolutionDiff = resolutions[i];
+
+    if (resolutionDiff === 0) {
+      result[offset] = cell;
+    } else {
+      result.set(cellToChildren(cell, targetResolution), offset);
+    }
+
+    offset += 4 ** resolutionDiff;
   }
+
   return result;
 }
 
