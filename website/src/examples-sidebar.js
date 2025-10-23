@@ -18,7 +18,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Inspection',
-      items: ['area', 'cells', 'hierarchy']
+      items: ['area', 'cells', 'compact', 'hierarchy']
     },
     {
       type: 'category',

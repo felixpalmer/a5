@@ -29,6 +29,7 @@
     "@types/three": "^0.174.0",
     "@vis.gl/react-maplibre": "^1.0.0-alpha.5",
     "d3-color": "^3.1.0",
+    "hyparquet": "^1.20.0",
     "maplibre-gl": "^5.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
