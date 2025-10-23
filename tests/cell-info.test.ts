@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { getNumCells, cellArea } from 'a5/core/cell-info';
+import { getNumCells, getNumChildren, cellArea } from 'a5/core/cell-info';
 import cellInfoFixtures from './fixtures/cell-info.json';
 
 describe('getNumCells', () => {
@@ -7,6 +7,14 @@ describe('getNumCells', () => {
     cellInfoFixtures.numCells.forEach(fixture => {
       expect(getNumCells(fixture.resolution)).toBe(fixture.count);
       expect(getNumCells(BigInt(fixture.resolution)).toString()).toBe(fixture.countBigInt);
+    });
+  });
+});
+
+describe('getNumChildren', () => {
+  test('returns correct number of children for parent-child resolution pairs', () => {
+    cellInfoFixtures.numChildren.forEach(fixture => {
+      expect(getNumChildren(fixture.parentResolution, fixture.childResolution)).toBe(fixture.numChildren);
     });
   });
 });
