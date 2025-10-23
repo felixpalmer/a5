@@ -86,8 +86,8 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
 
       const resolution = getResolution(cell);
 
-      // World cell can't be compacted further
-      if (resolution === -1) {
+      // Resolution 0 cells can't be compacted further
+      if (resolution < 1) {
         nextSet.add(cell);
         processed.add(cell);
         continue;
