@@ -5,12 +5,13 @@
 /**
  * Optimized implementation of compact/uncompact functions for A5 DGGS.
  *
- * This version exploits the bit structure of A5 indices for better performance,
- * using bit manipulation instead of serialize/deserialize operations.
+ * This version uses cellToChildren for expansion and bit-based sibling detection
+ * for compaction.
  */
 
 import {
   getResolution,
+  cellToChildren,
   WORLD_CELL,
   FIRST_HILBERT_RESOLUTION,
   HILBERT_START_BIT,
@@ -18,10 +19,7 @@ import {
 } from './serialization';
 
 /**
- * Uncompact a set of cells to a target resolution using bit manipulation.
- *
- * This optimized version directly manipulates bits to expand cells without
- * going through serialize/deserialize cycles.
+ * Uncompact a set of cells to a target resolution using cellToChildren.
  *
  * @param cells - Array of cell indices to uncompact
  * @param targetResolution - Resolution to expand all cells to
@@ -37,8 +35,8 @@ export function uncompact(cells: bigint[], targetResolution: number): bigint[] {
       // Already at target resolution
       result.push(cell);
     } else if (resolution < targetResolution) {
-      // Need to expand
-      result.push(...expandCell(cell, resolution, targetResolution));
+      // Need to expand - use cellToChildren
+      result.push(...cellToChildren(cell, targetResolution));
     } else {
       throw new Error(
         `Cannot uncompact cell at resolution ${resolution} to lower resolution ${targetResolution}`
@@ -47,122 +45,6 @@ export function uncompact(cells: bigint[], targetResolution: number): bigint[] {
   }
 
   return result;
-}
-
-/**
- * Expand a single cell from its current resolution to target resolution.
- * Uses bit manipulation to generate all children.
- */
-function expandCell(cell: bigint, currentResolution: number, targetResolution: number): bigint[] {
-  // Special cases for resolution -1 and 0
-  if (currentResolution === -1) {
-    // World cell - generate all 12 resolution 0 cells
-    if (targetResolution === 0) {
-      const result: bigint[] = [];
-      for (let originId = 0; originId < 12; originId++) {
-        result.push((BigInt(originId) << 58n) | (1n << 57n)); // res 0 marker at bit 57
-      }
-      return result;
-    } else {
-      // Expand world to res 0, then recursively expand
-      const res0Cells = expandCell(WORLD_CELL, -1, 0);
-      const result: bigint[] = [];
-      for (const res0Cell of res0Cells) {
-        result.push(...expandCell(res0Cell, 0, targetResolution));
-      }
-      return result;
-    }
-  }
-
-  if (currentResolution === 0) {
-    // Resolution 0 -> resolution 1 (5 segments)
-    const originId = Number(cell >> 58n);
-
-    // Calculate firstQuintant for this origin (from origin.ts pattern)
-    // This is a simplified version - in practice we'd need the full origin data
-    // For now, use the origin data implicitly through the bit pattern
-    const result: bigint[] = [];
-
-    if (targetResolution === 1) {
-      // Generate 5 segments for this origin
-      for (let segN = 0; segN < 5; segN++) {
-        const top6 = 5 * originId + segN;
-        const res1Cell = (BigInt(top6) << 58n) | (1n << 56n); // res 1 marker at bit 56
-        result.push(res1Cell);
-      }
-      return result;
-    } else {
-      // Expand to res 1 first, then continue
-      const res1Cells = expandCell(cell, 0, 1);
-      for (const res1Cell of res1Cells) {
-        result.push(...expandCell(res1Cell, 1, targetResolution));
-      }
-      return result;
-    }
-  }
-
-  // For Hilbert resolutions (2+), use bit shifting
-  if (currentResolution >= FIRST_HILBERT_RESOLUTION && targetResolution >= FIRST_HILBERT_RESOLUTION) {
-    const result: bigint[] = [];
-    const resolutionDiff = targetResolution - currentResolution;
-
-    // Extract origin/segment (top 6 bits)
-    const originSegment = cell & ORIGIN_SEGMENT_MASK;
-
-    // Extract S value
-    const currentHilbertLevels = currentResolution - FIRST_HILBERT_RESOLUTION + 1;
-    const currentHilbertBits = 2 * currentHilbertLevels;
-    const currentShift = HILBERT_START_BIT - BigInt(currentHilbertBits);
-    const S = (cell >> currentShift) & ((1n << BigInt(currentHilbertBits)) - 1n);
-
-    // Calculate new S values (shift left and add all possible suffixes)
-    const shiftAmount = 2 * resolutionDiff;
-    const childCount = 1 << shiftAmount; // 4^resolutionDiff
-    const shiftedS = S << BigInt(shiftAmount);
-
-    // Calculate target encoding parameters
-    const targetHilbertLevels = targetResolution - FIRST_HILBERT_RESOLUTION + 1;
-    const targetHilbertBits = 2 * targetHilbertLevels;
-    const targetShift = HILBERT_START_BIT - BigInt(targetHilbertBits);
-    const targetR = 2 * targetHilbertLevels + 1;
-
-    for (let i = 0; i < childCount; i++) {
-      const newS = shiftedS + BigInt(i);
-
-      // Reconstruct index: origin/segment | S | resolution marker
-      const newCell = originSegment | (newS << targetShift) | (1n << (HILBERT_START_BIT - BigInt(targetR)));
-      result.push(newCell);
-    }
-
-    return result;
-  }
-
-  // Mixed case: current res is 1, target is 2+
-  if (currentResolution === 1 && targetResolution >= FIRST_HILBERT_RESOLUTION) {
-    // Expand res 1 -> res 2, then continue if needed
-    const originSegment = cell & ORIGIN_SEGMENT_MASK;
-    const result: bigint[] = [];
-
-    if (targetResolution === 2) {
-      // Generate 4 children at res 2 (S = 0, 1, 2, 3 with 2-bit encoding)
-      for (let s = 0n; s < 4n; s++) {
-        // res 2: hilbert levels = 1, hilbert bits = 2, shift = 58 - 2 = 56, R = 3 (bit 55)
-        const res2Cell = originSegment | (s << 56n) | (1n << 55n);
-        result.push(res2Cell);
-      }
-      return result;
-    } else {
-      // Expand to res 2 first
-      const res2Cells = expandCell(cell, 1, 2);
-      for (const res2Cell of res2Cells) {
-        result.push(...expandCell(res2Cell, 2, targetResolution));
-      }
-      return result;
-    }
-  }
-
-  // Shouldn't reach here for valid inputs
-  throw new Error(`Unsupported expansion from resolution ${currentResolution} to ${targetResolution}`);
 }
 
 /**
