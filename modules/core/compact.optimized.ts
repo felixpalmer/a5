@@ -12,10 +12,7 @@
 import {
   getResolution,
   cellToChildren,
-  WORLD_CELL,
-  FIRST_HILBERT_RESOLUTION,
-  HILBERT_START_BIT,
-  ORIGIN_SEGMENT_MASK
+  cellToParent
 } from './serialization';
 
 /**
@@ -96,8 +93,8 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
         continue;
       }
 
-      // Calculate parent cell using bit manipulation
-      const parent = getParentCell(cell, resolution);
+      // Calculate parent cell
+      const parent = cellToParent(cell);
 
       if (!parentMap.has(parent)) {
         parentMap.set(parent, []);
@@ -140,46 +137,4 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
     result[i] = sortedArray[i];
   }
   return result;
-}
-
-/**
- * Get the parent cell using bit manipulation.
- * This avoids the overhead of deserialize/serialize cycles.
- */
-function getParentCell(cell: bigint, resolution: number): bigint {
-  if (resolution === 0) {
-    // Parent is world cell
-    return WORLD_CELL;
-  }
-
-  if (resolution === 1) {
-    // Parent is res 0 - extract origin from top 6 bits
-    const top6 = Number(cell >> 58n);
-    const originId = Math.floor(top6 / 5);
-    // Res 0 cell: origin in top 6 bits, marker at bit 57
-    return (BigInt(originId) << 58n) | (1n << 57n);
-  }
-
-  // Hilbert resolutions: shift S right by 2 bits
-  const originSegment = cell & ORIGIN_SEGMENT_MASK;
-
-  const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const hilbertBits = 2 * hilbertLevels;
-  const shift = HILBERT_START_BIT - BigInt(hilbertBits);
-
-  // Extract S
-  const S = (cell >> shift) & ((1n << BigInt(hilbertBits)) - 1n);
-
-  // Parent S is shifted right by 2 bits
-  const parentS = S >> 2n;
-
-  // Parent resolution encoding
-  const parentResolution = resolution - 1;
-  const parentHilbertLevels = parentResolution - FIRST_HILBERT_RESOLUTION + 1;
-  const parentHilbertBits = 2 * parentHilbertLevels;
-  const parentShift = HILBERT_START_BIT - BigInt(parentHilbertBits);
-  const parentR = 2 * parentHilbertLevels + 1;
-
-  // Reconstruct parent index
-  return originSegment | (parentS << parentShift) | (1n << (HILBERT_START_BIT - BigInt(parentR)));
 }
