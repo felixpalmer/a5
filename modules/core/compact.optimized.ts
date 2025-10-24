@@ -14,15 +14,13 @@ import {
   cellToChildren,
   cellToParent,
   FIRST_HILBERT_RESOLUTION,
-  HILBERT_START_BIT
+  HILBERT_START_BIT,
+  MAX_RESOLUTION
 } from './serialization';
 
 import { getNumChildren } from './cell-info';
 
 export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: number): BigUint64Array {
-  // Collect results in a temporary array
-  const tempResults: bigint[] = [];
-
   // First calculate how much space is needed
   let n = 0;
   const resolutions = new Uint8Array(cells.length);
@@ -65,7 +63,7 @@ export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: nu
  *
  * Key optimizations:
  * 1. Single sort at the start
- * 2. Forward scan detects complete sibling groups
+ * 2. Forward scan detects complete sibling groups using stride
  * 3. Multiple passes, but no re-sorting (parents maintain sort order)
  *
  * @param cells - Array or TypedArray of cell indices to compact
@@ -86,23 +84,21 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
     return 4;                              // parent is 1+ (Hilbert)
   }
 
-  // Helper to get parent pattern via bit shift (for Hilbert resolutions)
-  // This masks out the child-specific bits to check if cells share the same parent
-  function getParentPattern(cell: bigint, resolution: number): bigint {
+  // Helper to calculate stride between siblings at a given resolution
+  // Siblings increment the S value by 1, which translates to a fixed stride in the cell index
+  function getStride(resolution: number): bigint {
     if (resolution < FIRST_HILBERT_RESOLUTION) {
-      // For non-Hilbert resolutions, use full cellToParent
-      return cellToParent(cell);
+      // For non-Hilbert resolutions, there's no simple stride (different origins/segments)
+      throw new Error(`getStride not applicable for resolution ${resolution}`);
     }
 
-    // For Hilbert resolutions: shift right by 2 bits to remove child index,
-    // then shift back to get parent pattern
+    // For Hilbert resolutions: siblings differ by incrementing S by 1
+    // S is stored at position (HILBERT_START_BIT - hilbertBits)
+    // So incrementing S by 1 means adding (1 << sPosition) to the cell index
     const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
     const hilbertBits = BigInt(2 * hilbertLevels);
     const sPosition = HILBERT_START_BIT - hilbertBits;
-
-    // Mask out the bottom 2 bits of S (the child-specific bits)
-    const childBitsMask = (3n << sPosition);
-    return cell & ~childBitsMask;
+    return 1n << sPosition;
   }
 
   // Compact until no more changes
@@ -125,6 +121,7 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
       }
 
       // Special case: resolution 0 → world cell
+      // Resolution 0 cells don't have a constant stride (different origins)
       if (resolution === 0) {
         if (i + 12 <= currentCells.length) {
           let allRes0 = true;
@@ -150,16 +147,37 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
       const expectedChildren = getExpectedChildCount(resolution);
 
       if (i + expectedChildren <= currentCells.length) {
-        // Use bit operations to check if cells share same parent
-        const parentPattern = getParentPattern(cell, resolution);
         let hasAllSiblings = true;
 
-        for (let j = 1; j < expectedChildren; j++) {
-          const siblingResolution = getResolution(currentCells[i + j]);
-          if (siblingResolution !== resolution ||
-              getParentPattern(currentCells[i + j], resolution) !== parentPattern) {
-            hasAllSiblings = false;
-            break;
+        if (resolution >= FIRST_HILBERT_RESOLUTION) {
+          // For Hilbert resolutions: use stride-based checking
+          const stride = getStride(resolution);
+          for (let j = 1; j < expectedChildren; j++) {
+            const expectedCell = cell + BigInt(j) * stride;
+            if (currentCells[i + j] !== expectedCell) {
+              hasAllSiblings = false;
+              break;
+            }
+          }
+        } else {
+          // For resolution 1: can't use stride (different origins), fall back to parent check
+          for (let j = 1; j < expectedChildren; j++) {
+            const siblingResolution = getResolution(currentCells[i + j]);
+            if (siblingResolution !== resolution) {
+              hasAllSiblings = false;
+              break;
+            }
+          }
+          // Only check parents if all resolutions match
+          if (hasAllSiblings) {
+            const parent = cellToParent(cell);
+            for (let j = 1; j < expectedChildren; j++) {
+              const siblingParent = cellToParent(currentCells[i + j]);
+              if (siblingParent !== parent) {
+                hasAllSiblings = false;
+                break;
+              }
+            }
           }
         }
 
@@ -188,10 +206,9 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
 }
 
 /**
- * Compact a set of cells using bit-based sibling detection.
+ * Compact a set of cells using Set-based sibling detection.
  *
- * This optimized version uses bit patterns to identify sibling relationships
- * without full deserialization.
+ * This version groups cells by parent and checks for complete sibling sets.
  *
  * @param cells - Array or TypedArray of cell indices to compact
  * @returns BigUint64Array of compacted cell indices (typically smaller)
