@@ -112,6 +112,7 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
     while (i < currentCells.length) {
       const cell = currentCells[i];
       const resolution = getResolution(cell);
+      const stride = getStride(resolution);
 
       // Can't compact below resolution 0
       if (resolution < 0) {
@@ -151,7 +152,6 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
 
         if (resolution >= FIRST_HILBERT_RESOLUTION) {
           // For Hilbert resolutions: use stride-based checking
-          const stride = getStride(resolution);
           for (let j = 1; j < expectedChildren; j++) {
             const expectedCell = cell + BigInt(j) * stride;
             if (currentCells[i + j] !== expectedCell) {
