@@ -24,9 +24,45 @@ export const ALL_ONES = 0xffffffffffffffffn;
 export const WORLD_CELL = 0n;
 
 export function getResolution(index: bigint): number {
-  // Find resolution from position of first non-00 bits from the right
+  if (index === 0n) return -1;
+
   let resolution = MAX_RESOLUTION - 1;
-  let shifted = index >> 1n; // TODO check if non-zero for point level
+  let shifted = index >> 1n;
+  if (shifted === 0n) return -1;
+
+  // Fast path: skip large chunks of trailing zeros for Hilbert resolutions
+  // For Hilbert resolutions (2+), each resolution uses 2 bits
+  // So 32 zero bits = 16 resolution levels, 16 zero bits = 8 levels, etc.
+
+  // Check rightmost 32 bits - skip 16 resolution levels
+  // resolution starts at 29, so this always brings us to 13 (still in Hilbert range)
+  if ((shifted & 0xFFFFFFFFn) === 0n) {
+    shifted >>= 32n;
+    resolution -= 16; // 32 bits / 2 bits per Hilbert resolution
+  }
+
+  // Check rightmost 16 bits - skip 8 resolution levels
+  // resolution is now either 29 or 13, both >= 10, so no check needed
+  if ((shifted & 0xFFFFn) === 0n) {
+    shifted >>= 16n;
+    resolution -= 8;
+  }
+
+  // Check rightmost 8 bits - skip 4 resolution levels
+  // After two skips, resolution could be 5 (13-8), so we need this check to stay >= 2
+  if (resolution >= 6 && (shifted & 0xFFn) === 0n) {
+    shifted >>= 8n;
+    resolution -= 4;
+  }
+
+  // Check rightmost 4 bits - skip 2 resolution levels
+  // Need to ensure we stay above resolution 2 (Hilbert boundary)
+  if (resolution >= 4 && (shifted & 0xFn) === 0n) {
+    shifted >>= 4n;
+    resolution -= 2;
+  }
+
+  // Now use the original algorithm for the remaining bits
   while (resolution > -1 && (shifted & 0b1n) === 0n) {
     resolution -= 1;
     // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
