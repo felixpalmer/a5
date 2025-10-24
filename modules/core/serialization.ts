@@ -33,67 +33,43 @@ export function getResolution(index: bigint): number {
   // Fast path: split into 32-bit chunks and work with regular numbers (much faster than bigints)
   // Check low 32 bits first
   let low32 = Number(shifted & 0xFFFFFFFFn);
+  let remaining: number;
 
   if (low32 === 0) {
     // Low 32 bits are all zero, skip 16 resolution levels and work with high bits
     shifted >>= 32n;
     resolution -= 16;
-
-    // Now shifted fits in 32 bits (original max was 58 bits, now 26 bits), convert to number
-    let remaining = Number(shifted);
-
-    // Check remaining 16 bits
-    if ((remaining & 0xFFFF) === 0) {
-      remaining >>= 16;
-      resolution -= 8;
-    }
-
-    // Check remaining 8 bits
-    if (resolution >= 6 && (remaining & 0xFF) === 0) {
-      remaining >>= 8;
-      resolution -= 4;
-    }
-
-    // Check remaining 4 bits
-    if (resolution >= 4 && (remaining & 0xF) === 0) {
-      remaining >>= 4;
-      resolution -= 2;
-    }
-
-    // Final loop with remaining bits (still as Number, much faster)
-    while (resolution > -1 && (remaining & 0b1) === 0) {
-      resolution -= 1;
-      // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
-      // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
-      remaining = remaining >> (resolution < FIRST_HILBERT_RESOLUTION ? 1 : 2);
-    }
+    // Now shifted fits in 32 bits (original max was 58 bits, now 26 bits)
+    remaining = Number(shifted);
   } else {
-    // Low 32 bits have data, work with them as a number
-    // Check 16 bits
-    if ((low32 & 0xFFFF) === 0) {
-      low32 >>= 16;
-      resolution -= 8;
-    }
+    // Low 32 bits have data, work with them
+    remaining = low32;
+  }
 
-    // Check 8 bits
-    if (resolution >= 6 && (low32 & 0xFF) === 0) {
-      low32 >>= 8;
-      resolution -= 4;
-    }
+  // Check remaining 16 bits
+  if ((remaining & 0xFFFF) === 0) {
+    remaining >>= 16;
+    resolution -= 8;
+  }
 
-    // Check 4 bits
-    if (resolution >= 4 && (low32 & 0xF) === 0) {
-      low32 >>= 4;
-      resolution -= 2;
-    }
+  // Check remaining 8 bits
+  if (resolution >= 6 && (remaining & 0xFF) === 0) {
+    remaining >>= 8;
+    resolution -= 4;
+  }
 
-    // Final loop with remaining bits (still as Number, much faster)
-    while (resolution > -1 && (low32 & 0b1) === 0) {
-      resolution -= 1;
-      // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
-      // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
-      low32 = low32 >> (resolution < FIRST_HILBERT_RESOLUTION ? 1 : 2);
-    }
+  // Check remaining 4 bits
+  if (resolution >= 4 && (remaining & 0xF) === 0) {
+    remaining >>= 4;
+    resolution -= 2;
+  }
+
+  // Final loop with remaining bits (still as Number, much faster)
+  while (resolution > -1 && (remaining & 0b1) === 0) {
+    resolution -= 1;
+    // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
+    // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
+    remaining = remaining >> (resolution < FIRST_HILBERT_RESOLUTION ? 1 : 2);
   }
 
   return resolution;
