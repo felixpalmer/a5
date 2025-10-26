@@ -69,7 +69,7 @@ export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: nu
  * @param cells - Array or TypedArray of cell indices to compact
  * @returns BigUint64Array of compacted cell indices (typically smaller)
  */
-export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64Array {
+export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
   if (cells.length === 0) {
     return new BigUint64Array(0);
   }
@@ -82,23 +82,6 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
     if (cellResolution === 0) return 12;  // parent is -1 (world cell)
     if (cellResolution === 1) return 5;   // parent is 0
     return 4;                              // parent is 1+ (Hilbert)
-  }
-
-  // Helper to calculate stride between siblings at a given resolution
-  // Siblings increment the S value by 1, which translates to a fixed stride in the cell index
-  function getStride(resolution: number): bigint {
-    if (resolution < FIRST_HILBERT_RESOLUTION) {
-      // For non-Hilbert resolutions, there's no simple stride (different origins/segments)
-      throw new Error(`getStride not applicable for resolution ${resolution}`);
-    }
-
-    // For Hilbert resolutions: siblings differ by incrementing S by 1
-    // S is stored at position (HILBERT_START_BIT - hilbertBits)
-    // So incrementing S by 1 means adding (1 << sPosition) to the cell index
-    const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
-    const hilbertBits = BigInt(2 * hilbertLevels);
-    const sPosition = HILBERT_START_BIT - hilbertBits;
-    return 1n << sPosition;
   }
 
   // Compact until no more changes
@@ -154,14 +137,13 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
           // BUT: cells only form a complete sibling group if the first cell's S value is divisible by 4
           // This means the 2 least significant bits of S (before the resolution marker) must be 00
           // Check: cell & (3n << sPosition) === 0
-          const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
-          const hilbertBits = BigInt(2 * hilbertLevels);
-          const sPosition = HILBERT_START_BIT - hilbertBits;
+          const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
           const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
           const stride = 1n << sPosition; // Calculate stride
+          const isFirstChild = (cell & sMask) === 0n;
 
           // Only check stride if the first cell could be the start of a sibling group
-          if ((cell & sMask) === 0n) {
+          if (isFirstChild) {
             for (let j = 1; j < expectedChildren; j++) {
               const expectedCell = cell + BigInt(j) * stride;
               if (currentCells[i + j] !== expectedCell) {
@@ -227,7 +209,7 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
  * @param cells - Array or TypedArray of cell indices to compact
  * @returns BigUint64Array of compacted cell indices (typically smaller)
  */
-export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
+export function _compact(cells: bigint[] | BigUint64Array): BigUint64Array {
   if (cells.length === 0) {
     return new BigUint64Array(0);
   }
