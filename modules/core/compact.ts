@@ -13,8 +13,8 @@ import {
   getResolution,
   cellToChildren,
   cellToParent,
-  FIRST_HILBERT_RESOLUTION,
-  HILBERT_START_BIT
+  getStride,
+  isFirstChild
 } from './serialization';
 
 import { getNumChildren } from './cell-info';
@@ -102,79 +102,28 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
         continue;
       }
 
-      // Special case: resolution 0 → world cell
-      // Resolution 0 cells don't have a constant stride (different origins)
-      if (resolution === 0) {
-        if (i + 12 <= currentCells.length) {
-          let allRes0 = true;
-          for (let j = 0; j < 12; j++) {
-            if (getResolution(currentCells[i + j]) !== 0) {
-              allRes0 = false;
-              break;
-            }
-          }
-          if (allRes0) {
-            result.push(0n);
-            i += 12;
-            changed = true;
-            continue;
-          }
-        }
-        result.push(cell);
-        i++;
-        continue;
-      }
-
-      // Check for complete sibling group
+      // Check for complete sibling group using unified stride-based approach
       const expectedChildren = getExpectedChildCount(resolution);
 
       if (i + expectedChildren <= currentCells.length) {
         let hasAllSiblings = true;
 
-        if (resolution >= FIRST_HILBERT_RESOLUTION) {
-          // For Hilbert resolutions: use stride-based checking
-          // BUT: cells only form a complete sibling group if the first cell's S value is divisible by 4
-          // This means the 2 least significant bits of S (before the resolution marker) must be 00
-          // Check: cell & (3n << sPosition) === 0
-          const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
-          const hilbertBits = BigInt(2 * hilbertLevels);
-          const sPosition = HILBERT_START_BIT - hilbertBits;
-          const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
-          const stride = 1n << sPosition; // Calculate stride
+        // Use stride-based checking for all resolutions
+        // First check if this cell is a first child (at a sibling group boundary)
+        if (isFirstChild(cell, resolution)) {
+          const stride = getStride(resolution);
 
-          // Only check stride if the first cell could be the start of a sibling group
-          if ((cell & sMask) === 0n) {
-            for (let j = 1; j < expectedChildren; j++) {
-              const expectedCell = cell + BigInt(j) * stride;
-              if (currentCells[i + j] !== expectedCell) {
-                hasAllSiblings = false;
-                break;
-              }
-            }
-          } else {
-            // First cell is not at a sibling group boundary
-            hasAllSiblings = false;
-          }
-        } else {
-          // For resolution 1: can't use stride (different origins), fall back to parent check
+          // Check that all expected siblings are present with correct stride
           for (let j = 1; j < expectedChildren; j++) {
-            const siblingResolution = getResolution(currentCells[i + j]);
-            if (siblingResolution !== resolution) {
+            const expectedCell = cell + BigInt(j) * stride;
+            if (currentCells[i + j] !== expectedCell) {
               hasAllSiblings = false;
               break;
             }
           }
-          // Only check parents if all resolutions match
-          if (hasAllSiblings) {
-            const parent = cellToParent(cell);
-            for (let j = 1; j < expectedChildren; j++) {
-              const siblingParent = cellToParent(currentCells[i + j]);
-              if (siblingParent !== parent) {
-                hasAllSiblings = false;
-                break;
-              }
-            }
-          }
+        } else {
+          // First cell is not at a sibling group boundary
+          hasAllSiblings = false;
         }
 
         if (hasAllSiblings) {

@@ -211,6 +211,11 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
   const {origin, segment, S, resolution: currentResolution} = deserialize(index);
   const newResolution = parentResolution ?? currentResolution - 1;
 
+  // Special case: parent of resolution 0 cells is the world cell
+  if (newResolution === -1) {
+    return WORLD_CELL;
+  }
+
   if (newResolution < 0) {
     throw new Error(`Target resolution (${newResolution}) cannot be negative`);
   }
@@ -243,6 +248,15 @@ export function getRes0Cells(): bigint[] {
  */
 export function isFirstChild(index: bigint, resolution?: number): boolean {
   resolution ??= getResolution(index);
+
+  if (resolution < 2) {
+    // For resolution 0: first child is origin 0 (child count = 12)
+    // For resolution 1: first children are at multiples of 5 (child count = 5)
+    const top6Bits = Number(index >> HILBERT_START_BIT);
+    const childCount = resolution === 0 ? 12 : 5;
+    return top6Bits % childCount === 0;
+  }
+
   const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
   const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
   return (index & sMask) === 0n;
@@ -252,6 +266,10 @@ export function isFirstChild(index: bigint, resolution?: number): boolean {
  * Difference between two neighbouring sibling cells at a given resolution
  */
 export function getStride(resolution: number): bigint {
+  // Both level 0 & 1 just write values 0-11 or 0-59 to the first 6 bits
+  if (resolution < 2) return (1n << HILBERT_START_BIT);
+
+  // For hilbert levels, the position shifts by 2 bits per resolution level
   const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
   return 1n << sPosition;
 }
