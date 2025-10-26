@@ -112,7 +112,6 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
     while (i < currentCells.length) {
       const cell = currentCells[i];
       const resolution = getResolution(cell);
-      const stride = getStride(resolution);
 
       // Can't compact below resolution 0
       if (resolution < 0) {
@@ -152,12 +151,27 @@ export function compactForwardScan(cells: bigint[] | BigUint64Array): BigUint64A
 
         if (resolution >= FIRST_HILBERT_RESOLUTION) {
           // For Hilbert resolutions: use stride-based checking
-          for (let j = 1; j < expectedChildren; j++) {
-            const expectedCell = cell + BigInt(j) * stride;
-            if (currentCells[i + j] !== expectedCell) {
-              hasAllSiblings = false;
-              break;
+          // BUT: cells only form a complete sibling group if the first cell's S value is divisible by 4
+          // This means the 2 least significant bits of S (before the resolution marker) must be 00
+          // Check: cell & (3n << sPosition) === 0
+          const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
+          const hilbertBits = BigInt(2 * hilbertLevels);
+          const sPosition = HILBERT_START_BIT - hilbertBits;
+          const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
+          const stride = 1n << sPosition; // Calculate stride
+
+          // Only check stride if the first cell could be the start of a sibling group
+          if ((cell & sMask) === 0n) {
+            for (let j = 1; j < expectedChildren; j++) {
+              const expectedCell = cell + BigInt(j) * stride;
+              if (currentCells[i + j] !== expectedCell) {
+                hasAllSiblings = false;
+                break;
+              }
             }
+          } else {
+            // First cell is not at a sibling group boundary
+            hasAllSiblings = false;
           }
         } else {
           // For resolution 1: can't use stride (different origins), fall back to parent check
