@@ -237,3 +237,21 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
 export function getRes0Cells(): bigint[] {
   return cellToChildren(WORLD_CELL, 0);
 }
+
+/**
+ * Check for whether index corresponds to first child of its parent
+ */
+export function isFirstChild(index: bigint, resolution?: number): boolean {
+  resolution ??= getResolution(index);
+  const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
+  const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
+  return (index & sMask) === 0n;
+}
+
+/**
+ * Difference between two neighbouring sibling cells at a given resolution
+ */
+export function getStride(resolution: number): bigint {
+  const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
+  return 1n << sPosition;
+}

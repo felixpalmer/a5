@@ -13,6 +13,8 @@ import {
   getResolution,
   cellToChildren,
   cellToParent,
+  isFirstChild,
+  getStride,
   FIRST_HILBERT_RESOLUTION,
   HILBERT_START_BIT,
   MAX_RESOLUTION
@@ -134,16 +136,11 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
 
         if (resolution >= FIRST_HILBERT_RESOLUTION) {
           // For Hilbert resolutions: use stride-based checking
-          // BUT: cells only form a complete sibling group if the first cell's S value is divisible by 4
-          // This means the 2 least significant bits of S (before the resolution marker) must be 00
-          // Check: cell & (3n << sPosition) === 0
-          const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
-          const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
-          const stride = 1n << sPosition; // Calculate stride
-          const isFirstChild = (cell & sMask) === 0n;
+          // Cells only form a complete sibling group if they start with the first child
 
           // Only check stride if the first cell could be the start of a sibling group
-          if (isFirstChild) {
+          if (isFirstChild(cell, resolution)) {
+            const stride = getStride(resolution);
             for (let j = 1; j < expectedChildren; j++) {
               const expectedCell = cell + BigInt(j) * stride;
               if (currentCells[i + j] !== expectedCell) {
