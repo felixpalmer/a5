@@ -1,3 +1,5 @@
+import IndexExample from 'website-examples/components/index-example';
+
 # Index Encoding
 
 A5 uses a 64-bit unsigned integer to uniquely identify each cell on Earth. This encoding scheme is carefully designed to efficiently store the location and resolution information while maintaining useful properties like spatial locality and hierarchical relationships.
@@ -42,77 +44,31 @@ Let's look at how different cells are encoded. Using London ([-0.1276, 51.5074])
 
 ### Resolution 0: Base Pentagon
 
-```
-Cell ID (binary):   011000000000000000000000000000000000000000000000000000000000000
-Cell ID (hex):      0x3000000000000000
-Decimal:            3458764513820540928
-
-Structure:
-  ┌─ Origin/Segment (6 bits): 011000 = origin 3
-  │  ┌─ Resolution marker (1 bit): 1
-  │  │  ┌─ Trailing zeros (57 bits)
-  │  │  │
-011000 1 00000000000000000000000000000000000000000000000000000000000
-```
-
-At resolution 0, there are only 12 cells covering the entire Earth. The top 6 bits directly encode the origin ID (0-11).
+<IndexExample
+  cellId="0x3000000000000000"
+  description="At resolution 0, there are only 12 cells covering the entire Earth. The top 6 bits directly encode the origin ID (0-11). Notice how most bits are zeros with just a single '1' resolution marker."
+/>
 
 ### Resolution 1: Segment
 
-```
-Cell ID (binary):   011101000000000000000000000000000000000000000000000000000000000
-Cell ID (hex):      0x3a00000000000000
-Decimal:            4179340454199820288
-
-Structure:
-  ┌─ Origin/Segment (6 bits): 011101 = 29 = (5×3 + 4) = origin 3, segment 4
-  │       ┌─ Resolution marker (2 bits): 10
-  │       │  ┌─ Trailing zeros (56 bits)
-  │       │  │
-011101 10 00000000000000000000000000000000000000000000000000000000
-```
-
-At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The encoding uses `5 × origin_id + segment_id`.
+<IndexExample
+  cellId="0x3a00000000000000"
+  description="At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The top 6 bits (shown in blue) encode both origin and segment using the formula: 5 × origin_id + segment_id. Here: 011101 (binary) = 29 = 5×3 + 4, so origin=3, segment=4."
+/>
 
 ### Resolution 5: Hilbert Subdivision
 
-```
-Cell ID (binary):   011101011001000001010100000000000000000000000000000000000000000
-Cell ID (hex):      0x3b221500000000000
-Decimal:            4267244732121088000
-
-Structure:
-  ┌─ Origin/Segment (6 bits): 011101
-  │       ┌─ Hilbert S (8 bits): 01100100 = 100
-  │       │           ┌─ Resolution marker (2 bits): 01
-  │       │           │  ┌─ Trailing zeros (48 bits)
-  │       │           │  │
-011101 01100100 01 01 01 00000000000000000000000000000000000000000000
-```
-
-From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5:
-- Hilbert bits = 2 × (5 - 1) = 8 bits
-- This encodes position S along the Hilbert curve within the segment
+<IndexExample
+  cellId="0x3b22150000000000"
+  description="From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the Hilbert S value (shown in black) uses 8 bits: 2 × (5-1) = 8 bits. This encodes the position along the Hilbert space-filling curve within the segment."
+/>
 
 ### Resolution 10: Fine Detail
 
-```
-Cell ID (binary):   011101100001100011010110100000000000000000000000000000000000000
-Cell ID (hex):      0x3b1869a000000000
-Decimal:            4267914910944534528
-
-Structure:
-  ┌─ Origin/Segment (6 bits): 011101
-  │       ┌─ Hilbert S (18 bits): 100001100011010110 = 136,022
-  │       │                     ┌─ Resolution marker (2 bits): 10
-  │       │                     │  ┌─ Trailing zeros (38 bits)
-  │       │                     │  │
-011101 100001100011010110 10 00000000000000000000000000000000000000
-```
-
-At resolution 10:
-- Hilbert bits = 2 × (10 - 1) = 18 bits
-- Allows for 2^18 = 262,144 possible positions per segment
+<IndexExample
+  cellId="0x3b1869a000000000"
+  description="At resolution 10, the Hilbert S value uses 18 bits: 2 × (10-1) = 18 bits. This allows for 2^18 = 262,144 possible positions per segment. Notice how the black section (Hilbert S) has grown larger compared to resolution 5."
+/>
 
 ## Resolution Encoding
 
