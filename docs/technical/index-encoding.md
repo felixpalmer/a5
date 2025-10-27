@@ -1,4 +1,4 @@
-import CellIdDisplay from 'website-examples/components/cell-id-display';
+import A5CellInfoBox from 'website-examples/components/cell-id-display';
 
 # Index Encoding
 
@@ -9,69 +9,70 @@ A5 uses a 64-bit unsigned integer to uniquely identify each cell on Earth. This 
 The 64 bits are organized into several distinct sections:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ 6 bits │    Variable bits     │ Marker │   Trailing zeros      │
-│ Origin │   Hilbert Curve (S)  │   (1)  │                       │
-│Segment │                      │        │                       │
-└─────────────────────────────────────────────────────────────────┘
-  63-58        57-...              ...          ...-0
+┌──────────────────────────────────────────────────────────────┐
+│ 6 bits  │    Variable bits     │   2 bits   │ Trailing zeros │
+│ Origin/ │   Hilbert Curve (S)  │ resolution │                │
+│Quintant │                      │   marker   │                │
+└──────────────────────────────────────────────────────────────┘
+  63 - 58        57 - ...              ..          ... - 0
 ```
 
 ### Components
 
-1. **Bits 63-58 (6 bits)**: Origin and Segment
-   - Encodes which of the 12 pentagonal faces (origins) and which of the 5 segments
+1. **Bits 63-58 (6 bits)**: origin or quintant
+   - Encodes which of the 12 pentagonal faces (origins) and which of the 60 quintants the cell is in
    - For resolution 0: directly encodes origin ID (0-11)
-   - For resolution ≥ 1: encodes `5 × origin_id + segment` (0-59)
+   - For resolution ≥ 1: encodes quintant `5 × origin_id + segment` (0-59)
 
 2. **Hilbert Curve Position (S)**: Variable length, 0 to 58 bits
    - For resolution ≥ 2: encodes position along the Hilbert space-filling curve
    - Length = 2 × (resolution - 1) bits
    - Not present for resolution 0 and 1
 
-3. **Resolution Marker**: A single `1` bit
-   - The position of this bit encodes the resolution level
-   - For resolution < 2: shifts by 1 bit per resolution
+3. **Resolution Marker**: The right-most `01` or `10` bitpair
+   - The position of these bits encodes the resolution level
+   - For resolution 0: `10`, resolution 1: `01` (`1` shifts by one bit)
    - For resolution ≥ 2: shifts by 2 bits per resolution (accounts for Hilbert curve)
 
 4. **Trailing Zeros**: All remaining bits
    - Pads the integer to 64 bits
    - Allows efficient computation of parents (right-shift) and children (left-shift)
+   - Unambigiously determines which bits are the resolution marker bits
 
 ## Examples
 
-Let's look at how different cells are encoded. Using London ([-0.1276, 51.5074]) as our example location:
+Let's look at how different cells are encoded. Using London `-0.1276, 51.5074` as our example location:
 
 ### Resolution 0: Base Pentagon
 
-<CellIdDisplay
+<A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={0}
-  description="At resolution 0, there are only 12 cells covering the entire Earth. The top 6 bits directly encode the origin ID (0-11). Notice how most bits are zeros with just a single '1' resolution marker."
+  description={<>At resolution 0, there are only 12 cells covering the entire Earth. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> directly encode the origin ID (0-11). Notice how most bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> with just the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.</>}
 />
 
 ### Resolution 1: Segment
 
-<CellIdDisplay
+<A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={1}
-  description="At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The top 6 bits (shown in blue) encode both origin and segment using the formula: 5 × origin_id + segment_id."
+  description={<>At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment using the formula: 5 × origin_id + segment_id, followed by the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'01' resolution marker</span>.</>}
 />
 
 ### Resolution 5: Hilbert Subdivision
 
-<CellIdDisplay
+<A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={5}
-  description="From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the Hilbert S value (shown in black) uses 8 bits: 2 × (5-1) = 8 bits. This encodes the position along the Hilbert space-filling curve within the segment."
+  description={<>From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode origin/segment, followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit Hilbert S value</span> (2 × (5-1) = 8 bits) encoding position along the space-filling curve, then the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.</>}
 />
 
 ### Resolution 10: Fine Detail
 
-<CellIdDisplay
+<A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={10}
-  description="At resolution 10, the Hilbert S value uses 18 bits: 2 × (10-1) = 18 bits. This allows for 2^18 = 262,144 possible positions per segment. Notice how the black section (Hilbert S) has grown larger compared to resolution 5."
+  description={<>At resolution 10, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode origin/segment, followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>18-bit Hilbert S value</span> (2 × (10-1) = 18 bits) allowing for 2^18 = 262,144 possible positions per segment, then the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>. Notice how the <span style={{color: '#000000', fontWeight: 'bold'}}>Hilbert S section</span> has grown larger compared to resolution 5.</>}
 />
 
 ## Resolution Encoding

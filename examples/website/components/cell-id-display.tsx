@@ -1,15 +1,13 @@
 import React from 'react';
 import { getResolution, lonLatToCell } from 'a5';
 
-export interface CellIdDisplayProps {
-  /** Cell ID as bigint (if provided directly) */
-  cellId?: bigint;
-  /** Location [lon, lat] - if provided with resolution, will compute cellId */
-  location?: [number, number];
-  /** Resolution level - required if location is provided */
-  resolution?: number;
+export interface A5CellInfoBoxProps {
+  /** Location [lon, lat] */
+  location: [number, number];
+  /** Resolution level */
+  resolution: number;
   /** Optional description to show above the display */
-  description?: string;
+  description?: React.ReactNode;
   /** Optional children to render below the display */
   children?: React.ReactNode;
   /** Optional style overrides */
@@ -17,41 +15,23 @@ export interface CellIdDisplayProps {
 }
 
 /**
- * Displays a cell ID with color-coded binary representation showing:
+ * Displays A5 cell information with color-coded binary representation showing:
  * - Blue: Origin/Segment bits (top 6 bits)
  * - Black: Hilbert curve position (S)
  * - Pink: Resolution marker
  * - Gray: Trailing zeros
  *
  * Usage:
- * - Direct: <CellIdDisplay cellId={123n} />
- * - From location: <CellIdDisplay location={[-0.1276, 51.5074]} resolution={10} />
+ * <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={10} />
  */
-export const CellIdDisplay: React.FC<CellIdDisplayProps> = ({
-  cellId: providedCellId,
+export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
   location,
   resolution: providedResolution,
   description,
   children,
   style
 }) => {
-  // Compute cellId from location if not provided directly
-  let cellId: bigint;
-  let computedFromLocation = false;
-
-  if (providedCellId !== undefined) {
-    cellId = providedCellId;
-  } else if (location && providedResolution !== undefined) {
-    cellId = lonLatToCell(location, providedResolution);
-    computedFromLocation = true;
-  } else {
-    return (
-      <div style={{ color: 'red', padding: '10px', backgroundColor: '#fee' }}>
-        Error: Must provide either cellId or (location + resolution)
-      </div>
-    );
-  }
-
+  const cellId = lonLatToCell(location, providedResolution);
   const resolution = getResolution(cellId);
 
   // Convert cellId to binary string and split into parts
@@ -70,6 +50,8 @@ export const CellIdDisplay: React.FC<CellIdDisplayProps> = ({
   const hilbertSection = binaryCellId.substring(originSegmentBits, hilbertBits);
   const resolutionSection = binaryCellId.substring(hilbertBits, resolutionBits);
   const zeroSection = binaryCellId.substring(resolutionBits);
+
+  const [longitude, latitude] = location;
 
   return (
     <div style={{ marginBottom: '20px' }}>
@@ -95,17 +77,14 @@ export const CellIdDisplay: React.FC<CellIdDisplayProps> = ({
           <span style={{ fontWeight: 'bold', color: '#FF0066' }}>{resolutionSection}</span>
           <span style={{ fontWeight: 'bold', color: '#999999' }}>{zeroSection}</span>
         </div>
-        <div>Cell ID (Hex): {`0x${cellId.toString(16).padStart(16, '0')}`}</div>
-        <div>Resolution: {resolution}</div>
-        {location && (
-          <div>
-            Location: [{location[0].toFixed(4)}, {location[1].toFixed(4)}]
-          </div>
-        )}
+        <div>Cell ID (hex): {`0x${cellId.toString(16).padStart(16, '0')}`}</div>
+        <div>
+          Longitude: {longitude.toFixed(4)}, Latitude: {latitude.toFixed(4)}, Resolution: {resolution}
+        </div>
         {children}
       </div>
     </div>
   );
 };
 
-export default CellIdDisplay;
+export default A5CellInfoBox;
