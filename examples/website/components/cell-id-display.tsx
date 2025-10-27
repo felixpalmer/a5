@@ -1,10 +1,18 @@
 import React from 'react';
-import { getResolution } from 'a5';
+import { getResolution, lonLatToCell } from 'a5';
 
 export interface CellIdDisplayProps {
-  cellId: bigint;
+  /** Cell ID as bigint (if provided directly) */
+  cellId?: bigint;
+  /** Location [lon, lat] - if provided with resolution, will compute cellId */
   location?: [number, number];
+  /** Resolution level - required if location is provided */
+  resolution?: number;
+  /** Optional description to show above the display */
+  description?: string;
+  /** Optional children to render below the display */
   children?: React.ReactNode;
+  /** Optional style overrides */
   style?: React.CSSProperties;
 }
 
@@ -14,13 +22,36 @@ export interface CellIdDisplayProps {
  * - Black: Hilbert curve position (S)
  * - Pink: Resolution marker
  * - Gray: Trailing zeros
+ *
+ * Usage:
+ * - Direct: <CellIdDisplay cellId={123n} />
+ * - From location: <CellIdDisplay location={[-0.1276, 51.5074]} resolution={10} />
  */
 export const CellIdDisplay: React.FC<CellIdDisplayProps> = ({
-  cellId,
+  cellId: providedCellId,
   location,
+  resolution: providedResolution,
+  description,
   children,
   style
 }) => {
+  // Compute cellId from location if not provided directly
+  let cellId: bigint;
+  let computedFromLocation = false;
+
+  if (providedCellId !== undefined) {
+    cellId = providedCellId;
+  } else if (location && providedResolution !== undefined) {
+    cellId = lonLatToCell(location, providedResolution);
+    computedFromLocation = true;
+  } else {
+    return (
+      <div style={{ color: 'red', padding: '10px', backgroundColor: '#fee' }}>
+        Error: Must provide either cellId or (location + resolution)
+      </div>
+    );
+  }
+
   const resolution = getResolution(cellId);
 
   // Convert cellId to binary string and split into parts
@@ -41,33 +72,40 @@ export const CellIdDisplay: React.FC<CellIdDisplayProps> = ({
   const zeroSection = binaryCellId.substring(resolutionBits);
 
   return (
-    <div
-      style={{
-        backgroundColor: 'white',
-        color: 'black',
-        padding: '10px',
-        borderRadius: '5px',
-        fontFamily: 'monospace',
-        fontSize: '14px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        ...style
-      }}
-    >
-      <div>
-        Cell ID (binary):{' '}
-        <span style={{ fontWeight: 'bold', color: '#0066FF' }}>{originSegmentSection}</span>
-        <span style={{ fontWeight: 'bold', color: '#000000' }}>{hilbertSection}</span>
-        <span style={{ fontWeight: 'bold', color: '#FF0066' }}>{resolutionSection}</span>
-        <span style={{ fontWeight: 'bold', color: '#999999' }}>{zeroSection}</span>
-      </div>
-      <div>Cell ID (Hex): {`0x${cellId.toString(16).padStart(16, '0')}`}</div>
-      <div>Resolution: {resolution}</div>
-      {location && (
-        <div>
-          Location: [{location[0].toFixed(4)}, {location[1].toFixed(4)}]
-        </div>
+    <div style={{ marginBottom: '20px' }}>
+      {description && (
+        <p style={{ marginBottom: '10px', color: '#495057' }}>{description}</p>
       )}
-      {children}
+      <div
+        style={{
+          backgroundColor: 'white',
+          color: 'black',
+          padding: '10px',
+          borderRadius: '5px',
+          fontFamily: 'monospace',
+          fontSize: '14px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          ...style
+        }}
+      >
+        <div>
+          Cell ID (binary):{' '}
+          <span style={{ fontWeight: 'bold', color: '#0066FF' }}>{originSegmentSection}</span>
+          <span style={{ fontWeight: 'bold', color: '#000000' }}>{hilbertSection}</span>
+          <span style={{ fontWeight: 'bold', color: '#FF0066' }}>{resolutionSection}</span>
+          <span style={{ fontWeight: 'bold', color: '#999999' }}>{zeroSection}</span>
+        </div>
+        <div>Cell ID (Hex): {`0x${cellId.toString(16).padStart(16, '0')}`}</div>
+        <div>Resolution: {resolution}</div>
+        {location && (
+          <div>
+            Location: [{location[0].toFixed(4)}, {location[1].toFixed(4)}]
+          </div>
+        )}
+        {children}
+      </div>
     </div>
   );
 };
+
+export default CellIdDisplay;

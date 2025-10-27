@@ -1,4 +1,4 @@
-import IndexExample from 'website-examples/components/index-example';
+import CellIdDisplay from 'website-examples/components/cell-id-display';
 
 # Index Encoding
 
@@ -44,29 +44,33 @@ Let's look at how different cells are encoded. Using London ([-0.1276, 51.5074])
 
 ### Resolution 0: Base Pentagon
 
-<IndexExample
-  cellId="0x3000000000000000"
+<CellIdDisplay
+  location={[-0.1276, 51.5074]}
+  resolution={0}
   description="At resolution 0, there are only 12 cells covering the entire Earth. The top 6 bits directly encode the origin ID (0-11). Notice how most bits are zeros with just a single '1' resolution marker."
 />
 
 ### Resolution 1: Segment
 
-<IndexExample
-  cellId="0x3a00000000000000"
-  description="At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The top 6 bits (shown in blue) encode both origin and segment using the formula: 5 × origin_id + segment_id. Here: 011101 (binary) = 29 = 5×3 + 4, so origin=3, segment=4."
+<CellIdDisplay
+  location={[-0.1276, 51.5074]}
+  resolution={1}
+  description="At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The top 6 bits (shown in blue) encode both origin and segment using the formula: 5 × origin_id + segment_id."
 />
 
 ### Resolution 5: Hilbert Subdivision
 
-<IndexExample
-  cellId="0x3b22150000000000"
+<CellIdDisplay
+  location={[-0.1276, 51.5074]}
+  resolution={5}
   description="From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the Hilbert S value (shown in black) uses 8 bits: 2 × (5-1) = 8 bits. This encodes the position along the Hilbert space-filling curve within the segment."
 />
 
 ### Resolution 10: Fine Detail
 
-<IndexExample
-  cellId="0x3b1869a000000000"
+<CellIdDisplay
+  location={[-0.1276, 51.5074]}
+  resolution={10}
   description="At resolution 10, the Hilbert S value uses 18 bits: 2 × (10-1) = 18 bits. This allows for 2^18 = 262,144 possible positions per segment. Notice how the black section (Hilbert S) has grown larger compared to resolution 5."
 />
 
