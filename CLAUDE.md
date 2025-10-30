@@ -47,6 +47,30 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 - **Cell IDs**: Always use bigint internally, convert to hex with `u64ToHex()` / `hexToBigInt()`
 - **Build**: Run `yarn build` before testing example CLIs
 
+## CI Checks (run as a final verification)
+```bash
+# 1. Check for circular dependencies
+python3 analyze_imports.py modules
+
+# 2. Build the library
+yarn build
+
+# 3. Run tests
+yarn test
+```
+
+These are the same checks that run in CI (.github/workflows/test.yml). Run these to verify your changes before the user reviews the code.
+
+## Git Usage
+
+- **DO** use git commands for debugging and information gathering:
+  - `git status` - Check current state
+  - `git diff` - Compare changes
+  - `git log` - View commit history
+  - `git diff main` - Compare to main branch
+  - `git show <commit>` - View specific commits
+- **DO NOT** create git commits - the user will review the code and commit it themselves
+
 ## Testing strategy
 
 - Tests are written such that they can easily be ported to other languages
