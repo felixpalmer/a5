@@ -44,13 +44,18 @@ const App: React.FC = () => {
           }
         });
 
-        // Extract cell IDs and uncompact once
+        // Extract cell IDs
         const compacted = allRows.map(row => row[0]);
-        const uncompacted = uncompact(compacted, RESOLUTION);
 
+        // Set compacted cells and render them first
         setCompactedCells(compacted);
-        setUncompactedCells(uncompacted);
         setLoading(false);
+
+        // Uncompact in the background after rendering to avoid delaying initial render
+        setTimeout(() => {
+          const uncompacted = uncompact(compacted, RESOLUTION);
+          setUncompactedCells(uncompacted);
+        }, 1000);
       } catch (error) {
         console.error('Error loading parquet file:', error);
         setLoading(false);
