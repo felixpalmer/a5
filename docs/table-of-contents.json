@@ -34,7 +34,8 @@
       "api-reference/README",
       "api-reference/indexing",
       "api-reference/hierarchy",
-      "api-reference/cell-info"
+      "api-reference/cell-info",
+      "api-reference/compaction"
     ]
   },
   {

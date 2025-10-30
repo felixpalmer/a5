@@ -117,7 +117,8 @@ const App: React.FC = () => {
           padding: '10px',
           borderRadius: '4px',
           boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          zIndex: 1
+          zIndex: 1,
+          userSelect: 'none'
         }}
       >
         {loading ? (

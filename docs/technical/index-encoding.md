@@ -4,6 +4,14 @@ import A5CellInfoBox from 'website-examples/components/cell-id-display';
 
 A5 uses a 64-bit unsigned integer to uniquely identify each cell on Earth. This encoding scheme is carefully designed to efficiently store the location and resolution information while maintaining useful properties like spatial locality and hierarchical relationships.
 
+## Terminology
+
+The goal of the indexing system is to provide a unique 64-bit integer for every cell in the system. The system is hierarchical, with cells at a higher resolution levels, always having a parent cell at a lower level, all the way up to the whole planet.
+
+In general, the aperture of the A5 is 4, in other words each resolution level has 4 times as many cells as the preceding level. 
+
+See [Platonic Solids](./platonic-solids) for more details.
+
 ## 64-Bit Structure
 
 The 64 bits are organized into several distinct sections:
@@ -44,11 +52,11 @@ The 64 bits are organized into several distinct sections:
 Let's look at how different cells are encoded. Using London `-0.1276, 51.5074` as our example location:
 
 ### Resolution 0: Base Pentagon
-
+At resolution 0, there are only 12 cells covering the entire Earth. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> directly encode the origin ID (<span style={{color: '#0066FF', fontWeight: 'bold'}}>000100 = 4</span>). Notice how most bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> after the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.
 <A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={0}
-  description={<>At resolution 0, there are only 12 cells covering the entire Earth. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> directly encode the origin ID (0-11). Notice how most bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> with just the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.</>}
+  description={<></>}
 />
 
 ### Resolution 1: Segment
@@ -56,7 +64,7 @@ Let's look at how different cells are encoded. Using London `-0.1276, 51.5074` a
 <A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={1}
-  description={<>At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment using the formula: 5 × origin_id + segment_id, followed by the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'01' resolution marker</span>.</>}
+  description={<>At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment as (<span style={{color: '#0066FF', fontWeight: 'bold'}}>011000 = 24</span>). The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution marker is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.</>}
 />
 
 ### Resolution 5: Hilbert Subdivision
