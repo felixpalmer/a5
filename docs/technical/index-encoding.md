@@ -1,4 +1,4 @@
-import A5CellInfoBox from 'website-examples/components/cell-id-display';
+import A5CellInfoBox from 'website-examples/components/a5-cell-info-box';
 
 # Index Encoding
 

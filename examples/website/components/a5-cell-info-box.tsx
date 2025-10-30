@@ -6,8 +6,6 @@ export interface A5CellInfoBoxProps {
   location: [number, number];
   /** Resolution level */
   resolution: number;
-  /** Optional description to show above the display */
-  description?: React.ReactNode;
   /** Optional children to render below the display */
   children?: React.ReactNode;
   /** Optional style overrides */
@@ -27,7 +25,6 @@ export interface A5CellInfoBoxProps {
 export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
   location,
   resolution: providedResolution,
-  description,
   children,
   style
 }) => {
@@ -55,9 +52,6 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
 
   return (
     <div style={{ marginBottom: '20px' }}>
-      {description && (
-        <p style={{ marginBottom: '10px', color: '#495057' }}>{description}</p>
-      )}
       <div
         style={{
           backgroundColor: 'white',

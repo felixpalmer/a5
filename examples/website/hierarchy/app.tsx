@@ -6,7 +6,7 @@ import {ScatterplotLayer, PolygonLayer} from '@deck.gl/layers';
 import {lonLatToCell, cellToBoundary, cellToChildren, cellToParent} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
-import A5CellInfoBox from '../components/cell-id-display';
+import A5CellInfoBox from '../components/a5-cell-info-box';
 
 const MAX_RESOLUTION = 30;
 
