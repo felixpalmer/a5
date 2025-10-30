@@ -6,9 +6,10 @@ A5 uses a 64-bit unsigned integer to uniquely identify each cell on Earth. This 
 
 ## Terminology
 
-The goal of the indexing system is to provide a unique 64-bit integer for every cell in the system. The system is hierarchical, with cells at a higher resolution levels, always having a parent cell at a lower level, all the way up to the whole planet.
+Generally the term **cell** is used to describe the pentagonal region that the A5 grid is made up of, but in addition cells at resolutions 0 and 1 have special names as they are stored differently in the index:
 
-In general, the aperture of the A5 is 4, in other words each resolution level has 4 times as many cells as the preceding level. 
+- Resolution 0 cells are also called **origins**
+- Resolution 1 cells are also called **quintants**
 
 See [Platonic Solids](./platonic-solids) for more details.
 
@@ -17,27 +18,27 @@ See [Platonic Solids](./platonic-solids) for more details.
 The 64 bits are organized into several distinct sections:
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ 6 bits  │    Variable bits     │   2 bits   │ Trailing zeros │
-│ Origin/ │   Hilbert Curve (S)  │ resolution │                │
-│Quintant │                      │   marker   │                │
-└──────────────────────────────────────────────────────────────┘
-  63 - 58        57 - ...              ..          ... - 0
+┌────────────────────────────────────────────────────────┐
+│  6 bits  │ Variable bits │   2 bits   │ Trailing zeros │
+│  Origin/ │ Hilbert Curve │ resolution │                │
+│ Quintant │               │   marker   │                │
+└────────────────────────────────────────────────────────┘
+  63 - 58       57 - ...        ..          ... - 0
 ```
 
 ### Components
 
 1. **Bits 63-58 (6 bits)**: origin or quintant
-   - Encodes which of the 12 pentagonal faces (origins) and which of the 60 quintants the cell is in
+   - Encodes which of the 12 pentagonal faces (**origins**) and/or which of the 60 **quintants** the cell is in
    - For resolution 0: directly encodes origin ID (0-11)
    - For resolution ≥ 1: encodes quintant `5 × origin_id + segment` (0-59)
 
-2. **Hilbert Curve Position (S)**: Variable length, 0 to 58 bits
+2. **Hilbert Curve Position**: Variable length, 0 to 58 bits
    - For resolution ≥ 2: encodes position along the Hilbert space-filling curve
    - Length = 2 × (resolution - 1) bits
    - Not present for resolution 0 and 1
 
-3. **Resolution Marker**: The right-most `01` or `10` bitpair
+3. **Resolution Marker (2 bits)**: The right-most `01` or `10` bitpair
    - The position of these bits encodes the resolution level
    - For resolution 0: `10`, resolution 1: `01` (`1` shifts by one bit)
    - For resolution ≥ 2: shifts by 2 bits per resolution (accounts for Hilbert curve)
@@ -75,9 +76,9 @@ The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution marker is no
 
 ### Resolution 5: Hilbert Subdivision
 
-From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode the quintant, just like in resolution level 1.
+From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode the **quintant**, just like in resolution level 1.
 
-They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit Hilbert S value 11010011</span> encoding position along the space-filling curve.
+They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit Hilbert value 11010011</span> encoding position along the space-filling curve.
 
 Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>, followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
@@ -88,7 +89,14 @@ Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}
 
 ### Index explorer
 
-This allows the resolution to be determined in O(1) time by finding the position of the first `1` bit.
+Click on the interactive map below to change the location to index, and zoom to change the resolution. Notice how the indices of nearby locations are similar, sharing many bits. Likewise, when zooming in most of the bits remain the same, just more bits are added to the <span style={{color: '#000000', fontWeight: 'bold'}}>Hilbert S value</span>.
+
+import HierarchyDemo from 'website-examples/hierarchy/app';
+
+<div style={{margin: '20px 0'}}>
+  <HierarchyDemo height="500px" />
+</div>
+
 
 ## Key Properties
 
