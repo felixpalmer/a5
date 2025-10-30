@@ -10,7 +10,8 @@ function parseArgs() {
     radius: null,
     resolution: null,
     output: null,
-    geojson: false
+    geojson: false,
+    uncompacted: false
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -33,6 +34,9 @@ function parseArgs() {
         break;
       case '--geojson':
         options.geojson = true;
+        break;
+      case '--uncompacted':
+        options.uncompacted = true;
         break;
       case '--help':
       case '-h':
@@ -64,7 +68,7 @@ function parseArgs() {
 
 function printUsage() {
   console.log(`
-Usage: node index.js --lon <longitude> --lat <latitude> --radius <km> --resolution <res> --output <file> [--geojson]
+Usage: node index.js --lon <longitude> --lat <latitude> --radius <km> --resolution <res> --output <file> [--geojson] [--uncompacted]
 
 Arguments:
   --lon <longitude>      Center point longitude (decimal degrees)
@@ -73,6 +77,7 @@ Arguments:
   --resolution <res>     Target A5 resolution (integer)
   --output <file>        Output file path (without extension)
   --geojson              Also generate GeoJSON output (optional)
+  --uncompacted          Output uncompacted cells instead of compacted (optional)
 
 Example:
   node index.js --lon -0.1278 --lat 51.5074 --radius 10 --resolution 13 --output london
@@ -131,9 +136,10 @@ function generatePointsInRadius(centerLonLat, radiusKm, spacingMeters) {
 }
 
 /**
- * Generate compacted cells covering the specified area
+ * Generate cells covering the specified area
+ * Returns both uncompacted and compacted cells
  */
-function generateCompactedCells(centerLonLat, radiusKm, resolution) {
+function generateCells(centerLonLat, radiusKm, resolution) {
   // Calculate optimal point spacing based on cell area
   // Use 75% of cell side length to ensure no holes
   const cellAreaSqm = cellArea(resolution);
@@ -163,17 +169,17 @@ function generateCompactedCells(centerLonLat, radiusKm, resolution) {
   console.log(`  Compacted to: ${compacted.length} cells`);
   console.log(`  Compression ratio: ${(cells.length / compacted.length).toFixed(2)}x`);
 
-  return compacted;
+  return { uncompacted: cells, compacted };
 }
 
 /**
- * Write Parquet file for compacted cells
+ * Write Parquet file for cells
  */
-async function writeParquet(compacted, outputPath) {
+async function writeParquet(cells, outputPath) {
   const parquetPath = `${outputPath}.parquet`;
 
   // Ensure all values are BigInt (some might be plain numbers)
-  const cellIds = compacted.map(id => typeof id === 'bigint' ? id : BigInt(id));
+  const cellIds = cells.map(id => typeof id === 'bigint' ? id : BigInt(id));
 
   // Import ParquetWriter and fileWriter to manually construct the schema
   const {ParquetWriter, fileWriter} = await import('hyparquet-writer');
@@ -222,13 +228,13 @@ async function writeParquet(compacted, outputPath) {
 /**
  * Generate GeoJSON for cells
  */
-function writeGeoJSON(compacted, outputPath) {
+function writeGeoJSON(cells, outputPath) {
   const geojsonPath = `${outputPath}.geojson`;
 
-  console.log(`\nGenerating GeoJSON for ${compacted.length} cells...`);
+  console.log(`\nGenerating GeoJSON for ${cells.length} cells...`);
 
   const features = [];
-  for (const cellId of compacted) {
+  for (const cellId of cells) {
     const cellIdHex = u64ToHex(cellId);
     const boundary = cellToBoundary(cellId, {
       closedRing: true,
@@ -260,24 +266,27 @@ async function main() {
   try {
     const options = parseArgs();
 
-    console.log('\nGenerating compacted A5 cells:');
+    console.log(`\nGenerating ${options.uncompacted ? 'uncompacted' : 'compacted'} A5 cells:`);
     console.log(`  Center: [${options.lon}, ${options.lat}]`);
     console.log(`  Radius: ${options.radius} km`);
     console.log(`  Resolution: ${options.resolution}\n`);
 
-    // Generate compacted cells
-    const compacted = generateCompactedCells(
+    // Generate cells (both uncompacted and compacted)
+    const { uncompacted, compacted } = generateCells(
       [options.lon, options.lat],
       options.radius,
       options.resolution
     );
 
+    // Choose which cells to output
+    const cellsToOutput = options.uncompacted ? uncompacted : compacted;
+
     // Write Parquet file
-    await writeParquet(compacted, options.output);
+    await writeParquet(cellsToOutput, options.output);
 
     // Optionally write GeoJSON
     if (options.geojson) {
-      writeGeoJSON(compacted, options.output);
+      writeGeoJSON(cellsToOutput, options.output);
     }
 
     console.log('\n✓ Generation complete!');
