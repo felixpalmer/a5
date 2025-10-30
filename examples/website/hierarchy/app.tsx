@@ -6,6 +6,7 @@ import {ScatterplotLayer, PolygonLayer} from '@deck.gl/layers';
 import {lonLatToCell, cellToBoundary, cellToChildren, cellToParent} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
+import A5CellInfoBox from '../components/a5-cell-info-box';
 
 const MAX_RESOLUTION = 30;
 
@@ -16,7 +17,7 @@ const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.j
 const A5GREEN = [0, 170, 85] as [number, number, number];
 const A5GREEN_DARK = [0, 128, 64] as [number, number, number];
 
-const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
+const App: React.FC<{showCellId?: boolean, height?: string}> = ({showCellId = true, height = '100%'}) => {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [cellLocation, setCellLocation] = useState([INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude]);
   const [showChildren, setShowChildren] = useState(false);
@@ -78,25 +79,8 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
     lineWidthUnits: 'pixels'
   });
 
-  // Convert cellId to binary string and split into parts
-  const binaryCellId = data.cellId.toString(2).padStart(64, '0');
-
-  // First 6 bits encode origin and segment
-  const originSegmentBits = 6;
-
-  // Then follow bits to encode the position along the hilbert curve
-  const hilbertBits = (2 * Math.max(0, resolution - 1)) + originSegmentBits;
-
-  // Then two bits to encode the resolution
-  const resolutionBits = 2 + hilbertBits;
-
-  const originSegmentSection = binaryCellId.substring(0, originSegmentBits);
-  const hilbertSection = binaryCellId.substring(originSegmentBits, hilbertBits);
-  const resolutionSection = binaryCellId.substring(hilbertBits, resolutionBits);
-  const zeroSection = binaryCellId.substring(resolutionBits);
-
   return (
-    <>
+    <div style={{ position: 'relative', width: '100%', height }}>
       <DeckGL
         views={new MapView({repeat: true})}
         layers={[scatterplotLayer, polygonLayer]}
@@ -105,36 +89,23 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
         controller={{dragRotate: false}}
         onClick={handleMapClick}
       >
-        <Map 
-          mapStyle={MAP_STYLE} 
+        <Map
+          mapStyle={MAP_STYLE}
           maxZoom={24}
         />
       </DeckGL>
       {showCellId && (
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '20px',
-          backgroundColor: 'white',
-          color: 'black',
-          padding: '10px',
-          borderRadius: '5px',
-          fontFamily: 'monospace',
-          fontSize: '14px',
-          maxWidth: 'calc(100% - 40px)',
-          overflow: 'auto',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-        }}>
-          <div>
-            Cell ID (binary): 
-            <span style={{ fontWeight: 'bold', color: '#0066FF' }}>{originSegmentSection}</span>
-            <span style={{ fontWeight: 'bold', color: '#000000' }}>{hilbertSection}</span>
-            <span style={{ fontWeight: 'bold', color: '#FF0066' }}>{resolutionSection}</span>
-            <span style={{ fontWeight: 'bold', color: '#999999' }}>{zeroSection}</span>
-          </div>
-          <div>Cell ID (Hex): {`0x${data.cellId.toString(16).padStart(16, '0')}`}</div>
-          <div>Resolution: {resolution}</div>
-          <div>Location: [{cellLocation[0].toFixed(4)}, {cellLocation[1].toFixed(4)}]</div>
+        <A5CellInfoBox
+          location={cellLocation}
+          resolution={resolution}
+          style={{
+            position: 'absolute',
+            bottom: '20px',
+            left: '20px',
+            maxWidth: 'calc(100% - 40px)',
+            overflow: 'auto'
+          }}
+        >
           <div style={{ marginTop: '10px' }}>
             <label style={{ marginRight: '15px' }}>
               <input
@@ -153,9 +124,9 @@ const App: React.FC<{showCellId?: boolean}> = ({showCellId = true}) => {
               Show parent
             </label>
           </div>
-        </div>
+        </A5CellInfoBox>
       )}
-    </>
+    </div>
   );
 };
 

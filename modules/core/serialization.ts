@@ -24,14 +24,52 @@ export const ALL_ONES = 0xffffffffffffffffn;
 export const WORLD_CELL = 0n;
 
 export function getResolution(index: bigint): number {
-  // Find resolution from position of first non-00 bits from the right
+  if (index === 0n) return -1;
+
   let resolution = MAX_RESOLUTION - 1;
-  let shifted = index >> 1n; // TODO check if non-zero for point level
-  while (resolution > -1 && (shifted & 0b1n) === 0n) {
+  let shifted = index >> 1n;
+  if (shifted === 0n) return -1;
+
+  // Fast path: split into 32-bit chunks and work with regular numbers (much faster than bigints)
+  // Check low 32 bits first
+  let low32 = Number(shifted & 0xFFFFFFFFn);
+  let remaining: number;
+
+  if (low32 === 0) {
+    // Low 32 bits are all zero, skip 16 resolution levels and work with high bits
+    shifted >>= 32n;
+    resolution -= 16;
+    // Now shifted fits in 32 bits (original max was 58 bits, now 26 bits)
+    remaining = Number(shifted);
+  } else {
+    // Low 32 bits have data, work with them
+    remaining = low32;
+  }
+
+  // Check remaining 16 bits
+  if ((remaining & 0xFFFF) === 0) {
+    remaining >>= 16;
+    resolution -= 8;
+  }
+
+  // Check remaining 8 bits
+  if (resolution >= 6 && (remaining & 0xFF) === 0) {
+    remaining >>= 8;
+    resolution -= 4;
+  }
+
+  // Check remaining 4 bits
+  if (resolution >= 4 && (remaining & 0xF) === 0) {
+    remaining >>= 4;
+    resolution -= 2;
+  }
+
+  // Final loop with remaining bits (still as Number, much faster)
+  while (resolution > -1 && (remaining & 0b1) === 0) {
     resolution -= 1;
     // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
     // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
-    shifted = shifted >> (resolution < FIRST_HILBERT_RESOLUTION ? 1n : 2n);
+    remaining = remaining >> (resolution < FIRST_HILBERT_RESOLUTION ? 1 : 2);
   }
 
   return resolution;
@@ -173,6 +211,11 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
   const {origin, segment, S, resolution: currentResolution} = deserialize(index);
   const newResolution = parentResolution ?? currentResolution - 1;
 
+  // Special case: parent of resolution 0 cells is the world cell
+  if (newResolution === -1) {
+    return WORLD_CELL;
+  }
+
   if (newResolution < 0) {
     throw new Error(`Target resolution (${newResolution}) cannot be negative`);
   }
@@ -198,4 +241,35 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
  */
 export function getRes0Cells(): bigint[] {
   return cellToChildren(WORLD_CELL, 0);
+}
+
+/**
+ * Check for whether index corresponds to first child of its parent
+ */
+export function isFirstChild(index: bigint, resolution?: number): boolean {
+  resolution ??= getResolution(index);
+
+  if (resolution < 2) {
+    // For resolution 0: first child is origin 0 (child count = 12)
+    // For resolution 1: first children are at multiples of 5 (child count = 5)
+    const top6Bits = Number(index >> HILBERT_START_BIT);
+    const childCount = resolution === 0 ? 12 : 5;
+    return top6Bits % childCount === 0;
+  }
+
+  const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
+  const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
+  return (index & sMask) === 0n;
+}
+
+/**
+ * Difference between two neighbouring sibling cells at a given resolution
+ */
+export function getStride(resolution: number): bigint {
+  // Both level 0 & 1 just write values 0-11 or 0-59 to the first 6 bits
+  if (resolution < 2) return (1n << HILBERT_START_BIT);
+
+  // For hilbert levels, the position shifts by 2 bits per resolution level
+  const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
+  return 1n << sPosition;
 }

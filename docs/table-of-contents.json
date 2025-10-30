@@ -23,7 +23,8 @@
     "items": [
       "technical/dggs",
       "technical/the-pentagon-that-could",
-      "technical/platonic-solids"
+      "technical/platonic-solids",
+      "technical/index-encoding"
     ]
   },
   {
@@ -33,7 +34,8 @@
       "api-reference/README",
       "api-reference/indexing",
       "api-reference/hierarchy",
-      "api-reference/cell-info"
+      "api-reference/cell-info",
+      "api-reference/compaction"
     ]
   },
   {

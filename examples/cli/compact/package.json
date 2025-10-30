@@ -1,0 +1,13 @@
+{
+  "name": "a5-compact-cli",
+  "version": "1.0.0",
+  "description": "CLI tool to generate compacted A5 cells for a geographic region",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "hyparquet-writer": "^0.8.0"
+  }
+}

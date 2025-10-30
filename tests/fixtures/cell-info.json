@@ -156,6 +156,158 @@
       "countBigInt": "17293822569102704640"
     }
   ],
+  "numChildren": [
+    {
+      "parentResolution": -1,
+      "childResolution": -1,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": -1,
+      "childResolution": 0,
+      "numChildren": 12
+    },
+    {
+      "parentResolution": -1,
+      "childResolution": 1,
+      "numChildren": 60
+    },
+    {
+      "parentResolution": -1,
+      "childResolution": 2,
+      "numChildren": 240
+    },
+    {
+      "parentResolution": -1,
+      "childResolution": 3,
+      "numChildren": 960
+    },
+    {
+      "parentResolution": -1,
+      "childResolution": 4,
+      "numChildren": 3840
+    },
+    {
+      "parentResolution": -1,
+      "childResolution": 5,
+      "numChildren": 15360
+    },
+    {
+      "parentResolution": 0,
+      "childResolution": 0,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 0,
+      "childResolution": 1,
+      "numChildren": 5
+    },
+    {
+      "parentResolution": 0,
+      "childResolution": 2,
+      "numChildren": 20
+    },
+    {
+      "parentResolution": 0,
+      "childResolution": 3,
+      "numChildren": 80
+    },
+    {
+      "parentResolution": 0,
+      "childResolution": 4,
+      "numChildren": 320
+    },
+    {
+      "parentResolution": 1,
+      "childResolution": 1,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 1,
+      "childResolution": 2,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 1,
+      "childResolution": 3,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 1,
+      "childResolution": 4,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 2,
+      "childResolution": 2,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 2,
+      "childResolution": 3,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 2,
+      "childResolution": 4,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 2,
+      "childResolution": 5,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 2,
+      "childResolution": 6,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 3,
+      "childResolution": 3,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 3,
+      "childResolution": 4,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 3,
+      "childResolution": 5,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 3,
+      "childResolution": 10,
+      "numChildren": 16384
+    },
+    {
+      "parentResolution": 5,
+      "childResolution": 3,
+      "numChildren": 0
+    },
+    {
+      "parentResolution": 10,
+      "childResolution": 5,
+      "numChildren": 0
+    },
+    {
+      "parentResolution": 10,
+      "childResolution": 15,
+      "numChildren": 1024
+    },
+    {
+      "parentResolution": 15,
+      "childResolution": 20,
+      "numChildren": 1024
+    },
+    {
+      "parentResolution": 20,
+      "childResolution": 25,
+      "numChildren": 1024
+    }
+  ],
   "cellArea": [
     {
       "resolution": 0,

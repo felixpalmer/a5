@@ -13,6 +13,7 @@ export {hexToU64, u64ToHex} from './core/hex';
 // Hierarchy
 export {cellToParent, cellToChildren, getResolution, getRes0Cells} from './core/serialization';
 export {getNumCells, cellArea} from './core/cell-info';
+export {compact, uncompact} from './core/compact';
 
 // Types
 export type {Degrees, Radians} from './core/coordinate-systems';

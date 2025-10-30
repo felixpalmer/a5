@@ -6,6 +6,7 @@
 export * from './index';
 
 export {origins} from './core/origin';
+export {serialize, WORLD_CELL} from './core/serialization';
 export {quaternions} from './core/dodecahedron-quaternions';
 export {
   φ,

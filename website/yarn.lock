@@ -9024,6 +9024,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hyparquet@npm:^1.20.0":
+  version: 1.20.0
+  resolution: "hyparquet@npm:1.20.0"
+  checksum: 10c0/587cea3c2f1ba9a995aa2967afa23153d32c5d8fc6c7228ccea980ddfab3c15cc111d0adf625b3172c4c890e076cdcbfc694caefccbf0105aa60ae0dbbaa459e
+  languageName: node
+  linkType: hard
+
 "hyphenate-style-name@npm:^1.0.3":
   version: 1.1.0
   resolution: "hyphenate-style-name@npm:1.1.0"
@@ -12859,6 +12866,7 @@ __metadata:
     babel-plugin-module-resolver: "npm:^5.0.0"
     babel-plugin-styled-components: "npm:^2.0.0"
     d3-color: "npm:^3.1.0"
+    hyparquet: "npm:^1.20.0"
     maplibre-gl: "npm:^5.0.0"
     prism-react-renderer: "npm:^2.3.0"
     react: "npm:^18.2.0"
