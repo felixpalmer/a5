@@ -19,6 +19,10 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5 v0.5
 
+#### A5 [v0.6.0] - Oct 30 2025
+
+- Feature: cell compaction/uncompaction (#64) 
+
 #### A5 [v0.5.0] - Sep 21 2025
 
 - **BREAKING**: Renamed hex conversion functions to use u64 naming convention
