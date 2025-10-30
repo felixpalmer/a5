@@ -4,7 +4,7 @@ Compaction is a way to efficiently represent a set of A5 cells by replacing grou
 
 For example, if you have all 4 children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
 
-## compact
+### compact
 
 Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells.
 
@@ -12,18 +12,18 @@ Compacts a set of A5 cells by replacing complete groups of sibling cells with th
 function compact(cells: bigint[] | BigUint64Array): BigUint64Array;
 ```
 
-### Parameters
+#### Parameters
 
 - `cells` **(bigint[] | BigUint64Array)** Array of A5 cell identifiers to compact
 
-### Return value
+#### Return value
 
 - **(BigUint64Array)** Compacted array of cell identifiers (typically smaller than input)
 
-### Example
+#### Example
 
 ```ts
-import { compact, cellToChildren } from 'a5';
+import { compact, cellToChildren } from 'a5-js';
 
 // Get 4 sibling cells at resolution 3
 const parent = 0x2800000000000000n;  // A cell at resolution 2
@@ -37,14 +37,14 @@ console.log(compacted.length);  // 1
 console.log(compacted[0] === parent);  // true
 ```
 
-### Notes
+#### Notes
 
 - The compaction process is recursive - if compacting cells creates complete sibling groups at coarser resolutions, those will also be compacted
 - Duplicate cells in the input are automatically removed
 - The output is always sorted
 - For optimal performance with large datasets, consider using `BigUint64Array` as input
 
-## uncompact
+### uncompact
 
 Expands a set of A5 cells to a target resolution by generating all descendant cells.
 
@@ -52,19 +52,19 @@ Expands a set of A5 cells to a target resolution by generating all descendant ce
 function uncompact(cells: bigint[] | BigUint64Array, targetResolution: number): BigUint64Array;
 ```
 
-### Parameters
+#### Parameters
 
 - `cells` **(bigint[] | BigUint64Array)** Array of A5 cell identifiers to uncompact
 - `targetResolution` **(number)** The target resolution level for all output cells
 
-### Return value
+#### Return value
 
 - **(BigUint64Array)** Array of cell identifiers, all at the target resolution
 
-### Example
+#### Example
 
 ```ts
-import { uncompact } from 'a5';
+import { uncompact } from 'a5-js';
 
 // Start with a cell at resolution 2
 const cell = 0x2800000000000000n;
@@ -75,18 +75,18 @@ const expanded = uncompact([cell], 5);
 console.log(expanded.length);  // 64 (4^3)
 
 // All cells are at resolution 5
-import { getResolution } from 'a5';
+import { getResolution } from 'a5-js';
 console.log(getResolution(expanded[0]));  // 5
 ```
 
-### Notes
+#### Notes
 
 - All output cells will be at exactly the target resolution
 - Cells already at the target resolution are passed through unchanged
 - Attempting to uncompact to a coarser resolution throws an error
 - The expansion is complete - every descendant cell at the target resolution is included
 
-## Working with BigUint64Array
+### Working with BigUint64Array
 
 Both `compact()` and `uncompact()` return `BigUint64Array` for optimal performance. This typed array provides:
 
@@ -95,7 +95,7 @@ Both `compact()` and `uncompact()` return `BigUint64Array` for optimal performan
 - Efficient interop with TypedArray APIs
 
 ```ts
-import { compact } from 'a5';
+import { compact } from 'a5-js';
 
 const cells = [0x2800000000000000n, 0x2800000000000001n];
 const compacted = compact(cells);
@@ -109,7 +109,7 @@ for (const cell of compacted) {
 const array = Array.from(compacted);
 ```
 
-## Performance Tips
+### Performance Tips
 
 - Use `BigUint64Array` as input for large datasets (~12% faster)
 - Compact cells before storing or transmitting to reduce data size
