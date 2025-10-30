@@ -14,7 +14,8 @@ import {
   cellToChildren,
   cellToParent,
   getStride,
-  isFirstChild
+  isFirstChild,
+  FIRST_HILBERT_RESOLUTION
 } from './serialization';
 
 import { getNumChildren } from './cell-info';
@@ -60,11 +61,6 @@ export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: nu
 /**
  * Compact a set of cells using forward-scanning algorithm.
  *
- * Key optimizations:
- * 1. Single sort at the start
- * 2. Forward scan detects complete sibling groups using stride
- * 3. Multiple passes, but no re-sorting (parents maintain sort order)
- *
  * @param cells - Array or TypedArray of cell indices to compact
  * @returns BigUint64Array of compacted cell indices (typically smaller)
  */
@@ -75,13 +71,6 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
 
   // Single sort and dedup
   let currentCells = Array.from(new Set(cells)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-
-  // Helper to get expected sibling count from cell resolution
-  function getExpectedChildCount(cellResolution: number): number {
-    if (cellResolution === 0) return 12;  // parent is -1 (world cell)
-    if (cellResolution === 1) return 5;   // parent is 0
-    return 4;                              // parent is 1+ (Hilbert)
-  }
 
   // Compact until no more changes
   // No re-sorting needed - parents maintain sorted order!
@@ -103,7 +92,10 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
       }
 
       // Check for complete sibling group using unified stride-based approach
-      const expectedChildren = getExpectedChildCount(resolution);
+      const expectedChildren = resolution >= FIRST_HILBERT_RESOLUTION ?
+        4 : ( // Hilbert levels have 4 siblings
+          resolution === 0 ? 12 : 5 // First two levels are exceptions, with 12 & 5 siblings
+        );
 
       if (i + expectedChildren <= currentCells.length) {
         let hasAllSiblings = true;
