@@ -181,44 +181,33 @@ async function writeParquet(cells, outputPath) {
   // Ensure all values are BigInt (some might be plain numbers)
   const cellIds = cells.map(id => typeof id === 'bigint' ? id : BigInt(id));
 
-  // Import ParquetWriter and fileWriter to manually construct the schema
-  const {ParquetWriter, fileWriter} = await import('hyparquet-writer');
+  // Import parquet writer functions
+  const { ByteWriter, parquetWrite, schemaFromColumnData, fileWriter } = await import('hyparquet-writer');
 
   const columnData = [
-    {name: 'cell_id', data: cellIds}
-  ];
-
-  // Manually create schema with UINT_64 converted type
-  // Note: We use ParquetWriter directly instead of parquetWriteFile because
-  // schemaOverrides has a bug (see https://github.com/hyparam/hyparquet-writer/issues/11)
-  const schema = [
-    {
-      name: 'root',
-      num_children: 1
-    },
-    {
-      name: 'cell_id',
-      type: 'INT64',
-      converted_type: 'UINT_64',
-      repetition_type: 'REQUIRED'
-    }
+    { name: 'cell_id', data: cellIds }
   ];
 
   // Create file writer
   const writer = fileWriter(parquetPath);
 
-  // Write parquet file with UINT_64 type
-  const pq = new ParquetWriter({
+  // Write parquet file with UINT_64 type using schemaOverrides
+  parquetWrite({
     writer,
-    schema
-  });
-
-  pq.write({
     columnData,
-    rowGroupSize: 100000
+    // Override schema for cell_id column to use UINT_64
+    schema: schemaFromColumnData({
+      columnData,
+      schemaOverrides: {
+        cell_id: {
+          name: 'cell_id',
+          type: 'INT64',
+          converted_type: 'UINT_64',
+          repetition_type: 'REQUIRED',
+        },
+      },
+    }),
   });
-
-  pq.finish();
 
   const fileSize = fs.statSync(parquetPath).size;
   console.log(`\nWritten Parquet file: ${parquetPath}`);
