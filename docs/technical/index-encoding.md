@@ -52,35 +52,39 @@ The 64 bits are organized into several distinct sections:
 Let's look at how different cells are encoded. Using London `-0.1276, 51.5074` as our example location:
 
 ### Resolution 0: Base Pentagon
+
 At resolution 0, there are only 12 cells covering the entire Earth. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> directly encode the origin ID (<span style={{color: '#0066FF', fontWeight: 'bold'}}>000100 = 4</span>). Notice how most bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> after the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.
+
 <A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={0}
-  description={<></>}
 />
 
 ### Resolution 1: Segment
 
+At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment as (<span style={{color: '#0066FF', fontWeight: 'bold'}}>011000 = 24</span>). The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution marker is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
+
 <A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={1}
-  description={<>At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment as (<span style={{color: '#0066FF', fontWeight: 'bold'}}>011000 = 24</span>). The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution marker is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.</>}
 />
 
 ### Resolution 5: Hilbert Subdivision
 
+From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode origin/segment, followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit Hilbert S value</span> (2 × (5-1) = 8 bits) encoding position along the space-filling curve, then the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.
+
 <A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={5}
-  description={<>From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode origin/segment, followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit Hilbert S value</span> (2 × (5-1) = 8 bits) encoding position along the space-filling curve, then the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.</>}
 />
 
 ### Resolution 10: Fine Detail
 
+At resolution 10, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode origin/segment, followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>18-bit Hilbert S value</span> (2 × (10-1) = 18 bits) allowing for 2^18 = 262,144 possible positions per segment, then the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>. Notice how the <span style={{color: '#000000', fontWeight: 'bold'}}>Hilbert S section</span> has grown larger compared to resolution 5.
+
 <A5CellInfoBox
   location={[-0.1276, 51.5074]}
   resolution={10}
-  description={<>At resolution 10, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode origin/segment, followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>18-bit Hilbert S value</span> (2 × (10-1) = 18 bits) allowing for 2^18 = 262,144 possible positions per segment, then the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>. Notice how the <span style={{color: '#000000', fontWeight: 'bold'}}>Hilbert S section</span> has grown larger compared to resolution 5.</>}
 />
 
 ## Resolution Encoding
