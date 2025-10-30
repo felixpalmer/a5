@@ -4,7 +4,7 @@
 A5 is a TypeScript library that partitions the world into equal-area pentagonal cells at 31 resolution levels. Built on a dodecahedral geometry, it provides millimeter-accurate geospatial indexing (30mm² at highest resolution) encoded as 64-bit integers.
 
 Website: https://a5geo.org
-Docs: https://a5geo.org/docs/api-reference/
+Docs: docs/api-reference/README.md
 
 ## Ports
 
