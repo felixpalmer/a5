@@ -107,7 +107,7 @@ SELECT unnest(a5_cell_to_children(7161034019553935360, 13)) AS cell_id;
 └─────────────────────┘
 ```
 
-import {cellToChildren} from 'a5-js';
+import {cellToChildren} from 'a5';
 
 <div style={{margin: '20px 0'}}>
   <WireframeDemo cellIds={cellToChildren(7161034019553935360n, 13)}/>

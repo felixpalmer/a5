@@ -27,7 +27,7 @@ import { compact, cellToChildren } from 'a5-js';
 
 // Get 4 sibling cells at resolution 3
 const parent = 0x2800000000000000n;  // A cell at resolution 2
-const children = cellToChildren(parent, 3);
+const children = cellToChildren(parent);
 
 console.log(children.length);  // 4
 
@@ -64,7 +64,7 @@ function uncompact(cells: bigint[] | BigUint64Array, targetResolution: number): 
 #### Example
 
 ```ts
-import { uncompact } from 'a5-js';
+import { uncompact, getResolution } from 'a5-js';
 
 // Start with a cell at resolution 2
 const cell = 0x2800000000000000n;
@@ -75,7 +75,6 @@ const expanded = uncompact([cell], 5);
 console.log(expanded.length);  // 64 (4^3)
 
 // All cells are at resolution 5
-import { getResolution } from 'a5-js';
 console.log(getResolution(expanded[0]));  // 5
 ```
 
