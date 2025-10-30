@@ -26,7 +26,9 @@ const App: React.FC = () => {
   useEffect(() => {
     async function loadData() {
       try {
-        const response = await fetch('/data/london.parquet');
+        // Generated using examples/cli/compact with:
+        // node index.js --lon -0.1278 --lat 51.5074 --radius 10 --resolution 16 --output london-10km-compacted
+        const response = await fetch('/data/london-10km-compacted.parquet');
         const arrayBuffer = await response.arrayBuffer();
 
         // Get metadata first - pass arrayBuffer directly
