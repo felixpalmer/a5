@@ -17,7 +17,7 @@ const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.j
 const A5GREEN = [0, 170, 85] as [number, number, number];
 const A5GREEN_DARK = [0, 128, 64] as [number, number, number];
 
-const App: React.FC<{showCellId?: boolean, height?: string}> = ({showCellId = true, height = '100vh'}) => {
+const App: React.FC<{showCellId?: boolean, height?: string}> = ({showCellId = true, height = '100%'}) => {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [cellLocation, setCellLocation] = useState([INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude]);
   const [showChildren, setShowChildren] = useState(false);

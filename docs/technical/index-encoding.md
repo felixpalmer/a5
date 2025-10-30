@@ -116,9 +116,7 @@ Parent: 011101 011001   01 0001 00000...  (res 4)
 
 ### 2. Spatial Locality
 
-Cells that are geographically close tend to have similar cell IDs, which is excellent for:
-- Database range queries
-- Spatial clustering
+Cells that are geographically close tend to have similar cell IDs, which is excellent for database range queries and spatial clustering.
 
 
 ### 3. Fixed Size
@@ -128,9 +126,6 @@ All cell IDs are exactly 64 bits (8 bytes), making them:
 - Fast to compare and sort
 - Compatible with standard integer types in most programming languages
 
-### 4. Compact Representation
+### 4. High resolution
 
-The use of a resolution marker allows variable-length data to fit in a fixed 64-bit space:
-- Low resolutions waste more trailing zero bits
-- High resolutions use most of the 64 bits for position data
-- Maximum resolution is 30 (would need 58 bits for S, plus marker)
+By storing the resolution implicitly and effectively using the first 6 bits to store the quintant, the highest resolution A5 is around 30mm², better than S2 (~1cm²) and H3 (~1m²).
