@@ -14,7 +14,7 @@ import { PentagonShape } from "../geometry/pentagon";
 import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
-import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
+import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./serialization";
 import { SphericalPolygonShape } from "../geometry/spherical-polygon";
 
 // Reuse these objects to avoid allocation
@@ -134,6 +134,11 @@ type CellToBoundaryOptions = {
 }
 
 export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}): LonLat[] {
+  if (cellId === WORLD_CELL) {
+    // WORLD_CELL represents the entire world and is unbounded
+    return [];
+  }
+
   const {S, segment, origin, resolution} = deserialize(cellId);
   if (segments === 'auto') {
     segments = Math.max(1,  Math.pow(2, 6 - resolution));
