@@ -119,6 +119,11 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
 }
 
 export function cellToLonLat(cell: bigint): LonLat {
+  // WORLD_CELL represents the entire world, return [0, 0] as a reasonable default
+  if (cell === WORLD_CELL) {
+    return [0, 0] as LonLat;
+  }
+
   const {S, segment, origin, resolution} = deserialize(cell);
   const pentagon = _getPentagon({S, segment, origin, resolution});
   const point = dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);

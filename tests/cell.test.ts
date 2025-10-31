@@ -70,6 +70,11 @@ describe('Cell ID Validation Tests', () => {
         expect(cellId).toBe(0n);
     });
 
+    it('should return [0, 0] for WORLD_CELL center', () => {
+        const lonLat = cellToLonLat(0n);
+        expect(lonLat).toEqual([0, 0]);
+    });
+
     it('should return empty array for WORLD_CELL boundary', () => {
         const boundary = cellToBoundary(0n);
         expect(boundary).toEqual([]);

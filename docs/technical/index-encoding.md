@@ -10,6 +10,8 @@ Generally the term **cell** is used to describe the pentagonal region that the A
 
 - Resolution 0 cells are also called **origins**
 - Resolution 1 cells are also called **quintants**
+- Resolution 2+ cells are just **cells**
+- There is a **World Cell** which can be thought of as having Resolution -1, see [below for more details](#special-case-world-cell)
 
 See [Platonic Solids](./platonic-solids) for more details.
 
@@ -78,7 +80,7 @@ Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={5}/>
 
-### Index explorer
+## Index explorer
 
 Click on the interactive map below to change the location to index, and zoom to change the resolution. Notice how the indices of nearby locations are similar, sharing many bits. Likewise, when zooming in most of the bits remain the same, just more bits are added to the <span style={{color: '#000000', fontWeight: 'bold'}}>Hilbert S value</span>.
 
@@ -88,14 +90,14 @@ import HierarchyDemo from 'website-examples/hierarchy/app';
   <HierarchyDemo height="500px" />
 </div>
 
-### Special Case: "World Cell"
+## Special Case: World Cell
 
 A special cell identifier with value `0n` (all 64 bits are zero) represents the entire world. This cell serves as the root of the A5 hierarchy. It is useful for hierarchical operations where you need to represent the root of all cells, such as:
 - Traversing the complete cell hierarchy from the top down
 - Representing "all cells" in a compact form
 - Computing all resolution 0 cells via `cellToChildren(WORLD_CELL, 0)`, or any other resolution
 
-#### World Cell Encoding
+### World Cell Encoding
 
 As an encoded index it can be thought of as having:
 
@@ -105,12 +107,15 @@ As an encoded index it can be thought of as having:
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={-1}/>
 
-#### World Cell Boundary
+### World Cell Boundary
 
-A general A5 cell boundary is a set of points which enclose the region represented by that cell. As the World Cell contains the whole world it is not bounded by any points. Thus the boundary returned by `cellToBoundary(0n)` is `[]`, an empty array to represent the fact the region is valid, it is just unbounded.
+A general A5 cell boundary is a set of points which enclose the region represented by that cell. As the World Cell contains the whole world it is not bounded by any points. Thus the boundary returned by `cellToBoundary(0n)` is `[]`, an empty array to represent the fact the region is valid, but unbounded.
 
 *Note that other libraries may need to handle this case specially as not all systems have a concept of a geometry that is the entire globe*
 
+### World Cell Location
+
+Conversely, for completeness `cellToLonLat(0n)` will return `[0, 0]`. While this choice is arbitrary, as the World Cell covers the whole world and thus has no center - it seems the most natural choice as it is the point at the center of many map projections.
 
 ## Key Properties
 
