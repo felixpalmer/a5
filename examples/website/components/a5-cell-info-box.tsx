@@ -40,8 +40,8 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
   // Then follow bits to encode the position along the hilbert curve
   const hilbertBits = (2 * Math.max(0, resolution - 1)) + originSegmentBits;
 
-  // Then two bits to encode the resolution
-  const resolutionBits = 2 + hilbertBits;
+  // Then two bits to encode the resolution (not shown for resolution -1)
+  const resolutionBits = resolution >= 0 ? 2 + hilbertBits : hilbertBits;
 
   const originSegmentSection = binaryCellId.substring(0, originSegmentBits);
   const hilbertSection = binaryCellId.substring(originSegmentBits, hilbertBits);
