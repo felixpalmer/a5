@@ -5,7 +5,7 @@ Functions for converting between geospatial coordinates and A5 indices.
 Coordinates are specified as per the [GeoJSON spec](https://www.rfc-editor.org/rfc/rfc7946#section-3.1.1), namely: `[longitude, latitude]`.
 
 :::info
-For detailed information about how A5 encodes cells as 64-bit integers, including the special WORLD_CELL (cell ID 0), see [Index Encoding](../technical/index-encoding).
+For detailed information about how A5 encodes cells as 64-bit integers, see [Index Encoding](../technical/index-encoding).
 :::
 
 ### lonLatToCell
