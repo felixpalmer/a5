@@ -18,9 +18,12 @@ Docs: docs/api-reference/README.md
 
 
 ## Typescript Project Structure
-- `/src` - TypeScript source code
+- `/modules` - TypeScript source code (NOT `/src`)
+  - `/core` - Core geospatial functionality (cell, hex, hilbert, serialization, etc.)
+  - `/geometry` - Geometric calculations (pentagon, spherical_triangle, spherical_polygon)
+  - `/projections` - Map projection implementations (dodecahedron, authalic, gnomonic, etc.)
 - `/dist` - Built outputs (a5.js, a5.cjs, a5.d.ts)
-- `/test` - Vitest test files
+- `/tests` - Vitest test files
 - `/examples/cli` - CLI applications demonstrating A5 usage
 - `/website` - Docusaurus documentation site
 - `/scripts` - Build and utility scripts
@@ -41,11 +44,24 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 ```
 
 ## Development Guidelines
-- **TypeScript**: Source files in `/src`, compiled to `/dist`
+- **TypeScript**: Source files in `/modules`, compiled to `/dist`
 - **Tests**: Use Vitest, run specific tests with `yarn test <filename> --run`
 - **Imports**: Run `python3 analyze_imports.py modules --check-only` after changing imports
 - **Cell IDs**: Always use bigint internally, convert to hex with `u64ToHex()` / `hexToBigInt()`
+- **Branded Types**: LonLat and other coordinate types are branded - cast with `as LonLat`, not type construction
 - **Build**: Run `yarn build` before testing example CLIs
+
+## Porting Changes to Other Languages
+When implementing features across all three ports (TypeScript, Python, Rust):
+1. **Implement in TypeScript first** (this is the reference implementation)
+2. **Update TypeScript tests and documentation**
+3. **Port to Python** (`../a5-py`) - check `CLAUDE.md` there for specifics
+4. **Port to Rust** (`../a5-rs`) - check `CLAUDE.md` there for specifics
+5. **Verify all tests pass** in all three implementations
+6. Key files to update in each port:
+   - Core implementation: `modules/core/cell.ts`, `a5/core/cell.py`, `src/core/cell.rs`
+   - Tests: `tests/cell.test.ts`, `tests/core/test_cell.py`, `tests/cell.rs`
+   - Exports: `modules/index.ts`, `a5/__init__.py`, `src/lib.rs`
 
 ## CI Checks (run as a final verification)
 ```bash
