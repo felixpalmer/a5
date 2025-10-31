@@ -22,6 +22,11 @@ const rotation = mat2.create();
 const dodecahedron = new DodecahedronProjection();
 
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
+  // Resolution -1 represents WORLD_CELL, which covers the entire world
+  if (resolution === -1) {
+    return WORLD_CELL;
+  }
+
   if (resolution < FIRST_HILBERT_RESOLUTION) {
     // For low resolutions there is no Hilbert curve, so we can just return as the result is exact
     return serialize(_lonLatToEstimate(lonLat, resolution));

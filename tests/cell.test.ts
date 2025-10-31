@@ -65,7 +65,12 @@ function boundaryToGeoJSON(boundary: LonLat[], resolution: number, cellId: strin
 }
 
 describe('Cell ID Validation Tests', () => {
-    it('should return empty array for WORLD_CELL (cell ID 0)', () => {
+    it('should return WORLD_CELL for resolution -1', () => {
+        const cellId = lonLatToCell([0, 0], -1);
+        expect(cellId).toBe(0n);
+    });
+
+    it('should return empty array for WORLD_CELL boundary', () => {
         const boundary = cellToBoundary(0n);
         expect(boundary).toEqual([]);
     });
