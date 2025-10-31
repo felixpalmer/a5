@@ -14,7 +14,7 @@ import { PentagonShape } from "../geometry/pentagon";
 import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "./hilbert";
-import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from "./serialization";
+import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./serialization";
 import { SphericalPolygonShape } from "../geometry/spherical-polygon";
 
 // Reuse these objects to avoid allocation
@@ -22,6 +22,11 @@ const rotation = mat2.create();
 const dodecahedron = new DodecahedronProjection();
 
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
+  // Resolution -1 represents WORLD_CELL, which covers the entire world
+  if (resolution === -1) {
+    return WORLD_CELL;
+  }
+
   if (resolution < FIRST_HILBERT_RESOLUTION) {
     // For low resolutions there is no Hilbert curve, so we can just return as the result is exact
     return serialize(_lonLatToEstimate(lonLat, resolution));
@@ -114,6 +119,11 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
 }
 
 export function cellToLonLat(cell: bigint): LonLat {
+  // WORLD_CELL represents the entire world, return [0, 0] as a reasonable default
+  if (cell === WORLD_CELL) {
+    return [0, 0] as LonLat;
+  }
+
   const {S, segment, origin, resolution} = deserialize(cell);
   const pentagon = _getPentagon({S, segment, origin, resolution});
   const point = dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);
@@ -134,6 +144,11 @@ type CellToBoundaryOptions = {
 }
 
 export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}): LonLat[] {
+  if (cellId === WORLD_CELL) {
+    // WORLD_CELL represents the entire world and is unbounded
+    return [];
+  }
+
   const {S, segment, origin, resolution} = deserialize(cellId);
   if (segments === 'auto') {
     segments = Math.max(1,  Math.pow(2, 6 - resolution));

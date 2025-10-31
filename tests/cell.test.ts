@@ -64,6 +64,23 @@ function boundaryToGeoJSON(boundary: LonLat[], resolution: number, cellId: strin
     return featureCollection;
 }
 
+describe('Cell ID Validation Tests', () => {
+    it('should return WORLD_CELL for resolution -1', () => {
+        const cellId = lonLatToCell([0, 0], -1);
+        expect(cellId).toBe(0n);
+    });
+
+    it('should return [0, 0] for WORLD_CELL center', () => {
+        const lonLat = cellToLonLat(0n);
+        expect(lonLat).toEqual([0, 0]);
+    });
+
+    it('should return empty array for WORLD_CELL boundary', () => {
+        const boundary = cellToBoundary(0n);
+        expect(boundary).toEqual([]);
+    });
+});
+
 describe('Antimeridian Cell Tests', () => {
     const antimeridianCells = [ 'eb60000000000000', '2e00000000000000' ];
     const segments = [1, 10, 'auto'];
