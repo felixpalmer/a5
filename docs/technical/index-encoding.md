@@ -58,10 +58,7 @@ At resolution 0, there are only 12 cells covering the entire Earth. The <span st
 
 Notice how all bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> after the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.
 
-<A5CellInfoBox
-  location={[-0.1276, 51.5074]}
-  resolution={0}
-/>
+<A5CellInfoBox location={[-0.1276, 51.5074]} resolution={0}/>
 
 ### Resolution 1: Quintant (Origin & segment)
 
@@ -69,10 +66,7 @@ At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells
 
 The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution marker is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
-<A5CellInfoBox
-  location={[-0.1276, 51.5074]}
-  resolution={1}
-/>
+<A5CellInfoBox location={[-0.1276, 51.5074]} resolution={1}/>
 
 ### Resolution 5: Hilbert Subdivision
 
@@ -82,10 +76,7 @@ They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-
 
 Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>, followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
-<A5CellInfoBox
-  location={[-0.1276, 51.5074]}
-  resolution={5}
-/>
+<A5CellInfoBox location={[-0.1276, 51.5074]} resolution={5}/>
 
 ### Index explorer
 
@@ -96,6 +87,29 @@ import HierarchyDemo from 'website-examples/hierarchy/app';
 <div style={{margin: '20px 0'}}>
   <HierarchyDemo height="500px" />
 </div>
+
+### Special Case: "World Cell"
+
+A special cell identifier with value `0n` (all 64 bits are zero) represents the entire world. This cell serves as the root of the A5 hierarchy. It is useful for hierarchical operations where you need to represent the root of all cells, such as:
+- Traversing the complete cell hierarchy from the top down
+- Representing "all cells" in a compact form
+- Computing all resolution 0 cells via `cellToChildren(WORLD_CELL, 0)`, or any other resolution
+
+#### World Cell Encoding
+
+As an encoded index it can be thought of as having:
+
+- No **origin** or **quintant**
+- **Resolution -1** one less than the Resolution 0 cells as it acts as their parent
+- A **Resolution Marker** shifted so far left that it disappears, so only the zero padding remains
+
+<A5CellInfoBox location={[-0.1276, 51.5074]} resolution={-1}/>
+
+#### World Cell Boundary
+
+A general A5 cell boundary is a set of points which enclose the region represented by that cell. As the World Cell contains the whole world it is not bounded by any points. Thus the boundary returned by `cellToBoundary(0n)` is `[]`, an empty array to represent the fact the region is valid, it is just unbounded.
+
+*Note that other libraries may need to handle this case specially as not all systems have a concept of a geometry that is the entire globe*
 
 
 ## Key Properties
