@@ -51,17 +51,18 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 - **Branded Types**: LonLat and other coordinate types are branded - cast with `as LonLat`, not type construction
 - **Build**: Run `yarn build` before testing example CLIs
 
-## Porting Changes to Other Languages
-When implementing features across all three ports (TypeScript, Python, Rust):
-1. **Implement in TypeScript first** (this is the reference implementation)
-2. **Update TypeScript tests and documentation**
-3. **Port to Python** (`../a5-py`) - check `CLAUDE.md` there for specifics
-4. **Port to Rust** (`../a5-rs`) - check `CLAUDE.md` there for specifics
-5. **Verify all tests pass** in all three implementations
-6. Key files to update in each port:
-   - Core implementation: `modules/core/cell.ts`, `a5/core/cell.py`, `src/core/cell.rs`
-   - Tests: `tests/cell.test.ts`, `tests/core/test_cell.py`, `tests/cell.rs`
-   - Exports: `modules/index.ts`, `a5/__init__.py`, `src/lib.rs`
+## Polyglot Mirroring
+A5 uses **Polyglot Mirroring** - maintaining functionally equivalent implementations across TypeScript, Python, and Rust. See [docs/ecosystem/polyglot-mirroring.md](docs/ecosystem/polyglot-mirroring.md) for details.
+
+When porting features between languages:
+1. **Any language can be the source** - changes can originate in TypeScript, Python, or Rust
+2. **TypeScript has fixture generation** - test fixtures are generated here by default, but any implementation can be used as reference
+3. **Mirror to other languages** - port the feature to the other two implementations
+4. **Verify all tests pass** - all three implementations must have identical behavior
+5. **Key file mappings** across languages:
+   - Core implementation: `modules/core/cell.ts` ↔ `a5/core/cell.py` ↔ `src/core/cell.rs`
+   - Tests: `tests/cell.test.ts` ↔ `tests/core/test_cell.py` ↔ `tests/cell.rs`
+   - Exports: `modules/index.ts` ↔ `a5/__init__.py` ↔ `src/lib.rs`
 
 ## CI Checks (run as a final verification)
 ```bash
@@ -105,3 +106,14 @@ These are the same checks that run in CI (.github/workflows/test.yml). Run these
 - Verify no circular dependencies when modifying imports
 - Build outputs in `/dist` are auto-generated (don't edit directly)
 - If instructions in `CLAUDE.md` seem wrong, update them and notify the user
+
+## Self-Improvement
+After completing a porting task (implementing features across TypeScript/Python/Rust):
+1. **Review the session** - Identify any confusion, file hunting, or unclear instructions
+2. **Consider updates** - Would adding context to CLAUDE.md files have helped?
+3. **Keep it concise** - Only add guidance if it would clearly prevent future issues
+4. **Update all three** - If guidance applies across ports, update all CLAUDE.md files
+5. **Note to user** - Mention the improvements made
+
+Examples of valuable additions: file location clarifications, type system gotchas, common porting patterns
+Examples of noise: obvious information, language basics, one-off issues that won't recur
