@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
-import { cellToBoundary, bigIntToHex, cellToLonLat } from 'a5';
+import { cellToBoundary } from 'a5';
 import { Color } from '@deck.gl/core';
 import { parquetRead } from 'hyparquet';
 
@@ -15,51 +15,28 @@ const MAX_COUNT = 109;
 const A5GREEN = [0, 170, 85] as Color;
 const WHITE = [255, 255, 255] as Color;
 
-type A5CellWithCount = {
-  cellId: bigint;
-  count: number;
-};
-
-async function loadParquetData(url: string): Promise<A5CellWithCount[]> {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-
-  const data: A5CellWithCount[] = [];
-
-  await parquetRead({
-    file: arrayBuffer,
-    onComplete: (rows) => {
-      for (const row of rows) {
-        data.push({
-          cellId: row[0] as bigint,
-          count: row[1] as number
-        });
-      }
-    }
-  });
-
-  return data;
-}
-
 const App: React.FC = () => {
-  const [data, setData] = useState<A5CellWithCount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any[]>([]);
 
   useEffect(() => {
-    loadParquetData(HEATMAP_DATA)
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    fetch(HEATMAP_DATA)
+      .then(res => res.arrayBuffer())
+      .then(buffer => {
+        parquetRead({
+          file: buffer,
+          onComplete: (rows) => setData(rows)
+        });
+      });
   }, []);
 
   // Create layer
-  const cellLayer = new PolygonLayer<A5CellWithCount>({
+  const cellLayer = new PolygonLayer({
     data,
     id: 'cell-polygon',
-    getPolygon: d => cellToBoundary(d.cellId),
-    getFillColor: (d: A5CellWithCount) => {
+    getPolygon: (d: any) => cellToBoundary(d[0]),
+    getFillColor: (d: any) => {
       // Interpolate between A5 green and white based on sqrt of count
-      const scale = Math.sqrt(d.count / MAX_COUNT);
+      const scale = Math.sqrt(d[1] / MAX_COUNT);
       return [
         A5GREEN[0] * (1 - scale) + WHITE[0] * scale,
         A5GREEN[1] * (1 - scale) + WHITE[1] * scale,
@@ -68,16 +45,12 @@ const App: React.FC = () => {
       ] as Color;
     },
     extruded: true,
-    getElevation: (d: A5CellWithCount) => d.count,
+    getElevation: (d: any) => d[1],
     elevationScale: 1000,
     filled: true,
     beforeId: 'watername_ocean',
     parameters: { cullMode: 'back' } as const
   });
-
-  if (loading) {
-    return <div style={{ padding: '20px' }}>Loading...</div>;
-  }
 
   return (
     <div
