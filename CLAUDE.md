@@ -59,7 +59,7 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 - When regenerating data for examples, compare with deployed version at https://a5geo.org/examples/* to verify resolution
 - Use `getResolution()` to check the resolution of cells in existing data files
 - Example resolution levels:
-  - Road safety example: resolution 14 (~50k cells for UK dataset)
+  - Road safety example: resolution 13 (~50k cells for UK dataset)
 
 ## Polyglot Mirroring
 A5 uses **Polyglot Mirroring** - maintaining functionally equivalent implementations across TypeScript, Python, and Rust. See [docs/ecosystem/polyglot-mirroring.md](docs/ecosystem/polyglot-mirroring.md) for details.
