@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
@@ -15,25 +15,45 @@ const MAX_COUNT = 109;
 const A5GREEN = [0, 170, 85] as Color;
 const WHITE = [255, 255, 255] as Color;
 
-const App: React.FC = () => {
-  const [data, setData] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetch(HEATMAP_DATA)
-      .then(res => res.arrayBuffer())
-      .then(buffer => {
+// Custom loader for Parquet files using hyparquet
+const HyparquetLoader = {
+  name: 'Hyparquet',
+  id: 'hyparquet',
+  module: 'hyparquet',
+  version: '1.0.0',
+  extensions: ['parquet'],
+  mimeTypes: ['application/octet-stream'],
+  category: 'table',
+  parse: async (arrayBuffer: ArrayBuffer) => {
+    console.log('HyparquetLoader: Starting to parse', arrayBuffer.byteLength, 'bytes');
+    return new Promise((resolve, reject) => {
+      try {
         parquetRead({
-          file: buffer,
-          onComplete: (rows) => setData(rows)
+          file: arrayBuffer,
+          onComplete: (rows) => {
+            console.log('HyparquetLoader: Loaded', rows.length, 'rows');
+            console.log('HyparquetLoader: First row:', rows[0]);
+            resolve(rows);
+          }
         });
-      });
-  }, []);
+      } catch (error) {
+        console.error('HyparquetLoader: Error parsing parquet:', error);
+        reject(error);
+      }
+    });
+  }
+};
 
-  // Create layer
+const App: React.FC = () => {
+  // Create layer with custom Parquet loader
   const cellLayer = new PolygonLayer({
-    data,
+    data: HEATMAP_DATA,
     id: 'cell-polygon',
-    getPolygon: (d: any) => cellToBoundary(d[0]),
+    loaders: [HyparquetLoader],
+    getPolygon: (d: any) => {
+      const boundary = cellToBoundary(d[0]);
+      return boundary;
+    },
     getFillColor: (d: any) => {
       // Interpolate between A5 green and white based on sqrt of count
       const scale = Math.sqrt(d[1] / MAX_COUNT);
