@@ -1,31 +1,62 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
-import { cellToBoundary, hexToU64 } from 'a5';
+import { cellToBoundary, bigIntToHex, cellToLonLat } from 'a5';
 import { Color } from '@deck.gl/core';
+import { parquetRead } from 'hyparquet';
 
-const HEATMAP_DATA = '/data/heatmap-data.json';
+const HEATMAP_DATA = '/data/heatmap-data.parquet';
 const INITIAL_VIEW_STATE = { longitude: 0, latitude: 53, zoom: 5, pitch: 20, maxZoom: 8, minZoom: 4 };
 const MAX_COUNT = 109;
 
 const A5GREEN = [0, 170, 85] as Color;
 const WHITE = [255, 255, 255] as Color;
 
-type A5CellWithCount = { 
-  cellId: string;
-  center: [number, number];
+type A5CellWithCount = {
+  cellId: bigint;
   count: number;
 };
 
+async function loadParquetData(url: string): Promise<A5CellWithCount[]> {
+  const response = await fetch(url);
+  const arrayBuffer = await response.arrayBuffer();
+
+  const data: A5CellWithCount[] = [];
+
+  await parquetRead({
+    file: arrayBuffer,
+    onComplete: (rows) => {
+      for (const row of rows) {
+        data.push({
+          cellId: row[0] as bigint,
+          count: row[1] as number
+        });
+      }
+    }
+  });
+
+  return data;
+}
+
 const App: React.FC = () => {
+  const [data, setData] = useState<A5CellWithCount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadParquetData(HEATMAP_DATA)
+      .then(setData)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   // Create layer
   const cellLayer = new PolygonLayer<A5CellWithCount>({
-    data: HEATMAP_DATA,
+    data,
     id: 'cell-polygon',
-    getPolygon: d => cellToBoundary(hexToU64(d.cellId)),
+    getPolygon: d => cellToBoundary(d.cellId),
     getFillColor: (d: A5CellWithCount) => {
       // Interpolate between A5 green and white based on sqrt of count
       const scale = Math.sqrt(d.count / MAX_COUNT);
@@ -44,6 +75,10 @@ const App: React.FC = () => {
     parameters: { cullMode: 'back' } as const
   });
 
+  if (loading) {
+    return <div style={{ padding: '20px' }}>Loading...</div>;
+  }
+
   return (
     <div
       style={{
@@ -60,7 +95,7 @@ const App: React.FC = () => {
         initialViewState={INITIAL_VIEW_STATE}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       >
-        <DeckGLOverlay 
+        <DeckGLOverlay
           layers={[cellLayer]}
           interleaved={true}
         />
@@ -80,4 +115,4 @@ function DeckGLOverlay(props) {
   const overlay = useControl(() => new DeckOverlay(props));
   overlay.setProps(props);
   return null;
-} 
+}
