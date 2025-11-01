@@ -25,7 +25,10 @@ Docs: docs/api-reference/README.md
 - `/dist` - Built outputs (a5.js, a5.cjs, a5.d.ts)
 - `/tests` - Vitest test files
 - `/examples/cli` - CLI applications demonstrating A5 usage
+- `/examples/website` - Website example applications (source code)
 - `/website` - Docusaurus documentation site
+  - `/website/static/data` - Static data files for website examples (JSON, Parquet, etc.)
+  - `/website/src/examples` - Example page definitions that import from `/examples/website`
 - `/scripts` - Build and utility scripts
 
 ## Key Concepts
@@ -47,9 +50,16 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 - **TypeScript**: Source files in `/modules`, compiled to `/dist`
 - **Tests**: Use Vitest, run specific tests with `yarn test <filename> --run`
 - **Imports**: Run `python3 analyze_imports.py modules --check-only` after changing imports
-- **Cell IDs**: Always use bigint internally, convert to hex with `u64ToHex()` / `hexToBigInt()`
+- **Cell IDs**: Always use bigint internally, convert to hex with `u64ToHex()` / `hexToU64()`
 - **Branded Types**: LonLat and other coordinate types are branded - cast with `as LonLat`, not type construction
 - **Build**: Run `yarn build` before testing example CLIs
+
+## Website Examples
+- Website example data files go in `/website/static/data/` (NOT in `/examples/website/*/public/data/`)
+- When regenerating data for examples, compare with deployed version at https://a5geo.org/examples/* to verify resolution
+- Use `getResolution()` to check the resolution of cells in existing data files
+- Example resolution levels:
+  - Road safety example: resolution 14 (~50k cells for UK dataset)
 
 ## Polyglot Mirroring
 A5 uses **Polyglot Mirroring** - maintaining functionally equivalent implementations across TypeScript, Python, and Rust. See [docs/ecosystem/polyglot-mirroring.md](docs/ecosystem/polyglot-mirroring.md) for details.
