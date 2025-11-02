@@ -33,6 +33,7 @@ COPY (
     WHERE categories.primary = 'restaurant'
         AND bbox.xmin BETWEEN 2 AND 3
         AND bbox.ymin BETWEEN 48 AND 49
+        AND geometry IS NOT NULL
 ) TO 'restaurants_paris.parquet' (FORMAT PARQUET);
 ```
 
@@ -55,7 +56,6 @@ COPY (
         a5_lonlat_to_cell(lon, lat, 15) as a5,
         COUNT(*)::INTEGER as count
     FROM read_parquet('restaurants_paris.parquet')
-    WHERE lon IS NOT NULL AND lat IS NOT NULL
     GROUP BY a5
     ORDER BY count DESC
 ) TO 'restaurants_paris_aggregated.parquet' (FORMAT PARQUET);
