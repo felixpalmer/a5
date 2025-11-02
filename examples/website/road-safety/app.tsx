@@ -4,28 +4,29 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
-import { cellToBoundary, hexToU64 } from 'a5';
+import { cellToBoundary } from 'a5';
 import { Color } from '@deck.gl/core';
+import { HyparquetLoader } from '../shared/hyparquet-loader';
 
-const HEATMAP_DATA = '/data/heatmap-data.json';
+// Generated using examples/cli/aggregate with:
+// node index.js heatmap-data.csv heatmap-data.parquet 13 parquet
+// https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/3d-heatmap/heatmap-data.csv
+const HEATMAP_DATA = '/data/heatmap-data.parquet';
 const INITIAL_VIEW_STATE = { longitude: 0, latitude: 53, zoom: 5, pitch: 20, maxZoom: 8, minZoom: 4 };
 const MAX_COUNT = 109;
 
 const A5GREEN = [0, 170, 85] as Color;
 const WHITE = [255, 255, 255] as Color;
 
-type A5CellWithCount = { 
-  cellId: string;
-  center: [number, number];
-  count: number;
-};
+type A5CellWithCount = {a5: bigint; count: number;};
 
 const App: React.FC = () => {
-  // Create layer
+  // Create layer with custom Parquet loader
   const cellLayer = new PolygonLayer<A5CellWithCount>({
     data: HEATMAP_DATA,
     id: 'cell-polygon',
-    getPolygon: d => cellToBoundary(hexToU64(d.cellId)),
+    loaders: [HyparquetLoader],
+    getPolygon: (d: A5CellWithCount) => cellToBoundary(d.a5),
     getFillColor: (d: A5CellWithCount) => {
       // Interpolate between A5 green and white based on sqrt of count
       const scale = Math.sqrt(d.count / MAX_COUNT);
@@ -60,7 +61,7 @@ const App: React.FC = () => {
         initialViewState={INITIAL_VIEW_STATE}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       >
-        <DeckGLOverlay 
+        <DeckGLOverlay
           layers={[cellLayer]}
           interleaved={true}
         />
@@ -80,4 +81,4 @@ function DeckGLOverlay(props) {
   const overlay = useControl(() => new DeckOverlay(props));
   overlay.setProps(props);
   return null;
-} 
+}

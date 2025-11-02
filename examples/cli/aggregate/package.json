@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "a5-js": "latest",
-    "csv-parse": "^5.5.3"
+    "csv-parse": "^5.5.3",
+    "hyparquet": "^1.20.1",
+    "hyparquet-writer": "^0.9.0"
   }
-} 
+}
