@@ -17,6 +17,7 @@ export const HyparquetLoader = {
       try {
         parquetRead({
           file: arrayBuffer,
+          rowFormat: 'object',
           onComplete: (rows) => resolve(rows)
         });
       } catch (error) {

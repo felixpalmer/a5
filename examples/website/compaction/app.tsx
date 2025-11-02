@@ -7,6 +7,8 @@ import {PolygonLayer} from '@deck.gl/layers';
 import { cellToBoundary, uncompact } from 'a5';
 import { parquetRead } from 'hyparquet';
 
+// Generated using examples/cli/compact with:
+// node index.js --lon -0.1278 --lat 51.5074 --radius 10 --resolution 16 --output london-10km-compacted
 const COMPACTED_DATA = '/data/london-10km-compacted.parquet';
 const INITIAL_VIEW_STATE = { longitude: -0.1278, latitude: 51.5074, zoom: 11 };
 const RESOLUTION = 16;
@@ -27,8 +29,6 @@ const App: React.FC = () => {
   useEffect(() => {
     async function loadData() {
       try {
-        // Generated using examples/cli/compact with:
-        // node index.js --lon -0.1278 --lat 51.5074 --radius 10 --resolution 16 --output london-10km-compacted
         const response = await fetch(COMPACTED_DATA);
         const arrayBuffer = await response.arrayBuffer();
 

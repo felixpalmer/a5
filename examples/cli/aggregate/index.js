@@ -35,22 +35,22 @@ async function writeParquet(aggregatedData, outputPath) {
   }
 
   const columnData = [
-    { name: 'cell_id', data: cellIds },
+    { name: 'a5', data: cellIds },
     { name: 'count', data: counts }
   ];
 
   // Create file writer
   const writer = fileWriter(outputPath);
 
-  // Write parquet file with UINT_64 type for cell_id
+  // Write parquet file with UINT_64 type for a5
   parquetWrite({
     writer,
     columnData,
     schema: schemaFromColumnData({
       columnData,
       schemaOverrides: {
-        cell_id: {
-          name: 'cell_id',
+        a5: {
+          name: 'a5',
           type: 'INT64',
           converted_type: 'UINT_64',
           repetition_type: 'REQUIRED',

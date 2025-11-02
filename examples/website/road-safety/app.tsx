@@ -8,6 +8,9 @@ import { cellToBoundary } from 'a5';
 import { Color } from '@deck.gl/core';
 import { HyparquetLoader } from '../shared/hyparquet-loader';
 
+// Generated using examples/cli/aggregate with:
+// node index.js heatmap-data.csv heatmap-data.parquet 13 parquet
+// https://raw.githubusercontent.com/visgl/deck.gl-data/master/examples/3d-heatmap/heatmap-data.csv
 const HEATMAP_DATA = '/data/heatmap-data.parquet';
 const INITIAL_VIEW_STATE = { longitude: 0, latitude: 53, zoom: 5, pitch: 20, maxZoom: 8, minZoom: 4 };
 const MAX_COUNT = 109;
@@ -21,13 +24,10 @@ const App: React.FC = () => {
     data: HEATMAP_DATA,
     id: 'cell-polygon',
     loaders: [HyparquetLoader],
-    getPolygon: (d: any) => {
-      const boundary = cellToBoundary(d[0]);
-      return boundary;
-    },
+    getPolygon: (d: any) => cellToBoundary(d.a5),
     getFillColor: (d: any) => {
       // Interpolate between A5 green and white based on sqrt of count
-      const scale = Math.sqrt(d[1] / MAX_COUNT);
+      const scale = Math.sqrt(d.count / MAX_COUNT);
       return [
         A5GREEN[0] * (1 - scale) + WHITE[0] * scale,
         A5GREEN[1] * (1 - scale) + WHITE[1] * scale,
@@ -36,7 +36,7 @@ const App: React.FC = () => {
       ] as Color;
     },
     extruded: true,
-    getElevation: (d: any) => d[1],
+    getElevation: (d: any) => d.count,
     elevationScale: 1000,
     filled: true,
     beforeId: 'watername_ocean',
