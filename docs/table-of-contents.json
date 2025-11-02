@@ -19,6 +19,13 @@
   },
   {
     "type": "category",
+    "label": "Recipes",
+    "items": [
+      "recipes/paris-restaurant-density"
+    ]
+  },
+  {
+    "type": "category",
     "label": "Technical Details",
     "items": [
       "technical/dggs",

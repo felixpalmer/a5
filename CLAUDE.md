@@ -60,6 +60,7 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 - Use `getResolution()` to check the resolution of cells in existing data files
 - Example resolution levels:
   - Road safety example: resolution 13 (~50k cells for UK dataset)
+- **IMPORTANT**: The website development server is ALWAYS running. NEVER attempt to start it with `yarn start` or similar commands. Just use Chrome DevTools to test changes.
 
 ## Polyglot Mirroring
 A5 uses **Polyglot Mirroring** - maintaining functionally equivalent implementations across TypeScript, Python, and Rust. See [docs/ecosystem/polyglot-mirroring.md](docs/ecosystem/polyglot-mirroring.md) for details.
