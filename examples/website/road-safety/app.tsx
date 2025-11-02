@@ -18,14 +18,16 @@ const MAX_COUNT = 109;
 const A5GREEN = [0, 170, 85] as Color;
 const WHITE = [255, 255, 255] as Color;
 
+type A5CellWithCount = {a5: bigint; count: number;};
+
 const App: React.FC = () => {
   // Create layer with custom Parquet loader
-  const cellLayer = new PolygonLayer({
+  const cellLayer = new PolygonLayer<A5CellWithCount>({
     data: HEATMAP_DATA,
     id: 'cell-polygon',
     loaders: [HyparquetLoader],
-    getPolygon: (d: any) => cellToBoundary(d.a5),
-    getFillColor: (d: any) => {
+    getPolygon: (d: A5CellWithCount) => cellToBoundary(d.a5),
+    getFillColor: (d: A5CellWithCount) => {
       // Interpolate between A5 green and white based on sqrt of count
       const scale = Math.sqrt(d.count / MAX_COUNT);
       return [
@@ -36,7 +38,7 @@ const App: React.FC = () => {
       ] as Color;
     },
     extruded: true,
-    getElevation: (d: any) => d.count,
+    getElevation: (d: A5CellWithCount) => d.count,
     elevationScale: 1000,
     filled: true,
     beforeId: 'watername_ocean',

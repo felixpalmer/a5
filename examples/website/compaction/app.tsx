@@ -33,11 +33,8 @@ const App: React.FC = () => {
         const arrayBuffer = await response.arrayBuffer();
 
         // Parse parquet file
-        const rows: any[] = await new Promise((resolve) => {
-          parquetRead({
-            file: arrayBuffer,
-            onComplete: (rows) => resolve(rows)
-          });
+        const rows: any[] = await new Promise(onComplete => {
+          parquetRead({file: arrayBuffer, onComplete});
         });
 
         // Extract cell IDs (first column)
