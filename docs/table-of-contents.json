@@ -19,6 +19,13 @@
   },
   {
     "type": "category",
+    "label": "Recipes",
+    "items": [
+      "recipes/paris-restaurants"
+    ]
+  },
+  {
+    "type": "category",
     "label": "Technical Details",
     "items": [
       "technical/dggs",
