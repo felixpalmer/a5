@@ -6,7 +6,7 @@ import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
 import { cellToBoundary } from 'a5';
 import { Color } from '@deck.gl/core';
-import { parquetRead } from 'hyparquet';
+import { HyparquetLoader } from '../shared/hyparquet-loader';
 
 const HEATMAP_DATA = '/data/heatmap-data.parquet';
 const INITIAL_VIEW_STATE = { longitude: 0, latitude: 53, zoom: 5, pitch: 20, maxZoom: 8, minZoom: 4 };
@@ -14,35 +14,6 @@ const MAX_COUNT = 109;
 
 const A5GREEN = [0, 170, 85] as Color;
 const WHITE = [255, 255, 255] as Color;
-
-// Custom loader for Parquet files using hyparquet
-const HyparquetLoader = {
-  name: 'Hyparquet',
-  id: 'hyparquet',
-  module: 'hyparquet',
-  version: '1.0.0',
-  extensions: ['parquet'],
-  mimeTypes: ['application/octet-stream'],
-  category: 'table',
-  parse: async (arrayBuffer: ArrayBuffer) => {
-    console.log('HyparquetLoader: Starting to parse', arrayBuffer.byteLength, 'bytes');
-    return new Promise((resolve, reject) => {
-      try {
-        parquetRead({
-          file: arrayBuffer,
-          onComplete: (rows) => {
-            console.log('HyparquetLoader: Loaded', rows.length, 'rows');
-            console.log('HyparquetLoader: First row:', rows[0]);
-            resolve(rows);
-          }
-        });
-      } catch (error) {
-        console.error('HyparquetLoader: Error parsing parquet:', error);
-        reject(error);
-      }
-    });
-  }
-};
 
 const App: React.FC = () => {
   // Create layer with custom Parquet loader

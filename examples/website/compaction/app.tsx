@@ -4,9 +4,10 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
-import { cellToBoundary, uncompact, compact } from 'a5';
-import {parquetMetadataAsync, parquetRead} from 'hyparquet';
+import { cellToBoundary, uncompact } from 'a5';
+import { parquetRead } from 'hyparquet';
 
+const COMPACTED_DATA = '/data/london-10km-compacted.parquet';
 const INITIAL_VIEW_STATE = { longitude: -0.1278, latitude: 51.5074, zoom: 11 };
 const RESOLUTION = 16;
 
@@ -28,24 +29,19 @@ const App: React.FC = () => {
       try {
         // Generated using examples/cli/compact with:
         // node index.js --lon -0.1278 --lat 51.5074 --radius 10 --resolution 16 --output london-10km-compacted
-        const response = await fetch('/data/london-10km-compacted.parquet');
+        const response = await fetch(COMPACTED_DATA);
         const arrayBuffer = await response.arrayBuffer();
 
-        // Get metadata first - pass arrayBuffer directly
-        const metadata = await parquetMetadataAsync(arrayBuffer);
-
-        // Read parquet file - collect all rows
-        const allRows: any[] = [];
-        await parquetRead({
-          metadata,
-          file: arrayBuffer,
-          onComplete: (rows: any[]) => {
-            allRows.push(...rows);
-          }
+        // Parse parquet file
+        const rows: any[] = await new Promise((resolve) => {
+          parquetRead({
+            file: arrayBuffer,
+            onComplete: (rows) => resolve(rows)
+          });
         });
 
-        // Extract cell IDs
-        const compacted = allRows.map(row => row[0]);
+        // Extract cell IDs (first column)
+        const compacted = rows.map((row: any) => row[0]);
 
         // Set compacted cells and render them first
         setCompactedCells(compacted);
