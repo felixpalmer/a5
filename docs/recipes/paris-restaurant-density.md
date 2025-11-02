@@ -116,7 +116,13 @@ The visualization clearly shows:
 
 ### Source
 
-Below is a simple deck.gl app that shows how to load in the Parquet data and show it on an interactive map. It is written as a standalone [Scripting App](https://deck.gl/docs/get-started/using-standalone#using-the-scripting-api), so it just needs to be hosted on a static web server - no build step necessary.
+Below is a the source for the above visualization. It is written as a standalone deck.gl [Scripting App](https://deck.gl/docs/get-started/using-standalone#using-the-scripting-api), so it just needs to be hosted on a static web server - no build step necessary. Just copy the code to a file called `index.html` in the same directory as the data files produced above and then run in a terminal:
+
+```bash
+python3 -m http.server 8000
+```
+
+The app will then be accessible in a web broswer at `http://localhost:8000`.
 
 ```html
 <!DOCTYPE html>
