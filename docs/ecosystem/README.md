@@ -2,6 +2,8 @@
 
 The A5 project consists of multiple language implementations and integrations, maintained using [polyglot mirroring](polyglot-mirroring.md) to ensure feature parity and consistency across the ecosystem. Contributions are welcome!
 
+For practical examples on how to use these tools, see the [Recipes](./recipes) section.
+
 ## Core Libraries
 ### TypeScript
 📖 [Quickstart](../quickstart/javascript.md) • 📦 [Package](https://www.npmjs.com/package/a5-js) • 🔗 [Source](https://github.com/felixpalmer/a5)
@@ -14,11 +16,21 @@ The A5 project consists of multiple language implementations and integrations, m
 
 ## Integrations
 
+### deck.gl
+📖 [Docs](https://deck.gl/docs/api-reference/geo-layers/a5-layer) • 🌍 [Demo app](https://deck.gl/examples/global-grids) • 🔗 [Source](https://github.com/visgl/deck.gl/blob/master/modules/geo-layers/src/a5-layer/a5-layer.ts)
+
 ### DuckDB
 📖 [Quickstart](../quickstart/duckdb.md) • 📦 [Extension](https://query.farm/duckdb_extension_a5.html) • 🔗 [Source](https://github.com/Query-farm/a5)
 
+### raster2dggs
+📖 [Quickstart](https://github.com/manaakiwhenua/raster2dggs?tab=readme-ov-file#installation) • 📦 [Package](https://pypi.org/project/raster2dggs/) • 🔗 [Source](https://github.com/manaakiwhenua/raster2dggs)
+
+### QGIS
+
+📖 [Guide](https://vgridtools.gishub.vn/) • 📦 [Plugin](https://plugins.qgis.org/plugins/vgridtools/) • 🔗 [Source](https://github.com/opengeoshub/vgridtools)
+
 ### Other
 - [geotoolkit](https://github.com/Geomatys/geotoolkit) Java language library for developing geospatial applications with support for [A5](https://github.com/Geomatys/geotoolkit/tree/main/geotk-dggs/src/main/java/org/geotoolkit/dggs/a5)
-- [vgrid libraries](https://github.com/opengeoshub) A5 tools & utilies for [MapLibre](https://gishub.vn/pages/dggs/a5/), [pandas](https://vgridpandas.gishub.vn/notebooks/03_a5/), [QGIS](https://plugins.qgis.org/plugins/vgridtools/) & more
+- [vgrid libraries](https://github.com/opengeoshub) A5 tools & utilies for [MapLibre](https://gishub.vn/pages/dggs/a5/), [pandas](https://vgridpandas.gishub.vn/notebooks/03_a5/), [QGIS](https://github.com/opengeoshub/vgridtools) & more
 
 _Have a library you like to share? Make an [Issue](https://github.com/felixpalmer/a5/issues)_
