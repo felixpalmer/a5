@@ -26,7 +26,7 @@ function compact(cells: bigint[] | BigUint64Array): BigUint64Array;
 import { compact, cellToChildren } from 'a5-js';
 
 // Get 4 sibling cells at resolution 3
-const parent = 0x2800000000000000n;  // A cell at resolution 2
+const parent = 0x6a80000000000000n;  // A cell at resolution 2
 const children = cellToChildren(parent);
 
 console.log(children.length);  // 4
@@ -67,7 +67,7 @@ function uncompact(cells: bigint[] | BigUint64Array, targetResolution: number): 
 import { uncompact, getResolution } from 'a5-js';
 
 // Start with a cell at resolution 2
-const cell = 0x2800000000000000n;
+const cell = 0x6a80000000000000n;
 
 // Uncompact to resolution 5 (3 levels finer)
 const expanded = uncompact([cell], 5);
@@ -96,16 +96,17 @@ Both `compact()` and `uncompact()` return `BigUint64Array` for optimal performan
 ```ts
 import { compact } from 'a5-js';
 
-const cells = [0x2800000000000000n, 0x2800000000000001n];
-const compacted = compact(cells);
+const uncompacted = new BigUint64Array([7161033607237074944n, 7161033882114981888n, 7161034156992888832n, 7161034431870795776n, 7161033057481261056n]);
+const compacted = compact(uncompacted);
+console.log(compacted.length); // 5 cells compacted to 2
 
 // Use like a regular array
 for (const cell of compacted) {
-  console.log(cell.toString(16));
+  console.log(getResolution(cell));
 }
 
 // Convert to regular array if needed
-const array = Array.from(compacted);
+const array = [...uncompacted];
 ```
 
 ### Performance Tips
