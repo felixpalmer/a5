@@ -12,6 +12,7 @@
     "label": "Quickstart",
     "items": [
       "quickstart/duckdb",
+      "quickstart/postgresql",
       "quickstart/javascript",
       "quickstart/python",
       "quickstart/rust"
