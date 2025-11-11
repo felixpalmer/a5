@@ -1,5 +1,8 @@
 # PostgreSQL Quickstart
 
+import PostgresInputPolygon from '/images/examples/postgres-input-polygon.jpg';
+import PostgresOutputPolygon from '/images/examples/postgres-output-polygon.jpg';
+
 Get started with A5 in PostgreSQL by installing the [a5pg extension](https://github.com/decision-labs/a5pg) and running a simple example.
 
 ## Installation
@@ -140,6 +143,10 @@ features AS (
 SELECT * INTO TEMP elephant_features FROM features;
 ```
 
+The input polygon geometry:
+
+<img src={PostgresInputPolygon} style={{width: "100%", maxWidth: "800px"}}/>
+
 ### Step 2: Generate A5 Cells from Polygon Vertices
 
 ```sql
@@ -229,6 +236,10 @@ FROM elephant_cells;
 ```
 
 This produces a GeoJSON FeatureCollection where each feature represents an A5 cell covering part of the elephant shape. The cells can be visualized on a map to show how A5 partitions the polygon into equal-area pentagonal cells.
+
+The resulting A5 cells covering the polygon:
+
+<img src={PostgresOutputPolygon} style={{width: "100%", maxWidth: "800px"}}/>
 
 ## Example: Compare Cell Areas
 
