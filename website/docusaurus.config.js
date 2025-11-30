@@ -42,6 +42,12 @@ const config = {
 
   plugins: [
     [
+      'docusaurus-plugin-plausible',
+      {
+        domain: 'a5geo.org'
+      }
+    ],
+    [
       './ocular-docusaurus-plugin',
       {
         debug: true,

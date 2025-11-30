@@ -7259,6 +7259,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"docusaurus-plugin-plausible@npm:^0.0.5":
+  version: 0.0.5
+  resolution: "docusaurus-plugin-plausible@npm:0.0.5"
+  checksum: 10c0/409b58a81c013db65ebccc1e0d9f290ab13eec770e094107ba00039663d4fb8e4c7051f27e1761d66edfbb9031180b3100b48b8142a982d7528b76e5bed76f67
+  languageName: node
+  linkType: hard
+
 "dom-converter@npm:^0.2.0":
   version: 0.2.0
   resolution: "dom-converter@npm:0.2.0"
@@ -12866,6 +12873,7 @@ __metadata:
     babel-plugin-module-resolver: "npm:^5.0.0"
     babel-plugin-styled-components: "npm:^2.0.0"
     d3-color: "npm:^3.1.0"
+    docusaurus-plugin-plausible: "npm:^0.0.5"
     hyparquet: "npm:^1.20.0"
     maplibre-gl: "npm:^5.0.0"
     prism-react-renderer: "npm:^2.3.0"
