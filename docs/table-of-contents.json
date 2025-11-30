@@ -22,7 +22,8 @@
     "label": "Recipes",
     "items": [
       "recipes/README",
-      "recipes/paris-restaurant-density"
+      "recipes/paris-restaurant-density",
+      "recipes/airbnb-density-comparison"
     ]
   },
   {
