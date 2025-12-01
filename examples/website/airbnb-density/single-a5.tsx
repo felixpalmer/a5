@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import * as d3 from 'd3';
+import CollapsibleViz from './collapsible-viz';
 import './styles.css';
 
 interface CityData {
@@ -125,9 +126,35 @@ const SingleA5View: React.FC = () => {
 
       linkGroup.append('path')
         .attr('class', 'link')
+        .attr('data-location', link.source.location)
         .attr('d', path.toString())
         .attr('stroke', getRankChangeColor(link.rankDiff, link.source.rank, link.target.rank))
-        .attr('stroke-width', 4);
+        .attr('stroke-width', 4)
+        .attr('stroke-opacity', 0.4)
+        .attr('fill', 'none')
+        .style('cursor', 'pointer')
+        .on('mouseover', function() {
+          const location = d3.select(this).attr('data-location');
+          const cityName = formatCityName(location);
+
+          g.selectAll('.link')
+            .attr('stroke-opacity', function() {
+              return d3.select(this).attr('data-location') === location ? 1 : 0.2;
+            })
+            .attr('stroke-width', function() {
+              return d3.select(this).attr('data-location') === location ? 8 : 4;
+            });
+
+          g.selectAll('text')
+            .style('font-weight', function() {
+              const text = d3.select(this).text();
+              return text.includes(cityName) ? 'bold' : 'normal';
+            });
+        })
+        .on('mouseout', function() {
+          g.selectAll('.link').attr('stroke-opacity', 0.4).attr('stroke-width', 4);
+          g.selectAll('text').style('font-weight', 'normal');
+        });
     });
 
     const leftNodes = g.append('g')
@@ -165,9 +192,11 @@ const SingleA5View: React.FC = () => {
   }
 
   return (
-    <div ref={containerRef} className="viz-container">
-      <svg ref={svgRef} />
-    </div>
+    <CollapsibleViz defaultHeight={400}>
+      <div ref={containerRef} className="viz-container">
+        <svg ref={svgRef} />
+      </div>
+    </CollapsibleViz>
   );
 };
 
