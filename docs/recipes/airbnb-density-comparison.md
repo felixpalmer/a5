@@ -4,67 +4,82 @@ This recipe demonstrates how to analyze Airbnb listing density across global cit
 
 ## Overview
 
-In this example, we:
-1. Aggregate [Inside Airbnb](https://insideairbnb.com/get-the-data/) listing data using both A5 and H3 indices
-2. Calculate density metrics (listings per cell and listings per km²)
-3. Compare city rankings to reveal systematic biases in H3's variable cell areas
-4. Visualize the differences through interactive diagrams
+We analyze [Inside Airbnb](https://insideairbnb.com/get-the-data/) listing data aggregated using both A5 and H3 indices to compare density metrics across ~120 global cities. The analysis reveals a fundamental difference: **A5's equal-area cells provide consistent density rankings**, while **H3's variable cell areas introduce systematic latitude-dependent bias**.
 
-## Key Finding
+## A5: Equal-Area Consistency
 
-**A5's equal-area cells provide consistent density rankings**, while **H3's variable cell areas introduce systematic bias** that can misrepresent true density patterns.
+With A5, all cells at a given resolution have the same area (~0.13 km² at resolution 14). This means that rankings by "listings per cell" and "listings per km²" are **identical** — both metrics represent the same thing.
 
-## Interactive Visualization
+import SingleA5 from 'website-examples/airbnb-density/single-a5';
 
-import AirbnbDensityDemo from 'website-examples/airbnb-density/app';
-
-<div style={{margin: '20px 0', height: '700px', position: 'relative'}}>
-  <AirbnbDensityDemo />
+<div style={{margin: '20px 0'}}>
+  <SingleA5 />
 </div>
 
-## Understanding the Results
+**Notice:** All the lines are black (no rank changes). The left and right rankings are identical because A5 cells are equal-area. A city with many listings per cell *necessarily* has high density per km², and vice versa.
 
-### A5: Equal-Area Consistency
+## H3: Variable-Area Bias
 
-With A5, all cells at a given resolution have the same area (~0.13 km² at resolution 14). This means:
-- Rankings by "listings per cell" and "listings per km²" are **identical**
-- Density comparisons across latitudes are **fair and accurate**
-- No systematic bias based on geographic location
+With H3, cell areas vary by latitude (average ~0.09 km² at resolution 9, but ranges from ~0.07 km² to ~0.11 km²). This creates **different rankings** for "listings per cell" vs "listings per km²".
 
-### H3: Variable-Area Bias
+import SingleH3 from 'website-examples/airbnb-density/single-h3';
 
-With H3, cell areas vary by latitude (~0.09 km² average at resolution 9). This creates:
-- **Different rankings** for "listings per cell" vs "listings per km²"
-- **Systematic bias**: Cities at higher latitudes have larger cells, inflating their "per cell" counts
-- Rankings that don't accurately reflect true density when comparing across latitudes
+<div style={{margin: '20px 0'}}>
+  <SingleH3 />
+</div>
 
-### The H3 Bias Plot
+**Notice:** Many colored lines showing rank changes. Green lines indicate cities that rank higher in "listings per cell" than in true density, while red lines show cities that rank lower. The divergence reveals H3's variable cell areas creating measurement inconsistency.
 
-The scatterplot view reveals the correlation between H3 cell area and ranking shift:
-- Cities with **larger cells** (higher latitudes) rank **higher** in listings/cell than in true density
-- Cities with **smaller cells** (lower latitudes) rank **lower** in listings/cell than in true density
-- This creates a predictable, latitude-dependent bias in rankings
+## Direct Comparison: A5 vs H3
 
-## Data Processing
+When we compare both indices side-by-side, we can see how rankings evolve from A5 → H3:
 
-The analysis involves:
-1. **Downloading listing data** from Inside Airbnb for ~120 global cities
-2. **Geocoding listings** to A5 (resolution 14) and H3 (resolution 9) cells
-3. **Aggregating** to find the densest 10km² area per city
-4. **Calculating rankings** for both "listings per cell" and "listings per km²"
-5. **Comparing** how rankings differ between A5 and H3
+import Comparison from 'website-examples/airbnb-density/comparison';
+
+<div style={{margin: '20px 0'}}>
+  <Comparison />
+</div>
+
+The 4-column diagram shows:
+1. **A5 Listings/Cell** → **A5 Listings/km²**: Identical (all black lines)
+2. **A5 Listings/km²** → **H3 Listings/km²**: Similar rankings (mostly black/slight green)
+3. **H3 Listings/km²** → **H3 Listings/Cell**: Significant divergence (many colored lines)
+
+Cell areas are shown in columns 1 and 4. Notice that A5 has consistent ~0.13 km² cells, while H3 varies from ~0.07-0.11 km².
+
+## The H3 Latitude Bias
+
+The scatterplot reveals the systematic nature of H3's bias:
+
+import Scatterplot from 'website-examples/airbnb-density/scatterplot';
+
+<div style={{margin: '20px 0'}}>
+  <Scatterplot />
+</div>
+
+**Key insight:** There's a clear correlation between H3 cell area and ranking shift:
+- Cities with **larger H3 cells** (higher latitudes) rank **higher** in listings/cell than in true density (positive values, green)
+- Cities with **smaller H3 cells** (lower latitudes) rank **lower** in listings/cell than in true density (negative values, red)
+
+This creates a predictable, latitude-dependent bias that can misrepresent true density patterns when comparing cities across different latitudes.
 
 ## Why This Matters
 
 When analyzing geospatial density:
+
 - **Use A5** when you need consistent, comparable density measurements across latitudes
 - **Be aware of H3 bias** when interpreting "per cell" metrics across different geographic regions
-- **Always normalize to area** (per km²) when using variable-area indices like H3
+- **Always normalize to area** (per km²) when using variable-area indices like H3 for fair comparisons
 
-This example demonstrates why equal-area indices like A5 are preferable for density analysis and fair geographic comparisons.
+Equal-area indices like A5 ensure that density metrics are fair and comparable regardless of geographic location.
 
-## Next Steps
+## Data Processing Overview
 
-- Try applying this analysis to other geospatial datasets (restaurants, POIs, population)
-- Explore how the bias manifests at different resolutions
-- Compare density patterns within a single latitude band (where H3 bias is minimal)
+The analysis involves:
+1. Downloading Airbnb listing data for ~120 global cities from Inside Airbnb
+2. Geocoding listings to A5 cells (resolution 14) and H3 cells (resolution 9)
+3. Aggregating to find the densest 10km² area per city
+4. Calculating rankings for both "listings per cell" and "listings per km²"
+5. Comparing how rankings differ between the two geospatial indexing systems
+
+This demonstrates the importance of equal-area properties in fair geospatial analysis.

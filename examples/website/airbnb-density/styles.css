@@ -56,3 +56,19 @@
   stroke-opacity: 0.4;
   transition: all 0.3s ease-in-out;
 }
+
+/* Visualization container constraints */
+.viz-container {
+  width: 100%;
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.viz-container svg {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+}
