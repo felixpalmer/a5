@@ -13,6 +13,7 @@
     "items": [
       "quickstart/duckdb",
       "quickstart/javascript",
+      "quickstart/postgresql",
       "quickstart/python",
       "quickstart/rust"
     ]

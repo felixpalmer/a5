@@ -22,6 +22,9 @@ For practical examples on how to use these tools, see the [Recipes](./recipes) s
 ### DuckDB
 📖 [Quickstart](../quickstart/duckdb.md) • 📦 [Extension](https://query.farm/duckdb_extension_a5.html) • 🔗 [Source](https://github.com/Query-farm/a5)
 
+### PostgreSQL
+📖 [Quickstart](../quickstart/postgresql.md) • 📦 [Extension](https://github.com/decision-labs/a5pg) • 🔗 [Source](https://github.com/decision-labs/a5pg)
+
 ### raster2dggs
 📖 [Quickstart](https://github.com/manaakiwhenua/raster2dggs?tab=readme-ov-file#installation) • 📦 [Package](https://pypi.org/project/raster2dggs/) • 🔗 [Source](https://github.com/manaakiwhenua/raster2dggs)
 
