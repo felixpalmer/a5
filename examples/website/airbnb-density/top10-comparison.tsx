@@ -45,12 +45,20 @@ function formatCityName(location: string): string {
 
 const Top10Comparison: React.FC = () => {
   const [data, setData] = useState<AirbnbData | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetch('/data/airbnb_density.json')
       .then(res => res.json())
       .then(setData)
       .catch(err => console.error('Error loading data:', err));
+  }, []);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   if (!data) {
@@ -68,7 +76,8 @@ const Top10Comparison: React.FC = () => {
   return (
     <div style={{
       display: 'flex',
-      gap: '40px',
+      flexDirection: isMobile ? 'column' : 'row',
+      gap: isMobile ? '20px' : '40px',
       margin: '30px 0',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif'
     }}>

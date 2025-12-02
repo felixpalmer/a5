@@ -63,7 +63,7 @@ const ComparisonView: React.FC = () => {
     const margin = {top: 60, right: 180, bottom: 20, left: 180};
     const width = Math.min(containerWidth, 1200) - margin.left - margin.right;
     const height = 50 + topCities.length * 25;
-    const colWidth = width / 3;
+    const colWidth = width;
 
     const svg = d3.select(svgRef.current)
       .attr('width', width + margin.left + margin.right)
@@ -72,29 +72,26 @@ const ComparisonView: React.FC = () => {
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const labels = ['A5\nListings / Cell', 'A5\nListings / km²', 'H3\nListings / km²', 'H3\nListings / Cell'];
+    const labels = ['A5 Cell Areas', 'H3 Cell Areas'];
 
     labels.forEach((label, i) => {
-      const lines = label.split('\n');
-      lines.forEach((line, j) => {
-        g.append('text')
-          .attr('class', 'column-label')
-          .attr('x', i * colWidth)
-          .attr('y', -30 + j * 15)
-          .attr('text-anchor', 'middle')
-          .text(line);
-      });
+      g.append('text')
+        .attr('class', 'column-label')
+        .attr('x', i * colWidth)
+        .attr('y', -30)
+        .attr('text-anchor', 'middle')
+        .text(label);
     });
 
     const nodes: any[] = [];
     const links: any[] = [];
 
+    // A5 column - sorted by listings per cell
     const a5ByListings = [...topCities].sort((a, b) => b.max_listings_per_cell - a.max_listings_per_cell);
     a5ByListings.forEach((city, i) => {
       nodes.push({
         id: `col1_${city.location}`,
         location: city.location,
-        value: city.max_listings_per_cell,
         cellArea: city.avg_cell_area_km2,
         rank: i + 1,
         column: 0,
@@ -102,58 +99,34 @@ const ComparisonView: React.FC = () => {
       });
     });
 
-    topCities.forEach((city, i) => {
+    // H3 column - sorted by listings per cell
+    const h3Sorted = h3Cities
+      .filter(c => topCities.some(tc => tc.location === c.location))
+      .sort((a, b) => b.max_listings_per_cell - a.max_listings_per_cell);
+
+    h3Sorted.forEach((city, i) => {
       nodes.push({
         id: `col2_${city.location}`,
         location: city.location,
-        value: city.max_density_per_km2,
+        cellArea: city.avg_cell_area_km2,
         rank: i + 1,
         column: 1,
         y: i * 25
       });
     });
 
-    const h3Sorted = h3Cities
-      .filter(c => topCities.some(tc => tc.location === c.location))
-      .sort((a, b) => b.max_density_per_km2 - a.max_density_per_km2);
-
-    h3Sorted.forEach((city, i) => {
-      nodes.push({
-        id: `col3_${city.location}`,
-        location: city.location,
-        value: city.max_density_per_km2,
-        rank: i + 1,
-        column: 2,
-        y: i * 25
-      });
+    // Create links between matching cities
+    a5ByListings.forEach(city => {
+      const sourceNode = nodes.find(n => n.column === 0 && n.location === city.location);
+      const targetNode = nodes.find(n => n.column === 1 && n.location === city.location);
+      if (sourceNode && targetNode) {
+        links.push({
+          source: sourceNode,
+          target: targetNode,
+          rankDiff: Math.abs(sourceNode.rank - targetNode.rank)
+        });
+      }
     });
-
-    const h3ByListings = [...h3Sorted].sort((a, b) => b.max_listings_per_cell - a.max_listings_per_cell);
-    h3ByListings.forEach((city, i) => {
-      nodes.push({
-        id: `col4_${city.location}`,
-        location: city.location,
-        value: city.max_listings_per_cell,
-        cellArea: city.avg_cell_area_km2,
-        rank: i + 1,
-        column: 3,
-        y: i * 25
-      });
-    });
-
-    for (let col = 0; col < 3; col++) {
-      topCities.forEach(city => {
-        const sourceNode = nodes.find(n => n.column === col && n.location === city.location);
-        const targetNode = nodes.find(n => n.column === col + 1 && n.location === city.location);
-        if (sourceNode && targetNode) {
-          links.push({
-            source: sourceNode,
-            target: targetNode,
-            rankDiff: Math.abs(sourceNode.rank - targetNode.rank)
-          });
-        }
-      });
-    }
 
     const linkGroup = g.append('g');
     links.forEach(link => {
@@ -172,7 +145,7 @@ const ComparisonView: React.FC = () => {
         .attr('data-location', link.source.location)
         .attr('d', path.toString())
         .attr('stroke', getRankChangeColor(link.rankDiff, link.source.rank, link.target.rank))
-        .attr('stroke-width', 1)
+        .attr('stroke-width', 4)
         .attr('stroke-opacity', 0.4)
         .attr('fill', 'none')
         .style('cursor', 'pointer')
@@ -182,10 +155,10 @@ const ComparisonView: React.FC = () => {
 
           g.selectAll('.link')
             .attr('stroke-opacity', function() {
-              return d3.select(this).attr('data-location') === location ? 1 : 0.1;
+              return d3.select(this).attr('data-location') === location ? 1 : 0.2;
             })
             .attr('stroke-width', function() {
-              return d3.select(this).attr('data-location') === location ? 3 : 1;
+              return d3.select(this).attr('data-location') === location ? 8 : 4;
             });
 
           g.selectAll('text')
@@ -199,12 +172,12 @@ const ComparisonView: React.FC = () => {
             });
         })
         .on('mouseout', function() {
-          g.selectAll('.link').attr('stroke-opacity', 0.4).attr('stroke-width', 1);
+          g.selectAll('.link').attr('stroke-opacity', 0.4).attr('stroke-width', 4);
           g.selectAll('text').style('font-weight', 'normal').style('opacity', 1);
         });
     });
 
-    for (let col = 0; col < 4; col++) {
+    for (let col = 0; col < 2; col++) {
       const columnNodes = g.append('g')
         .selectAll('g')
         .data(nodes.filter(n => n.column === col))
@@ -215,18 +188,14 @@ const ComparisonView: React.FC = () => {
         .attr('x', -5).attr('y', 0).attr('width', 10).attr('height', 20).attr('fill', '#000');
 
       columnNodes.append('text')
-        .attr('x', col < 2 ? -10 : 10)
+        .attr('x', col === 0 ? -10 : 10)
         .attr('y', 10)
         .attr('dy', '.35em')
-        .attr('text-anchor', col < 2 ? 'end' : 'start')
+        .attr('text-anchor', col === 0 ? 'end' : 'start')
         .style('font-size', '11px')
         .text(d => {
           const cityName = formatCityName(d.location);
-          if (col === 0 || col === 3) {
-            return `${cityName} (${d.value.toFixed(1)} / ${d.cellArea.toFixed(2)}km²)`;
-          } else {
-            return `${cityName} (${d.value.toFixed(1)})`;
-          }
+          return `${cityName} (${d.cellArea.toFixed(2)}km²)`;
         });
     }
 

@@ -40,7 +40,7 @@ import SingleH3 from 'website-examples/airbnb-density/single-h3';
 
 ## Direct Comparison: A5 vs H3
 
-When we compare both indices side-by-side, we can see how rankings evolve from A5 → H3:
+When we compare both indices side-by-side, we can see how cell areas affect the rankings:
 
 import Comparison from 'website-examples/airbnb-density/comparison';
 
@@ -48,12 +48,9 @@ import Comparison from 'website-examples/airbnb-density/comparison';
   <Comparison />
 </div>
 
-The 4-column diagram shows:
-1. **A5 Listings/Cell** → **A5 Listings/km²**: Identical (all black lines)
-2. **A5 Listings/km²** → **H3 Listings/km²**: Similar rankings (mostly black/slight green)
-3. **H3 Listings/km²** → **H3 Listings/Cell**: Significant divergence (many colored lines)
+This 2-column diagram compares cell areas for cities ranked by listings per cell. The colored lines show how rankings shift between A5 and H3 when using the naive "listings per cell" metric.
 
-Cell areas are shown in columns 1 and 4. Notice that A5 has consistent ~0.13 km² cells, while H3 varies from ~0.07-0.11 km².
+**Key observation**: A5 has consistent ~0.13 km² cells across all cities, while H3 cell areas vary significantly from ~0.07 km² to ~0.13 km² depending on latitude. This variation in cell size is what causes the ranking distortions shown by the colored lines.
 
 ## The H3 Latitude Bias
 
