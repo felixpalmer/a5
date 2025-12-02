@@ -237,7 +237,7 @@ const ComparisonView: React.FC = () => {
   }
 
   return (
-    <CollapsibleViz defaultHeight={400}>
+    <CollapsibleViz>
       <div ref={containerRef} className="viz-container">
         <svg ref={svgRef} />
       </div>

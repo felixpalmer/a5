@@ -6,6 +6,14 @@ This recipe demonstrates how to analyze Airbnb listing density across global cit
 
 We analyze [Inside Airbnb](https://insideairbnb.com/get-the-data/) listing data aggregated using both A5 and H3 indices to compare density metrics across ~120 global cities. The analysis reveals a fundamental difference: **A5's equal-area cells provide consistent density rankings**, while **H3's variable cell areas introduce systematic latitude-dependent bias**.
 
+import Top10Comparison from 'website-examples/airbnb-density/top10-comparison';
+
+<div style={{margin: '20px 0'}}>
+  <Top10Comparison />
+</div>
+
+**What's going on?** When using the naive "listings per cell" metric, the rankings change dramatically. Hawaii jumps from #5 to #3, while Buenos Aires completely disappears from the top 10! London also drops out of the top 10, replaced by Sicily and Athens. Why does this happen? H3's variable cell sizes mean that higher-latitude cities (with larger cells) artificially appear to have higher density when you simply count items per cell without normalizing by area. A5's equal-area cells avoid this problem entirely.
+
 ## A5: Equal-Area Consistency
 
 With A5, all cells at a given resolution have the same area (~0.13 km² at resolution 14). This means that rankings by "listings per cell" and "listings per km²" are **identical** — both metrics represent the same thing.
@@ -20,7 +28,7 @@ import SingleA5 from 'website-examples/airbnb-density/single-a5';
 
 ## H3: Variable-Area Bias
 
-With H3, cell areas vary by latitude (average ~0.09 km² at resolution 9, but ranges from ~0.07 km² to ~0.11 km²). This creates **different rankings** for "listings per cell" vs "listings per km²".
+With H3, cell areas vary by latitude (average ~0.09 km² at resolution 9, but ranges from ~0.07 km² to ~0.13 km²). This creates **different rankings** for "listings per cell" vs "listings per km²".
 
 import SingleH3 from 'website-examples/airbnb-density/single-h3';
 
