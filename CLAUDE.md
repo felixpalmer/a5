@@ -60,7 +60,24 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 - Use `getResolution()` to check the resolution of cells in existing data files
 - Example resolution levels:
   - Road safety example: resolution 13 (~50k cells for UK dataset)
-- **IMPORTANT**: The website development server is ALWAYS running. NEVER attempt to start it with `yarn start` or similar commands. Just use Chrome DevTools to test changes.
+
+## Using Chrome DevTools MCP for Testing
+
+The website development server is ALWAYS running on `localhost:3000`. Use Chrome DevTools MCP to test changes:
+
+**Screenshot Management:**
+- Name all screenshots with prefix `claude-screenshot-` followed by a descriptive suffix
+- Save screenshots to `website/` directory (relative to project root)
+- Clean up old `claude-screenshot-*.png` files from previous tasks before creating new ones
+- Keep only screenshots relevant to the current task for debugging
+
+**Testing guidelines:**
+- NEVER attempt to start the dev server with `yarn start` or similar commands
+- Assume the user has the website running at `localhost:3000`
+- Reload the page after making changes to see updates
+- Take snapshots for DOM inspection when needed
+- Use screenshots primarily for visual verification and debugging
+- Clean up screenshots when done with a task
 
 ## Polyglot Mirroring
 A5 uses **Polyglot Mirroring** - maintaining functionally equivalent implementations across TypeScript, Python, and Rust. See [docs/ecosystem/polyglot-mirroring.md](docs/ecosystem/polyglot-mirroring.md) for details.
