@@ -1,6 +1,7 @@
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import Sankey from './sankey';
+import {formatCityName} from './utils';
 import './styles.css';
 
 interface CityData {
@@ -13,13 +14,6 @@ interface CityData {
 interface AirbnbData {
   a5: CityData[];
   h3: CityData[];
-}
-
-function formatCityName(location: string): string {
-  return location.split('/').pop()!
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 }
 
 const SingleA5View: React.FC = () => {

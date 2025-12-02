@@ -83,37 +83,3 @@
   transition: max-height 0.3s ease-in-out;
 }
 
-.collapsible-viz-fade {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 150px;
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.95) 70%, rgba(255,255,255,1) 100%);
-  pointer-events: none;
-}
-
-.collapsible-viz-toggle {
-  display: inline-block;
-  margin: 10px auto;
-  padding: 10px 24px;
-  background: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.collapsible-viz-toggle:hover {
-  background: #1976D2;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-}
-
-.collapsible-viz-toggle:active {
-  background: #0D47A1;
-  transform: translateY(1px);
-}

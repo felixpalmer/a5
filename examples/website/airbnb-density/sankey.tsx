@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import * as d3 from 'd3';
 import CollapsibleViz from './collapsible-viz';
+import {formatCityName} from './utils';
 import './styles.css';
 
 interface CityData {
@@ -22,13 +23,6 @@ interface SankeyProps {
   getRightData: (data: AirbnbData) => CityData[];
   formatLeftLabel: (city: CityData) => string;
   formatRightLabel: (city: CityData) => string;
-}
-
-function formatCityName(location: string): string {
-  return location.split('/').pop()!
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 }
 
 function getRankChangeColor(rankDiff: number, sourceRank: number, targetRank: number): string {

@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import {formatCityName} from './utils';
 import './styles.css';
 
 interface CityData {
@@ -34,13 +35,6 @@ const countryFlags: {[key: string]: string} = {
 function getCountryFromLocation(location: string): string {
   const parts = location.split('/');
   return parts[0] || '';
-}
-
-function formatCityName(location: string): string {
-  return location.split('/').pop()!
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 }
 
 const Top10Comparison: React.FC = () => {
