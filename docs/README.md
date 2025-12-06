@@ -22,6 +22,8 @@ Like other [DGGSs](/docs/technical/dggs), A5 can be used for indexing, spatial j
 - Very high resolution of 30mm² at final resolution level, encoded as a 64-bit integer. 
 - Single cell topology type, with minimal shape distortion across the globe.
 
+For an in-depth comparison to H3, see [A5 vs H3](/docs/recipes/a5-vs-h3)
+
 ## Geometric Construction
 
 [DGGSs](/docs/technical/dggs) are generally based on a planar cell tiling which is applied to the sides of a [platonic solid](/docs/technical/platonic-solids), before being projected onto a sphere.
