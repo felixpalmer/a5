@@ -1,18 +1,18 @@
-# A5 vs H3 comparison
+# A5 vs H3 Comparison
 
-The analysis ranks locations worldwide to establish which have the highest density of Airbnb listings. It is an extension of the idea illustrated in the [Airbnb example](/examples/airbnb).
+This analysis ranks locations worldwide to identify which have the highest density of Airbnb listings. It extends the concept illustrated in the [Airbnb example](/examples/airbnb).
 
-We analyze [Inside Airbnb](https://insideairbnb.com/get-the-data/) listing data aggregated using an equal-area grid system (A5) compared to a non-equal-area system (H3).
+We analyze [Inside Airbnb](https://insideairbnb.com/get-the-data/) listing data aggregated using an equal-area grid system (A5) compared to a variable-area system (H3).
 
 The analysis across 120 global locations reveals a fundamental difference: **A5's equal-area cells provide consistent density rankings**, while **H3's variable cell areas introduce systematic bias**.
 
 ## Method
 
-- Aggregate listing data into roughly 0.1 km² cells using both systems (A5 / H3)
-- For each location, order the cells by count to obtain density values per cell
-- For each location, take top N cells (by density) such that the area sums to 10 km²
-- Sum the count over N cells for each location to obtain density value per location
-- Order locations by density to obtain global ordering
+- Aggregate listing data into cells of roughly 0.1 km² using both systems (A5 and H3)
+- For each location, order cells by listing count to obtain density values per cell
+- For each location, select the top N cells (by density) such that their combined area totals 10 km²
+- Sum the listing count across these N cells to obtain a density value per location
+- Rank locations by density to establish a global ordering
 
 ## Results
 
@@ -24,17 +24,17 @@ import Top10Comparison from 'website-examples/airbnb-density/top10-comparison';
 
 Notice how Buenos Aires has disappeared in the H3 ranking, and Hawaii and Rome have swapped places. Why is this happening?
 
-## Cause: Density calculation
+## Cause: Density Calculation
 
-The root cause is that when talking about density, our units need to be **listings/km²**. For an equal-area system like A5 this is equivalent to **listings/cell** (up to a constant scaling factor). However for other systems like H3 or S2, which have variable cell areas it is not.
+The root cause is that density measurements require units of **listings/km²**. For an equal-area system like A5, this is equivalent to **listings/cell** (up to a constant scaling factor). However, for variable-area systems like H3 or S2, this equivalence does not hold.
 
-It is a common error with H3 to assume that the cells have equal areas and to treat them as such. In fact to obtain a correct result, the density should be normalized to be **listings/km²** rather than **listings/cell**, but in practice this is often omitted.
+A common error with H3 is to assume cells have equal areas and treat them as such. To obtain accurate results, density must be normalized to **listings/km²** rather than **listings/cell**, but this normalization is often omitted in practice.
 
-The benefit of an equal-area system is that there is no need to normalize, which simplifies the analysis and reduces the scope for error.
+The benefit of an equal-area system is that normalization is unnecessary, which simplifies analysis and reduces the potential for errors.
 
-## Density comparisons
+## Density Comparisons
 
-The following sections dive deeper into how the systems calculate density, to show that the above effect is not just theoritical, but has a real impact on the result of our analysis.
+The following sections examine how the systems calculate density, demonstrating that the above effect is not merely theoretical but has a measurable impact on analysis results.
 
 ### A5: Equal-Area Consistency
 
@@ -48,11 +48,11 @@ import SingleA5 from 'website-examples/airbnb-density/single-a5';
 
 ### H3: Variable-Area Bias
 
-With H3, cell areas vary by across the globe. To understand how exactly, see the [Area Variance](examples/area) example.
+With H3, cell areas vary across the globe. To understand the details, see the [Area Variance](/examples/area) example.
 
-_Note: It is a common misconception that H3 cell areas vary by latitude and thus are "only small on the north pole/equator". This is completely wrong_
+_Note: A common misconception is that H3 cell areas vary predictably by latitude (e.g., "cells are only small near the poles/equator"). This is incorrect - variation occurs across all latitudes._
 
-In this analysis, we have used H3 cells at resolution 9. The cells have an **average area** of ~0.09 km², but vary from ~0.07 km² to ~0.13 km². These are not theoretical limits, the full range is present in our real-world data.
+In this analysis, we used H3 cells at resolution 9. The cells have an **average area** of ~0.09 km², but range from ~0.07 km² to ~0.13 km². These are not theoretical limits - the full range appears in our real-world dataset.
 
 Due to size variation, we get a different ordering depending on whether we order by **listings/cell** vs **listings/km²**.
 
@@ -74,7 +74,7 @@ import Comparison from 'website-examples/airbnb-density/comparison';
   <Comparison />
 </div>
 
-**Key observation**: A5 has consistent ~0.13 km² cells across all cities, while H3 cell areas vary significantly from ~0.07 km² to ~0.13 km². This leads to Buenos Aires dropping down the ranking due to the small cell sizes there (0.07 km²), while Hawaii is pushed up due to a large cell size (0.12 km²).
+**Key observation**: A5 maintains consistent ~0.13 km² cells across all cities, while H3 cell areas vary significantly from ~0.07 km² to ~0.13 km². This causes Buenos Aires to drop in the rankings due to smaller cell sizes there (~0.07 km²), while Hawaii ranks higher due to larger cell sizes (~0.12 km²).
 
 
 ### H3 Size Bias
@@ -89,14 +89,14 @@ import Scatterplot from 'website-examples/airbnb-density/scatterplot';
 
 ## Why This Matters
 
-The above example illustrates a clear case where variable cell sizes will result in an analysis producing an inaccurate result. While the effect may not always be so strong, it is always there - so it is good to be mindful of it when using variable-area system (and normalizing by cell area), or to use an equal-area system for analysis involving density.
+The above example demonstrates how variable cell sizes can produce inaccurate analysis results. While the effect may not always be this pronounced, it is always present. When performing density analysis, either use an equal-area system or carefully normalize by cell area when using variable-area systems.
 
-### Other examples
+### Other Examples
 
-Some examples where error will be introduced for a similar reason:
+Similar errors can occur in:
 
-- **H3 global population maps**. Aggregating population per-cell and then directly applying a gradient is inaccurate (unless normalized by cell area)
-- **Bucketing using S2**. Assigning land-use values to cells and then producing a histogram is inaccurate as the bucket (cell) sizes are not uniform
+- **H3 global population maps**: Aggregating population per cell and directly applying a color gradient is inaccurate unless normalized by cell area
+- **S2 bucketing**: Assigning land-use values to cells and producing histograms is inaccurate because bucket (cell) sizes are non-uniform
 
 ### Takeaway
 
