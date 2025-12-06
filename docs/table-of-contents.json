@@ -23,6 +23,7 @@
     "label": "Recipes",
     "items": [
       "recipes/README",
+      "recipes/a5-vs-h3",
       "recipes/paris-restaurant-density"
     ]
   },
