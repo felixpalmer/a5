@@ -19,8 +19,8 @@ interface AirbnbData {
 const SingleH3View: React.FC = () => {
   return (
     <Sankey
-      leftLabel="H3: Ranked by Listings / km²"
-      rightLabel="H3: Ranked by Listings / Cell"
+      leftLabel="Ranked by Listings / km²"
+      rightLabel="Ranked by Listings / Cell"
       getLeftData={(data: AirbnbData) => {
         return [...data.h3].sort((a, b) => b.max_density_per_km2 - a.max_density_per_km2);
       }}

@@ -68,10 +68,16 @@ const Sankey: React.FC<SankeyProps> = ({
     d3.select(svgRef.current).selectAll('*').remove();
 
     const containerWidth = containerRef.current.clientWidth;
-    const margin = {top: 60, right: 180, bottom: 20, left: 180};
+    const isMobile = containerWidth < 768;
+    const margin = isMobile
+      ? {top: 50, right: 100, bottom: 20, left: 100}
+      : {top: 60, right: 180, bottom: 20, left: 180};
     const width = Math.min(containerWidth, 1200) - margin.left - margin.right;
     const height = 50 + leftCities.length * 25;
-    const colWidth = width;
+    // Make the sankey narrower to leave room for labels, but center it
+    const sankeyWidth = isMobile ? width * 0.5 : width * 0.6;
+    const sankeyOffset = (width - sankeyWidth) / 2;
+    const colWidth = sankeyWidth;
 
     const svg = d3.select(svgRef.current)
       .attr('width', width + margin.left + margin.right)
@@ -83,16 +89,18 @@ const Sankey: React.FC<SankeyProps> = ({
     // Add column labels
     g.append('text')
       .attr('class', 'column-label')
-      .attr('x', 0)
+      .attr('x', -margin.left)
       .attr('y', -30)
-      .attr('text-anchor', 'middle')
+      .attr('text-anchor', 'start')
+      .style('font-size', isMobile ? '11px' : '14px')
       .text(leftLabel);
 
     g.append('text')
       .attr('class', 'column-label')
-      .attr('x', colWidth)
+      .attr('x', width + margin.right)
       .attr('y', -30)
-      .attr('text-anchor', 'middle')
+      .attr('text-anchor', 'end')
+      .style('font-size', isMobile ? '11px' : '14px')
       .text(rightLabel);
 
     const nodes: any[] = [];
@@ -106,6 +114,7 @@ const Sankey: React.FC<SankeyProps> = ({
         data: city,
         rank: i + 1,
         column: 0,
+        x: sankeyOffset,
         y: i * 25
       });
     });
@@ -118,6 +127,7 @@ const Sankey: React.FC<SankeyProps> = ({
         data: city,
         rank: i + 1,
         column: 1,
+        x: sankeyOffset + colWidth,
         y: i * 25
       });
     });
@@ -138,9 +148,9 @@ const Sankey: React.FC<SankeyProps> = ({
     const linkGroup = g.append('g');
     links.forEach(link => {
       const path = d3.path();
-      const x0 = link.source.column * colWidth;
+      const x0 = link.source.x;
       const y0 = link.source.y + 10;
-      const x1 = link.target.column * colWidth;
+      const x1 = link.target.x;
       const y1 = link.target.y + 10;
       const xi = d3.interpolateNumber(x0, x1);
       const x2 = xi(0.5), x3 = xi(0.5);
@@ -189,7 +199,7 @@ const Sankey: React.FC<SankeyProps> = ({
         .selectAll('g')
         .data(nodes.filter(n => n.column === col))
         .join('g')
-        .attr('transform', d => `translate(${d.column * colWidth}, ${d.y})`);
+        .attr('transform', d => `translate(${d.x}, ${d.y})`);
 
       columnNodes.append('rect')
         .attr('x', -5).attr('y', 0).attr('width', 10).attr('height', 20).attr('fill', '#000');
@@ -199,7 +209,7 @@ const Sankey: React.FC<SankeyProps> = ({
         .attr('y', 10)
         .attr('dy', '.35em')
         .attr('text-anchor', col === 0 ? 'end' : 'start')
-        .style('font-size', '11px')
+        .style('font-size', isMobile ? '9px' : '11px')
         .text(d => col === 0 ? formatLeftLabel(d.data) : formatRightLabel(d.data));
     }
 

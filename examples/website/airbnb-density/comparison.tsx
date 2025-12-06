@@ -19,8 +19,8 @@ interface AirbnbData {
 const ComparisonView: React.FC = () => {
   return (
     <Sankey
-      leftLabel="A5 Cell Areas"
-      rightLabel="H3 Cell Areas"
+      leftLabel="A5 (constant area)"
+      rightLabel="H3 (variable area)"
       getLeftData={(data: AirbnbData) => {
         // Get top cities by A5 density
         const topCities = [...data.a5]

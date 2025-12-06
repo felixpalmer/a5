@@ -19,8 +19,8 @@ interface AirbnbData {
 const SingleA5View: React.FC = () => {
   return (
     <Sankey
-      leftLabel="A5: Ranked by Listings / km²"
-      rightLabel="A5: Ranked by Listings / Cell"
+      leftLabel="Ranked by Listings / km²"
+      rightLabel="Ranked by Listings / Cell"
       getLeftData={(data: AirbnbData) => {
         return [...data.a5].sort((a, b) => b.max_density_per_km2 - a.max_density_per_km2);
       }}
