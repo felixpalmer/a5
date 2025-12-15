@@ -32,6 +32,11 @@ For practical examples on how to use these tools, see the [Recipes](./recipes) s
 
 📖 [Guide](https://vgridtools.gishub.vn/) • 📦 [Plugin](https://plugins.qgis.org/plugins/vgridtools/) • 🔗 [Source](https://github.com/opengeoshub/vgridtools)
 
+## Products
+
+### PowerBI
+📖 [Example](https://icon-map.com/blog/30-day-map-challenge-day-17-a-new-tool.html) • 📦 [Plugin](https://marketplace.microsoft.com/en-us/product/power-bi-visuals/tekantislimited1706613112857.iconmap_slicer) • 🔗 [Overview](https://icon-map.com/products/slicer/)
+
 ### Other
 - [geotoolkit](https://github.com/Geomatys/geotoolkit) Java language library for developing geospatial applications with support for [A5](https://github.com/Geomatys/geotoolkit/tree/main/geotk-dggs/src/main/java/org/geotoolkit/dggs/a5)
 - [vgrid libraries](https://github.com/opengeoshub) A5 tools & utilies for [MapLibre](https://gishub.vn/pages/dggs/a5/), [pandas](https://vgridpandas.gishub.vn/notebooks/03_a5/), [QGIS](https://github.com/opengeoshub/vgridtools) & more

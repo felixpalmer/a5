@@ -53,6 +53,7 @@
     "label": "Ecosystem",
     "items": [
       "ecosystem/README",
+      "ecosystem/podcasts-and-talks",
       "ecosystem/polyglot-mirroring"
     ]
   }
