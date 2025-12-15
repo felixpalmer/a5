@@ -53,6 +53,7 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 - **Cell IDs**: Always use bigint internally, convert to hex with `u64ToHex()` / `hexToU64()`
 - **Branded Types**: LonLat and other coordinate types are branded - cast with `as LonLat`, not type construction
 - **Build**: Run `yarn build` before testing example CLIs
+- **Documentation**: When adding new documentation pages, update `docs/table-of-contents.json` to add them to the sidebar navigation
 
 ## Website Examples
 - Website example data files go in `/website/static/data/` (NOT in `/examples/website/*/public/data/`)
