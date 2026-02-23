@@ -7,17 +7,11 @@ import { Origin } from './utils';
 import { origins } from "./origin";
 
 export const FIRST_HILBERT_RESOLUTION = 2;
-export const MAX_RESOLUTION = 30;
-export const HILBERT_START_BIT = 58n; // 64 - 6 bits for origin & segment
+const MAX_RESOLUTION = 30;
+const HILBERT_START_BIT = 58n; // 64 - 6 bits for origin & segment
 
 // First 6 bits 0, remaining 58 bits 1
-export const REMOVAL_MASK = 0x3ffffffffffffffn;
-
-// First 6 bits 1, remaining 58 bits 0
-export const ORIGIN_SEGMENT_MASK = 0xfc00000000000000n;
-
-// All 64 bits 1
-export const ALL_ONES = 0xffffffffffffffffn;
+const REMOVAL_MASK = 0x3ffffffffffffffn;
 
 // Abstract cell that contains the whole world, has resolution -1 and 12 children,
 // which are the res0 cells.
@@ -263,7 +257,7 @@ export function isFirstChild(index: bigint, resolution?: number): boolean {
 }
 
 /**
- * Difference between two neighbouring sibling cells at a given resolution
+ * Difference between two neighboring sibling cells at a given resolution
  */
 export function getStride(resolution: number): bigint {
   // Both level 0 & 1 just write values 0-11 or 0-59 to the first 6 bits

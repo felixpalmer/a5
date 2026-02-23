@@ -6,7 +6,7 @@ import { quat, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Radians, Spherical } from "./coordinate-systems";
 import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from './constants';
-import { Orientation } from "./hilbert";
+import type { Orientation } from "../lattice";
 import type { Origin, OriginId } from './utils';
 import { quaternions } from './dodecahedron-quaternions';
 

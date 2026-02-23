@@ -5,8 +5,8 @@
 // Re-export public API
 export * from './index';
 
-export {origins} from './core/origin';
-export {serialize, WORLD_CELL} from './core/serialization';
+export {origins, segmentToQuintant, quintantToSegment, haversine} from './core/origin';
+export {serialize, deserialize, WORLD_CELL, FIRST_HILBERT_RESOLUTION} from './core/serialization';
 export {quaternions} from './core/dodecahedron-quaternions';
 export {
   φ,
@@ -26,6 +26,19 @@ export {
 
 // Export tiling functions for testing
 export { getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPolar } from './core/tiling';
+export { isNeighbor } from './traversal/neighbors'
+
+// Export Hilbert functions for testing
+export { sToAnchor, anchorToS, IJToKJ, IJToS, computeQ, offsetFlipsToAnchor, shiftDigits, IJToQuaternary, quaternaryToKJ, quaternaryToFlips } from './lattice';
+export { tripleParity, tripleInBounds, tripleToS, anchorToTriple, tripleToAnchor } from './lattice';
+export type { Anchor, Triple } from './lattice';
+
+// Export neighbor functions for testing
+export { getCellNeighbors } from './traversal/quintant-neighbors';
+export { getGlobalCellNeighbors } from './traversal/global-neighbors';
+
+// Export cap helper functions for testing
+export { metersToH, estimateCellRadius, pickCoarseResolution } from './traversal/cap';
 
 // Export projections for testing
 export { GnomonicProjection } from './projections/gnomonic';

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPolar } from 'a5/core/tiling';
 import fixtures from './fixtures/tiling.json';
-import { Anchor } from 'a5/core/hilbert';
+import type { Anchor } from 'a5/lattice';
 import type { Polar } from 'a5/core/coordinate-systems';
 
 describe('tiling', () => {
@@ -92,7 +92,7 @@ describe('tiling', () => {
         const { input, output } = testCase;
         const { polar } = input;
         const { quintant } = output;
-        
+
         const result = getQuintantPolar(polar as Polar);
         expect(result).toBe(quintant);
       });

@@ -158,41 +158,6 @@
   ],
   "numChildren": [
     {
-      "parentResolution": -1,
-      "childResolution": -1,
-      "numChildren": 1
-    },
-    {
-      "parentResolution": -1,
-      "childResolution": 0,
-      "numChildren": 12
-    },
-    {
-      "parentResolution": -1,
-      "childResolution": 1,
-      "numChildren": 60
-    },
-    {
-      "parentResolution": -1,
-      "childResolution": 2,
-      "numChildren": 240
-    },
-    {
-      "parentResolution": -1,
-      "childResolution": 3,
-      "numChildren": 960
-    },
-    {
-      "parentResolution": -1,
-      "childResolution": 4,
-      "numChildren": 3840
-    },
-    {
-      "parentResolution": -1,
-      "childResolution": 5,
-      "numChildren": 15360
-    },
-    {
       "parentResolution": 0,
       "childResolution": 0,
       "numChildren": 1
@@ -218,6 +183,11 @@
       "numChildren": 320
     },
     {
+      "parentResolution": 0,
+      "childResolution": 5,
+      "numChildren": 1280
+    },
+    {
       "parentResolution": 1,
       "childResolution": 1,
       "numChildren": 1
@@ -236,6 +206,16 @@
       "parentResolution": 1,
       "childResolution": 4,
       "numChildren": 64
+    },
+    {
+      "parentResolution": 1,
+      "childResolution": 5,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 1,
+      "childResolution": 6,
+      "numChildren": 1024
     },
     {
       "parentResolution": 2,
@@ -263,6 +243,11 @@
       "numChildren": 256
     },
     {
+      "parentResolution": 2,
+      "childResolution": 7,
+      "numChildren": 1024
+    },
+    {
       "parentResolution": 3,
       "childResolution": 3,
       "numChildren": 1
@@ -279,32 +264,227 @@
     },
     {
       "parentResolution": 3,
-      "childResolution": 10,
-      "numChildren": 16384
+      "childResolution": 6,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 3,
+      "childResolution": 7,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 3,
+      "childResolution": 8,
+      "numChildren": 1024
+    },
+    {
+      "parentResolution": 4,
+      "childResolution": 4,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 4,
+      "childResolution": 5,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 4,
+      "childResolution": 6,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 4,
+      "childResolution": 7,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 4,
+      "childResolution": 8,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 4,
+      "childResolution": 9,
+      "numChildren": 1024
     },
     {
       "parentResolution": 5,
-      "childResolution": 3,
-      "numChildren": 0
+      "childResolution": 5,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 5,
+      "childResolution": 6,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 5,
+      "childResolution": 7,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 5,
+      "childResolution": 8,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 5,
+      "childResolution": 9,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 5,
+      "childResolution": 10,
+      "numChildren": 1024
+    },
+    {
+      "parentResolution": 6,
+      "childResolution": 6,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 6,
+      "childResolution": 7,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 6,
+      "childResolution": 8,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 6,
+      "childResolution": 9,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 6,
+      "childResolution": 10,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 6,
+      "childResolution": 11,
+      "numChildren": 1024
+    },
+    {
+      "parentResolution": 7,
+      "childResolution": 7,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 7,
+      "childResolution": 8,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 7,
+      "childResolution": 9,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 7,
+      "childResolution": 10,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 7,
+      "childResolution": 11,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 7,
+      "childResolution": 12,
+      "numChildren": 1024
+    },
+    {
+      "parentResolution": 8,
+      "childResolution": 8,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 8,
+      "childResolution": 9,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 8,
+      "childResolution": 10,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 8,
+      "childResolution": 11,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 8,
+      "childResolution": 12,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 8,
+      "childResolution": 13,
+      "numChildren": 1024
+    },
+    {
+      "parentResolution": 9,
+      "childResolution": 9,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 9,
+      "childResolution": 10,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 9,
+      "childResolution": 11,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 9,
+      "childResolution": 12,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 9,
+      "childResolution": 13,
+      "numChildren": 256
+    },
+    {
+      "parentResolution": 9,
+      "childResolution": 14,
+      "numChildren": 1024
     },
     {
       "parentResolution": 10,
-      "childResolution": 5,
-      "numChildren": 0
+      "childResolution": 10,
+      "numChildren": 1
+    },
+    {
+      "parentResolution": 10,
+      "childResolution": 11,
+      "numChildren": 4
+    },
+    {
+      "parentResolution": 10,
+      "childResolution": 12,
+      "numChildren": 16
+    },
+    {
+      "parentResolution": 10,
+      "childResolution": 13,
+      "numChildren": 64
+    },
+    {
+      "parentResolution": 10,
+      "childResolution": 14,
+      "numChildren": 256
     },
     {
       "parentResolution": 10,
       "childResolution": 15,
-      "numChildren": 1024
-    },
-    {
-      "parentResolution": 15,
-      "childResolution": 20,
-      "numChildren": 1024
-    },
-    {
-      "parentResolution": 20,
-      "childResolution": 25,
       "numChildren": 1024
     }
   ],

@@ -157,8 +157,7 @@ const dodecahedronQuaternionsData = {
   },
   validationTests,
   metadata: {
-    totalQuaternions: quaternions.length,
-    generatedAt: new Date().toISOString()
+    totalQuaternions: quaternions.length
   }
 };
 

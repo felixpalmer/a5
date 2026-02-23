@@ -5,17 +5,16 @@
 import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Face, LonLat } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toCartesian, toFace, toLonLat, toSpherical, toPolar, normalizeLongitudes } from "./coordinate-transforms";
+import type { Face, LonLat, Spherical } from "./coordinate-systems";
+import { FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { DodecahedronProjection } from "../projections/dodecahedron";
 import { A5Cell } from "./utils";
 import { PentagonShape } from "../geometry/pentagon";
 import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
-import { IJToS, sToAnchor } from "./hilbert";
+import { IJToS, sToAnchor } from "../lattice";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./serialization";
-import { SphericalPolygonShape } from "../geometry/spherical-polygon";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -72,7 +71,7 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
 }
 
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
-// Thus this function only returns an cell nearby, and we need to search the neighbourhood to find the correct cell
+// Thus this function only returns an cell nearby, and we need to search the neighborhood to find the correct cell
 // TODO: Implement a more accurate function
 function _lonLatToEstimate(lonLat: LonLat, resolution: number): A5Cell {
   const spherical = fromLonLat(lonLat);
@@ -118,16 +117,19 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
   return getPentagonVertices(hilbertResolution, quintant, anchor);
 }
 
+export function cellToSpherical(cell: bigint): Spherical {
+  const {S, segment, origin, resolution} = deserialize(cell);
+  const pentagon = _getPentagon({S, segment, origin, resolution});
+  return dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);
+}
+
 export function cellToLonLat(cell: bigint): LonLat {
   // WORLD_CELL represents the entire world, return [0, 0] as a reasonable default
   if (cell === WORLD_CELL) {
     return [0, 0] as LonLat;
   }
 
-  const {S, segment, origin, resolution} = deserialize(cell);
-  const pentagon = _getPentagon({S, segment, origin, resolution});
-  const point = dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);
-  return toLonLat(point);
+  return toLonLat(cellToSpherical(cell));
 }
 
 type CellToBoundaryOptions = {

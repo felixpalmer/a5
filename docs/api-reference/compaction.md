@@ -84,6 +84,7 @@ console.log(getResolution(expanded[0]));  // 5
 - Cells already at the target resolution are passed through unchanged
 - Attempting to uncompact to a coarser resolution throws an error
 - The expansion is complete - every descendant cell at the target resolution is included
+- **Ordering property**: If the input is sorted, the output is also sorted. A5 cell IDs encode the origin/quintant in the high bits with the Hilbert curve position below, so all children of a cell form a contiguous, ordered block in ID space. This means `uncompact` on a sorted compacted set produces sorted output without requiring a re-sort, which is useful for large result sets
 
 ### Working with BigUint64Array
 

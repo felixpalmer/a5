@@ -10,7 +10,8 @@ export default defineConfig({
   resolve: {
     alias: {
       'a5': path.resolve(__dirname, 'modules'),
-      'a5/core': path.resolve(__dirname, 'modules/core')
+      'a5/core': path.resolve(__dirname, 'modules/core'),
+      'a5/traversal': path.resolve(__dirname, 'modules/traversal')
     }
   }
 }) 

@@ -7,7 +7,8 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 import { Pentagon, PentagonShape } from "../geometry/pentagon";
 import { BASIS, PENTAGON, TRIANGLE, v, w } from "./pentagon";
 import { TWO_PI_OVER_5 } from "./constants";
-import { NO, Anchor, YES } from "./hilbert";
+import type { Anchor } from "../lattice";
+import { NO, YES } from "../lattice";
 import { Polar } from "./coordinate-systems";
 
 const TRIANGLE_MODE = false;
@@ -40,21 +41,20 @@ export function getPentagonVertices(resolution: number, quintant: number, anchor
   vec2.transformMat2(translation, anchor.offset, BASIS);
 
   // Apply transformations based on anchor properties
-  if (anchor.flips[0] === NO && anchor.flips[1] === YES) {
+  if (anchor.flips[0] === NO && anchor.flips[1] === YES) { // F == 0!
     pentagon.rotate180();
   }
 
-  const {k} = anchor;
+  const {q} = anchor;
   const F = anchor.flips[0] + anchor.flips[1];
   if (
     // Orient last two pentagons when both or neither flips are YES
-    ((F === -2 || F === 2) && k > 1) ||
+    ((F === -2 || F === 2) && q > 1) ||
     // Orient first & last pentagons when only one of flips is YES
-    (F === 0 && (k === 0 || k === 3))
+    (F === 0 && (q === 0 || q === 3))
   ) {
     pentagon.reflectY();
   }
-
   if (anchor.flips[0] === YES && anchor.flips[1] === YES) {
     pentagon.rotate180();
   } else if (anchor.flips[0] === YES) {
@@ -69,6 +69,31 @@ export function getPentagonVertices(resolution: number, quintant: number, anchor
   pentagon.transform(QUINTANT_ROTATIONS[quintant]);
 
   return pentagon;
+}
+
+export type PentagonFlavor = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export function getPentagonFlavor(anchor: Anchor): PentagonFlavor {
+  let f = 0;
+  if (anchor.flips[1] === YES) {
+    f += 2;
+  }
+
+  const {q} = anchor;
+  const F = anchor.flips[0] + anchor.flips[1];
+  if (
+    // Orient last two pentagons when both or neither flips are YES
+    ((F === -2 || F === 2) && q > 1) ||
+    // Orient first & last pentagons when only one of flips is YES
+    (F === 0 && (q === 0 || q === 3))
+  ) {
+    f += 1;
+  }
+
+  if (F === -2 || F === 2) {
+    f += 4;
+  }
+
+  return f as PentagonFlavor;
 }
 
 // TODO: memoize these two functions?

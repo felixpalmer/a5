@@ -14,18 +14,18 @@ const tilingData = {
 
 // Test getPentagonVertices with various combinations
 const testCases = [
-  { resolution: 0, quintant: 0, anchor: { offset: [0, 0], flips: [-1, -1], k: 0 } },
-  { resolution: 0, quintant: 1, anchor: { offset: [0, 0], flips: [-1, -1], k: 1 } },
-  { resolution: 0, quintant: 2, anchor: { offset: [0, 0], flips: [-1, -1], k: 2 } },
-  { resolution: 0, quintant: 3, anchor: { offset: [0, 0], flips: [-1, -1], k: 3 } },
-  { resolution: 0, quintant: 4, anchor: { offset: [0, 0], flips: [-1, -1], k: 0 } },
-  
-  { resolution: 1, quintant: 0, anchor: { offset: [0.5, 0.5], flips: [-1, 1], k: 0 } },
-  { resolution: 1, quintant: 2, anchor: { offset: [-0.5, 0.5], flips: [1, -1], k: 1 } },
-  { resolution: 1, quintant: 4, anchor: { offset: [0.25, -0.25], flips: [1, 1], k: 2 } },
-  
-  { resolution: 2, quintant: 1, anchor: { offset: [0.125, 0.125], flips: [-1, -1], k: 3 } },
-  { resolution: 2, quintant: 3, anchor: { offset: [-0.125, -0.125], flips: [1, 1], k: 0 } },
+  { resolution: 0, quintant: 0, anchor: { offset: [0, 0], flips: [-1, -1], q: 0 } },
+  { resolution: 0, quintant: 1, anchor: { offset: [0, 0], flips: [-1, -1], q: 1 } },
+  { resolution: 0, quintant: 2, anchor: { offset: [0, 0], flips: [-1, -1], q: 2 } },
+  { resolution: 0, quintant: 3, anchor: { offset: [0, 0], flips: [-1, -1], q: 3 } },
+  { resolution: 0, quintant: 4, anchor: { offset: [0, 0], flips: [-1, -1], q: 0 } },
+
+  { resolution: 1, quintant: 0, anchor: { offset: [0.5, 0.5], flips: [-1, 1], q: 0 } },
+  { resolution: 1, quintant: 2, anchor: { offset: [-0.5, 0.5], flips: [1, -1], q: 1 } },
+  { resolution: 1, quintant: 4, anchor: { offset: [0.25, -0.25], flips: [1, 1], q: 2 } },
+
+  { resolution: 2, quintant: 1, anchor: { offset: [0.125, 0.125], flips: [-1, -1], q: 3 } },
+  { resolution: 2, quintant: 3, anchor: { offset: [-0.125, -0.125], flips: [1, 1], q: 0 } },
 ];
 
 testCases.forEach(({ resolution, quintant, anchor }) => {
