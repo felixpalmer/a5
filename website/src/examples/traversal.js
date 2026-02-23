@@ -15,8 +15,9 @@ class TraversalDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
-        <p>Interactive demo of <code>gridDisk</code> and <code>sphericalCap</code>.</p>
-        <p>Pan and zoom to explore cells at different resolutions. Toggle <strong>Uncompact</strong> to expand compacted results to individual cells.</p>
+        <p>The <code>gridDisk</code> and <code>sphericalCap</code> APIs compute neighboring cells, either by number of hops <code>(k)</code> or distance.</p>
+        <p>Pan and zoom to explore cells at different resolutions.</p>
+        <p>Cells are returned compacted for efficiency, but can be uncompacted for visualization if needed.</p>
       </div>
     );
   }
