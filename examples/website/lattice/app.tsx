@@ -6,10 +6,12 @@ import {DataFilterExtension} from '@deck.gl/extensions';
 import { colorContinuous } from '@deck.gl/carto';
 import { vec2 } from 'gl-matrix';
 
-import { Orientation } from 'a5/core/hilbert';
-import { Anchor, sToAnchor } from 'a5/core/hilbert';
+import type { Anchor, Orientation } from 'a5/lattice';
+import type { Triple } from 'a5/lattice';
+import { sToAnchor, anchorToTriple } from 'a5/lattice';
 import { Pentagon, PentagonShape } from 'a5/geometry/pentagon';
 import { getPentagonVertices } from 'a5/core/tiling';
+import { getCellNeighbors } from 'a5/traversal/quintant-neighbors';
 import { BASIS } from 'a5/core/pentagon';
 
 export type Cell = {
@@ -18,6 +20,7 @@ export type Cell = {
   vertices: vec2[];
   center: vec2;
   index: number;
+  tripleCoords: Triple;
 }
 
 function crossCheck(cells: Cell[], cells2: Cell[]) {
@@ -54,13 +57,15 @@ const App: React.FC = () => {
   const [colorByParent, setColorByParent] = useState(true);
   const [maxFilterValue, setMaxFilterValue] = useState(100);
   const [hoveredCellIndex, setHoveredCellIndex] = useState<number | null>(null);
+  const [showTripleCoords, setShowTripleCoords] = useState(false);
+  const [gridDiskK, setGridDiskK] = useState(0);
 
   // Memoize the cell generation function
   const generateCells = useCallback((resolution: number) => {
     const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
     const scale = Math.pow(2, -resolution);
     
-    let anchors = sequence.map(s => sToAnchor(s, resolution, orientation)) as Anchor[];
+    let anchors = sequence.map(s => sToAnchor(s, resolution, orientation));
 
     return anchors.map((anchor, i) => {
       const origin = vec2.transformMat2(vec2.create(), anchor.offset, BASIS);
@@ -68,12 +73,13 @@ const App: React.FC = () => {
       // Calculate center as average of vertices
       const center = vertices.reduce((sum, v) => vec2.add(sum, sum, vec2.fromValues(v[0], v[1])), [0, 0] as vec2);
       vec2.scale(center, center, 1/vertices.length);
-      return { 
-        origin: vec2.scale(vec2.create(), origin, scale), 
-        anchor, 
-        vertices, 
-        center, 
-        index: i 
+      return {
+        origin: vec2.scale(vec2.create(), origin, scale),
+        anchor,
+        vertices,
+        center,
+        index: i,
+        tripleCoords: anchorToTriple(anchor)
       };
     });
   }, [orientation]);
@@ -86,9 +92,31 @@ const App: React.FC = () => {
   }, []);
 
   // Initialize state with memoized values
-  const [cells, setCells] = useState([]);
+  const [cells, setCells] = useState<Cell[]>([]);
   const [children, setChildren] = useState([]);
   const [paths, setPaths] = useState(() => generatePaths(cells));
+
+  // Compute gridDisk highlighted cells when hovering with k > 0
+  const highlightedCells = useMemo(() => {
+    if (gridDiskK === 0 || hoveredCellIndex === null) return new Set<number>();
+    // BFS in s-value space using getCellNeighbors
+    const s = BigInt(hoveredCellIndex);
+    const visited = new Set<bigint>([s]);
+    let frontier = new Set<bigint>([s]);
+    for (let ring = 1; ring <= gridDiskK; ring++) {
+      const nextFrontier = new Set<bigint>();
+      for (const id of frontier) {
+        for (const neighbor of getCellNeighbors(id, resolution, orientation, {edgeOnly: true})) {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor);
+            nextFrontier.add(neighbor);
+          }
+        }
+      }
+      frontier = nextFrontier;
+    }
+    return new Set(Array.from(visited).map(Number));
+  }, [hoveredCellIndex, gridDiskK, resolution, orientation]);
 
   // Update geometry when resolution changes
   useEffect(() => {
@@ -127,16 +155,24 @@ const App: React.FC = () => {
     orientation: Orientation,
     setOrientation: (o: Orientation) => void,
     colorByParent: boolean,
-    setColorByParent: (colorByParent: boolean) => void
+    setColorByParent: (colorByParent: boolean) => void,
+    showTripleCoords: boolean,
+    setShowTripleCoords: (show: boolean) => void,
+    gridDiskK: number,
+    setGridDiskK: (k: number) => void
   }> = ({
-    resolution, 
-    onResolutionChange, 
-    layerVisibility, 
-    setLayerVisibility, 
+    resolution,
+    onResolutionChange,
+    layerVisibility,
+    setLayerVisibility,
     orientation,
     setOrientation,
     colorByParent,
-    setColorByParent
+    setColorByParent,
+    showTripleCoords,
+    setShowTripleCoords,
+    gridDiskK,
+    setGridDiskK
   }) => {
     return (
       <div style={{
@@ -174,6 +210,30 @@ const App: React.FC = () => {
               checked={colorByParent}
               onChange={e => setColorByParent(e.target.checked)}
             /> Color by Parent
+          </label>
+        </div>
+
+        <div style={{marginBottom: '10px'}}>
+          <label>
+            <input
+              type="checkbox"
+              checked={showTripleCoords}
+              onChange={e => setShowTripleCoords(e.target.checked)}
+            /> Triple Coordinates
+          </label>
+        </div>
+
+        <div style={{marginBottom: '10px'}}>
+          <label>
+            gridDisk: {gridDiskK}
+            <input
+              type="range"
+              min="0"
+              max="4"
+              value={gridDiskK}
+              onChange={e => setGridDiskK(Number(e.target.value))}
+              style={{marginLeft: '10px'}}
+            />
           </label>
         </div>
 
@@ -287,11 +347,13 @@ const App: React.FC = () => {
   };
 
   const createLayers = (
-    filterRange: [number, number], 
+    filterRange: [number, number],
     pathsLength: number,
     cells: Cell[],
     paths: any[],
-    softBuffer: number
+    softBuffer: number,
+    showTripleCoords: boolean,
+    highlightedCells: Set<number>
   ) => {
     // Common filter props shared between layers
     const filterProps = {
@@ -313,15 +375,26 @@ const App: React.FC = () => {
         return [255, 0, 0, 255];
       }
 
-      if (!colorByParent) {
-        return [100, 100, 100, 0]; // Default gray color
+      // gridDisk highlighting
+      if (highlightedCells.size > 0) {
+        if (highlightedCells.has(d.index)) {
+          return [255, 200, 0, 220]; // Yellow highlight
+        }
+        return colorByParent ? getBaseColor(d, 80) : [100, 100, 100, 0];
       }
 
+      if (!colorByParent) {
+        return [100, 100, 100, 0];
+      }
+
+      return getBaseColor(d, 200);
+    }
+    function getBaseColor(d: Cell, alpha: number) {
       const parent = Math.floor(d.index / 4) + 5;
       const r = Math.sin(2748127411 * parent) * 127 + 128;
       const g = Math.sin(748119248 * parent) * 127 + 128;
       const b = Math.sin(33712841 * parent) * 127 + 128;
-      return [r, g, b, 200];
+      return [r, g, b, alpha];
     }
     return [
       new PolygonLayer<Cell>({
@@ -329,7 +402,7 @@ const App: React.FC = () => {
         data: cells,
         getPolygon: d => d.vertices,
         getFillColor: getParentColor,
-        updateTriggers: { getFillColor: [colorByParent] },
+        updateTriggers: { getFillColor: [colorByParent, highlightedCells] },
         getLineColor: [255, 255, 255, 255],
         filled: true,
         visible: layerVisibility.triangles,
@@ -360,17 +433,21 @@ const App: React.FC = () => {
       new TextLayer<Cell>({
         id: 'labels',
         data: cells,
-        getPosition: d => vec2.lerp(vec2.create(), d.origin, d.center, 0.2),
-        getText: (d, info) => {
+        getPosition: d => d.center,
+        getText: d => {
+          if (showTripleCoords) {
+            const {x, y, z} = d.tripleCoords;
+            return `${x},${y},${z}`;
+          }
           const [i, j] = d.anchor.offset;
-          const label = `[${i},${j}]`;
-          return label;
+          return `[${i},${j}]`;
         },
-        getSize: 16,
+        getSize: 12,
         getColor: [255, 255, 255, 255],
         getTextAnchor: 'middle',
         getAlignmentBaseline: 'center',
         visible: layerVisibility.labels,
+        updateTriggers: { getText: [showTripleCoords] },
         ...filterProps
       }),
 
@@ -440,10 +517,12 @@ const App: React.FC = () => {
           paths.length,
           cells,
           paths,
-          softBuffer
+          softBuffer,
+          showTripleCoords,
+          highlightedCells
         )}
       />
-      <Controls 
+      <Controls
         resolution={resolution}
         onResolutionChange={handleResolutionChange}
         layerVisibility={layerVisibility}
@@ -452,6 +531,10 @@ const App: React.FC = () => {
         setOrientation={setOrientation}
         colorByParent={colorByParent}
         setColorByParent={setColorByParent}
+        showTripleCoords={showTripleCoords}
+        setShowTripleCoords={setShowTripleCoords}
+        gridDiskK={gridDiskK}
+        setGridDiskK={setGridDiskK}
       />
       <FilterSlider 
         value={maxFilterValue}

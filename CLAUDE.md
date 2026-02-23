@@ -122,10 +122,12 @@ These are the same checks that run in CI (.github/workflows/test.yml). Run these
 - Tests are written such that they can easily be ported to other languages
 - Tests should be driven by fixtures, JSON files that specify known input & output values
 - When adding new tests:
-  - 1. create the fixture generators
-  - 2. generate the fixtures
+  - 1. create the fixture generators in `/scripts/fixtures/`
+  - 2. generate the fixtures using `yarn generate-fixtures` (NOT by running scripts directly)
   - 3. add the tests
   - 4. run tests and iterate, fixing either the tests, code or fixtures
+- **IMPORTANT**: Always use `yarn generate-fixtures` to regenerate fixtures after code changes. This builds the library first, then runs all fixture generation scripts.
+- **IMPORTANT**: If you modify `modules/test-index.ts` (which exports functions for testing), you MUST run `yarn build` before running any scripts that depend on it (like `scripts/analyze-subflavours.cjs`)
 - Python/Rust ports should just copy across the fixtures, not have their own generators
 - IMPORTANT: The ports should verify that the behavior is exactly the same, it is NOT acceptable to round values or accept approximate equality
 

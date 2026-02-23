@@ -36,3 +36,13 @@ export const Rmidedge = Math.sqrt(3 - φ);
  * Radius of the circumscribed sphere for dodecahedron
  */
 export const Rcircumscribed = Math.sqrt(3) * Rmidedge / φ;
+
+/**
+ * Authalic radius of Earth (meters)
+ */
+export const AUTHALIC_RADIUS_EARTH = 6371007.2; // m
+
+/**
+ * Authalic surface area of Earth (square meters)
+ */
+export const AUTHALIC_AREA_EARTH = 4 * Math.PI * AUTHALIC_RADIUS_EARTH * AUTHALIC_RADIUS_EARTH; // m^2

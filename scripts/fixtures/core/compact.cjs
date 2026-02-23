@@ -218,7 +218,7 @@ function generateRoundTripFixtures() {
     name: 'roundtrip_basic',
     description: 'Compact then uncompact should maintain cell coverage',
     initialCells: children.map(c => u64ToHex(c)),
-    afterCompact: compacted.map(c => u64ToHex(c)),
+    afterCompact: Array.from(compacted).map(c => u64ToHex(c)),
     targetResolution: 6,
     afterUncompact: children.map(c => u64ToHex(c)).sort()
   });
@@ -235,7 +235,7 @@ function generateRoundTripFixtures() {
     name: 'roundtrip_mixed_resolutions',
     description: 'Mixed resolutions maintain coverage through compact/uncompact cycle',
     initialCells: mixedCells.map(c => u64ToHex(c)),
-    afterCompact: compactedMixed.map(c => u64ToHex(c)),
+    afterCompact: Array.from(compactedMixed).map(c => u64ToHex(c)),
     targetResolution: 5,
     expectedCount: uncompactedMixed.length
   });
@@ -249,7 +249,7 @@ function generateRoundTripFixtures() {
     description: 'Verify cell count is preserved through operations',
     initialCells: coverageCells.map(c => u64ToHex(c)),
     initialCount: coverageCells.length,
-    afterCompact: compactedCoverage.map(c => u64ToHex(c)),
+    afterCompact: Array.from(compactedCoverage).map(c => u64ToHex(c)),
     targetResolution: 7,
     expectedFinalCount: coverageCells.length
   });

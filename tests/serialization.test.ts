@@ -1,5 +1,8 @@
 import { describe, it, expect, test } from 'vitest'
-import { getResolution, serialize, deserialize, MAX_RESOLUTION, REMOVAL_MASK, FIRST_HILBERT_RESOLUTION, getRes0Cells } from 'a5/core/serialization';
+import { getResolution, serialize, deserialize, FIRST_HILBERT_RESOLUTION, getRes0Cells } from 'a5/core/serialization';
+
+const MAX_RESOLUTION = 30;
+const REMOVAL_MASK = 0x3ffffffffffffffn;
 import { A5Cell } from 'a5/core/utils';
 import { origins } from 'a5/core/origin';
 import TEST_IDS from './test-ids.json';

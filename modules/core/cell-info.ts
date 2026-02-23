@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
+import {AUTHALIC_AREA_EARTH} from './constants';
 import {FIRST_HILBERT_RESOLUTION} from './serialization';
-
-const AUTHALIC_RADIUS = 6371007.2; // m
-const AUTHALIC_AREA = 4 * Math.PI * AUTHALIC_RADIUS * AUTHALIC_RADIUS; // m^2
 
 /**
  * Returns the number of cells at a given resolution.
@@ -47,6 +45,6 @@ export function getNumChildren(parentResolution: number, childResolution: number
  * @returns Area of a cell in square meters
  */
 export function cellArea(resolution: number): number {
-  if (resolution < 0) return AUTHALIC_AREA;
-  return AUTHALIC_AREA / getNumCells(resolution);
+  if (resolution < 0) return AUTHALIC_AREA_EARTH;
+  return AUTHALIC_AREA_EARTH / getNumCells(resolution);
 } 

@@ -13,7 +13,8 @@
     "jsxImportSource": "react",
     "paths": {
       "a5/*": ["modules/*"],
-      "a5/core/*": ["modules/core/*"]
+      "a5/core/*": ["modules/core/*"],
+      "a5/traversal/*": ["modules/traversal/*"]
     }
   },
   "include": ["modules/**/*", "tests/**/*", "examples/**/*"],

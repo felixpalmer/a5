@@ -19,7 +19,17 @@ import {
 } from './serialization';
 
 import { getNumChildren } from './cell-info';
+import { compareBigint } from '../utils/bigint';
 
+/**
+ * Expand a set of cells to a target resolution by generating all descendant cells.
+ *
+ * **Ordering property**: If the input is sorted, the output is also sorted.
+ * This holds because A5 cell IDs encode the origin/quintant in the high bits
+ * and the Hilbert curve position below that, so all children of a cell form a
+ * contiguous, ordered block in ID space. Consequently, `children(A) < children(B)`
+ * whenever `A < B`.
+ */
 export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: number): BigUint64Array {
   // First calculate how much space is needed
   let n = 0;
@@ -70,7 +80,7 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
   }
 
   // Single sort and dedup
-  let currentCells = Array.from(new Set(cells)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  let currentCells = Array.from(new Set(cells)).sort(compareBigint);
 
   // Compact until no more changes
   // No re-sorting needed - parents maintain sorted order!
