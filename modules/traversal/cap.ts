@@ -28,15 +28,20 @@ export function metersToH(meters: number): number {
 
 /**
  * Estimate a conservative cell circumradius in meters for a given resolution.
- * Uses equal-area approximation with a safety factor. The actual pentagon
- * circumradius is ~1.34x the equal-area circle radius, but descendants at finer
- * resolutions can be up to ~1.34x the circumradius away from the cell center
- * (they fill toward the edges/vertices of the curved pentagon on the sphere).
- * The safety factor safely covers the worst-case descendant distance.
+ *
+ * Derived from: cellRadius = SAFETY * sqrt(cellArea / π)
+ *             = SAFETY * sqrt(4πR² / (numCells × π))
+ *             = SAFETY × 2R / sqrt(numCells)
+ *
+ * For r ≥ 1: numCells = 60 × 4^(r-1), so sqrt(numCells) = 2√15 × 2^(r-1)
+ * giving: cellRadius(r) = BASE_CELL_RADIUS / 2^(r-1)
+ * i.e. the radius exactly halves at each resolution level.
  */
+const BASE_CELL_RADIUS = CELL_RADIUS_SAFETY_FACTOR * AUTHALIC_RADIUS_EARTH / Math.sqrt(15);
 const _cellRadius: number[] = new Array(31);
-for (let r = 0; r <= 30; r++) {
-  _cellRadius[r] = CELL_RADIUS_SAFETY_FACTOR * Math.sqrt(cellArea(r) / Math.PI);
+_cellRadius[0] = CELL_RADIUS_SAFETY_FACTOR * AUTHALIC_RADIUS_EARTH / Math.sqrt(3);
+for (let r = 1; r <= 30; r++) {
+  _cellRadius[r] = BASE_CELL_RADIUS / (1 << (r - 1));
 }
 
 export function estimateCellRadius(resolution: number): number {
