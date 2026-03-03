@@ -34,7 +34,8 @@
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "build": "tsup",
-    "generate-fixtures": "yarn build && node scripts/generate-fixtures.cjs"
+    "generate-fixtures": "yarn build && node scripts/generate-fixtures.cjs",
+    "sync-fixtures": "python3 scripts/sync_fixtures.py"
   },
   "dependencies": {
     "gl-matrix": "^3.4.3"
