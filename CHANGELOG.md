@@ -19,6 +19,10 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v0.7.0] - Mar 3 2026
+
+- Feature: gridDisk & sphericalCap (#78)
+
 #### A5 [v0.6.1] - Nov 11 2025
 
 - feat: World cell handling (#66)
