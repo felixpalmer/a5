@@ -1,5 +1,5 @@
 import { describe, it, expect, test } from 'vitest'
-import { getResolution, serialize, deserialize, FIRST_HILBERT_RESOLUTION, getRes0Cells } from 'a5/core/serialization';
+import { getResolution, serialize, deserialize, FIRST_HILBERT_RESOLUTION, getRes0Cells, isFirstChild, getStride } from 'a5/core/serialization';
 
 const MAX_RESOLUTION = 30;
 const REMOVAL_MASK = 0x3ffffffffffffffn;
@@ -42,8 +42,8 @@ const RESOLUTION_MASKS = [
   '0000000000000000000000000000000000000000000000000000000000100000',
   '0000000000000000000000000000000000000000000000000000000000001000',
   '0000000000000000000000000000000000000000000000000000000000000010',
-  // Point level
-  //'0000000000000000000000000000000000000000000000000000000000000001', // TODO
+  // Resolution 30 (point level): 5-bit quintant + 58-bit S + 1-bit marker
+  '0000000000000000000000000000000000000000000000000000000000000001',
 ];
 
 const origin0 = JSON.parse(JSON.stringify(origins[0])); // Use first origin for most tests
@@ -51,7 +51,7 @@ const origin0 = JSON.parse(JSON.stringify(origins[0])); // Use first origin for 
 describe('serialize', () => {
 
   test('Correct number of masks', () => {
-    expect(RESOLUTION_MASKS.length).toBe(MAX_RESOLUTION); // TODO add point level
+    expect(RESOLUTION_MASKS.length).toBe(MAX_RESOLUTION + 1);
   });
 
   test('Removal mask is correct', () => {
@@ -125,7 +125,8 @@ describe('serialize', () => {
     for (let n = 1; n < 12; n++) {
       const originSegmentId = (5 * n).toString(2).padStart(6, '0');
       test(`resolution masks with origin ${n} (${originSegmentId})`, () => {
-        RESOLUTION_MASKS.slice(FIRST_HILBERT_RESOLUTION).forEach(binary => {
+        // Exclude res 30 as it has a different bit layout (5-bit quintant)
+        RESOLUTION_MASKS.slice(FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION).forEach(binary => {
           const serialized = BigInt(`0b${originSegmentId}${binary.slice(6)}`);
           const deserialized = deserialize(serialized);
           const reserialized = serialize(deserialized);
@@ -275,6 +276,151 @@ describe('getRes0Cells', () => {
     res0Cells.forEach((cell, index) => {
       expect(u64ToHex(cell)).toBe(expectedHexValues[index]);
     });
+  });
+});
+
+describe('resolution 30', () => {
+  test('getResolution detects res 30 from LSB', () => {
+    // Any odd bigint (LSB=1) that isn't 0 is resolution 30
+    expect(getResolution(1n)).toBe(30);
+    expect(getResolution(3n)).toBe(30);
+    expect(getResolution(0xFFFFFFFFFFFFFFFFn)).toBe(30);
+  });
+
+  test('serialize/deserialize round trip for valid quintants', () => {
+    // Quintants 0-31 are valid for res 30
+    for (let q = 0; q < 32; q++) {
+      const originId = Math.floor(q / 5);
+      const origin = origins[originId];
+      const segmentN = q % 5;
+      const segment = (segmentN + origin.firstQuintant) % 5;
+
+      const cell: A5Cell = { origin, segment, S: 0n, resolution: 30 };
+      const serialized = serialize(cell);
+      expect(getResolution(serialized)).toBe(30);
+
+      const deserialized = deserialize(serialized);
+      expect(deserialized.origin.id).toBe(originId);
+      expect(deserialized.segment).toBe(segment);
+      expect(deserialized.S).toBe(0n);
+      expect(deserialized.resolution).toBe(30);
+
+      // Round trip
+      const reserialized = serialize(deserialized);
+      expect(reserialized).toBe(serialized);
+    }
+  });
+
+  test('serialize/deserialize round trip with non-zero S', () => {
+    const origin = origins[0];
+    const segment = (0 + origin.firstQuintant) % 5; // segmentN=0
+
+    const testSValues = [0n, 1n, 42n, (1n << 58n) - 1n]; // min, small, medium, max
+    for (const S of testSValues) {
+      const cell: A5Cell = { origin, segment, S, resolution: 30 };
+      const serialized = serialize(cell);
+      const deserialized = deserialize(serialized);
+      expect(deserialized.S).toBe(S);
+      expect(deserialized.resolution).toBe(30);
+      expect(serialize(deserialized)).toBe(serialized);
+    }
+  });
+
+  test('bit layout: quintant in top 5 bits, S in middle 58, marker in LSB', () => {
+    const origin = origins[0];
+    const segment = (0 + origin.firstQuintant) % 5; // quintant=0
+
+    // Quintant 0, S=0 → just the marker bit
+    const cell0 = serialize({ origin, segment, S: 0n, resolution: 30 });
+    expect(cell0).toBe(1n);
+
+    // Quintant 0, S=1 → marker + S shifted left by 1
+    const cell1 = serialize({ origin, segment, S: 1n, resolution: 30 });
+    expect(cell1).toBe(0b11n); // S=1 at bit 1, marker at bit 0
+  });
+
+  test('throws for quintant > 31', () => {
+    // Origin 7 has quintants 35-39, all > 31
+    const origin = origins[7];
+    const segment = (0 + origin.firstQuintant) % 5;
+    expect(() => serialize({ origin, segment, S: 0n, resolution: 30 }))
+      .toThrow('too large for resolution 30');
+  });
+
+  test('throws for S too large', () => {
+    const origin = origins[0];
+    const segment = (0 + origin.firstQuintant) % 5;
+    expect(() => serialize({ origin, segment, S: 1n << 58n, resolution: 30 }))
+      .toThrow('too large for resolution level 30');
+  });
+
+  test('cellToParent from res 30 to res 29', () => {
+    const origin = origins[0];
+    const segment = (0 + origin.firstQuintant) % 5;
+
+    // Create 4 children at res 30 (S=0..3), they should share the same res 29 parent (S=0)
+    for (let i = 0; i < 4; i++) {
+      const child = serialize({ origin, segment, S: BigInt(i), resolution: 30 });
+      const parent = cellToParent(child);
+      expect(getResolution(parent)).toBe(29);
+
+      const parentCell = deserialize(parent);
+      expect(parentCell.S).toBe(0n);
+    }
+  });
+
+  test('cellToChildren from res 29 to res 30', () => {
+    const origin = origins[0];
+    const segment = (0 + origin.firstQuintant) % 5;
+    const parent = serialize({ origin, segment, S: 0n, resolution: 29 });
+    const children = cellToChildren(parent, 30);
+
+    expect(children.length).toBe(4);
+    children.forEach((child, i) => {
+      expect(getResolution(child)).toBe(30);
+      const childCell = deserialize(child);
+      expect(childCell.S).toBe(BigInt(i));
+    });
+  });
+
+  test('cellToChildren/cellToParent round trip', () => {
+    const origin = origins[0];
+    const segment = (0 + origin.firstQuintant) % 5;
+    const parent = serialize({ origin, segment, S: 42n, resolution: 29 });
+    const children = cellToChildren(parent, 30);
+
+    expect(children.length).toBe(4);
+    children.forEach(child => {
+      expect(cellToParent(child)).toBe(parent);
+    });
+  });
+
+  test('getStride returns 2 for res 30', () => {
+    expect(getStride(30)).toBe(2n);
+  });
+
+  test('isFirstChild works for res 30', () => {
+    const origin = origins[0];
+    const segment = (0 + origin.firstQuintant) % 5;
+
+    // S=0 → first child
+    const first = serialize({ origin, segment, S: 0n, resolution: 30 });
+    expect(isFirstChild(first)).toBe(true);
+
+    // S=1 → not first child
+    const second = serialize({ origin, segment, S: 1n, resolution: 30 });
+    expect(isFirstChild(second)).toBe(false);
+
+    // S=4 → first child (S ends in 00 binary)
+    const fourth = serialize({ origin, segment, S: 4n, resolution: 30 });
+    expect(isFirstChild(fourth)).toBe(true);
+  });
+
+  test('cellToChildren of res 30 throws (max resolution)', () => {
+    const origin = origins[0];
+    const segment = (0 + origin.firstQuintant) % 5;
+    const cell = serialize({ origin, segment, S: 0n, resolution: 30 });
+    expect(() => cellToChildren(cell)).toThrow('exceeds maximum resolution');
   });
 });
 

@@ -20,6 +20,9 @@ export const WORLD_CELL = 0n;
 export function getResolution(index: bigint): number {
   if (index === 0n) return -1;
 
+  // Resolution 30: LSB is set (no other resolution has this)
+  if (index & 1n) return MAX_RESOLUTION;
+
   let resolution = MAX_RESOLUTION - 1;
   let shifted = index >> 1n;
   if (shifted === 0n) return -1;
@@ -78,6 +81,16 @@ export function deserialize(index: bigint): A5Cell {
     return { origin: origins[0], segment: 0, S: 0n, resolution };
   }
 
+  if (resolution === MAX_RESOLUTION) {
+    // Resolution 30: [5-bit quintant][58-bit S][1-bit marker]
+    const quintant = Number(index >> 59n);
+    const originId = Math.floor(quintant / 5);
+    const origin = origins[originId];
+    const segment = (quintant + origin.firstQuintant) % 5;
+    const S = (index >> 1n) & ((1n << 58n) - 1n);
+    return { origin, segment, S, resolution };
+  }
+
   // Extract origin*segment from top 6 bits
   const top6Bits = Number(index >> 58n);
   
@@ -117,6 +130,26 @@ export function serialize(cell: A5Cell): bigint {
   }
 
   if (resolution === -1) return WORLD_CELL;
+
+  if (resolution === MAX_RESOLUTION) {
+    // Resolution 30 special encoding:
+    // Conceptually 66 bits: [6-bit quintant][58-bit S][marker '10']
+    // Encoded as 64 bits by dropping trailing '0' and leading '0':
+    //   [5-bit quintant (0-31)][58-bit S][marker '1']
+    const segmentN = (segment - origin.firstQuintant + 5) % 5;
+    const quintant = 5 * origin.id + segmentN;
+    if (quintant > 31) {
+      throw new Error(`Quintant ${quintant} is too large for resolution ${MAX_RESOLUTION} (max 31)`);
+    }
+    const hilbertBits = 58n;
+    if (BigInt(S) >= (1n << hilbertBits)) {
+      throw new Error(`S (${S}) is too large for resolution level ${MAX_RESOLUTION}`);
+    }
+    let index = BigInt(quintant) << 59n;
+    index |= BigInt(S) << 1n;
+    index |= 1n;
+    return index;
+  }
 
   // Position of resolution marker as bit shift from LSB
   let R;
@@ -251,6 +284,11 @@ export function isFirstChild(index: bigint, resolution?: number): boolean {
     return top6Bits % childCount === 0;
   }
 
+  if (resolution === MAX_RESOLUTION) {
+    // For res 30, S occupies bits 58-1, so its 2 LSBs are at bits 2-1
+    return (index & 0b110n) === 0n;
+  }
+
   const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
   const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
   return (index & sMask) === 0n;
@@ -262,6 +300,9 @@ export function isFirstChild(index: bigint, resolution?: number): boolean {
 export function getStride(resolution: number): bigint {
   // Both level 0 & 1 just write values 0-11 or 0-59 to the first 6 bits
   if (resolution < 2) return (1n << HILBERT_START_BIT);
+
+  // For res 30, S is shifted left by 1 (marker bit at position 0)
+  if (resolution === MAX_RESOLUTION) return 2n;
 
   // For hilbert levels, the position shifts by 2 bits per resolution level
   const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
