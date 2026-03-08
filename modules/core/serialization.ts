@@ -10,9 +10,6 @@ export const FIRST_HILBERT_RESOLUTION = 2;
 const MAX_RESOLUTION = 30;
 const HILBERT_START_BIT = 58n; // 64 - 6 bits for origin & segment
 
-// First 6 bits 0, remaining 58 bits 1
-const REMOVAL_MASK = 0x3ffffffffffffffn;
-
 // Abstract cell that contains the whole world, has resolution -1 and 12 children,
 // which are the res0 cells.
 export const WORLD_CELL = 0n;
@@ -81,45 +78,37 @@ export function deserialize(index: bigint): A5Cell {
     return { origin: origins[0], segment: 0, S: 0n, resolution };
   }
 
-  if (resolution === MAX_RESOLUTION) {
-    // Resolution 30: [5-bit quintant][58-bit S][1-bit marker]
-    const quintant = Number(index >> 59n);
-    const originId = Math.floor(quintant / 5);
-    const origin = origins[originId];
-    const segment = (quintant + origin.firstQuintant) % 5;
-    const S = (index >> 1n) & ((1n << 58n) - 1n);
-    return { origin, segment, S, resolution };
-  }
+  // For res 30, quintant is 5 bits (shifted by 59) instead of the usual 6 bits (shifted by 58)
+  const quintantShift = resolution === MAX_RESOLUTION ? HILBERT_START_BIT + 1n : HILBERT_START_BIT;
 
-  // Extract origin*segment from top 6 bits
-  const top6Bits = Number(index >> 58n);
-  
-  // Find origin and segment that multiply to give this product
+  // Extract origin*segment from top bits
+  const topBits = Number(index >> quintantShift);
+
+  // Find origin and segment
   let origin: Origin, segment: number;
 
   if (resolution === 0) {
-    const originId: number = top6Bits;
-    origin = origins[originId];
+    origin = origins[topBits];
     segment = 0;
   } else {
-    const originId = Math.floor(top6Bits / 5);
+    const originId = Math.floor(topBits / 5);
     origin = origins[originId];
-    segment = (top6Bits + origin.firstQuintant) % 5;
+    segment = (topBits + origin.firstQuintant) % 5;
   }
 
   if (!origin) {
-    throw new Error(`Could not parse origin: ${top6Bits}`);
+    throw new Error(`Could not parse origin: ${topBits}`);
   }
 
   if (resolution < FIRST_HILBERT_RESOLUTION) {
     return { origin, segment, S: 0n, resolution };
   }
 
-  // Mask away origin & segment and shift away resolution and 00 bits
+  // Mask away origin & segment and shift away resolution and marker bits
   const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const hilbertBits = BigInt(2 * hilbertLevels);
-  const shift = HILBERT_START_BIT - hilbertBits;
-  const S = (index & REMOVAL_MASK) >> shift;
+  const removalMask = (1n << quintantShift) - 1n;
+  const S = (index & removalMask) >> (quintantShift - hilbertBits);
   return { origin, segment, S, resolution };
 }
 
@@ -131,60 +120,44 @@ export function serialize(cell: A5Cell): bigint {
 
   if (resolution === -1) return WORLD_CELL;
 
-  if (resolution === MAX_RESOLUTION) {
-    // Resolution 30 special encoding:
-    // Conceptually 66 bits: [6-bit quintant][58-bit S][marker '10']
-    // Encoded as 64 bits by dropping trailing '0' and leading '0':
-    //   [5-bit quintant (0-31)][58-bit S][marker '1']
-    const segmentN = (segment - origin.firstQuintant + 5) % 5;
-    const quintant = 5 * origin.id + segmentN;
-    if (quintant > 31) {
-      throw new Error(`Quintant ${quintant} is too large for resolution ${MAX_RESOLUTION} (max 31)`);
-    }
-    const hilbertBits = 58n;
-    if (BigInt(S) >= (1n << hilbertBits)) {
-      throw new Error(`S (${S}) is too large for resolution level ${MAX_RESOLUTION}`);
-    }
-    let index = BigInt(quintant) << 59n;
-    index |= BigInt(S) << 1n;
-    index |= 1n;
-    return index;
-  }
+  // For res 30, quintant is 5 bits (shifted by 59) instead of the usual 6 bits (shifted by 58)
+  const quintantShift = resolution === MAX_RESOLUTION ? HILBERT_START_BIT + 1n : HILBERT_START_BIT;
 
   // Position of resolution marker as bit shift from LSB
   let R;
   if (resolution < FIRST_HILBERT_RESOLUTION) {
-    // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
     R = BigInt(resolution + 1);
   } else {
-    // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
     const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
     R = BigInt(2 * hilbertResolution + 1);
   }
 
-  // First 6 bits are the origin id and the segment
+  // Top bits encode the origin id and segment
   const segmentN = (segment - origin.firstQuintant + 5) % 5;
 
-  let index; 
+  let index;
   if (resolution === 0) {
-    index = BigInt(origin.id) << 58n;
+    index = BigInt(origin.id) << quintantShift;
   } else {
-    index = BigInt(5 * origin.id + segmentN) << 58n;
+    const quintant = 5 * origin.id + segmentN;
+    // For res 30, quintant must fit in 5 bits; fall back to res 29 if not
+    if (resolution === MAX_RESOLUTION && quintant > 31) {
+      return serialize({origin, segment, S: S >> 2n, resolution: MAX_RESOLUTION - 1});
+    }
+    index = BigInt(quintant) << quintantShift;
   }
 
   if (resolution >= FIRST_HILBERT_RESOLUTION) {
-    // Number of bits required for S Hilbert curve
     const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
     const hilbertBits = BigInt(2 * hilbertLevels);
     if (BigInt(S) >= (1n << hilbertBits)) {
       throw new Error(`S (${S}) is too large for resolution level ${resolution}`);
     }
-    // Next (2 * hilbertResolution) bits are S (hilbert index within segment)
-    index += BigInt(S) << (HILBERT_START_BIT - hilbertBits);
+    index += BigInt(S) << (quintantShift - hilbertBits);
   }
 
   // Resolution is encoded by position of the least significant 1
-  index |= 1n << (HILBERT_START_BIT - R);
+  index |= 1n << (quintantShift - R);
 
   return index;
 }

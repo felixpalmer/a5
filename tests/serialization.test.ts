@@ -339,12 +339,17 @@ describe('resolution 30', () => {
     expect(cell1).toBe(0b11n); // S=1 at bit 1, marker at bit 0
   });
 
-  test('throws for quintant > 31', () => {
+  test('falls back to res 29 for quintant > 31', () => {
     // Origin 7 has quintants 35-39, all > 31
     const origin = origins[7];
     const segment = (0 + origin.firstQuintant) % 5;
-    expect(() => serialize({ origin, segment, S: 0n, resolution: 30 }))
-      .toThrow('too large for resolution 30');
+    const cell = serialize({ origin, segment, S: 0n, resolution: 30 });
+    expect(getResolution(cell)).toBe(29);
+
+    // With non-zero S, the parent S should be S >> 2
+    const cell2 = serialize({ origin, segment, S: 7n, resolution: 30 });
+    expect(getResolution(cell2)).toBe(29);
+    expect(deserialize(cell2).S).toBe(1n); // 7 >> 2 = 1
   });
 
   test('throws for S too large', () => {
