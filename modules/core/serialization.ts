@@ -17,10 +17,11 @@ export const WORLD_CELL = 0n;
 export function getResolution(index: bigint): number {
   if (index === 0n) return -1;
 
-  // Resolution 30 uses two encoding patterns:
-  //   ...1   → 5-bit quintant (0-31), 58-bit S
-  //   ...100 → 3-bit quintant + 32 (32-39), 58-bit S
-  if ((index & 1n) || (index & 0b111n) === 0b100n) return MAX_RESOLUTION;
+  // Resolution 30 uses three encoding patterns:
+  //   ...1     → 5-bit quintant (0-31),  58-bit S
+  //   ...100   → 3-bit quintant (32-39), 58-bit S
+  //   ...10000 → 1-bit quintant (40-41), 58-bit S
+  if ((index & 1n) || (index & 0b111n) === 0b100n || (index & 0b11111n) === 0b10000n) return MAX_RESOLUTION;
 
   let resolution = MAX_RESOLUTION - 1;
   let shifted = index >> 1n;
@@ -81,14 +82,15 @@ export function deserialize(index: bigint): A5Cell {
   }
 
   // For res 30, quintant bits are fewer to make room for S:
-  //   ...1   marker (1 bit)  → 5-bit quintant (0-31)
-  //   ...100 marker (3 bits) → 3-bit quintant + 32 (32-39)
+  //   ...1     marker (1 bit)  → 5-bit quintant (0-31)
+  //   ...100   marker (3 bits) → 3-bit quintant + 32 (32-39)
+  //   ...10000 marker (5 bits) → 1-bit quintant + 40 (40-41)
   let quintantShift = HILBERT_START_BIT;
   let quintantOffset = 0;
   if (resolution === MAX_RESOLUTION) {
-    const markerBits = (index & 1n) ? 1n : 3n;
+    const markerBits = (index & 1n) ? 1n : (index & 0b100n) ? 3n : 5n;
     quintantShift = HILBERT_START_BIT + markerBits;
-    quintantOffset = markerBits === 3n ? 32 : 0;
+    quintantOffset = markerBits === 1n ? 0 : markerBits === 3n ? 32 : 40;
   }
 
   // Extract origin*segment from top bits
@@ -131,9 +133,10 @@ export function serialize(cell: A5Cell): bigint {
   if (resolution === -1) return WORLD_CELL;
 
   // For res 30, quintant bits are fewer to make room for S:
-  //   quintant 0-31:  ...1   marker → 5-bit quintant
-  //   quintant 32-39: ...100 marker → 3-bit quintant + 32
-  //   quintant 40+:   fall back to res 29
+  //   quintant 0-31:  ...1     marker → 5-bit quintant
+  //   quintant 32-39: ...100   marker → 3-bit quintant + 32
+  //   quintant 40-41: ...10000 marker → 1-bit quintant + 40
+  //   quintant 42+:   fall back to res 29
   let quintantShift = HILBERT_START_BIT;
 
   // Position of resolution marker as bit shift from LSB
@@ -154,14 +157,20 @@ export function serialize(cell: A5Cell): bigint {
   } else {
     const quintant = 5 * origin.id + segmentN;
     if (resolution === MAX_RESOLUTION) {
+      let quintantValue: number;
       if (quintant <= 31) {
         quintantShift = HILBERT_START_BIT + 1n;
+        quintantValue = quintant;
       } else if (quintant <= 39) {
         quintantShift = HILBERT_START_BIT + 3n;
+        quintantValue = quintant - 32;
+      } else if (quintant <= 41) {
+        quintantShift = HILBERT_START_BIT + 5n;
+        quintantValue = quintant - 40;
       } else {
         return serialize({origin, segment, S: S >> 2n, resolution: MAX_RESOLUTION - 1});
       }
-      index = BigInt(quintant <= 31 ? quintant : quintant - 32) << quintantShift;
+      index = BigInt(quintantValue) << quintantShift;
     } else {
       index = BigInt(quintant) << quintantShift;
     }
@@ -279,7 +288,7 @@ export function isFirstChild(index: bigint, resolution?: number): boolean {
 
   if (resolution === MAX_RESOLUTION) {
     // S's 2 LSBs sit just above the marker bits
-    const markerBits = (index & 1n) ? 1n : 3n;
+    const markerBits = (index & 1n) ? 1n : (index & 0b100n) ? 3n : 5n;
     return (index & (3n << markerBits)) === 0n;
   }
 
