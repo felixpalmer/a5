@@ -107,6 +107,11 @@ yarn test
 
 These are the same checks that run in CI (.github/workflows/test.yml). Run these to verify your changes before the user reviews the code.
 
+## Debugging
+- **DO NOT** use `node -e "..."` for debugging scripts — write them as files instead
+- Write debug scripts to `/debug-scripts/` (gitignored) using the Write tool, then execute with Bash
+- This avoids permission prompts and keeps scripts inspectable
+
 ## Git Usage
 
 - **DO** use git commands for debugging and information gathering:

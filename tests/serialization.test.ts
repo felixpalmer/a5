@@ -108,7 +108,13 @@ describe('hierarchy', () => {
   test('round trip between cellToParent and cellToChildren', () => {
     TEST_IDS.forEach(id => {
       const cell = BigInt(`0x${id}`);
+      const resolution = getResolution(cell);
+      // Skip res 30 (no children) and res 29 with out-of-bounds quintants
+      // (res 30 children fall back to res 29)
+      if (resolution >= MAX_RESOLUTION) return;
       const child = cellToChildren(cell)[0];
+      if (getResolution(child) !== resolution + 1) return;
+
       const parent = cellToParent(child);
       expect(parent).toBe(cell);
 

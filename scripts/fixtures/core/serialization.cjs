@@ -34,12 +34,12 @@ for (let res = 0; res <= MAX_RESOLUTION; res++) {
 }
 
 // --- Test IDs from pseudo-random lon/lat ---
-// Generate cells at resolutions 0-29 from geographic coordinates.
-// Res 30 is excluded because cellToChildren(res30Cell) throws in hierarchy tests.
+// Generate cells at all resolutions 0-30 from geographic coordinates.
+// At res 30, only cells with quintant <= 41 are included (others fall back to res 29).
 const testIds = [];
 
-for (let res = 0; res <= MAX_RESOLUTION - 1; res++) {
-  const numPoints = res <= 1 ? 2 : 3;
+for (let res = 0; res <= MAX_RESOLUTION; res++) {
+  const numPoints = res <= 1 ? 4 : 8;
   for (let i = 0; i < numPoints; i++) {
     const lon = random() * 360 - 180;
     const lat = Math.asin(random() * 2 - 1) * (180 / Math.PI); // uniform on sphere
@@ -53,6 +53,9 @@ for (let res = 0; res <= MAX_RESOLUTION - 1; res++) {
       console.error(`ERROR: round-trip failed for [${lon}, ${lat}] at res ${res}: ${hex}`);
       process.exit(1);
     }
+
+    // Skip res 30 cells that fell back to res 29 (quintant > 41)
+    if (res === MAX_RESOLUTION && getResolution(cell) !== MAX_RESOLUTION) continue;
 
     testIds.push(hex);
   }
