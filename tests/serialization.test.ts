@@ -2,49 +2,14 @@ import { describe, it, expect, test } from 'vitest'
 import { getResolution, serialize, deserialize, FIRST_HILBERT_RESOLUTION, getRes0Cells, isFirstChild, getStride } from 'a5/core/serialization';
 
 const MAX_RESOLUTION = 30;
-const REMOVAL_MASK = 0x3ffffffffffffffn;
 import { A5Cell } from 'a5/core/utils';
 import { origins } from 'a5/core/origin';
-import TEST_IDS from './test-ids.json';
 import { cellToParent, cellToChildren } from 'a5/core/serialization';
 import { u64ToHex } from 'a5/core/hex';
+import FIXTURES from './fixtures/serialization.json';
 
-const RESOLUTION_MASKS = [
-  // Non-Hilbert resolutions
-  '0000001000000000000000000000000000000000000000000000000000000000', // Dodecahedron faces
-  '0000000100000000000000000000000000000000000000000000000000000000', // Quintants
-  // Hilbert resolutions
-  '0000000010000000000000000000000000000000000000000000000000000000',
-  '0000000000100000000000000000000000000000000000000000000000000000',
-  '0000000000001000000000000000000000000000000000000000000000000000',
-  '0000000000000010000000000000000000000000000000000000000000000000',
-  '0000000000000000100000000000000000000000000000000000000000000000',
-  '0000000000000000001000000000000000000000000000000000000000000000',
-  '0000000000000000000010000000000000000000000000000000000000000000',
-  '0000000000000000000000100000000000000000000000000000000000000000',
-  '0000000000000000000000001000000000000000000000000000000000000000',
-  '0000000000000000000000000010000000000000000000000000000000000000',
-  '0000000000000000000000000000100000000000000000000000000000000000',
-  '0000000000000000000000000000001000000000000000000000000000000000',
-  '0000000000000000000000000000000010000000000000000000000000000000',
-  '0000000000000000000000000000000000100000000000000000000000000000',
-  '0000000000000000000000000000000000001000000000000000000000000000',
-  '0000000000000000000000000000000000000010000000000000000000000000',
-  '0000000000000000000000000000000000000000100000000000000000000000',
-  '0000000000000000000000000000000000000000001000000000000000000000',
-  '0000000000000000000000000000000000000000000010000000000000000000',
-  '0000000000000000000000000000000000000000000000100000000000000000',
-  '0000000000000000000000000000000000000000000000001000000000000000',
-  '0000000000000000000000000000000000000000000000000010000000000000',
-  '0000000000000000000000000000000000000000000000000000100000000000',
-  '0000000000000000000000000000000000000000000000000000001000000000',
-  '0000000000000000000000000000000000000000000000000000000010000000',
-  '0000000000000000000000000000000000000000000000000000000000100000',
-  '0000000000000000000000000000000000000000000000000000000000001000',
-  '0000000000000000000000000000000000000000000000000000000000000010',
-  // Resolution 30 (point level): 5-bit quintant + 58-bit S + 1-bit marker
-  '0000000000000000000000000000000000000000000000000000000000000001',
-];
+const RESOLUTION_MASKS = FIXTURES.resolutionMasks;
+const TEST_IDS = FIXTURES.testIds;
 
 const origin0 = JSON.parse(JSON.stringify(origins[0])); // Use first origin for most tests
 
@@ -52,13 +17,6 @@ describe('serialize', () => {
 
   test('Correct number of masks', () => {
     expect(RESOLUTION_MASKS.length).toBe(MAX_RESOLUTION + 1);
-  });
-
-  test('Removal mask is correct', () => {
-    const originSegmentBits = ''.padStart(6, '0');
-    const remainingBits = ''.padStart(58, '1');
-    const expected = BigInt(`0b${originSegmentBits}${remainingBits}`);
-    expect(REMOVAL_MASK).toBe(expected);
   });
 
   test('encodes resolution correctly for different values', () => {
@@ -553,16 +511,33 @@ describe('resolution 30', () => {
   });
 });
 
-// A bit broken, can generate invalid ids
-function randomId() {
-  const originSegment = Math.floor(Math.random() * 60).toString(2).padStart(6, '0');
-  const resolution = Math.floor(Math.random() * (MAX_RESOLUTION - 1));
-  const S = Math.floor(Math.random() * (1 << (2 * resolution)));
-  const Sbits = S.toString(2).padStart(2 * resolution, '0');
-  const id = `${originSegment}${Sbits}10`.padEnd(64, '0');
-  return BigInt(`0b${id}`).toString(16).padStart(16, '0');
-}
-// for (let i = 0; i < 100; i++) {
-//   const id = randomId();
-//   console.log(`"${id}",`);
-// }
+describe('resolution 30 locations', () => {
+  const res30Locations = FIXTURES.res30Locations;
+
+  test('round trip for res 30 location cells', () => {
+    res30Locations.forEach((loc: any) => {
+      const cell = BigInt(`0x${loc.hex}`);
+      const deserialized = deserialize(cell);
+      const reserialized = serialize(deserialized);
+      expect(reserialized).toBe(cell);
+    });
+  });
+
+  test('out-of-bounds quintants fall back to res 29', () => {
+    const outOfBounds = res30Locations.filter((l: any) => l.resolution === 29);
+    expect(outOfBounds.length).toBeGreaterThan(0);
+    outOfBounds.forEach((loc: any) => {
+      const cell = BigInt(`0x${loc.hex}`);
+      expect(getResolution(cell)).toBe(29);
+    });
+  });
+
+  test('in-bounds quintants encode at res 30', () => {
+    const inBounds = res30Locations.filter((l: any) => l.resolution === 30);
+    expect(inBounds.length).toBeGreaterThan(0);
+    inBounds.forEach((loc: any) => {
+      const cell = BigInt(`0x${loc.hex}`);
+      expect(getResolution(cell)).toBe(30);
+    });
+  });
+});

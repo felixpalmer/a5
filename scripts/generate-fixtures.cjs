@@ -1,6 +1,7 @@
 const path = require("path");
 
 // Core tests
+require("./fixtures/core/serialization.cjs");
 require("./fixtures/core/cell-info.cjs");
 require("./fixtures/core/crs-vertices.cjs");
 require("./fixtures/core/origins.cjs");
