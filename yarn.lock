@@ -797,7 +797,9 @@ __metadata:
   resolution: "a5-js@workspace:."
   dependencies:
     gl-matrix: "npm:^3.4.3"
+    h3-js: "npm:^4.4.0"
     node-fetch: "npm:^3.3.1"
+    s2-geometry: "npm:^1.2.10"
     tsup: "npm:^8.0.2"
     typescript: "npm:^5.0.0"
     vitest: "npm:^1.3.1"
@@ -1420,6 +1422,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"h3-js@npm:^4.4.0":
+  version: 4.4.0
+  resolution: "h3-js@npm:4.4.0"
+  checksum: 10c0/3a324b3a879601e1d012c2f67b2f78e9a480b0fa8e51c54b77ee281b421343ae735c3d892ab80c2cc8c47522ad0822ccb457b97b3792a040e41991016801f3ed
+  languageName: node
+  linkType: hard
+
 "http-cache-semantics@npm:^4.1.1":
   version: 4.1.1
   resolution: "http-cache-semantics@npm:4.1.1"
@@ -1577,6 +1586,13 @@ __metadata:
   version: 4.7.0
   resolution: "lodash.sortby@npm:4.7.0"
   checksum: 10c0/fc48fb54ff7669f33bb32997cab9460757ee99fafaf72400b261c3e10fde21538e47d8cfcbe6a25a31bcb5b7b727c27d52626386fc2de24eb059a6d64a89cdf5
+  languageName: node
+  linkType: hard
+
+"long@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "long@npm:3.2.0"
+  checksum: 10c0/03884ad097403bda356228899c8397d7e4e2cd26489983034faa8e52ab9f18df4539de548571ad2f574ecf78454fc377bbcd2ba8ba76d567bf973345aefcbdb2
   languageName: node
   linkType: hard
 
@@ -2205,6 +2221,15 @@ __metadata:
   bin:
     rollup: dist/bin/rollup
   checksum: 10c0/cbe9b766891da74fbf7c3b50420bb75102e5c59afc0ea45751f7e43a581d2cd93367763f521f820b72e341cf1f6b9951fbdcd3be67a1b0aa774b754525a8b9c7
+  languageName: node
+  linkType: hard
+
+"s2-geometry@npm:^1.2.10":
+  version: 1.2.10
+  resolution: "s2-geometry@npm:1.2.10"
+  dependencies:
+    long: "npm:^3.2.0"
+  checksum: 10c0/4cc50d9ee56a15731d8952755ef30f22c5139158c77b4ee0d015fc3676049ffc632d7e6fd489aeeabb04b8ded59d1577b8a270b0317f675a31b70adfecd9e9df
   languageName: node
   linkType: hard
 
