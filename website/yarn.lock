@@ -8877,6 +8877,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"h3-js@npm:^4.4.0":
+  version: 4.4.0
+  resolution: "h3-js@npm:4.4.0"
+  checksum: 10c0/3a324b3a879601e1d012c2f67b2f78e9a480b0fa8e51c54b77ee281b421343ae735c3d892ab80c2cc8c47522ad0822ccb457b97b3792a040e41991016801f3ed
+  languageName: node
+  linkType: hard
+
 "handle-thing@npm:^2.0.0":
   version: 2.0.1
   resolution: "handle-thing@npm:2.0.1"
@@ -13182,6 +13189,7 @@ __metadata:
     d3-color: "npm:^3.1.0"
     d3-sankey: "npm:^0.12.3"
     docusaurus-plugin-plausible: "npm:^0.0.5"
+    h3-js: "npm:^4.4.0"
     hyparquet: "npm:^1.20.0"
     maplibre-gl: "npm:^5.0.0"
     prism-react-renderer: "npm:^2.3.0"
@@ -13189,6 +13197,7 @@ __metadata:
     react-dom: "npm:^18.2.0"
     react-map-gl: "npm:^8.0.0"
     react-virtualized-auto-sizer: "npm:^1.0.2"
+    s2-geometry: "npm:^1.2.10"
     styled-components: "npm:^5.3.3"
     three: "npm:^0.174.0"
     ts-node: "npm:~10.9.1"
@@ -14141,6 +14150,15 @@ __metadata:
   version: 1.3.3
   resolution: "rw@npm:1.3.3"
   checksum: 10c0/b1e1ef37d1e79d9dc7050787866e30b6ddcb2625149276045c262c6b4d53075ddc35f387a856a8e76f0d0df59f4cd58fe24707e40797ebee66e542b840ed6a53
+  languageName: node
+  linkType: hard
+
+"s2-geometry@npm:^1.2.10":
+  version: 1.2.10
+  resolution: "s2-geometry@npm:1.2.10"
+  dependencies:
+    long: "npm:^3.2.0"
+  checksum: 10c0/4cc50d9ee56a15731d8952755ef30f22c5139158c77b4ee0d015fc3676049ffc632d7e6fd489aeeabb04b8ded59d1577b8a270b0317f675a31b70adfecd9e9df
   languageName: node
   linkType: hard
 
