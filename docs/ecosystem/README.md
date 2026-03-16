@@ -14,6 +14,10 @@ For practical examples on how to use these tools, see the [Recipes](./recipes) s
 ### Rust
 📖 [Quickstart](../quickstart/rust.md) • 📦 [Package](https://crates.io/crates/a5) • 🔗 [Source](https://github.com/felixpalmer/a5-rs)
 
+### R
+
+📖 [Docs](https://belian-earth.github.io/a5R/) • 📦 [Package](https://cran.r-project.org/package=a5R) • 🔗 [Source](https://github.com/belian-earth/a5R)
+
 ## Integrations
 
 ### deck.gl
