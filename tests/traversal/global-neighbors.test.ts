@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hexToU64, u64ToHex } from 'a5';
+import { hexToU64, u64ToHex, getResolution } from 'a5';
 import { getGlobalCellNeighbors } from 'a5/traversal/global-neighbors';
 import fixtures from '../fixtures/traversal/global-neighbors.json';
 
@@ -25,9 +25,14 @@ describe('getGlobalCellNeighbors', () => {
     }
   });
 
-  it('should always return exactly 5 edge neighbors', () => {
+  it('should return correct edge neighbor count per resolution', () => {
     for (const f of fixtures as Fixture[]) {
-      expect(f.output.edgeNeighbors.length).toBe(5);
+      const resolution = getResolution(hexToU64(f.input.cellId));
+      // Res 0: pentagonal face → 5 edge neighbors
+      // Res 1: triangular quintant → 3 edge neighbors
+      // Res 2+: pentagonal cell → 5 edge neighbors
+      const expectedEdgeCount = resolution === 1 ? 3 : 5;
+      expect(f.output.edgeNeighbors.length).toBe(expectedEdgeCount);
     }
   });
 });

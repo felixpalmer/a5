@@ -11,14 +11,19 @@ type Fixture = {
 
 const cases = fixtures as Fixture[];
 
+/** Sort hex cell IDs by numeric value. */
+function sortHex(cells: string[]): string[] {
+  return cells.sort((a, b) => a.padStart(20, '0').localeCompare(b.padStart(20, '0')));
+}
+
 describe('gridDisk', () => {
   it('should return correct cells for all k values', () => {
     for (const f of cases) {
       const cellId = hexToU64(f.cellId);
       const targetRes = getResolution(cellId);
-      const result = Array.from(uncompact(gridDisk(cellId, f.k), targetRes))
-        .map(n => u64ToHex(n));
-      expect(result).toEqual(f.cells);
+      const result = sortHex(Array.from(uncompact(gridDisk(cellId, f.k), targetRes))
+        .map(n => u64ToHex(n)));
+      expect(result).toEqual(sortHex([...f.cells]));
     }
   });
 
@@ -39,10 +44,9 @@ describe('gridDiskVertex', () => {
     for (const f of cases) {
       const cellId = hexToU64(f.cellId);
       const targetRes = getResolution(cellId);
-      const expected = [...f.cells, ...f.extraVertexCells]
-        .sort((a, b) => a.padStart(20, '0').localeCompare(b.padStart(20, '0')));
-      const result = Array.from(uncompact(gridDiskVertex(cellId, f.k), targetRes))
-        .map(n => u64ToHex(n));
+      const expected = sortHex([...f.cells, ...f.extraVertexCells]);
+      const result = sortHex(Array.from(uncompact(gridDiskVertex(cellId, f.k), targetRes))
+        .map(n => u64ToHex(n)));
       expect(result).toEqual(expected);
     }
   });
