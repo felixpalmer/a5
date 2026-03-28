@@ -122,7 +122,7 @@ function cellBoundary(id: bigint): LonLat[] {
 
 /** Derive A5 resolution from map zoom level */
 function zoomToResolution(zoom: number): number {
-  return Math.max(2, Math.min(28, zoom + 2));
+  return Math.max(0, Math.min(28, Math.round(zoom * 1.1)));
 }
 
 /** Base radius in meters for a given zoom level (half Earth circumference / scale) */

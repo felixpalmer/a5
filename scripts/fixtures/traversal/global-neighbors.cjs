@@ -162,8 +162,46 @@ function generateForResolution(resolution, cellsPerCategory) {
   return fixtures;
 }
 
-// Generate fixtures for resolutions 2-5
+// Generate fixtures for resolutions 0-1 (all cells, brute-force)
 const allFixtures = [];
+
+for (const resolution of [0, 1]) {
+  console.log(`\nResolution ${resolution}:`);
+  const cells = getRes0Cells().flatMap(c => cellToChildren(c, resolution));
+  console.log(`  ${cells.length} total cells`);
+
+  const boundaries = new Map();
+  for (const cell of cells) {
+    boundaries.set(cell, cellToBoundary(cell, {closedRing: false, segments: 1}));
+  }
+
+  for (const cell of cells) {
+    const bA = boundaries.get(cell);
+    const neighbors = [];
+    const edgeNeighbors = [];
+    for (const other of cells) {
+      if (other === cell) continue;
+      const shared = countSharedVertices(bA, boundaries.get(other));
+      if (shared > 0) {
+        neighbors.push(other);
+        if (shared >= 2) edgeNeighbors.push(other);
+      }
+    }
+    neighbors.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    edgeNeighbors.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+
+    allFixtures.push({
+      input: {cellId: u64ToHex(cell)},
+      output: {
+        neighbors: neighbors.map(n => u64ToHex(n)),
+        edgeNeighbors: edgeNeighbors.map(n => u64ToHex(n))
+      }
+    });
+  }
+  console.log(`  Added ${cells.length} test cases for resolution ${resolution}`);
+}
+
+// Generate fixtures for resolutions 2-5
 const resolutions = [2, 3, 4, 5];
 const cellsPerCategory = 8;
 

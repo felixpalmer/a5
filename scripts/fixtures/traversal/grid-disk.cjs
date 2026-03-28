@@ -61,6 +61,45 @@ function bruteForceGridDisk(cellId, k, allCells, boundaryMap, edgeOnly) {
 
 console.log('Generating traversal/grid-disk fixtures...');
 
+const fixtures = [];
+
+// Generate fixtures for resolutions 0 and 1 (all cells)
+for (const resolution of [0, 1]) {
+  console.log(`\nResolution ${resolution}:`);
+  const cells = getRes0Cells().flatMap(c => cellToChildren(c, resolution));
+  console.log(`  ${cells.length} total cells`);
+
+  const boundaries = new Map();
+  for (const cell of cells) {
+    boundaries.set(cell, cellToBoundary(cell, {closedRing: false, segments: 1}));
+  }
+
+  // Test a sample of cells (every 5th at res 0, every 10th at res 1)
+  const step = resolution === 0 ? 4 : 10;
+  const testCells = cells.filter((_, i) => i % step === 0);
+  console.log(`  Selected ${testCells.length} test cells`);
+
+  for (const k of [1, 2]) {
+    console.log(`  Generating k=${k} fixtures...`);
+    for (const cellId of testCells) {
+      const edgeCells = bruteForceGridDisk(cellId, k, cells, boundaries, true);
+      const vertexCells = bruteForceGridDisk(cellId, k, cells, boundaries, false);
+      const edgeSet = new Set(edgeCells.map(c => u64ToHex(c)));
+      const extraVertexCells = vertexCells
+        .filter(c => !edgeSet.has(u64ToHex(c)))
+        .map(c => u64ToHex(c));
+
+      fixtures.push({
+        cellId: u64ToHex(cellId),
+        k,
+        cells: edgeCells.map(c => u64ToHex(c)),
+        extraVertexCells,
+      });
+    }
+  }
+}
+
+// Generate fixtures for resolution 3
 const resolution = 3;
 console.log(`\nResolution ${resolution}:`);
 const cells = getRes0Cells().flatMap(c => cellToChildren(c, resolution));
@@ -88,7 +127,6 @@ const testCells = Array.from(testCellIndices)
 
 console.log(`  Selected ${testCells.length} test cells`);
 
-const fixtures = [];
 for (const k of [1, 2]) {
   console.log(`  Generating k=${k} fixtures...`);
   for (const cellId of testCells) {
