@@ -19,6 +19,14 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v0.7.2] - Mar 29 2026
+
+- Feature: Support neighbor functions in res 0 & 1 (#87)
+
+#### A5 [v0.7.1] - Mar 11 2026
+
+- Feature: Support (de)serialization of resolution 30 cells (#82)
+
 #### A5 [v0.7.0] - Mar 3 2026
 
 - Feature: gridDisk & sphericalCap (#78)
