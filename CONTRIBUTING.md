@@ -29,6 +29,16 @@ yarn build
 yarn generate-fixtures
 ```
 
+## Sync fixtures to Python & Rust ports
+
+After generating fixtures, sync them to the sibling `a5-py` and `a5-rs` repos:
+
+```bash
+yarn sync-fixtures            # copy updated fixtures
+yarn sync-fixtures --dry-run  # preview what would be copied
+yarn sync-fixtures --check    # exit 1 if any fixtures are out of sync (useful in CI)
+```
+
 ## Publish (for maintainers)
 
 ```bash
