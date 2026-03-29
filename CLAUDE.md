@@ -47,6 +47,7 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 ```
 
 ## Development Guidelines
+- Read CONTRIBUTING.md
 - **TypeScript**: Source files in `/modules`, compiled to `/dist`
 - **Tests**: Use Vitest, run specific tests with `yarn test <filename> --run`
 - **Imports**: Run `python3 analyze_imports.py modules --check-only` after changing imports
@@ -133,8 +134,8 @@ These are the same checks that run in CI (.github/workflows/test.yml). Run these
   - 4. run tests and iterate, fixing either the tests, code or fixtures
 - **IMPORTANT**: Always use `yarn generate-fixtures` to regenerate fixtures after code changes. This builds the library first, then runs all fixture generation scripts.
 - **IMPORTANT**: If you modify `modules/test-index.ts` (which exports functions for testing), you MUST run `yarn build` before running any scripts that depend on it (like `scripts/analyze-subflavours.cjs`)
-- Python/Rust ports should just copy across the fixtures, not have their own generators
-- IMPORTANT: The ports should verify that the behavior is exactly the same, it is NOT acceptable to round values or accept approximate equality
+- **IMPORTANT**: Python/Rust ports should just copy across the fixtures, not have their own generators, use `yarn sync-fixtures`
+- **IMPORTANT**: The ports should verify that the behavior is exactly the same, it is NOT acceptable to round values or accept approximate equality
 
 ## Important
 - Keep changes minimal and focused on requested tasks
