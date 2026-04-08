@@ -105,13 +105,20 @@ export function fromLonLat([longitude, latitude]: LonLat): Spherical {
 }
 
 /**
+ * Normalize a longitude value to the range [-180, 180)
+ */
+export function normalizeLongitude(lon: Degrees): Degrees {
+  return ((lon + 180) % 360 + 360) % 360 - 180 as Degrees;
+}
+
+/**
  * Convert spherical coordinates to longitude/latitude
  * @param theta Longitude in radians (0 to 2π)
  * @param phi Colatitude in radians (0 to π)
  * @returns [longitude, latitude] in degrees
  */
 export function toLonLat([theta, phi]: Spherical): LonLat {
-  const longitude = radToDeg(theta) - LONGITUDE_OFFSET as Degrees;
+  const longitude = normalizeLongitude(radToDeg(theta) - LONGITUDE_OFFSET as Degrees);
 
   const authalicLat = Math.PI / 2 - phi as Radians;
   const geodeticLat = authalic.inverse(authalicLat);
@@ -138,13 +145,12 @@ export function normalizeLongitudes(contour: Contour): Contour {
     centerLon = contour[0][0] as Degrees;
   }
 
-  // Normalize center longitude to be in the range -180 to 180
-  centerLon = ((centerLon + 180) % 360 + 360) % 360 - 180 as Degrees;
-  
+  centerLon = normalizeLongitude(centerLon);
+
   // Normalize each point relative to center
   return contour.map(point => {
     let [longitude, latitude] = point;
-    
+
     // Adjust longitude to be closer to center
     while (longitude - centerLon > 180) longitude = longitude - 360 as Degrees;
     while (longitude - centerLon < -180) longitude = longitude + 360 as Degrees;

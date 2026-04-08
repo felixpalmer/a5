@@ -182,8 +182,10 @@ describe('LonLat to/from spherical', () => {
     TEST_POINTS_LONLAT.forEach(([lon, lat]) => {
       const spherical = fromLonLat([lon, lat] as LonLat)
       const [newLon, newLat] = toLonLat(spherical)
-      
-      expect([newLon, newLat]).toBeCloseToArray([lon, lat]);
+
+      // 180 and -180 are equivalent longitudes (antimeridian)
+      const expectedLon = lon === 180 ? -180 : lon;
+      expect([newLon, newLat]).toBeCloseToArray([expectedLon, lat]);
     })
   })
 });
