@@ -8,6 +8,7 @@ require("./fixtures/core/origins.cjs");
 require("./fixtures/core/tiling.cjs");
 require("./fixtures/core/constants.cjs");
 require("./fixtures/core/dodecahedron-quaternions.cjs");
+require("./fixtures/core/cell-to-lonlat.cjs");
 // Lattice generators
 require("./fixtures/lattice/hilbert.cjs");
 require("./fixtures/lattice/shift-digits.cjs");
