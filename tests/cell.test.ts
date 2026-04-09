@@ -4,6 +4,7 @@ import { cellToBoundary, cellToLonLat, lonLatToCell,a5cellContainsPoint } from '
 import { deserialize, MAX_RESOLUTION } from 'a5/core/serialization';
 import { hexToU64 } from 'a5/core/hex';
 import populatedPlaces from './data/ne_50m_populated_places_nameonly.json';
+import cellToLonLatFixtures from './fixtures/cell-to-lonlat.json';
 
 interface GeoJSONFeature {
     type: 'Feature';
@@ -180,4 +181,26 @@ describe('Cell Boundary Tests', () => {
             throw new Error(failureMessage);
         }
     });
-}); 
+});
+
+describe('cellToLonLat Tests', () => {
+    it('should return longitude in [-180, 180] range', () => {
+        for (const fixture of cellToLonLatFixtures) {
+            const cell = hexToU64(fixture.cell_id);
+            const [lon, lat] = cellToLonLat(cell);
+            expect(lon).toBeGreaterThanOrEqual(-180);
+            expect(lon).toBeLessThanOrEqual(180);
+            expect(lat).toBeGreaterThanOrEqual(-90);
+            expect(lat).toBeLessThanOrEqual(90);
+        }
+    });
+
+    it('should match fixture values', () => {
+        for (const fixture of cellToLonLatFixtures) {
+            const cell = hexToU64(fixture.cell_id);
+            const [lon, lat] = cellToLonLat(cell);
+            expect(lon).toBeCloseTo(fixture.center_lonlat[0], 10);
+            expect(lat).toBeCloseTo(fixture.center_lonlat[1], 10);
+        }
+    });
+});
