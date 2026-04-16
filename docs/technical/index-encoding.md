@@ -90,6 +90,32 @@ import HierarchyDemo from 'website-examples/hierarchy/app';
   <HierarchyDemo height="500px" />
 </div>
 
+## Special Case: Resolution 30
+
+At resolution 30 the Hilbert curve requires 2 × 29 = 58 bits, and combined with 6 quintant bits that's already 64 — leaving no room for the resolution marker.
+
+The solution is a **virtual 66-bit layout**: when the final 1, 3 or 5 bits of the 64-bit index are set to a special value - before interpreting the index it must be first shifted right and then treated as a *66* bit integer, where the last two bits are `10` as usual.
+
+Depending on the mask, the quintant value is also offset.
+
+| Pattern    | Pattern bits | Shift  | Quintant offset | Quintant range |
+|------------|--------------|--------|-----------------|----------------|
+| `...1`     | 1            | 1 bits | 0               | 0–31           |
+| `...100`   | 3            | 3 bits | 32              | 32–39          |
+| `...10000` | 5            | 5 bits | 40              | 40–41          |
+
+Examples:
+- <span style={{color: '#0066FF', fontWeight: 'bold'}}>QQQQQ</span><span style={{color: '#000000', fontWeight: 'bold'}}>S...S</span><span style={{color: '#FF0066', fontWeight: 'bold'}}>1</span> (64 bits) becomes <span style={{color: '#0066FF', fontWeight: 'bold'}}>0QQQQQ</span><span style={{color: '#000000', fontWeight: 'bold'}}>S...S</span><span style={{color: '#FF0066', fontWeight: 'bold'}}>10</span> (66 bits) 
+- <span style={{color: '#0066FF', fontWeight: 'bold'}}>Q</span><span style={{color: '#000000', fontWeight: 'bold'}}>S...S</span><span style={{color: '#FF0066', fontWeight: 'bold'}}>10000</span> (64 bits) becomes <span style={{color: '#0066FF', fontWeight: 'bold'}}>10100Q</span><span style={{color: '#000000', fontWeight: 'bold'}}>S...S</span><span style={{color: '#FF0066', fontWeight: 'bold'}}>10</span> (66 bits). _Note static offset of 40 (`101000` in binary)._
+
+### Why this works
+
+The trick above exploits the fact that the indexing scheme has some unused values, which can be used to represent the final resolution level. In the general case, an index value will have a `1` followed by an *odd* number of `0`s, e.g. `...1000`. Thus by choosing patterns that have an *even* number of `0`s, we can be sure to avoid collisions and effectively gain an extra two bits.
+
+### Quintants beyond 41
+
+Resolution 30 supports only quintants 0–41, as there isn't room for the remaining quintants in the index space. Any quintant value above 41 falls back to resolution 29, gracefully losing one level of precision rather than failing. The A5 index is designed so that more than 99% of the land mass is [contained in the first 41 quintants](../../examples/globe/), thus providing the highest resoution on land.
+
 ## Special Case: World Cell
 
 A special cell identifier with value `0n` (all 64 bits are zero) represents the entire world. This cell serves as the root of the A5 hierarchy. It is useful for hierarchical operations where you need to represent the root of all cells, such as:
@@ -147,4 +173,4 @@ All cell IDs are exactly 64 bits (8 bytes), making them:
 
 ### 4. High resolution
 
-By storing the resolution implicitly and effectively using the first 6 bits to store the quintant, the highest resolution A5 is around 30mm², better than S2 (~1cm²) and H3 (~1m²).
+By storing the resolution implicitly and effectively using 6 bits for the quintant, A5 dedicates the remaining 58 bits to the Hilbert curve at its highest resolution. The [virtual 66-bit encoding](#special-case-resolution-30) at resolution 30 squeezes every last bit out of the 64-bit integer, achieving cell areas of around 30mm² — better than S2 (~1cm²) and H3 (~1m²).
