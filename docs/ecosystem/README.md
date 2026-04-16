@@ -1,10 +1,13 @@
 # Libraries & Integrations
 
-The A5 project consists of multiple language implementations and integrations, maintained using [polyglot mirroring](polyglot-mirroring.md) to ensure feature parity and consistency across the ecosystem. Contributions are welcome!
+The A5 project maintains official implementations in TypeScript, Python, and Rust using [polyglot mirroring](polyglot-mirroring.md) to ensure feature parity and consistency. The wider ecosystem includes community-contributed libraries and integrations in additional languages and platforms. Contributions are welcome!
 
 For practical examples on how to use these tools, see the [Recipes](./recipes) section.
 
 ## Core Libraries
+
+The TypeScript, Python, and Rust libraries are maintained directly by the A5 project.
+
 ### TypeScript
 📖 [Quickstart](../quickstart/javascript.md) • 📦 [Package](https://www.npmjs.com/package/a5-js) • 🔗 [Source](https://github.com/felixpalmer/a5)
 
@@ -14,8 +17,15 @@ For practical examples on how to use these tools, see the [Recipes](./recipes) s
 ### Rust
 📖 [Quickstart](../quickstart/rust.md) • 📦 [Package](https://crates.io/crates/a5) • 🔗 [Source](https://github.com/felixpalmer/a5-rs)
 
-### R
+## Community Libraries
 
+### Go
+🔗 [Source](https://github.com/corewood-tech/a5go)
+
+### Python (Rust bindings)
+📦 [Package](https://pypi.org/project/a5-fast/) • 🔗 [Source](https://github.com/afterrealism/a5_fast)
+
+### R
 📖 [Docs](https://belian-earth.github.io/a5R/) • 📦 [Package](https://cran.r-project.org/package=a5R) • 🔗 [Source](https://github.com/belian-earth/a5R)
 
 ## Integrations
@@ -32,8 +42,10 @@ For practical examples on how to use these tools, see the [Recipes](./recipes) s
 ### raster2dggs
 📖 [Quickstart](https://github.com/manaakiwhenua/raster2dggs?tab=readme-ov-file#installation) • 📦 [Package](https://pypi.org/project/raster2dggs/) • 🔗 [Source](https://github.com/manaakiwhenua/raster2dggs)
 
-### QGIS
+### GeoParquet
+ 🔗 [Website](https://geoparquet.io/) • 📖 [Docs](https://geoparquet.io/guide/partition/#by-a5-cells) • 🔗 [Source](https://github.com/geoparquet/geoparquet-io)
 
+### QGIS
 📖 [Guide](https://vgridtools.gishub.vn/) • 📦 [Plugin](https://plugins.qgis.org/plugins/vgridtools/) • 🔗 [Source](https://github.com/opengeoshub/vgridtools)
 
 ## Products
