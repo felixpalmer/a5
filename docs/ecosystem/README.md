@@ -17,7 +17,7 @@ The TypeScript, Python, and Rust libraries are maintained directly by the A5 pro
 ### Rust
 📖 [Quickstart](../quickstart/rust.md) • 📦 [Package](https://crates.io/crates/a5) • 🔗 [Source](https://github.com/felixpalmer/a5-rs)
 
-The following are community-contributed libraries:
+## Community Libraries
 
 ### Go
 🔗 [Source](https://github.com/corewood-tech/a5go)
@@ -43,7 +43,7 @@ The following are community-contributed libraries:
 📖 [Quickstart](https://github.com/manaakiwhenua/raster2dggs?tab=readme-ov-file#installation) • 📦 [Package](https://pypi.org/project/raster2dggs/) • 🔗 [Source](https://github.com/manaakiwhenua/raster2dggs)
 
 ### GeoParquet
-📖 [Docs](https://geoparquet.io/guide/partition/#by-a5-cells) • 🔗 [Website](https://geoparquet.io/)
+ 🔗 [Website](https://geoparquet.io/) • 📖 [Docs](https://geoparquet.io/guide/partition/#by-a5-cells) • 🔗 [Source](https://github.com/geoparquet/geoparquet-io)
 
 ### QGIS
 📖 [Guide](https://vgridtools.gishub.vn/) • 📦 [Plugin](https://plugins.qgis.org/plugins/vgridtools/) • 🔗 [Source](https://github.com/opengeoshub/vgridtools)
