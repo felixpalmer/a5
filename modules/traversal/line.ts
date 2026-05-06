@@ -152,79 +152,14 @@ function cellIntersectsSegment(cellId: bigint, startVec: Vec3, endVec: Vec3): bo
 // =============================================================================
 
 /**
- * Trace cells along a great-circle line segment between two points.
- *
- * Seeds cells at regular intervals along the segment, then BFS-expands via
- * lattice neighbors, keeping any cell whose pentagon intersects the segment.
- *
- * @returns Array of unique cell IDs along the segment
- */
-export function lineSegmentToCells(start: LonLat, end: LonLat, resolution: number): bigint[] {
-  const startCell = lonLatToCell(start, resolution);
-  const endCell = lonLatToCell(end, resolution);
-
-  // Fast path: both endpoints in the same cell (very common for dense polylines)
-  if (startCell === endCell) return [startCell];
-
-  const dist = greatCircleDistance(start, end);
-  const cellRadius = estimateCellRadius(resolution);
-
-  const startVec = toVec3(start);
-  const endVec = toVec3(end);
-
-  // 0.5 cell radii is just the BFS seed density — the actual membership test is
-  // cellIntersectsSegment downstream. Polygon fill uses 0.4 because there each
-  // sample IS the boundary-cell decision (a miss = flood-fill leak).
-  const seedInterval = cellRadius * 0.5;
-  const numSeeds = Math.max(2, Math.ceil(dist / seedInterval));
-
-  const visited = new Set<bigint>();
-  const result: bigint[] = [];
-  let frontier = new Set<bigint>();
-
-  visited.add(startCell);
-  result.push(startCell);
-  frontier.add(startCell);
-  if (!visited.has(endCell)) {
-    visited.add(endCell);
-    result.push(endCell);
-    frontier.add(endCell);
-  }
-
-  for (let i = 1; i < numSeeds; i++) {
-    const t = i / numSeeds;
-    const cell = lonLatToCell(greatCircleSlerp(start, end, t), resolution);
-    if (!visited.has(cell)) {
-      visited.add(cell);
-      result.push(cell);
-      frontier.add(cell);
-    }
-  }
-
-  // BFS: expand via lattice neighbors, keep cells that intersect the segment
-  while (frontier.size > 0) {
-    const nextFrontier = new Set<bigint>();
-    for (const cell of frontier) {
-      for (const neighbor of getLatticeNeighbors(cell, false)) {
-        if (visited.has(neighbor)) continue;
-        visited.add(neighbor);
-        if (cellIntersectsSegment(neighbor, startVec, endVec)) {
-          result.push(neighbor);
-          nextFrontier.add(neighbor);
-        }
-      }
-    }
-    frontier = nextFrontier;
-  }
-
-  return result;
-}
-
-/**
  * Trace cells along a polyline defined by a sequence of waypoints.
  *
- * Connects consecutive waypoints with great-circle arcs and returns all
- * cells along the path. Cells at waypoint junctions are deduplicated.
+ * Connects consecutive waypoints with great-circle arcs. For each segment,
+ * seeds cells at regular intervals along the arc, then BFS-expands via lattice
+ * neighbors, keeping any cell whose pentagon intersects the segment. Cells at
+ * waypoint junctions are deduplicated.
+ *
+ * Pass `[start, end]` for a simple two-point line segment.
  *
  * @returns Array of unique cell IDs along the polyline, in order
  */

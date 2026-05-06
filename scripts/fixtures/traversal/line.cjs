@@ -6,7 +6,7 @@ const {
   lonLatToCell,
   cellToBoundary,
   u64ToHex,
-  lineSegmentToCells,
+  lineStringToCells,
 } = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
@@ -110,7 +110,7 @@ const lineSegmentFixtures = [];
 for (const tc of lineSegmentCases) {
   console.log(`  ${tc.name}...`);
   const expected = bruteForceLineSegmentToCells(tc.start, tc.end, resolution);
-  const actual = lineSegmentToCells(tc.start, tc.end, resolution);
+  const actual = lineStringToCells([tc.start, tc.end], resolution);
   const actualSorted = [...actual].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   console.log(`    brute-force: ${expected.length}, algorithm: ${actual.length}`);
   lineSegmentFixtures.push({
