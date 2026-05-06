@@ -9,7 +9,7 @@ import type { Face, LonLat, Spherical } from "./coordinate-systems";
 import { FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { DodecahedronProjection } from "../projections/dodecahedron";
-import { A5Cell } from "./utils";
+import { A5Cell, OriginId } from "./utils";
 import { PentagonShape } from "../geometry/pentagon";
 import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
 import { PI_OVER_5 } from "./constants";
@@ -19,6 +19,24 @@ import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
 const dodecahedron = new DodecahedronProjection();
+
+// Single-entry cache of the most recent successful lookup. Speeds up
+// dense-sample workloads (polygon boundary tracing, line tracing) where
+// consecutive calls often land in the same cell. The cache stores the
+// pre-computed pentagon + origin so the hit-test is just one projection
+// + one pentagon containment check.
+let _lastResult: {
+  cellId: bigint,
+  pentagon: PentagonShape,
+  originId: OriginId,
+  resolution: number,
+} | null = null;
+
+/** Update the single-entry cache with a successful (cell, cellId) pair. */
+function cacheResult(cell: A5Cell, cellId: bigint, resolution: number): bigint {
+  _lastResult = {cellId, pentagon: _getPentagon(cell), originId: cell.origin.id, resolution};
+  return cellId;
+}
 
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   // Resolution -1 represents WORLD_CELL, which covers the entire world
@@ -31,43 +49,47 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
     return serialize(_lonLatToEstimate(lonLat, resolution));
   }
 
+  // Try the cached pentagon first — skips the full estimate pipeline when
+  // consecutive calls land in the same cell (common in dense-sample loops).
+  if (_lastResult && _lastResult.resolution === resolution) {
+    const projected = dodecahedron.forward(fromLonLat(lonLat), _lastResult.originId);
+    if (_lastResult.pentagon.containsPoint(projected as Face) > 0) return _lastResult.cellId;
+  }
+
+  // Try the original point's projection-based estimate. Common case for
+  // non-boundary points.
+  const firstEstimate = _lonLatToEstimate(lonLat, resolution);
+  const firstKey = serialize(firstEstimate);
+  const firstDistance = a5cellContainsPoint(firstEstimate, lonLat);
+  if (firstDistance > 0) return cacheResult(firstEstimate, firstKey, resolution);
+
+  // Spiral search: perturb lonLat to find nearby estimate cells (the projection
+  // approximation can land in a neighbor at pentagon boundaries). Samples are
+  // generated lazily — if the first sample hits we skip 25 trig+alloc ops.
   const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-  const samples: LonLat[] = [lonLat];
   const N = 25;
   const scale = 50 / Math.pow(2, hilbertResolution);
-  for (let i = 0; i < N; i++) {
+  const estimateSet = new Set<bigint>([firstKey]);
+  const cells: {cell: A5Cell, distance: number}[] = [{cell: firstEstimate, distance: firstDistance}];
+
+  // i=0 yields R=0 → same as the original sample, so start at i=1.
+  for (let i = 1; i < N; i++) {
     const R = (i / N) * scale;
-    const coordinate = vec2.fromValues(Math.cos(i) * R, Math.sin(i) * R);
-    vec2.add(coordinate, coordinate, lonLat);
-    samples.push(coordinate as LonLat);
-  }
-
-  // Deduplicate estimates
-  const estimateSet = new Set<bigint>();
-  const uniqueEstimates: A5Cell[] = [];
-
-  const cells: {cell: A5Cell, distance: number}[] = [];
-  for (const sample of samples) {
+    const sample: LonLat = [lonLat[0] + Math.cos(i) * R, lonLat[1] + Math.sin(i) * R] as LonLat;
     const estimate = _lonLatToEstimate(sample, resolution);
     const estimateKey = serialize(estimate);
-    if (!estimateSet.has(estimateKey)) {
-      // Have new estimate, add to set and list
-      estimateSet.add(estimateKey);
-      uniqueEstimates.push(estimate);
-
-      // Check if we have a hit, storing distance if not
-      const distance = a5cellContainsPoint(estimate, lonLat);
-      if (distance > 0) {
-        return serialize(estimate);
-      } else {
-        cells.push({cell: estimate, distance});
-      }
-    }
+    if (estimateSet.has(estimateKey)) continue;
+    estimateSet.add(estimateKey);
+    const distance = a5cellContainsPoint(estimate, lonLat);
+    if (distance > 0) return cacheResult(estimate, estimateKey, resolution);
+    cells.push({cell: estimate, distance});
   }
 
-  // As fallback, sort cells by distance and use the closest one
+  // Fallback: pick the closest estimate. Cache it so subsequent dense-sample
+  // calls still benefit even though this lookup was approximate.
   cells.sort((a, b) => b.distance - a.distance);
-  return serialize(cells[0].cell);
+  const fallback = cells[0].cell;
+  return cacheResult(fallback, serialize(fallback), resolution);
 }
 
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
