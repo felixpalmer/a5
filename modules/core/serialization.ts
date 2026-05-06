@@ -236,30 +236,83 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
   return children;
 }
 
+/**
+ * Cheap predicate that mirrors the first three checks in `getResolution`:
+ * res-30 cells are exactly those whose low bits match one of the three
+ * variable-width quintant marker patterns.
+ */
+function isMaxResolution(index: bigint): boolean {
+  return (
+    (index & 1n) !== 0n
+    || (index & 0b111n) === 0b100n
+    || (index & 0b11111n) === 0b10000n
+  );
+}
+
+/**
+ * Re-pack a res-30 cell into the standard res-29 bit layout (6-bit quintant
+ * in [63..58], 56-bit S in [57..2], marker at bit 1). The 58-bit res-30 S is
+ * truncated by 2 bits, exactly as `cellToParent(_, 29)` would.
+ */
+function normalizeRes30(index: bigint): bigint {
+  let qShift: bigint, qOffset: bigint, markerBits: bigint;
+  if (index & 1n)               { qShift = 59n; qOffset = 0n;  markerBits = 1n; }
+  else if (index & 0b100n)      { qShift = 61n; qOffset = 32n; markerBits = 3n; }
+  else                          { qShift = 63n; qOffset = 40n; markerBits = 5n; }
+  const quintant = (index >> qShift) + qOffset;
+  const s58 = (index >> markerBits) & ((1n << 58n) - 1n);
+  return (quintant << 58n) | ((s58 >> 2n) << 2n) | (1n << 1n);
+}
+
+/**
+ * Walk a cell up the hierarchy to a coarser resolution.
+ *
+ * Implemented as pure bit ops over the encoded index — no deserialize /
+ * serialize round-trip. The three encoding regimes (non-Hilbert res 0/1,
+ * Hilbert res 2..29, variable-width res 30) all reduce to the same shape
+ * after a small amount of normalization.
+ */
 export function cellToParent(index: bigint, parentResolution?: number): bigint {
-  const {origin, segment, S, resolution: currentResolution} = deserialize(index);
-  const newResolution = parentResolution ?? currentResolution - 1;
+  if (parentResolution === undefined) parentResolution = getResolution(index) - 1;
 
   // Special case: parent of resolution 0 cells is the world cell
-  if (newResolution === -1) {
-    return WORLD_CELL;
+  if (parentResolution === -1) return WORLD_CELL;
+  if (parentResolution < -1 || parentResolution > MAX_RESOLUTION) {
+    throw new Error(`Target resolution (${parentResolution}) is out of range`);
+  }
+  if (index === WORLD_CELL) {
+    throw new Error(`Target resolution (${parentResolution}) must be equal to or less than current resolution (-1)`);
   }
 
-  if (newResolution < 0) {
-    throw new Error(`Target resolution (${newResolution}) cannot be negative`);
+  // Normalize res-30 children to the standard res-29 layout. After this,
+  // the fast paths below treat the cell as a Hilbert-range cell.
+  let c = index;
+  if (isMaxResolution(index)) {
+    if (parentResolution === MAX_RESOLUTION) return index; // identity (already res 30)
+    c = normalizeRes30(index);
+    if (parentResolution === MAX_RESOLUTION - 1) return c;
   }
 
-  if (newResolution > currentResolution) {
-    throw new Error(`Target resolution (${newResolution}) must be equal to or less than current resolution (${currentResolution})`);
+  if (parentResolution >= FIRST_HILBERT_RESOLUTION) {
+    // Hilbert-range parent: clear bits below the parent marker, set the marker.
+    // Identity (parent res === child res) falls out for free: the marker lands
+    // in the same position and bits below the keep cut are already zero.
+    const keepShift = BigInt(60 - 2 * parentResolution);
+    return ((c >> keepShift) << keepShift) | (1n << BigInt(59 - 2 * parentResolution));
   }
 
-  if (newResolution === currentResolution) {
-    return index;
+  if (parentResolution === 1) {
+    // Top 6 bits already encode 5*originId + segmentN; only the marker moves.
+    // Identity (cell already at res 1) is preserved.
+    return ((c >> 58n) << 58n) | (1n << 56n);
   }
 
-  const resolutionDiff = currentResolution - newResolution;
-  const shiftedS = S >> BigInt(2 * resolutionDiff);
-  return serialize({origin, segment, S: shiftedS, resolution: newResolution});
+  // parentResolution === 0: top 6 bits change from quintant (0-59) to originId (0-11).
+  // Identity (cell already at res 0) needs an explicit guard since dividing
+  // an originId by 5 would corrupt it. A res-0 cell has bit 57 set with all
+  // lower bits zero — equivalently, all bottom 57 bits are zero.
+  if ((c & ((1n << 57n) - 1n)) === 0n) return c;
+  return (((c >> 58n) / 5n) << 58n) | (1n << 57n);
 }
 
 /**
@@ -295,6 +348,25 @@ export function isFirstChild(index: bigint, resolution?: number): boolean {
   const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
   const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
   return (index & sMask) === 0n;
+}
+
+/**
+ * Bit-level descendant test: is `child` the same cell as `parent`, or one of
+ * its descendants at any deeper resolution? Compares the high (quintant +
+ * parent's Hilbert) bits in a single shift, no deserialize needed.
+ *
+ * Restricted to the Hilbert range: `parentResolution` must be in
+ * [FIRST_HILBERT_RESOLUTION .. MAX_RESOLUTION - 1], and `child` must not be
+ * a resolution-30 cell (whose encoding uses a variable quintant shift).
+ * Callers handling those cases should fall back to `cellToParent` equality.
+ */
+export function isChildOf(child: bigint, parent: bigint, parentResolution: number): boolean {
+  // Parent's identifying bits occupy positions 63..(60-2P): 6 quintant bits
+  // + 2(P-1) Hilbert bits. Bit (59-2P) is the marker, below that is zero.
+  // Shifting both right by (60-2P) keeps exactly those identifying bits and
+  // discards the marker, so a descendant matches iff the high bits match.
+  const shift = BigInt(60 - 2 * parentResolution);
+  return (child >> shift) === (parent >> shift);
 }
 
 /**
