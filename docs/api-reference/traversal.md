@@ -1,10 +1,10 @@
 # Traversal
 
-Functions for finding neighboring cells and collecting cells within a region. See the [Traversal](../../examples/traversal) example.
+Functions for finding neighboring cells, collecting cells within a range, and tracing cells along a path. See the [Traversal](../../examples/traversal) example.
 
-Each A5 cell has exactly 5 edge neighbors, which can be obtained using the `gridDisk` function. If the vertex neighbors are required, `gridDiskVertex` can be used. For broader range queries `sphericalCap` provides all the cells within a great-circle radius.
+Each A5 cell has exactly 5 edge neighbors, which can be obtained using the `gridDisk` function. If the vertex neighbors are required, `gridDiskVertex` can be used. For broader range queries `sphericalCap` provides all the cells within a great-circle radius. To trace cells along a great-circle path, use `lineStringToCells`.
 
-In order to save memory, the returned cells are [compacted](./compaction).
+In order to save memory, the returned cells from `gridDisk`, `gridDiskVertex` and `sphericalCap` are [compacted](./compaction).
 
 ### gridDisk
 
@@ -83,4 +83,40 @@ import { lonLatToCell, sphericalCap, uncompact, getResolution } from 'a5-js';
 const cell = lonLatToCell([2.3522, 48.8566], 10);
 const compact = sphericalCap(cell, 500_000); // 500 km
 const flat = uncompact(compact, getResolution(cell));
+```
+
+### lineStringToCells
+
+Returns all cells whose pentagons intersect a polyline defined by a sequence of waypoints. Consecutive waypoints are connected with great-circle arcs. For a simple two-point line segment, pass `[start, end]`.
+
+The result is uncompacted at the requested resolution and is not sorted — cells appear roughly in the order they were discovered along the path. Cells at waypoint junctions are deduplicated.
+
+```ts
+function lineStringToCells(waypoints: LonLat[], resolution: number): bigint[];
+```
+
+#### Parameters
+
+- `waypoints` **(LonLat[])** Polyline vertices, each as `[longitude, latitude]`
+- `resolution` **(number)** Target resolution (0–30)
+
+#### Return value
+
+- **(bigint[])** Array of unique cell identifiers whose pentagons intersect the polyline
+
+#### Example
+
+```ts
+import { lineStringToCells } from 'a5-js';
+
+// Simple segment: Paris → London
+const segment = lineStringToCells([[2.3522, 48.8566], [-0.1276, 51.5074]], 8);
+
+// Multi-waypoint route
+const route = [
+  [2.3522, 48.8566], // Paris
+  [4.8357, 45.7640], // Lyon
+  [7.2620, 43.7102]  // Nice
+];
+const cells = lineStringToCells(route, 8);
 ```

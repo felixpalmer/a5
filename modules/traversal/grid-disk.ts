@@ -60,9 +60,6 @@ function _gridDiskBFS(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Ar
  * Returns a sorted, compacted BigUint64Array of cell IDs including
  * the center cell.
  *
- * This matches H3's `gridDisk` semantics — only edge-sharing neighbors are
- * followed. For A5 pentagons, each cell has exactly 5 edge neighbors.
- *
  * To get all cells at the input resolution, chain with `uncompact`:
  * ```ts
  * const flat = uncompact(gridDisk(cellId, k), getResolution(cellId));
@@ -80,9 +77,6 @@ export function gridDisk(cellId: bigint, k: number): BigUint64Array {
  * Compute the grid disk of all neighbors (edge + vertex sharing) within k hops.
  * Returns a sorted, compacted BigUint64Array of cell IDs including
  * the center cell.
- *
- * This is an A5 extension — pentagons have both edge-sharing (5) and
- * vertex-only-sharing neighbors (1-3), giving 6-8 total neighbors per cell.
  *
  * To get all cells at the input resolution, chain with `uncompact`:
  * ```ts

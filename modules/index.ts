@@ -18,6 +18,7 @@ export {compact, uncompact} from './core/compact';
 // Traversal
 export {gridDisk, gridDiskVertex} from './traversal/grid-disk';
 export {sphericalCap} from './traversal/cap';
+export {lineStringToCells} from './traversal/line';
 
 // Types
 export type {Degrees, Radians, Spherical} from './core/coordinate-systems';

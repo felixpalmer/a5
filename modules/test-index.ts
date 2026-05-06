@@ -53,4 +53,7 @@ export { SphericalTriangleShape } from './geometry/spherical-triangle';
 export { PentagonShape } from './geometry/pentagon';
 
 // Export core types needed for projections
-export type { Polar, Spherical } from './core/coordinate-systems'; 
+export type { Polar, Spherical } from './core/coordinate-systems';
+
+// Export coordinate transforms for fixture generation
+export { fromLonLat, toCartesian, toSpherical, toLonLat } from './core/coordinate-transforms'; 

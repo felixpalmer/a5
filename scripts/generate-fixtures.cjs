@@ -20,6 +20,7 @@ require("./fixtures/traversal/quintant-neighbors.cjs");
 require("./fixtures/traversal/global-neighbors.cjs");
 require("./fixtures/traversal/grid-disk.cjs");
 require("./fixtures/traversal/cap.cjs");
+require("./fixtures/traversal/line.cjs");
 require("./fixtures/core/compact.cjs");
 
 // Geometry generators

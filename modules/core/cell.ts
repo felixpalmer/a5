@@ -207,3 +207,22 @@ export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
   const projectedPoint = dodecahedron.forward(spherical, cell.origin.id);
   return pentagon.containsPoint(projectedPoint);
 }
+
+/**
+ * Tests whether the segment between two LonLat points intersects a cell.
+ *
+ * The test runs entirely in the cell's Face coordinate system: both endpoints
+ * are projected via the dodecahedron projection (with face-plane extension for
+ * points beyond the face's edge), then checked against the pentagon's straight
+ * 2D edges. The segment is treated as a 2D straight line in Face coords —
+ * accurate when the segment is short relative to the face (DSEA distortion is
+ * negligible at sub-cell scales).
+ */
+export function cellIntersectsSegment(cellId: bigint, a: LonLat, b: LonLat): boolean {
+  if (cellId === WORLD_CELL) return true;
+  const cell = deserialize(cellId);
+  const pentagon = _getPentagon(cell);
+  const aFace = dodecahedron.forward(fromLonLat(a), cell.origin.id);
+  const bFace = dodecahedron.forward(fromLonLat(b), cell.origin.id);
+  return pentagon.intersectsSegment(aFace, bFace);
+}
