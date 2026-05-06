@@ -129,18 +129,3 @@ const fixtures = {
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
 console.log(`\nWrote line fixtures to ${outputPath}`);
-
-// Combine line + polygon fixtures for website
-const polygonFixturePath = path.join(outputDir, 'polygon.json');
-if (fs.existsSync(polygonFixturePath)) {
-  const polygonFixtures = JSON.parse(fs.readFileSync(polygonFixturePath, 'utf-8'));
-  const websiteDataDir = path.join(__dirname, '../../../website/static/data');
-  const websiteCopyPath = path.join(websiteDataDir, 'line-fixtures.json');
-  const combined = {
-    lineSegment: lineSegmentFixtures,
-    polygon: polygonFixtures.polygon,
-  };
-  fs.mkdirSync(websiteDataDir, { recursive: true });
-  fs.writeFileSync(websiteCopyPath, JSON.stringify(combined, null, 2));
-  console.log(`Wrote combined fixtures to ${websiteCopyPath}`);
-}

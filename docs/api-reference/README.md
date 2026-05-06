@@ -18,6 +18,13 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [cellToParent](./api-reference/hierarchy#celltoparent)
 - [cellToChildren](./api-reference/hierarchy#celltochildren)
 
+### Traversal
+
+- [gridDisk](./api-reference/traversal#griddisk)
+- [gridDiskVertex](./api-reference/traversal#griddiskvertex)
+- [sphericalCap](./api-reference/traversal#sphericalcap)
+- [lineStringToCells](./api-reference/traversal#linestringtocells)
+
 ### Compaction
 
 - [compact](./api-reference/compaction#compact)
