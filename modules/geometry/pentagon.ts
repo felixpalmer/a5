@@ -8,6 +8,22 @@ import type { Face } from '../core/coordinate-systems';
 
 export type Pentagon = [Face, Face, Face, Face, Face];
 
+/**
+ * 2D segment-vs-segment intersection test.
+ * Returns true iff the closed segments p1→p2 and p3→p4 share at least one point.
+ */
+function segments2dIntersect(p1: vec2, p2: vec2, p3: vec2, p4: vec2): boolean {
+  const d1x = p2[0] - p1[0], d1y = p2[1] - p1[1];
+  const d2x = p4[0] - p3[0], d2y = p4[1] - p3[1];
+  const denom = d1x * d2y - d1y * d2x;
+  if (Math.abs(denom) < 1e-12) return false;
+
+  const dx = p3[0] - p1[0], dy = p3[1] - p1[1];
+  const t = (dx * d2y - dy * d2x) / denom;
+  const u = (dx * d1y - dy * d1x) / denom;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
 export class PentagonShape {
   private vertices: Pentagon;
 
@@ -141,6 +157,24 @@ export class PentagonShape {
     }
     
     return dMax;
+  }
+
+  /**
+   * Tests whether a 2D segment intersects this pentagon.
+   * True if either endpoint is inside, or any pentagon edge crosses the segment.
+   * Operates entirely in Face coordinates — pentagon edges are exact straight lines
+   * here, so the test has no projection-induced approximation.
+   */
+  intersectsSegment(a: Face, b: Face): boolean {
+    if (this.containsPoint(a) > 0 || this.containsPoint(b) > 0) return true;
+
+    const N = this.vertices.length;
+    for (let i = 0; i < N; i++) {
+      const v1 = this.vertices[i];
+      const v2 = this.vertices[(i + 1) % N];
+      if (segments2dIntersect(a, b, v1, v2)) return true;
+    }
+    return false;
   }
 
   /**

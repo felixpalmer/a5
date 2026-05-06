@@ -42,10 +42,17 @@ function segmentsIntersect(av, bv, cv, dv) {
   return true;
 }
 
+// Dense per-edge subdivision. The cell pentagon edges are straight in Face
+// coords but curved on the sphere; we need a fine polyline so the great-circle
+// intersection test approximates the true projected curve. 64 sub-segments per
+// edge is well below cell-radius / 1000 in arc length at the resolutions used.
+const BOUNDARY_SEGMENTS = 64;
+
 /**
- * Brute-force lineSegmentToCells: test if cell boundary intersects the segment,
- * or if either endpoint is inside the cell.
- * Uses lonLatToCell for endpoint containment (guaranteed correct).
+ * Authoritative brute-force: scan every cell at the given resolution and accept
+ * any whose densely-sampled boundary intersects the great-circle segment, or
+ * which contains an endpoint. Different code path from the production algorithm
+ * (which works in Face coordinates), so it's a genuine cross-check.
  */
 function bruteForceLineSegmentToCells(start, end, resolution) {
   const startVec = toCartesian(fromLonLat(start));
@@ -57,14 +64,12 @@ function bruteForceLineSegmentToCells(start, end, resolution) {
 
   const result = [];
   for (const cellId of allCells) {
-    // Endpoint containment via lonLatToCell (authoritative)
     if (cellId === startCell || cellId === endCell) {
       result.push(cellId);
       continue;
     }
 
-    // Check if any cell edge intersects the segment
-    const boundary = cellToBoundary(cellId, {closedRing: true, segments: 1});
+    const boundary = cellToBoundary(cellId, {closedRing: true, segments: BOUNDARY_SEGMENTS});
     const boundaryVecs = boundary.map(ll => toCartesian(fromLonLat(ll)));
 
     let intersects = false;
