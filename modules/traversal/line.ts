@@ -2,69 +2,24 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type {LonLat} from '../core/coordinate-systems';
+import {vec3} from 'gl-matrix';
+import type {LonLat, Cartesian} from '../core/coordinate-systems';
 import {lonLatToCell, cellToBoundary} from '../core/cell';
+import {fromLonLat, toCartesian, toSpherical, toLonLat} from '../core/coordinate-transforms';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
+import {slerp} from '../utils/vector';
 import {estimateCellRadius} from './cap';
 import {getLatticeNeighbors} from './lattice-neighbors';
 
-const DEG_TO_RAD = Math.PI / 180;
-
-type Vec3 = [number, number, number];
-
 // =============================================================================
-// Spherical geometry primitives
+// Segment geometry — line-tracing specific
 // =============================================================================
-
-/** Convert lon/lat (degrees) to unit 3D vector. */
-function toVec3(ll: LonLat): Vec3 {
-  const lat = ll[1] * DEG_TO_RAD;
-  const lon = ll[0] * DEG_TO_RAD;
-  const cosLat = Math.cos(lat);
-  return [cosLat * Math.cos(lon), cosLat * Math.sin(lon), Math.sin(lat)];
-}
-
-/** Great-circle distance between two lon/lat points, in meters. */
-function greatCircleDistance(a: LonLat, b: LonLat): number {
-  const lat1 = a[1] * DEG_TO_RAD;
-  const lat2 = b[1] * DEG_TO_RAD;
-  const dLat = lat2 - lat1;
-  const dLon = (b[0] - a[0]) * DEG_TO_RAD;
-  const sinLat = Math.sin(dLat / 2);
-  const sinLon = Math.sin(dLon / 2);
-  const h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLon * sinLon;
-  return 2 * AUTHALIC_RADIUS_EARTH * Math.asin(Math.sqrt(h));
-}
-
-/** Spherical linear interpolation along a great-circle arc. */
-function greatCircleSlerp(a: LonLat, b: LonLat, t: number): LonLat {
-  const [ax, ay, az] = toVec3(a);
-  const [bx, by, bz] = toVec3(b);
-
-  let dot = ax * bx + ay * by + az * bz;
-  dot = Math.max(-1, Math.min(1, dot));
-
-  const omega = Math.acos(dot);
-  if (omega < 1e-10) {
-    return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])] as LonLat;
-  }
-
-  const sinOmega = Math.sin(omega);
-  const fA = Math.sin((1 - t) * omega) / sinOmega;
-  const fB = Math.sin(t * omega) / sinOmega;
-
-  const rx = fA * ax + fB * bx;
-  const ry = fA * ay + fB * by;
-  const rz = fA * az + fB * bz;
-
-  return [Math.atan2(ry, rx) / DEG_TO_RAD, Math.asin(Math.max(-1, Math.min(1, rz))) / DEG_TO_RAD] as LonLat;
-}
 
 /**
  * Test whether two great-circle segments intersect on the sphere.
  * Two arcs intersect iff each segment's endpoints straddle the other's great circle.
  */
-function segmentsIntersect(av: Vec3, bv: Vec3, cv: Vec3, dv: Vec3): boolean {
+function segmentsIntersect(av: Cartesian, bv: Cartesian, cv: Cartesian, dv: Cartesian): boolean {
   // Normal to great circle through A,B
   const n1x = av[1] * bv[2] - av[2] * bv[1];
   const n1y = av[2] * bv[0] - av[0] * bv[2];
@@ -96,9 +51,9 @@ function segmentsIntersect(av: Vec3, bv: Vec3, cv: Vec3, dv: Vec3): boolean {
  * True if any pentagon edge crosses the segment, or if the segment endpoints
  * lie inside the cell.
  */
-function cellIntersectsSegment(cellId: bigint, startVec: Vec3, endVec: Vec3): boolean {
+function cellIntersectsSegment(cellId: bigint, startVec: Cartesian, endVec: Cartesian): boolean {
   const boundary = cellToBoundary(cellId, {closedRing: true, segments: 1});
-  const verts = boundary.map(ll => toVec3(ll as LonLat));
+  const verts = boundary.map(ll => toCartesian(fromLonLat(ll as LonLat)));
 
   for (let i = 0; i < verts.length - 1; i++) {
     if (segmentsIntersect(startVec, endVec, verts[i], verts[i + 1])) return true;
@@ -172,9 +127,10 @@ export function lineStringToCells(waypoints: LonLat[], resolution: number): bigi
 
     const start = waypoints[i];
     const end = waypoints[i + 1];
-    const dist = greatCircleDistance(start, end);
-    const startVec = toVec3(start);
-    const endVec = toVec3(end);
+    const startVec = toCartesian(fromLonLat(start));
+    const endVec = toCartesian(fromLonLat(end));
+    const dot = Math.max(-1, Math.min(1, vec3.dot(startVec, endVec)));
+    const dist = Math.acos(dot) * AUTHALIC_RADIUS_EARTH;
 
     const visited = new Set<bigint>();
     let frontier = new Set<bigint>();
@@ -190,9 +146,11 @@ export function lineStringToCells(waypoints: LonLat[], resolution: number): bigi
     // Short segments rely on BFS alone — endpoints + neighbor expansion cover them.
     if (dist > cellRadius * 2) {
       const numSeeds = Math.max(2, Math.ceil(dist / seedInterval));
+      const seedVec = vec3.create() as Cartesian;
       for (let j = 1; j < numSeeds; j++) {
         const t = j / numSeeds;
-        const cell = lonLatToCell(greatCircleSlerp(start, end, t), resolution);
+        slerp(seedVec, startVec, endVec, t);
+        const cell = lonLatToCell(toLonLat(toSpherical(seedVec)), resolution);
         if (!visited.has(cell)) {
           visited.add(cell);
           frontier.add(cell);

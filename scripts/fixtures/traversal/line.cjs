@@ -7,20 +7,12 @@ const {
   cellToBoundary,
   u64ToHex,
   lineStringToCells,
+  fromLonLat,
+  toCartesian,
 } = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'line.json');
-
-const DEG_TO_RAD = Math.PI / 180;
-
-/** Convert lon/lat (degrees) to unit 3D vector */
-function toVec3(ll) {
-  const lat = ll[1] * DEG_TO_RAD;
-  const lon = ll[0] * DEG_TO_RAD;
-  const cosLat = Math.cos(lat);
-  return [cosLat * Math.cos(lon), cosLat * Math.sin(lon), Math.sin(lat)];
-}
 
 /**
  * Test whether two great-circle segments intersect on the sphere.
@@ -56,8 +48,8 @@ function segmentsIntersect(av, bv, cv, dv) {
  * Uses lonLatToCell for endpoint containment (guaranteed correct).
  */
 function bruteForceLineSegmentToCells(start, end, resolution) {
-  const startVec = toVec3(start);
-  const endVec = toVec3(end);
+  const startVec = toCartesian(fromLonLat(start));
+  const endVec = toCartesian(fromLonLat(end));
   const startCell = lonLatToCell(start, resolution);
   const endCell = lonLatToCell(end, resolution);
 
@@ -73,7 +65,7 @@ function bruteForceLineSegmentToCells(start, end, resolution) {
 
     // Check if any cell edge intersects the segment
     const boundary = cellToBoundary(cellId, {closedRing: true, segments: 1});
-    const boundaryVecs = boundary.map(ll => toVec3(ll));
+    const boundaryVecs = boundary.map(ll => toCartesian(fromLonLat(ll)));
 
     let intersects = false;
     for (let i = 0; i < boundaryVecs.length - 1; i++) {
