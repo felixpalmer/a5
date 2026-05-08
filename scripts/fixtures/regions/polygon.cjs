@@ -259,6 +259,7 @@ if (fs.existsSync(geojsonPath)) {
     console.log(`    brute-force: ${expected.length}, algorithm (compact): ${actualCompact.length} → ${actual.length}`);
     countryFixtures.push({
       name,
+      ring,
       resolution: countryResolution,
       cellCount: expected.length,
     });
