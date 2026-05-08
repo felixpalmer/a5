@@ -132,11 +132,11 @@ export function toLonLat([theta, phi]: Spherical): LonLat {
  * @returns Normalized contour with consistent longitude values
  */
 export function normalizeLongitudes(contour: Contour): Contour {
-  // Calculate center in Cartesian space to avoid poles & antimeridian crossing issues
-  const points = contour.map(lonLat => toCartesian(fromLonLat(lonLat)));
+  // Accumulate the centroid in Cartesian space directly — no intermediate
+  // points array, avoids one allocation per cell when called from cellToBoundary.
   const center = vec3.create() as Cartesian;
-  for (const point of points) {
-    vec3.add(center, center, point);
+  for (let i = 0; i < contour.length; i++) {
+    vec3.add(center, center, toCartesian(fromLonLat(contour[i])));
   }
   vec3.normalize(center, center);
   let [centerLon, centerLat] = toLonLat(toSpherical(center));
@@ -147,13 +147,14 @@ export function normalizeLongitudes(contour: Contour): Contour {
 
   centerLon = normalizeLongitude(centerLon);
 
-  // Normalize each point relative to center
-  return contour.map(point => {
-    let [longitude, latitude] = point;
-
+  const out: Contour = new Array(contour.length);
+  for (let i = 0; i < contour.length; i++) {
+    let longitude = contour[i][0];
+    const latitude = contour[i][1];
     // Adjust longitude to be closer to center
     while (longitude - centerLon > 180) longitude = longitude - 360 as Degrees;
     while (longitude - centerLon < -180) longitude = longitude + 360 as Degrees;
-    return [longitude, latitude] as LonLat;
-  });
+    out[i] = [longitude, latitude] as LonLat;
+  }
+  return out;
 }

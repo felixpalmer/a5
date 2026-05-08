@@ -196,9 +196,12 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
   const splitPentagon = pentagon.splitEdges(segments);
   const vertices = splitPentagon.getVertices();
 
-  // Unproject to obtain lon/lat coordinates
-  const unprojectedVertices = vertices.map(vertex => dodecahedron.inverse(vertex, origin.id));
-  const boundary = unprojectedVertices.map(vertex => toLonLat(vertex));
+  // Unproject to obtain lon/lat coordinates. Fused loop avoids the
+  // intermediate `unprojectedVertices` allocation.
+  const boundary: LonLat[] = new Array(vertices.length);
+  for (let i = 0; i < vertices.length; i++) {
+    boundary[i] = toLonLat(dodecahedron.inverse(vertices[i], origin.id));
+  }
 
   // Normalize longitudes to handle antimeridian crossing
   const normalizedBoundary = normalizeLongitudes(boundary);

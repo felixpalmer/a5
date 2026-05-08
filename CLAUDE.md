@@ -55,6 +55,7 @@ yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 - **Branded Types**: LonLat and other coordinate types are branded - cast with `as LonLat`, not type construction
 - **Build**: Run `yarn build` before testing example CLIs
 - **Documentation**: When adding new documentation pages, update `docs/table-of-contents.json` to add them to the sidebar navigation
+- **Hot loops**: Prefer indexed `for` loops over `.map()` / `.forEach()` / `.filter()` in performance-sensitive paths (cell-fill, line tracing, dense-sample loops, fixture generators). Two reasons: (1) the closure form is measurably slower in V8 for large inputs (10–15% on country-scale polygons in the polygonToCells PR), and (2) `for (let i = 0; i < n; i++)` ports 1:1 to `for i in range(n)` / `for i in 0..n`, while `.map(fn)` does not.
 
 ## Website Examples
 - Website example data files go in `/website/static/data/` (NOT in `/examples/website/*/public/data/`)
