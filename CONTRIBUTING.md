@@ -23,6 +23,15 @@ yarn test --run
 yarn build
 ```
 
+## Formatting
+
+This project uses [Prettier](https://prettier.io/) for code formatting. The config in `.prettierrc.json` is the source of truth; editors that respect Prettier (Zed, VS Code, JetBrains, vim plugins) will pick it up automatically.
+
+```bash
+yarn format         # format all files in place
+yarn format:check   # exit non-zero if any file would be reformatted (CI use)
+```
+
 ## Generate fixtures
 
 ```bash
