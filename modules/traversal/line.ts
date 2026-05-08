@@ -54,7 +54,10 @@ export function lineStringToCells(waypoints: LonLat[], resolution: number): bigi
     for (let j = 0; j < interior.length; j++) {
       samples[j + 1] = toLonLat(toSpherical(interior[j]));
     }
-    const sampleCells = samples.map(s => lonLatToCell(s, resolution));
+    const sampleCells: bigint[] = new Array(samples.length);
+    for (let j = 0; j < samples.length; j++) {
+      sampleCells[j] = lonLatToCell(samples[j], resolution);
+    }
 
     // Walk pairwise. Each (P_j, P_{j+1}) sub-segment is short enough that its
     // projection onto any nearby cell's Face is essentially straight, so we

@@ -45,7 +45,10 @@ function denseSampleBoundary(
     }
   };
 
-  const vertexCells = ring.map(p => lonLatToCell(p, resolution));
+  const vertexCells: bigint[] = new Array(ring.length);
+  for (let i = 0; i < ring.length; i++) {
+    vertexCells[i] = lonLatToCell(ring[i], resolution);
+  }
 
   for (let i = 0; i < ring.length; i++) {
     const nextI = (i + 1) % ring.length;
@@ -221,7 +224,10 @@ export function polygonToCells(ring: LonLat[], resolution: number): BigUint64Arr
 
   // Authalic-sphere ring vectors — A5's internal sphere, so cell centers
   // compare directly with no geodetic↔authalic round-trip.
-  const ringVecs = ring.map(ll => toCartesian(fromLonLat(ll)));
+  const ringVecs: Cartesian[] = new Array(ring.length);
+  for (let i = 0; i < ring.length; i++) {
+    ringVecs[i] = toCartesian(fromLonLat(ring[i]));
+  }
 
   const {boundaryCells, boundarySet, segmentMap} = denseSampleBoundary(ring, ringVecs, resolution);
 
