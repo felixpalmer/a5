@@ -80,21 +80,40 @@ export function quadrupleProduct(out: Cartesian, A: Cartesian, B: Cartesian, C: 
 }
 
 /**
- * Spherical linear interpolation between two vectors
+ * Cached `gamma` and `sin(gamma)` for a fixed (A, B) pair, so loops that
+ * slerp many times along the same arc don't re-run `vec3.angle` and `Math.sin`.
+ * Build with `precomputeSlerp(A, B)` and pass to `slerp` as the optional `ctx`.
+ */
+export interface SlerpContext {
+  gamma: number;
+  sinGamma: number;
+}
+
+export function precomputeSlerp(A: Cartesian, B: Cartesian): SlerpContext {
+  const gamma = vec3.angle(A, B);
+  return {gamma, sinGamma: Math.sin(gamma)};
+}
+
+/**
+ * Spherical linear interpolation between two vectors.
  * @param out - The target vector to write the result to
  * @param A - The first vector
  * @param B - The second vector
  * @param t - The interpolation parameter (0 to 1)
+ * @param ctx - Optional precomputed `{gamma, sinGamma}`; supply when slerping
+ *              many `t` values along the same arc to avoid recomputing them
  * @returns The interpolated vector (same as out)
  */
-export function slerp(out: Cartesian, A: Cartesian, B: Cartesian, t: number): Cartesian {
-  const gamma = vec3.angle(A, B);
+export function slerp(out: Cartesian, A: Cartesian, B: Cartesian, t: number, ctx?: SlerpContext): Cartesian {
+  const gamma = ctx ? ctx.gamma : vec3.angle(A, B);
   if (gamma < 1e-12) {
     return vec3.lerp(out, A, B, t) as Cartesian;
   }
-  const weightA = Math.sin((1 - t) * gamma) / Math.sin(gamma);
-  const weightB = Math.sin(t * gamma) / Math.sin(gamma);
-  const scaledA = vec3.scale(vec3.create(), A, weightA);
-  const scaledB = vec3.scale(vec3.create(), B, weightB);
-  return vec3.add(out, scaledA, scaledB) as Cartesian;
-} 
+  const sinGamma = ctx ? ctx.sinGamma : Math.sin(gamma);
+  const weightA = Math.sin((1 - t) * gamma) / sinGamma;
+  const weightB = Math.sin(t * gamma) / sinGamma;
+  out[0] = weightA * A[0] + weightB * B[0];
+  out[1] = weightA * A[1] + weightB * B[1];
+  out[2] = weightA * A[2] + weightB * B[2];
+  return out;
+}

@@ -488,6 +488,66 @@
       {
         "resolution": 15,
         "expectedMeters": 200.80407539198848
+      },
+      {
+        "resolution": 16,
+        "expectedMeters": 100.40203769599424
+      },
+      {
+        "resolution": 17,
+        "expectedMeters": 50.20101884799712
+      },
+      {
+        "resolution": 18,
+        "expectedMeters": 25.10050942399856
+      },
+      {
+        "resolution": 19,
+        "expectedMeters": 12.55025471199928
+      },
+      {
+        "resolution": 20,
+        "expectedMeters": 6.27512735599964
+      },
+      {
+        "resolution": 21,
+        "expectedMeters": 3.13756367799982
+      },
+      {
+        "resolution": 22,
+        "expectedMeters": 1.56878183899991
+      },
+      {
+        "resolution": 23,
+        "expectedMeters": 0.784390919499955
+      },
+      {
+        "resolution": 24,
+        "expectedMeters": 0.3921954597499775
+      },
+      {
+        "resolution": 25,
+        "expectedMeters": 0.19609772987498875
+      },
+      {
+        "resolution": 26,
+        "expectedMeters": 0.09804886493749437
+      },
+      {
+        "resolution": 27,
+        "expectedMeters": 0.04902443246874719
+      },
+      {
+        "resolution": 28,
+        "expectedMeters": 0.024512216234373593
+      },
+      {
+        "resolution": 29,
+        "expectedMeters": 0.012256108117186797
+      },
+      {
+        "resolution": 30,
+        "expectedMeters": 0.006128054058593398
       }
     ],
     "pickCoarseResolution": [

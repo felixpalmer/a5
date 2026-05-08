@@ -7,6 +7,8 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 import type { Cartesian, Radians } from '../core/coordinate-systems';
 import { slerp, tripleProduct } from '../utils/vector';
 
+const _windingCentroid = vec3.create() as Cartesian;
+
 // Pre-allocated vectors for midpoints. midA is the midpoint opposite the vertex A
 const midA = vec3.create() as Cartesian;
 const midB = vec3.create() as Cartesian;
@@ -16,6 +18,56 @@ const center = vec3.create() as Cartesian;
 // Use Cartesian system for all calculations for greater accuracy
 // Using [x, y, z] gives equal precision in all directions, unlike spherical coordinates
 export type SphericalPolygon = Cartesian[];
+
+/**
+ * Spherical point-in-polygon via signed-angle summation. Works for concave
+ * polygons (unlike `SphericalPolygonShape.containsPoint`, which assumes convex
+ * "necessary strike"). The math is fully inlined as it's called per-cell in
+ * polygon-fill hot paths.
+ */
+export function pointInSphericalPolygon(point: Cartesian, vertices: Cartesian[]): boolean {
+  let angleSum = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const av = vertices[i];
+    const bv = vertices[(i + 1) % vertices.length];
+    const dotPA = point[0] * av[0] + point[1] * av[1] + point[2] * av[2];
+    const dotPB = point[0] * bv[0] + point[1] * bv[1] + point[2] * bv[2];
+    const apx = av[0] - dotPA * point[0], apy = av[1] - dotPA * point[1], apz = av[2] - dotPA * point[2];
+    const bpx = bv[0] - dotPB * point[0], bpy = bv[1] - dotPB * point[1], bpz = bv[2] - dotPB * point[2];
+    const cx = apy * bpz - apz * bpy;
+    const cy = apz * bpx - apx * bpz;
+    const cz = apx * bpy - apy * bpx;
+    angleSum += Math.atan2(cx * point[0] + cy * point[1] + cz * point[2], apx * bpx + apy * bpy + apz * bpz);
+  }
+  return Math.abs(angleSum) > Math.PI;
+}
+
+/**
+ * Ring winding direction: +1 for CCW (interior to the left of edge direction), -1 for CW.
+ * Sums (v_i × v_{i+1}) · centroid across the ring.
+ */
+export function ringWindingSign(ringVecs: Cartesian[]): 1 | -1 {
+  vec3.set(_windingCentroid, 0, 0, 0);
+  for (const v of ringVecs) vec3.add(_windingCentroid, _windingCentroid, v);
+  vec3.normalize(_windingCentroid, _windingCentroid);
+
+  let sum = 0;
+  for (let i = 0; i < ringVecs.length; i++) {
+    sum += tripleProduct(_windingCentroid, ringVecs[i], ringVecs[(i + 1) % ringVecs.length]);
+  }
+  return sum > 0 ? 1 : -1;
+}
+
+/** Great-circle plane normals for every segment of the ring. */
+export function ringSegmentNormals(ringVecs: Cartesian[]): Cartesian[] {
+  const normals: Cartesian[] = new Array(ringVecs.length);
+  for (let i = 0; i < ringVecs.length; i++) {
+    const n = vec3.create() as Cartesian;
+    vec3.cross(n, ringVecs[i], ringVecs[(i + 1) % ringVecs.length]);
+    normals[i] = n;
+  }
+  return normals;
+}
 
 export class SphericalPolygonShape {
   protected vertices: SphericalPolygon;

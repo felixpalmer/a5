@@ -25,6 +25,10 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [sphericalCap](./api-reference/traversal#sphericalcap)
 - [lineStringToCells](./api-reference/traversal#linestringtocells)
 
+### Regions
+
+- [polygonToCells](./api-reference/regions#polygontocells)
+
 ### Compaction
 
 - [compact](./api-reference/compaction#compact)

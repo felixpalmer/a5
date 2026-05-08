@@ -79,19 +79,22 @@ function pushDeltas(
 
 /**
  * Return every neighbor that lies outside the source cell's quintant: cross-quintant
- * lateral edges, cross-face base edge, apex (face center), and the [-maxRow, maxRow, 0]
- * vertex corner. The within-quintant ±1 candidates are NOT covered here — callers
- * generate those directly.
+ * lateral edges, cross-face base edge, apex (face center), and (when not `skipCorners`)
+ * the `[-maxRow, maxRow, 0]` vertex corner. The within-quintant ±1 candidates are NOT
+ * covered here — callers generate those directly.
  *
  * The result may contain duplicates and the order is not stable; callers
  * deduplicate (via Set) or accept duplicates if their downstream pipeline tolerates them.
  *
- * @param ctx      source-cell context
- * @param edgeOnly drop vertex-only neighbors
+ * @param ctx         source-cell context
+ * @param edgeOnly    drop apex non-adjacent quintants and other vertex-only neighbors
+ * @param skipCorners drop the `[-maxRow, maxRow, 0]` corner — used when the caller's
+ *                    connectivity (e.g. lattice ±1 moves) doesn't traverse that vertex
  */
 export function getBoundaryNeighbors(
   ctx: BoundaryContext,
   edgeOnly: boolean,
+  skipCorners = false,
 ): bigint[] {
   const out: bigint[] = [];
   const {triple, parity, sourceQuintant, origin, maxRow} = ctx;
@@ -137,7 +140,7 @@ export function getBoundaryNeighbors(
   // Base-left corner [-maxRow, maxRow, 0]: 3 dodecahedron faces meet at this vertex.
   // The symmetric base-right corner is implicitly covered: its cross-quintant and
   // cross-face paths land on the [-maxRow, maxRow, 0] cell of neighboring quintants.
-  if (triple.x === -maxRow && triple.y === maxRow && triple.z === 0) {
+  if (!skipCorners && triple.x === -maxRow && triple.y === maxRow && triple.z === 0) {
     // Vertex neighbor 1: across the previous quintant's base edge
     const prevQuintant = (sourceQuintant - 1 + 5) % 5;
     const [prevAdjFaceId, prevAdjQuintant] = FACE_ADJACENCY[origin.id][prevQuintant];

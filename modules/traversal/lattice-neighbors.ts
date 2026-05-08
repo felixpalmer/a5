@@ -3,14 +3,14 @@
 // Copyright (c) A5 contributors
 
 import type { Orientation, Triple } from '../lattice';
-import { sToAnchor, anchorToTriple, tripleToS, tripleInBounds, tripleParity } from '../lattice';
+import { sToAnchor, anchorToTriple, tripleToS, tripleParity, tripleInBounds } from '../lattice';
 import type { Origin } from '../core/utils';
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from '../core/serialization';
 import { segmentToQuintant } from '../core/origin';
 import { getGlobalCellNeighbors } from './global-neighbors';
 import { type BoundaryContext, getBoundaryNeighbors } from './lattice-boundary';
 
-/** Source-cell state used by the lattice neighbor finder. */
+/** Decoded source-cell state used by the lattice neighbor finder. */
 interface LatticeSource {
   origin: Origin;
   segment: number;
@@ -56,47 +56,56 @@ function boundaryContext(src: LatticeSource): BoundaryContext {
   };
 }
 
+type Delta = readonly [number, number, number];
+
+/** All 26 non-zero ±1 moves in 3D — vertex- and edge-sharing within-quintant candidates. */
+const SUPERSET_DELTAS: readonly Delta[] = (() => {
+  const out: Delta[] = [];
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        if (dx === 0 && dy === 0 && dz === 0) continue;
+        out.push([dx, dy, dz]);
+      }
+    }
+  }
+  return out;
+})();
+
+/** The 3 parity-valid single-axis moves matching `tripleSpaceFloodFill`'s edge connectivity. */
+const PARITY_EVEN_DELTAS: readonly Delta[] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+const PARITY_ODD_DELTAS: readonly Delta[] = [[-1, 0, 0], [0, -1, 0], [0, 0, -1]];
+
 /**
- * Fast lattice-based neighbor finding for BFS in line tracing.
+ * Fast lattice-based neighbor finding. Skips `isNeighbor()` validation for
+ * within-quintant candidates; falls back to `getGlobalCellNeighbors` below res 2.
  *
- * Unlike `getGlobalCellNeighbors`, this skips `isNeighbor()` validation for
- * within-quintant candidates. The result is a SUPERSET of true neighbors —
- * it may include a few extra cells that share only a vertex point (not an edge).
- *
- * This is safe for BFS contexts where candidates are validated by
- * `cellIntersectsSegment` — false positives just fail that check.
- *
- * For res < 2, falls back to getGlobalCellNeighbors (rare).
- *
- * @param edgeOnly - If true, restrict to Manhattan distance ≤ 2 (edge-sharing candidates)
+ * - `edgeOnly=false`: 26-cube ±1 superset (may include vertex-only touchers).
+ *   For BFS that re-validates candidates downstream (e.g. line tracing).
+ * - `edgeOnly=true`: 3 parity-valid moves matching `tripleSpaceFloodFill` —
+ *   exact connectivity for shell-buffering the flood-fill firewall.
  */
 export function getLatticeNeighbors(cellId: bigint, edgeOnly: boolean): bigint[] {
   const src = decodeSource(cellId);
   if (!src) return getGlobalCellNeighbors(cellId, {edgeOnly});
 
   const {origin, segment, S, resolution, hilbertRes, orientation, triple, maxS, maxRow} = src;
+  const deltas = edgeOnly
+    ? (tripleParity(triple) === 0 ? PARITY_EVEN_DELTAS : PARITY_ODD_DELTAS)
+    : SUPERSET_DELTAS;
   const result: bigint[] = [];
 
-  // Within-quintant: enumerate the 26-cube of ±1 deltas, skipping the source.
-  for (let dx = -1; dx <= 1; dx++) {
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dz = -1; dz <= 1; dz++) {
-        if (dx === 0 && dy === 0 && dz === 0) continue;
-        const manhattan = Math.abs(dx) + Math.abs(dy) + Math.abs(dz);
-        if (manhattan > 3) continue;
-        if (edgeOnly && manhattan > 2) continue;
-
-        const candidate: Triple = {x: triple.x + dx, y: triple.y + dy, z: triple.z + dz};
-        if (!tripleInBounds(candidate, maxRow)) continue;
-
-        const candidateS = tripleToS(candidate, hilbertRes, orientation);
-        if (candidateS !== null && candidateS >= 0n && candidateS < maxS && candidateS !== S) {
-          result.push(serialize({origin, segment, S: candidateS, resolution}));
-        }
-      }
+  for (const [dx, dy, dz] of deltas) {
+    const candidate: Triple = {x: triple.x + dx, y: triple.y + dy, z: triple.z + dz};
+    if (!tripleInBounds(candidate, maxRow)) continue;
+    const candidateS = tripleToS(candidate, hilbertRes, orientation);
+    if (candidateS !== null && candidateS >= 0n && candidateS < maxS && candidateS !== S) {
+      result.push(serialize({origin, segment, S: candidateS, resolution}));
     }
   }
 
-  for (const c of getBoundaryNeighbors(boundaryContext(src), edgeOnly)) result.push(c);
+  // Strict lattice connectivity (edgeOnly) doesn't traverse the [-maxRow, maxRow, 0]
+  // vertex corner, so we skip it there too — keeping the firewall topology tight.
+  for (const c of getBoundaryNeighbors(boundaryContext(src), edgeOnly, edgeOnly)) result.push(c);
   return result;
 }

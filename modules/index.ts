@@ -20,6 +20,9 @@ export {gridDisk, gridDiskVertex} from './traversal/grid-disk';
 export {sphericalCap} from './traversal/cap';
 export {lineStringToCells} from './traversal/line';
 
+// Regions
+export {polygonToCells} from './regions/polygon';
+
 // Types
 export type {Degrees, Radians, Spherical} from './core/coordinate-systems';
 export type {A5Cell} from './core/utils';

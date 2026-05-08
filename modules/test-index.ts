@@ -40,6 +40,16 @@ export { getGlobalCellNeighbors } from './traversal/global-neighbors';
 // Export cap helper functions for testing
 export { metersToH, estimateCellRadius, pickCoarseResolution } from './traversal/cap';
 
+// Export great-circle helpers for testing
+export { greatCircleDistance, sampleGreatCircleArc } from './utils/great-circle';
+
+// Export lattice neighbor / flood-fill for testing
+export { getLatticeNeighbors } from './traversal/lattice-neighbors';
+export { tripleSpaceFloodFill } from './traversal/lattice-flood-fill';
+
+// Export spherical-polygon free functions for testing
+export { pointInSphericalPolygon, ringWindingSign, ringSegmentNormals } from './geometry/spherical-polygon';
+
 // Export projections for testing
 export { GnomonicProjection } from './projections/gnomonic';
 export { AuthalicProjection } from './projections/authalic';
