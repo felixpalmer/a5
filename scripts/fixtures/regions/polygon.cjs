@@ -177,6 +177,14 @@ const polygonCases = [
   { name: 'dodecahedron_face_center', ring:[[11.320708,-28.426323],[16.366366,-30.021687],[18.194503,-26.741263],[15.342609,-24.166513],[11.759461,-25.030859]], resolution: 3},
   // Highly concave polygon with multiple interior regions separated by narrow boundary passages
   { name: 'concave_zigzag', ring:[[2.177734,47.952439],[10.219727,55.422181],[28.500977,48.070034],[6.923828,43.635312],[-1.425781,41.565353],[14.746094,46.791816],[18.771639,49.542909],[21.163759,49.899795],[19.875694,48.181157],[23.969899,47.996786],[23.18786,49.988607],[18.909646,51.358685]], resolution: 7},
+  // Stress cases — chosen to hit specific code paths in polygonToCells:
+  // Tiny polygon entirely inside a single cell (interiorSeeds-empty path).
+  { name: 'tiny_inside_one_cell', ring: [[10, 50], [10.0001, 50], [10.0001, 50.0001], [10, 50.0001]], resolution: 5 },
+  // Sliver polygon — boundary cells only, no PIP-inside shell cells.
+  { name: 'no_interior_sliver', ring: [[0, 0], [0.4, 0], [0.4, 0.05]], resolution: 5 },
+  // Resolution 30 micro polygon — exercises the MAX_RESOLUTION fallback in
+  // floodInterior (skips the coarse phase for res 30's special encoding).
+  { name: 'res30_micro', ring: [[10, 50], [10.0000001, 50], [10.0000001, 50.0000001], [10, 50.0000001]], resolution: 30 },
 ];
 
 console.log('\nPolygon fixtures:');

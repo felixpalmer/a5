@@ -127,9 +127,10 @@ helperFixtures.metersToH = meterValues.map(meters => ({
 }));
 console.log(`  metersToH: ${helperFixtures.metersToH.length} cases`);
 
-// estimateCellRadius
+// estimateCellRadius — full 0..30 table so an off-by-one in the radius
+// table is caught directly rather than via downstream sample-count drift.
 helperFixtures.estimateCellRadius = [];
-for (let res = 0; res <= 15; res++) {
+for (let res = 0; res <= 30; res++) {
   helperFixtures.estimateCellRadius.push({
     resolution: res,
     expectedMeters: estimateCellRadius(res),

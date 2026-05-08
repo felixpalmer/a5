@@ -2,16 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec3} from 'gl-matrix';
 import type {LonLat, Cartesian} from '../core/coordinate-systems';
 import {lonLatToCell, sphericalToCell, cellToSpherical} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical} from '../core/coordinate-transforms';
 import {cellToParent, cellToChildren, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION} from '../core/serialization';
 import {compact} from '../core/compact';
-import {tripleProduct} from '../utils/vector';
-import {pointInSphericalPolygon} from '../geometry/spherical-polygon';
-import {estimateCellRadius, sampleGreatCircleArc} from '../traversal/cap';
-import {getLatticeNeighbors, tripleSpaceFloodFill} from '../traversal/lattice-neighbors';
+import {pointInSphericalPolygon, ringWindingSign, ringSegmentNormals} from '../geometry/spherical-polygon';
+import {estimateCellRadius} from '../traversal/cap';
+import {sampleGreatCircleArc} from '../utils/great-circle';
+import {getLatticeNeighbors} from '../traversal/lattice-neighbors';
+import {tripleSpaceFloodFill} from '../traversal/lattice-flood-fill';
 
 /**
  * Maps each boundary cell to the indices of the ring segments that produced it.
@@ -60,33 +60,6 @@ function denseSampleBoundary(
   }
 
   return {boundaryCells, boundarySet, segmentMap};
-}
-
-/**
- * Ring winding direction: +1 for CCW (interior to the left of edge direction), -1 for CW.
- * Sums (v_i × v_{i+1}) · centroid across the ring.
- */
-function ringWindingSign(ringVecs: Cartesian[]): 1 | -1 {
-  const centroid = vec3.create() as Cartesian;
-  for (const v of ringVecs) vec3.add(centroid, centroid, v);
-  vec3.normalize(centroid, centroid);
-
-  let sum = 0;
-  for (let i = 0; i < ringVecs.length; i++) {
-    sum += tripleProduct(centroid, ringVecs[i], ringVecs[(i + 1) % ringVecs.length]);
-  }
-  return sum > 0 ? 1 : -1;
-}
-
-/** Great-circle plane normals for every segment of the ring. */
-function ringSegmentNormals(ringVecs: Cartesian[]): Cartesian[] {
-  const normals: Cartesian[] = new Array(ringVecs.length);
-  for (let i = 0; i < ringVecs.length; i++) {
-    const n = vec3.create() as Cartesian;
-    vec3.cross(n, ringVecs[i], ringVecs[(i + 1) % ringVecs.length]);
-    normals[i] = n;
-  }
-  return normals;
 }
 
 /**

@@ -5,7 +5,8 @@
 import type {LonLat} from '../core/coordinate-systems';
 import {lonLatToCell, cellIntersectsSegment} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical, toLonLat} from '../core/coordinate-transforms';
-import {estimateCellRadius, sampleGreatCircleArc} from './cap';
+import {estimateCellRadius} from './cap';
+import {sampleGreatCircleArc} from '../utils/great-circle';
 import {getLatticeNeighbors} from './lattice-neighbors';
 
 /**

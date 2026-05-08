@@ -1,7 +1,5 @@
 import { describe, it, expect, test } from 'vitest'
-import { getResolution, serialize, deserialize, FIRST_HILBERT_RESOLUTION, getRes0Cells, isFirstChild, isChildOf, getStride } from 'a5/core/serialization';
-
-const MAX_RESOLUTION = 30;
+import { getResolution, serialize, deserialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, getRes0Cells, isFirstChild, isChildOf, getStride } from 'a5/core/serialization';
 import { A5Cell } from 'a5/core/utils';
 import { origins } from 'a5/core/origin';
 import { cellToParent, cellToChildren } from 'a5/core/serialization';
