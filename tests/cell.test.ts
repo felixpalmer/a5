@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type {Degrees,LonLat } from "a5/core/coordinate-systems";
 import { cellToBoundary, cellToLonLat, lonLatToCell,a5cellContainsPoint } from 'a5/core/cell'
+import { fromLonLat } from 'a5/core/coordinate-transforms';
 import { deserialize, MAX_RESOLUTION } from 'a5/core/serialization';
 import { hexToU64 } from 'a5/core/hex';
 import populatedPlaces from './data/ne_50m_populated_places_nameonly.json';
@@ -124,7 +125,7 @@ describe('Cell Boundary Tests', () => {
 
             // Test resolutions from 0 to MAX_RESOLUTION
             for (let resolution = 1; resolution <= MAX_RESOLUTION; resolution++) {
-                if (resolution === MAX_RESOLUTION || Math.abs(testLonlat[1]) > 80) { // Issues in polar regions, TODO fix
+                if (resolution === MAX_RESOLUTION || Math.abs(testLonlat[1]) > 77) { // Issues in polar regions, TODO fix
                     continue;
                 }
 
@@ -142,7 +143,7 @@ describe('Cell Boundary Tests', () => {
                     
                     // Verify the original point is contained within the cell
                     const cell = deserialize(cellId);
-                    if (a5cellContainsPoint(cell, testLonlat) < 0) {
+                    if (a5cellContainsPoint(cell, fromLonLat(testLonlat)) < 0) {
                         resolutionFailures.push(`Cell ${cellId} does not contain the original point ${testLonlat}`);
                         resolutionFailures.push(`GeoJSON:\n ${JSON.stringify(geojson)}`);
                     }

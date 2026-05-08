@@ -1,5 +1,5 @@
 import { describe, it, expect, test } from 'vitest'
-import { getResolution, serialize, deserialize, FIRST_HILBERT_RESOLUTION, getRes0Cells, isFirstChild, getStride } from 'a5/core/serialization';
+import { getResolution, serialize, deserialize, FIRST_HILBERT_RESOLUTION, getRes0Cells, isFirstChild, isChildOf, getStride } from 'a5/core/serialization';
 
 const MAX_RESOLUTION = 30;
 import { A5Cell } from 'a5/core/utils';
@@ -215,10 +215,58 @@ describe('hierarchy', () => {
       
       // Verify the total number of cells matches expected
       expect(allChildren.length).toBe(expectedCounts[resolution]);
-      
+
       // Update current cells for next iteration
       currentCells = allChildren;
     }
+  });
+});
+
+describe('isChildOf', () => {
+  test('returns true for self at same resolution (Hilbert range)', () => {
+    for (let res = FIRST_HILBERT_RESOLUTION; res < MAX_RESOLUTION; res++) {
+      const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: res});
+      expect(isChildOf(cell, cell, res)).toBe(true);
+    }
+  });
+
+  test('returns true for direct children', () => {
+    for (let res = FIRST_HILBERT_RESOLUTION; res < MAX_RESOLUTION - 1; res++) {
+      const parent = serialize({origin: origin0, segment: 0, S: 0n, resolution: res});
+      const children = cellToChildren(parent);
+      for (const child of children) {
+        expect(isChildOf(child, parent, res)).toBe(true);
+      }
+    }
+  });
+
+  test('returns true for deep descendants', () => {
+    const parent = serialize({origin: origin0, segment: 0, S: 0n, resolution: 5});
+    let descendants = [parent];
+    for (let r = 6; r < 10; r++) {
+      descendants = descendants.flatMap(c => cellToChildren(c));
+    }
+    for (const d of descendants) {
+      expect(isChildOf(d, parent, 5)).toBe(true);
+    }
+  });
+
+  test('returns false for siblings (same resolution, different cells)', () => {
+    const parent = serialize({origin: origin0, segment: 0, S: 0n, resolution: 4});
+    const children = cellToChildren(parent);
+    // Each child is not a descendant of any other child at res 5.
+    for (let i = 0; i < children.length; i++) {
+      for (let j = 0; j < children.length; j++) {
+        if (i === j) continue;
+        expect(isChildOf(children[i], children[j], 5)).toBe(false);
+      }
+    }
+  });
+
+  test('returns false when child is at shallower resolution than parent', () => {
+    const grandparent = serialize({origin: origin0, segment: 0, S: 0n, resolution: 4});
+    const parent = cellToChildren(grandparent)[0]; // res 5
+    expect(isChildOf(grandparent, parent, 5)).toBe(false);
   });
 });
 

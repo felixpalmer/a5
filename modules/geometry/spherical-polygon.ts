@@ -17,6 +17,29 @@ const center = vec3.create() as Cartesian;
 // Using [x, y, z] gives equal precision in all directions, unlike spherical coordinates
 export type SphericalPolygon = Cartesian[];
 
+/**
+ * Spherical point-in-polygon via signed-angle summation. Works for concave
+ * polygons (unlike `SphericalPolygonShape.containsPoint`, which assumes convex
+ * "necessary strike"). The math is fully inlined as it's called per-cell in
+ * polygon-fill hot paths.
+ */
+export function pointInSphericalPolygon(point: Cartesian, vertices: Cartesian[]): boolean {
+  let angleSum = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const av = vertices[i];
+    const bv = vertices[(i + 1) % vertices.length];
+    const dotPA = point[0] * av[0] + point[1] * av[1] + point[2] * av[2];
+    const dotPB = point[0] * bv[0] + point[1] * bv[1] + point[2] * bv[2];
+    const apx = av[0] - dotPA * point[0], apy = av[1] - dotPA * point[1], apz = av[2] - dotPA * point[2];
+    const bpx = bv[0] - dotPB * point[0], bpy = bv[1] - dotPB * point[1], bpz = bv[2] - dotPB * point[2];
+    const cx = apy * bpz - apz * bpy;
+    const cy = apz * bpx - apx * bpz;
+    const cz = apx * bpy - apy * bpx;
+    angleSum += Math.atan2(cx * point[0] + cy * point[1] + cz * point[2], apx * bpx + apy * bpy + apz * bpz);
+  }
+  return Math.abs(angleSum) > Math.PI;
+}
+
 export class SphericalPolygonShape {
   protected vertices: SphericalPolygon;
   private _area: Radians | null = null;

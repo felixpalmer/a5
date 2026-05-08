@@ -7,7 +7,7 @@ import { Origin } from './utils';
 import { origins } from "./origin";
 
 export const FIRST_HILBERT_RESOLUTION = 2;
-const MAX_RESOLUTION = 30;
+export const MAX_RESOLUTION = 30;
 const HILBERT_START_BIT = 58n; // 64 - 6 bits for origin & segment
 
 // Abstract cell that contains the whole world, has resolution -1 and 12 children,

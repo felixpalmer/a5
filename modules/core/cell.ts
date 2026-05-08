@@ -39,6 +39,17 @@ function cacheResult(cell: A5Cell, cellId: bigint, resolution: number): bigint {
 }
 
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
+  return sphericalToCell(fromLonLat(lonLat), resolution);
+}
+
+/**
+ * Like `lonLatToCell`, but accepts a point already in A5's internal spherical
+ * representation (rotated authalic frame, as produced by `fromLonLat` or
+ * `toSpherical(authalicCartesian)`). Skips the redundant authalic
+ * inverse/forward round-trip in dense-sample loops where the input already
+ * comes from the authalic Cartesian space (e.g. polygon-fill boundary slerp).
+ */
+export function sphericalToCell(spherical: Spherical, resolution: number): bigint {
   // Resolution -1 represents WORLD_CELL, which covers the entire world
   if (resolution === -1) {
     return WORLD_CELL;
@@ -46,41 +57,42 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
 
   if (resolution < FIRST_HILBERT_RESOLUTION) {
     // For low resolutions there is no Hilbert curve, so we can just return as the result is exact
-    return serialize(_lonLatToEstimate(lonLat, resolution));
+    return serialize(_sphericalToEstimate(spherical, resolution));
   }
 
   // Try the cached pentagon first — skips the full estimate pipeline when
   // consecutive calls land in the same cell (common in dense-sample loops).
   if (_lastResult && _lastResult.resolution === resolution) {
-    const projected = dodecahedron.forward(fromLonLat(lonLat), _lastResult.originId);
+    const projected = dodecahedron.forward(spherical, _lastResult.originId);
     if (_lastResult.pentagon.containsPoint(projected as Face) > 0) return _lastResult.cellId;
   }
 
   // Try the original point's projection-based estimate. Common case for
   // non-boundary points.
-  const firstEstimate = _lonLatToEstimate(lonLat, resolution);
+  const firstEstimate = _sphericalToEstimate(spherical, resolution);
   const firstKey = serialize(firstEstimate);
-  const firstDistance = a5cellContainsPoint(firstEstimate, lonLat);
+  const firstDistance = a5cellContainsPoint(firstEstimate, spherical);
   if (firstDistance > 0) return cacheResult(firstEstimate, firstKey, resolution);
 
-  // Spiral search: perturb lonLat to find nearby estimate cells (the projection
-  // approximation can land in a neighbor at pentagon boundaries). Samples are
-  // generated lazily — if the first sample hits we skip 25 trig+alloc ops.
+  // Spiral search: perturb the point to find nearby estimate cells (the
+  // projection approximation can land in a neighbor at pentagon boundaries).
+  // Samples are generated lazily — if the first sample hits we skip 25 trig+alloc ops.
   const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
   const N = 25;
-  const scale = 50 / Math.pow(2, hilbertResolution);
+  // 50 degrees / 2^hilbertResolution, expressed as radians for spherical-space perturbation.
+  const scale = (50 * Math.PI / 180) / Math.pow(2, hilbertResolution);
   const estimateSet = new Set<bigint>([firstKey]);
   const cells: {cell: A5Cell, distance: number}[] = [{cell: firstEstimate, distance: firstDistance}];
 
   // i=0 yields R=0 → same as the original sample, so start at i=1.
   for (let i = 1; i < N; i++) {
     const R = (i / N) * scale;
-    const sample: LonLat = [lonLat[0] + Math.cos(i) * R, lonLat[1] + Math.sin(i) * R] as LonLat;
-    const estimate = _lonLatToEstimate(sample, resolution);
+    const sample: Spherical = [spherical[0] + Math.cos(i) * R, spherical[1] + Math.sin(i) * R] as Spherical;
+    const estimate = _sphericalToEstimate(sample, resolution);
     const estimateKey = serialize(estimate);
     if (estimateSet.has(estimateKey)) continue;
     estimateSet.add(estimateKey);
-    const distance = a5cellContainsPoint(estimate, lonLat);
+    const distance = a5cellContainsPoint(estimate, spherical);
     if (distance > 0) return cacheResult(estimate, estimateKey, resolution);
     cells.push({cell: estimate, distance});
   }
@@ -95,8 +107,7 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
 // Thus this function only returns an cell nearby, and we need to search the neighborhood to find the correct cell
 // TODO: Implement a more accurate function
-function _lonLatToEstimate(lonLat: LonLat, resolution: number): A5Cell {
-  const spherical = fromLonLat(lonLat);
+function _sphericalToEstimate(spherical: Spherical, resolution: number): A5Cell {
   const origin = {...findNearestOrigin(spherical)};
 
   const dodecPoint = dodecahedron.forward(spherical, origin.id);
@@ -201,9 +212,8 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
   return normalizedBoundary;
 }
 
-export function a5cellContainsPoint(cell: A5Cell, point: LonLat): number {
+export function a5cellContainsPoint(cell: A5Cell, spherical: Spherical): number {
   const pentagon = _getPentagon(cell);
-  const spherical = fromLonLat(point);
   const projectedPoint = dodecahedron.forward(spherical, cell.origin.id);
   return pentagon.containsPoint(projectedPoint);
 }

@@ -45,6 +45,7 @@
       "api-reference/indexing",
       "api-reference/hierarchy",
       "api-reference/traversal",
+      "api-reference/regions",
       "api-reference/cell-info",
       "api-reference/compaction"
     ]

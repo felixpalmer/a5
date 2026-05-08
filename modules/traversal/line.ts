@@ -2,13 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec3} from 'gl-matrix';
-import type {LonLat, Cartesian} from '../core/coordinate-systems';
+import type {LonLat} from '../core/coordinate-systems';
 import {lonLatToCell, cellIntersectsSegment} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical, toLonLat} from '../core/coordinate-transforms';
-import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
-import {slerp} from '../utils/vector';
-import {estimateCellRadius} from './cap';
+import {estimateCellRadius, sampleGreatCircleArc} from './cap';
 import {getLatticeNeighbors} from './lattice-neighbors';
 
 /**
@@ -45,22 +42,16 @@ export function lineStringToCells(waypoints: LonLat[], resolution: number): bigi
     const end = waypoints[i + 1];
     const startVec = toCartesian(fromLonLat(start));
     const endVec = toCartesian(fromLonLat(end));
-    const dot = Math.max(-1, Math.min(1, vec3.dot(startVec, endVec)));
-    const dist = Math.acos(dot) * AUTHALIC_RADIUS_EARTH;
 
-    // Sample the great-circle at half-cell-radius spacing. The endpoints are
-    // always included; numSubsegments >= 1 (so we always get the start→end pair
-    // even for short waypoint-to-waypoint hops).
-    const numSubsegments = Math.max(1, Math.ceil(dist / sampleInterval));
+    // Sample the great-circle at half-cell-radius spacing. Endpoints are
+    // always included; even for short hops we get the start→end pair.
+    const interior = sampleGreatCircleArc(startVec, endVec, sampleInterval);
+    const numSubsegments = interior.length + 1;
     const samples: LonLat[] = new Array(numSubsegments + 1);
     samples[0] = start;
     samples[numSubsegments] = end;
-    if (numSubsegments > 1) {
-      const tmp = vec3.create() as Cartesian;
-      for (let j = 1; j < numSubsegments; j++) {
-        slerp(tmp, startVec, endVec, j / numSubsegments);
-        samples[j] = toLonLat(toSpherical(tmp));
-      }
+    for (let j = 0; j < interior.length; j++) {
+      samples[j + 1] = toLonLat(toSpherical(interior[j]));
     }
     const sampleCells = samples.map(s => lonLatToCell(s, resolution));
 

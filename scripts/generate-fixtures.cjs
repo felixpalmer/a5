@@ -23,6 +23,9 @@ require("./fixtures/traversal/cap.cjs");
 require("./fixtures/traversal/line.cjs");
 require("./fixtures/core/compact.cjs");
 
+// Region generators
+require("./fixtures/regions/polygon.cjs");
+
 // Geometry generators
 require("./fixtures/geometry/spherical-polygon.cjs");
 require("./fixtures/geometry/spherical-triangle.cjs");
