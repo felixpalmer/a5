@@ -1,5 +1,5 @@
 {
-  "name": "a5-world-cells-cli",
+  "name": "a5-country-polygons-cli",
   "version": "1.0.0",
   "description": "Generate compacted A5 cells for every country in Natural Earth as a Parquet file",
   "type": "module",

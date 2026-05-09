@@ -8,7 +8,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Visualization',
-      items: ['airbnb', 'populated-places', 'road-safety', 'world-cells']
+      items: ['airbnb', 'country-polygons', 'populated-places', 'road-safety']
     },
     {
       type: 'category',

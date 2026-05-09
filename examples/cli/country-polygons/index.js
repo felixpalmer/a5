@@ -6,7 +6,7 @@ import {fileURLToPath} from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 const DEFAULT_INPUT = path.join(REPO_ROOT, 'website/static/data/ne_50m_countries.geojson');
-const DEFAULT_OUTPUT = path.join(REPO_ROOT, 'website/static/data/world-cells-compacted.parquet');
+const DEFAULT_OUTPUT = path.join(REPO_ROOT, 'website/static/data/country-polygons-compacted.parquet');
 const DEFAULT_RESOLUTION = 8;
 
 function parseArgs() {
