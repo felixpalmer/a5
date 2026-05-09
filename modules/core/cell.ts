@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { mat2, vec2, vec3, quat, glMatrix } from "gl-matrix";
+import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Cartesian, Face, LonLat, Spherical } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toCartesian, toLonLat, toPolar, toSpherical, normalizeLongitudes } from "./coordinate-transforms";
+import type { Face, LonLat, Spherical } from "./coordinate-systems";
+import { FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { DodecahedronProjection } from "../projections/dodecahedron";
 import { A5Cell, OriginId } from "./utils";
@@ -16,6 +16,7 @@ import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "../lattice";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./serialization";
 import { getGlobalCellNeighbors } from "../traversal/global-neighbors";
+import { generateSpiralSamples, SPIRAL_SAMPLE_COUNT } from "../utils/spiral";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -76,29 +77,15 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   if (firstDistance > 0) return cacheResult(firstEstimate, firstKey, resolution);
 
   // Spiral search: perturb the point in the tangent plane to find nearby
-  // estimate cells. The spiral pattern is precomputed once at the pole
-  // (where the tangent plane has no warping) and rotated to the input
-  // point's tangent plane via a quaternion — no per-iteration trig.
-  // Tuned via debug-scripts/tune-spiral.ts on a corpus of ~3500 points
-  // × 8 resolutions.
+  // estimate cells (see modules/utils/spiral.ts).
   const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
   const scale = SPIRAL_SCALE_RAD / Math.pow(2, hilbertResolution);
   const estimateSet = new Set<bigint>([firstKey]);
   const cells: {cellId: bigint, distance: number}[] = [{cellId: firstKey, distance: firstDistance}];
 
-  const c0 = toCartesian(spherical);
-  quat.rotationTo(_q, SPIRAL_POLE, c0 as unknown as vec3);
-
-  for (let i = 0; i < SPIRAL_PATTERN.length; i++) {
-    vec3.transformQuat(_tangent, SPIRAL_PATTERN[i], _q);
-    const R = ((i + 1) / SPIRAL_SAMPLES) * scale;
-    const perturbed: Cartesian = [
-      c0[0] + R * _tangent[0],
-      c0[1] + R * _tangent[1],
-      c0[2] + R * _tangent[2],
-    ] as Cartesian;
-    const sample = toSpherical(perturbed);
-    const estimate = _sphericalToEstimate(sample, resolution);
+  const samples = generateSpiralSamples(spherical, scale);
+  for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
+    const estimate = _sphericalToEstimate(samples[i], resolution);
     const estimateKey = serialize(estimate);
     if (estimateSet.has(estimateKey)) continue;
     estimateSet.add(estimateKey);
@@ -134,26 +121,10 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   return cacheResult(deserialize(fallbackKey), fallbackKey, resolution);
 }
 
-const SPIRAL_SAMPLES = 25;
+// Spiral perturbation radius at hilbertResolution=1 (in radians of tangent
+// offset). For higher resolutions we scale by 1/2^hilbertResolution. Tuned
+// via debug-scripts/tune-spiral.ts.
 const SPIRAL_SCALE_RAD = 70 * Math.PI / 180;
-const SPIRAL_ANGLE_STEP_RAD = 1.4;
-
-// Precomputed unit-direction spiral at the pole's tangent plane (z=0).
-// At the pole, tangent space coincides with the xy plane, so directions are
-// just (cos θ, sin θ, 0). Per call we rotate this pattern to the input
-// point's tangent plane via a quaternion — `quat.rotationTo` handles the
-// antipode case internally.
-const SPIRAL_POLE = vec3.fromValues(0, 0, 1);
-const SPIRAL_PATTERN: vec3[] = (() => {
-  const out: vec3[] = [];
-  for (let i = 1; i < SPIRAL_SAMPLES; i++) {
-    const a = i * SPIRAL_ANGLE_STEP_RAD;
-    out.push(vec3.fromValues(Math.cos(a), Math.sin(a), 0));
-  }
-  return out;
-})();
-const _q = quat.create();
-const _tangent = vec3.create();
 
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
 // Thus this function only returns an cell nearby, and we need to search the neighborhood to find the correct cell
