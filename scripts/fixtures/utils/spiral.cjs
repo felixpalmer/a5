@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { generateSpiralSamples, SPIRAL_SAMPLE_COUNT } = require('../../a5-test.cjs');
+const { Spiral, SPIRAL_SAMPLE_COUNT } = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/utils');
 const outputPath = path.join(outputDir, 'spiral.json');
@@ -25,13 +25,18 @@ const cases = [
 ];
 
 const fixtures = cases.map(c => {
-  const samples = generateSpiralSamples(c.center, c.scaleRad);
+  const spiral = new Spiral(c.center, c.scaleRad);
+  const samples = [];
+  for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
+    const s = spiral.sample(i);
+    samples.push([s[0], s[1]]);
+  }
   return {
     name: c.name,
     center: c.center,
     scaleRad: c.scaleRad,
     sampleCount: samples.length,
-    samples: samples.map(s => [s[0], s[1]]),
+    samples,
   };
 });
 
@@ -44,6 +49,6 @@ for (const f of fixtures) {
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(outputPath, JSON.stringify({
   sampleCount: SPIRAL_SAMPLE_COUNT,
-  generateSpiralSamples: fixtures,
+  spiral: fixtures,
 }, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

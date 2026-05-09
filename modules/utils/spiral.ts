@@ -9,24 +9,24 @@ import type { Cartesian, Spherical } from "../core/coordinate-systems";
 import { toCartesian, toSpherical } from "../core/coordinate-transforms";
 
 /**
- * Number of perturbed sample points returned by `generateSpiralSamples`.
- * Tuned via debug-scripts/tune-spiral.ts so that on a corpus of ~3500
- * spherical points × 8 resolutions, the spiral hits a strictly-containing
- * cell within these many iterations for all but a handful of points right
- * at the polar singularity at very high resolutions.
+ * Number of perturbed sample points the spiral can produce. Tuned via
+ * debug-scripts/tune-spiral.ts so that on a corpus of ~3500 spherical
+ * points × 8 resolutions, the spiral hits a strictly-containing cell
+ * within these many iterations for all but a handful of points right at
+ * the polar singularity at very high resolutions.
  */
 export const SPIRAL_SAMPLE_COUNT = 24;
 
 /**
  * Azimuthal step between consecutive samples in the rotated tangent plane.
- * 1.4 rad (~80°) is in a flat plateau of the parameter sweep.
+ * 1.4 rad (~80°) sits on a flat plateau of the parameter sweep.
  */
 const ANGLE_STEP_RAD = 1.4;
 
 // Precomputed unit-direction spiral at the canonical pole's tangent plane
-// (z=0). Pattern is independent of resolution; per call we rotate it to
-// the input point's tangent plane via a quaternion. `quat.rotationTo`
-// handles the antipode case internally.
+// (z=0). Each entry is the tangent direction of one sample. The pattern
+// is independent of resolution; per spiral the directions are rotated to
+// the input point's tangent plane via a single quaternion.
 const POLE: vec3 = vec3.fromValues(0, 0, 1);
 const SPIRAL_DIRECTIONS: vec3[] = (() => {
   const out: vec3[] = [];
@@ -37,34 +37,57 @@ const SPIRAL_DIRECTIONS: vec3[] = (() => {
   return out;
 })();
 
-const _q = quat.create();
-const _tangent = vec3.create();
-
 /**
- * Generate `SPIRAL_SAMPLE_COUNT` sample points around `center` on the unit
- * sphere, used to discover nearby cells when the projection-based estimate
- * lands in the wrong one.
+ * Lazy spiral sampler around a center point on the unit sphere — used by
+ * `sphericalToCell` to discover nearby cells when the projection-based
+ * estimate lands in the wrong one.
  *
- * Sample i sits at tangent-plane offset of magnitude
- * `(i+1)/(SPIRAL_SAMPLE_COUNT+1) · scaleRad` from `center`, rotated by
- * azimuth `(i+1) · ANGLE_STEP_RAD` in `center`'s tangent frame. The point
- * `center + offset` is computed in 3D Cartesian — slightly off the unit
- * sphere by O(R²) — and `toSpherical` projects it back implicitly.
+ * Construction precomputes the pole→center quaternion. `sample(i)`
+ * rotates the i-th cached direction into the tangent plane at `center`,
+ * scales by the appropriate radius, and returns a spherical coordinate
+ * — so the caller can break out of the loop as soon as a sample produces
+ * a hit.
+ *
+ * All state is per-instance (no module-level mutable scratch), so each
+ * thread/task can hold its own without locking.
  */
-export function generateSpiralSamples(center: Spherical, scaleRad: number): Spherical[] {
-  const c0 = toCartesian(center);
-  quat.rotationTo(_q, POLE, c0 as unknown as vec3);
+export class Spiral {
+  private c0: Cartesian;
+  private q: quat;
+  private scaleRad: number;
+  private scratch: vec3;
 
-  const out: Spherical[] = new Array(SPIRAL_SAMPLE_COUNT);
-  for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
-    vec3.transformQuat(_tangent, SPIRAL_DIRECTIONS[i], _q);
-    const R = ((i + 1) / (SPIRAL_SAMPLE_COUNT + 1)) * scaleRad;
-    const perturbed: Cartesian = [
-      c0[0] + R * _tangent[0],
-      c0[1] + R * _tangent[1],
-      c0[2] + R * _tangent[2],
-    ] as Cartesian;
-    out[i] = toSpherical(perturbed);
+  /**
+   * Initialise a spiral around `center` on the unit sphere. The
+   * tangent-plane radius of the outermost sample is `scaleRad`;
+   * intermediate samples scale linearly between 0 and that.
+   * `quat.rotationTo` handles the antipode case internally.
+   */
+  constructor(center: Spherical, scaleRad: number) {
+    this.c0 = toCartesian(center);
+    this.q = quat.create();
+    quat.rotationTo(this.q, POLE, this.c0 as unknown as vec3);
+    this.scaleRad = scaleRad;
+    this.scratch = vec3.create();
   }
-  return out;
+
+  /**
+   * Return the i-th spiral sample (0 ≤ i < SPIRAL_SAMPLE_COUNT) as a
+   * spherical coordinate. Sample i sits at tangent-plane offset of
+   * magnitude `(i+1)/(SPIRAL_SAMPLE_COUNT+1) · scaleRad` from `center`,
+   * rotated by azimuth `(i+1) · 1.4 rad` in `center`'s tangent frame.
+   *
+   * The Cartesian point `center + offset` is slightly off the unit
+   * sphere by O(R²); `toSpherical` projects it back implicitly.
+   */
+  sample(i: number): Spherical {
+    vec3.transformQuat(this.scratch, SPIRAL_DIRECTIONS[i], this.q);
+    const R = ((i + 1) / (SPIRAL_SAMPLE_COUNT + 1)) * this.scaleRad;
+    const perturbed: Cartesian = [
+      this.c0[0] + R * this.scratch[0],
+      this.c0[1] + R * this.scratch[1],
+      this.c0[2] + R * this.scratch[2],
+    ] as Cartesian;
+    return toSpherical(perturbed);
+  }
 }

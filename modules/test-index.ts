@@ -44,7 +44,7 @@ export { metersToH, estimateCellRadius, pickCoarseResolution } from './traversal
 export { greatCircleDistance, sampleGreatCircleArc } from './utils/great-circle';
 
 // Export spiral helper for testing
-export { generateSpiralSamples, SPIRAL_SAMPLE_COUNT } from './utils/spiral';
+export { Spiral, SPIRAL_SAMPLE_COUNT } from './utils/spiral';
 
 // Export lattice neighbor / flood-fill for testing
 export { getLatticeNeighbors } from './traversal/lattice-neighbors';

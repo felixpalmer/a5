@@ -1,6 +1,6 @@
 {
   "sampleCount": 24,
-  "generateSpiralSamples": [
+  "spiral": [
     {
       "name": "equator_low_res",
       "center": [

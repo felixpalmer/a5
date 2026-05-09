@@ -16,7 +16,7 @@ import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "../lattice";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./serialization";
 import { getGlobalCellNeighbors } from "../traversal/global-neighbors";
-import { generateSpiralSamples, SPIRAL_SAMPLE_COUNT } from "../utils/spiral";
+import { Spiral, SPIRAL_SAMPLE_COUNT } from "../utils/spiral";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -83,9 +83,9 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   const estimateSet = new Set<bigint>([firstKey]);
   const cells: {cellId: bigint, distance: number}[] = [{cellId: firstKey, distance: firstDistance}];
 
-  const samples = generateSpiralSamples(spherical, scale);
+  const spiral = new Spiral(spherical, scale);
   for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
-    const estimate = _sphericalToEstimate(samples[i], resolution);
+    const estimate = _sphericalToEstimate(spiral.sample(i), resolution);
     const estimateKey = serialize(estimate);
     if (estimateSet.has(estimateKey)) continue;
     estimateSet.add(estimateKey);
