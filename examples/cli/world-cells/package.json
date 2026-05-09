@@ -1,0 +1,13 @@
+{
+  "name": "a5-world-cells-cli",
+  "version": "1.0.0",
+  "description": "Generate compacted A5 cells for every country in Natural Earth as a Parquet file",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "hyparquet-writer": "^0.8.0"
+  }
+}
