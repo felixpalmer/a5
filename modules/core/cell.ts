@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { mat2, vec2, glMatrix } from "gl-matrix";
+import { mat2, vec2, vec3, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Face, LonLat, Spherical } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes } from "./coordinate-transforms";
+import type { Cartesian, Face, LonLat, Spherical } from "./coordinate-systems";
+import { FaceToIJ, fromLonLat, toCartesian, toLonLat, toPolar, toSpherical, normalizeLongitudes } from "./coordinate-transforms";
 import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
 import { DodecahedronProjection } from "../projections/dodecahedron";
 import { A5Cell, OriginId } from "./utils";
@@ -15,6 +15,7 @@ import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVert
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "../lattice";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./serialization";
+import { getGlobalCellNeighbors } from "../traversal/global-neighbors";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -76,33 +77,77 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
 
   // Spiral search: perturb the point to find nearby estimate cells (the
   // projection approximation can land in a neighbor at pentagon boundaries).
-  // Samples are generated lazily — if the first sample hits we skip 25 trig+alloc ops.
+  // The perturbation is a tangent-plane spiral on the unit sphere — uniform
+  // around the input point regardless of latitude, so it covers face-space
+  // evenly even at the poles where (theta, phi) perturbation degenerates.
   const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
   const N = 25;
-  // 50 degrees / 2^hilbertResolution, expressed as radians for spherical-space perturbation.
   const scale = (50 * Math.PI / 180) / Math.pow(2, hilbertResolution);
   const estimateSet = new Set<bigint>([firstKey]);
-  const cells: {cell: A5Cell, distance: number}[] = [{cell: firstEstimate, distance: firstDistance}];
+  const cells: {cellId: bigint, distance: number}[] = [{cellId: firstKey, distance: firstDistance}];
+
+  // Build an orthonormal tangent basis (t1, t2) at the input point on the
+  // unit sphere. The helper is chosen to avoid degeneracy near the poles.
+  const c0 = toCartesian(spherical);
+  const helper = Math.abs(c0[2]) < 0.9 ? VEC3_Z : VEC3_X;
+  vec3.cross(_t1, c0 as unknown as vec3, helper);
+  vec3.normalize(_t1, _t1);
+  vec3.cross(_t2, c0 as unknown as vec3, _t1);
 
   // i=0 yields R=0 → same as the original sample, so start at i=1.
   for (let i = 1; i < N; i++) {
     const R = (i / N) * scale;
-    const sample: Spherical = [spherical[0] + Math.cos(i) * R, spherical[1] + Math.sin(i) * R] as Spherical;
+    const cosI = Math.cos(i), sinI = Math.sin(i);
+    const cosR = Math.cos(R), sinR = Math.sin(R);
+    const tx = cosI * _t1[0] + sinI * _t2[0];
+    const ty = cosI * _t1[1] + sinI * _t2[1];
+    const tz = cosI * _t1[2] + sinI * _t2[2];
+    const perturbed: Cartesian = [
+      cosR * c0[0] + sinR * tx,
+      cosR * c0[1] + sinR * ty,
+      cosR * c0[2] + sinR * tz,
+    ] as Cartesian;
+    const sample = toSpherical(perturbed);
     const estimate = _sphericalToEstimate(sample, resolution);
     const estimateKey = serialize(estimate);
     if (estimateSet.has(estimateKey)) continue;
     estimateSet.add(estimateKey);
     const distance = a5cellContainsPoint(estimate, spherical);
     if (distance > 0) return cacheResult(estimate, estimateKey, resolution);
-    cells.push({cell: estimate, distance});
+    cells.push({cellId: estimateKey, distance});
+  }
+
+  // Neighbor expansion: cells right at the boundary can land just outside
+  // due to floating-point imprecision in the cross-product test (especially
+  // near the poles at very high resolutions, where pentagon edges meet
+  // FP precision). Expand the search to direct neighbors of the closest
+  // candidates — one of them will strictly contain the point.
+  cells.sort((a, b) => b.distance - a.distance);
+  const K = Math.min(3, cells.length);
+  for (let k = 0; k < K; k++) {
+    const neighbors = getGlobalCellNeighbors(cells[k].cellId);
+    for (let n = 0; n < neighbors.length; n++) {
+      const neighborKey = neighbors[n];
+      if (estimateSet.has(neighborKey)) continue;
+      estimateSet.add(neighborKey);
+      const neighborCell = deserialize(neighborKey);
+      const distance = a5cellContainsPoint(neighborCell, spherical);
+      if (distance > 0) return cacheResult(neighborCell, neighborKey, resolution);
+      cells.push({cellId: neighborKey, distance});
+    }
   }
 
   // Fallback: pick the closest estimate. Cache it so subsequent dense-sample
   // calls still benefit even though this lookup was approximate.
   cells.sort((a, b) => b.distance - a.distance);
-  const fallback = cells[0].cell;
-  return cacheResult(fallback, serialize(fallback), resolution);
+  const fallbackKey = cells[0].cellId;
+  return cacheResult(deserialize(fallbackKey), fallbackKey, resolution);
 }
+
+const VEC3_X = vec3.fromValues(1, 0, 0);
+const VEC3_Z = vec3.fromValues(0, 0, 1);
+const _t1 = vec3.create();
+const _t2 = vec3.create();
 
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
 // Thus this function only returns an cell nearby, and we need to search the neighborhood to find the correct cell
