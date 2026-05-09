@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { mat2, vec2, glMatrix } from "gl-matrix";
+import { mat2, vec2, vec3, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type { Cartesian, Face, LonLat, Spherical } from "./coordinate-systems";
@@ -85,7 +85,7 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
 
   const spiral = new Spiral(spherical, scale);
   for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
-    const estimate = _cartesianToEstimate(spiral.sample(i), resolution);
+    const estimate = _cartesianToEstimate(spiral.sample(_spiralOut, i), resolution);
     const estimateKey = serialize(estimate);
     if (estimateSet.has(estimateKey)) continue;
     estimateSet.add(estimateKey);
@@ -125,6 +125,11 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
 // offset). For higher resolutions we scale by 1/2^hilbertResolution. Tuned
 // via debug-scripts/tune-spiral.ts.
 const SPIRAL_SCALE_RAD = 70 * Math.PI / 180;
+
+// Reusable output buffer for spiral.sample() — written once per iteration,
+// consumed immediately by _cartesianToEstimate. Single-threaded JS makes
+// this safe; ports use stack allocation or per-call locals.
+const _spiralOut = vec3.create() as unknown as Cartesian;
 
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
 // Thus these functions only return a cell nearby, and we need to search the neighborhood to find the correct cell

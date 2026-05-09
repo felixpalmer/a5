@@ -74,18 +74,18 @@ export class Spiral {
   }
 
   /**
-   * Return the i-th spiral sample (0 ≤ i < SPIRAL_SAMPLE_COUNT) as a
-   * Cartesian point. Sample i sits at tangent-plane offset of magnitude
-   * `(i+1)/(SPIRAL_SAMPLE_COUNT+1) · scaleRad` from `center`, rotated
-   * by azimuth `(i+1) · 1.4 rad` in `center`'s tangent frame.
+   * Write the i-th spiral sample (0 ≤ i < SPIRAL_SAMPLE_COUNT) into
+   * `out` and return it. Sample i sits at tangent-plane offset of
+   * magnitude `(i+1)/(SPIRAL_SAMPLE_COUNT+1) · scaleRad` from `center`,
+   * rotated by azimuth `(i+1) · 1.4 rad` in `center`'s tangent frame.
+   *
+   * `out` is supplied by the caller so the same buffer can be reused
+   * across all samples in a search, avoiding per-iteration allocation.
    */
-  sample(i: number): Cartesian {
+  sample(out: Cartesian, i: number): Cartesian {
     vec3.transformQuat(this.scratch, SPIRAL_DIRECTIONS[i], this.q);
     const R = ((i + 1) / (SPIRAL_SAMPLE_COUNT + 1)) * this.scaleRad;
-    return [
-      this.c0[0] + R * this.scratch[0],
-      this.c0[1] + R * this.scratch[1],
-      this.c0[2] + R * this.scratch[2],
-    ] as Cartesian;
+    vec3.scaleAndAdd(out as unknown as vec3, this.c0 as unknown as vec3, this.scratch, R);
+    return out;
   }
 }

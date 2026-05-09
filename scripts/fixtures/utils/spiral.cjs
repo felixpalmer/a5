@@ -26,10 +26,11 @@ const cases = [
 
 const fixtures = cases.map(c => {
   const spiral = new Spiral(c.center, c.scaleRad);
+  const out = new Float64Array(3);
   const samples = [];
   for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
-    const s = spiral.sample(i);
-    samples.push([s[0], s[1], s[2]]);
+    spiral.sample(out, i);
+    samples.push([out[0], out[1], out[2]]);
   }
   return {
     name: c.name,

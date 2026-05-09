@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Spiral, SPIRAL_SAMPLE_COUNT } from 'a5/utils/spiral';
-import type { Spherical } from 'a5/core/coordinate-systems';
-// fixtures store [x, y, z]; samples return Cartesian.
+import type { Cartesian, Spherical } from 'a5/core/coordinate-systems';
 import fixtures from '../fixtures/utils/spiral.json';
 import './matchers';
 
@@ -22,10 +21,11 @@ describe('Spiral', () => {
     it(`${f.name}`, () => {
       const center = f.center as unknown as Spherical;
       const spiral = new Spiral(center, f.scaleRad);
+      const out = new Float64Array(3);
       expect(f.sampleCount).toBe(SPIRAL_SAMPLE_COUNT);
       for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
-        const s = spiral.sample(i);
-        expect([...s]).toBeCloseToArray(f.samples[i], 6);
+        spiral.sample(out as unknown as Cartesian, i);
+        expect([...out]).toBeCloseToArray(f.samples[i], 6);
       }
     });
   }
