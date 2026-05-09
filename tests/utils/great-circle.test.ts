@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { sampleGreatCircleArc, greatCircleDistance } from 'a5/utils/great-circle';
-import type { Cartesian } from 'a5/core/coordinate-systems';
+import {describe, it, expect} from 'vitest';
+import {sampleGreatCircleArc, greatCircleDistance} from 'a5/utils/great-circle';
+import type {Cartesian} from 'a5/core/coordinate-systems';
 import fixtures from '../fixtures/utils/great-circle.json';
 import './matchers';
 

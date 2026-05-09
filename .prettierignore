@@ -1,0 +1,25 @@
+dist/
+build/
+node_modules/
+coverage/
+.yarn/
+.pytest_cache/
+debug-scripts/
+yarn.lock
+package-lock.json
+
+# Generated/data JSON (treat as fixtures, not code)
+tests/**/*.json
+
+# Website build output
+website/build/
+website/.docusaurus/
+
+# Auto-generated docs
+docs/api-reference/
+
+# Other languages / non-JS files
+*.py
+*.rs
+*.md
+*.parquet

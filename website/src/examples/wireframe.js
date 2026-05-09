@@ -14,8 +14,8 @@ class WireframeDemo extends Component {
     return (
       <div>
         <p>
-          Interactive wireframe showing A5 cells at different resolutions.
-          This demonstrates the same functionality as the CLI example but in an interactive map.
+          Interactive wireframe showing A5 cells at different resolutions. This demonstrates the same functionality as
+          the CLI example but in an interactive map.
         </p>
         <p>
           Try adjusting the resolution slider to see how A5 cells subdivide the globe at different levels of detail.
@@ -25,7 +25,7 @@ class WireframeDemo extends Component {
   }
 
   render() {
-    return <App showControls={false}/>;
+    return <App showControls={false} />;
   }
 }
 

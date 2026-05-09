@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { compact, uncompact } from 'a5/core/compact';
-import { hexToU64 } from 'a5/core/hex';
-import { deserialize } from 'a5/core/serialization';
+import {describe, it, expect} from 'vitest';
+import {compact, uncompact} from 'a5/core/compact';
+import {hexToU64} from 'a5/core/hex';
+import {deserialize} from 'a5/core/serialization';
 import compactFixtures from './fixtures/compact.json';
 
 describe('uncompact', () => {
@@ -36,14 +36,13 @@ describe('compact', () => {
   it('should handle all fixture test cases', () => {
     for (const testCase of compactFixtures.compact) {
       const input = testCase.input.map(hexToU64);
-      const expected = testCase.expectedOutput.map(hexToU64).sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+      const expected = testCase.expectedOutput.map(hexToU64).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
       const result = compact(input);
 
       expect(Array.from(result)).toEqual(expected);
     }
   });
 });
-
 
 describe('compact/uncompact round-trip', () => {
   it('should handle all round-trip fixture test cases', () => {
@@ -53,8 +52,9 @@ describe('compact/uncompact round-trip', () => {
 
       // Verify compact result matches fixture
       const compactResult = compact(initialCells);
-      expect(Array.from(compactResult).sort((a, b) => a < b ? -1 : a > b ? 1 : 0))
-        .toEqual(afterCompact.sort((a, b) => a < b ? -1 : a > b ? 1 : 0));
+      expect(Array.from(compactResult).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))).toEqual(
+        afterCompact.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      );
 
       // Verify uncompact restores coverage
       const uncompactResult = uncompact(afterCompact, testCase.targetResolution);
@@ -75,4 +75,3 @@ describe('compact/uncompact round-trip', () => {
     }
   });
 });
-

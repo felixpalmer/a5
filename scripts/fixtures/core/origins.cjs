@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { origins } = require('../../a5-test.cjs');
+const {origins} = require('../../a5-test.cjs');
 
 // Generate origins data
 const originsData = origins.map(origin => ({

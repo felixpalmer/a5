@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { quat, glMatrix } from 'gl-matrix';
+import {quat, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Cartesian, Radians, Spherical } from "./coordinate-systems";
-import { toCartesian } from './coordinate-transforms';
-import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from './constants';
-import type { Orientation } from "../lattice";
-import type { Origin, OriginId } from './utils';
-import { quaternions } from './dodecahedron-quaternions';
+import type {Cartesian, Radians, Spherical} from './coordinate-systems';
+import {toCartesian} from './coordinate-transforms';
+import {interhedralAngle, PI_OVER_5, TWO_PI_OVER_5} from './constants';
+import type {Orientation} from '../lattice';
+import type {Origin, OriginId} from './utils';
+import {quaternions} from './dodecahedron-quaternions';
 
 // Quintant layouts (clockwise & counterclockwise)
 export const clockwiseFan = ['vu', 'uw', 'vw', 'vw', 'vw'] as Orientation[];
@@ -18,28 +18,28 @@ export const counterStep = ['wu', 'uv', 'wv', 'wu', 'uw'] as Orientation[];
 export const counterJump = ['vu', 'uv', 'wv', 'wu', 'uw'] as Orientation[];
 
 const QUINTANT_ORIENTATIONS: Orientation[][] = [
-  clockwiseFan,   // 0 Arctic
-  counterJump,    // 1 North America
-  counterStep,    // 2 South America
+  clockwiseFan, // 0 Arctic
+  counterJump, // 1 North America
+  counterStep, // 2 South America
 
-  clockwiseStep,  // 3 North Atlantic & Western Europe & Africa
-  counterStep,    // 4 South Atlantic & Africa
-  counterJump,    // 5 Europe, Middle East & CentralAfrica
-  
-  counterStep,    // 6 Indian Ocean
-  clockwiseStep,  // 7 Asia
-  clockwiseStep,  // 8 Australia
+  clockwiseStep, // 3 North Atlantic & Western Europe & Africa
+  counterStep, // 4 South Atlantic & Africa
+  counterJump, // 5 Europe, Middle East & CentralAfrica
 
-  clockwiseStep,  // 9 North Pacific
-  counterJump,    // 10 South Pacific
-  counterJump,    // 11 Antarctic
+  counterStep, // 6 Indian Ocean
+  clockwiseStep, // 7 Asia
+  clockwiseStep, // 8 Australia
+
+  clockwiseStep, // 9 North Pacific
+  counterJump, // 10 South Pacific
+  counterJump // 11 Antarctic
 ];
 
 // Within each face, these are the indices of the first quintant
-const QUINTANT_FIRST = [4, 2, 3,  2, 0, 4,  3, 2, 2,  0, 3, 0];
+const QUINTANT_FIRST = [4, 2, 3, 2, 0, 4, 3, 2, 2, 0, 3, 0];
 
 // Placements of dodecahedron faces along the Hilbert curve
-const ORIGIN_ORDER = [0, 1, 2,  4, 3, 5,  7, 8, 6,  11, 10, 9];
+const ORIGIN_ORDER = [0, 1, 2, 4, 3, 5, 7, 8, 6, 11, 10, 9];
 
 const origins: Origin[] = [];
 function generateOrigins(): void {
@@ -48,10 +48,10 @@ function generateOrigins(): void {
 
   // Middle band
   for (let i = 0; i < 5; i++) {
-    const alpha = i * TWO_PI_OVER_5 as Radians;
-    const alpha2 = alpha + PI_OVER_5 as Radians;
+    const alpha = (i * TWO_PI_OVER_5) as Radians;
+    const alpha2 = (alpha + PI_OVER_5) as Radians;
     addOrigin([alpha, interhedralAngle] as Spherical, PI_OVER_5, quaternions[i + 1]);
-    addOrigin([alpha2, Math.PI - interhedralAngle] as Spherical, PI_OVER_5, quaternions[(i + 3) % 5 + 6]);
+    addOrigin([alpha2, Math.PI - interhedralAngle] as Spherical, PI_OVER_5, quaternions[((i + 3) % 5) + 6]);
   }
 
   // South pole
@@ -82,14 +82,14 @@ generateOrigins();
 
 // Reorder origins to match the order of the hilbert curve
 origins.sort((a, b) => ORIGIN_ORDER.indexOf(a.id) - ORIGIN_ORDER.indexOf(b.id));
-origins.forEach((origin, i) => origin.id = i as OriginId);
+origins.forEach((origin, i) => (origin.id = i as OriginId));
 
-export { origins };
+export {origins};
 
-export function quintantToSegment(quintant: number, origin: Origin): {segment: number, orientation: Orientation} {
+export function quintantToSegment(quintant: number, origin: Origin): {segment: number; orientation: Orientation} {
   // Lookup winding direction of this face
   const layout = origin.orientation;
-  const step = (layout === clockwiseFan || layout === clockwiseStep) ? -1 : 1;
+  const step = layout === clockwiseFan || layout === clockwiseStep ? -1 : 1;
 
   // Find (CCW) delta from first quintant of this face
   const delta = (quintant - origin.firstQuintant + 5) % 5;
@@ -102,10 +102,10 @@ export function quintantToSegment(quintant: number, origin: Origin): {segment: n
   return {segment, orientation};
 }
 
-export function segmentToQuintant(segment: number, origin: Origin): {quintant: number, orientation: Orientation} {
+export function segmentToQuintant(segment: number, origin: Origin): {quintant: number; orientation: Orientation} {
   // Lookup winding direction of this face
   const layout = origin.orientation;
-  const step = (layout === clockwiseFan || layout === clockwiseStep) ? -1 : 1;
+  const step = layout === clockwiseFan || layout === clockwiseStep ? -1 : 1;
 
   const faceRelativeQuintant = (segment - origin.firstQuintant + 5) % 5;
   const orientation = layout[faceRelativeQuintant];
@@ -162,14 +162,14 @@ export function findNearestOriginCartesian(c: Cartesian): Origin {
  * @param point The point to calculate distance from
  * @param axis The axis to calculate distance to
  * @returns The "angle" between the two points
- */ 
+ */
 export function haversine(point: Spherical, axis: Spherical): number {
   const [theta, phi] = point;
   const [theta2, phi2] = axis;
-  const dtheta = theta2 - theta as Radians;
-  const dphi = phi2 - phi as Radians;
+  const dtheta = (theta2 - theta) as Radians;
+  const dphi = (phi2 - phi) as Radians;
   const A1 = Math.sin(dphi / 2);
   const A2 = Math.sin(dtheta / 2);
   const angle = A1 * A1 + A2 * A2 * Math.sin(phi) * Math.sin(phi2);
   return angle;
-} 
+}

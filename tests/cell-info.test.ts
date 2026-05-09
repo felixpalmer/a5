@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest';
-import { getNumCells, getNumChildren, cellArea } from 'a5/core/cell-info';
+import {describe, expect, test} from 'vitest';
+import {getNumCells, getNumChildren, cellArea} from 'a5/core/cell-info';
 import cellInfoFixtures from './fixtures/cell-info.json';
 
 describe('getNumCells', () => {
@@ -25,4 +25,4 @@ describe('cellArea', () => {
       expect(cellArea(fixture.resolution)).toBe(fixture.areaM2);
     });
   });
-}); 
+});

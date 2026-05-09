@@ -16,7 +16,9 @@ class PopulatedPlacesDemo extends Component {
       <div>
         <p>Populated places aggregated by A5, and drawn as 3D columns at cell centers.</p>
         <p>Switch to cell mode to see aggregation bounds, source points and cell centers.</p>
-        <p>Data: <a href="https://www.naturalearthdata.com/downloads/10m-cultural-vectors/">Natural Earth</a></p>
+        <p>
+          Data: <a href="https://www.naturalearthdata.com/downloads/10m-cultural-vectors/">Natural Earth</a>
+        </p>
       </div>
     );
   }
@@ -30,4 +32,4 @@ class PopulatedPlacesDemo extends Component {
   }
 }
 
-export default makeExample(PopulatedPlacesDemo); 
+export default makeExample(PopulatedPlacesDemo);

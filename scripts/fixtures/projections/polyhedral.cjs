@@ -1,6 +1,6 @@
-const { PolyhedralProjection } = require("../../a5-test.cjs");
-const { generateProjectionTests } = require("../projection-generator.cjs");
-const { vec3 } = require("gl-matrix");
+const {PolyhedralProjection} = require('../../a5-test.cjs');
+const {generateProjectionTests} = require('../projection-generator.cjs');
+const {vec3} = require('gl-matrix');
 
 // Static test data that must be included
 const φ = (1 + Math.sqrt(5)) / 2;
@@ -15,7 +15,11 @@ const TEST_SPHERICAL_TRIANGLE = [CENTER, VERTEX, EDGE_MIDPOINT];
 TEST_SPHERICAL_TRIANGLE.forEach(p => vec3.normalize(p, p));
 
 // Different to shape used in app, but should not matter as barycentric coordinates are used
-const TEST_FACE_TRIANGLE = [[0, 0], [0, 1], [1, 0]];
+const TEST_FACE_TRIANGLE = [
+  [0, 0],
+  [0, 1],
+  [1, 0]
+];
 
 const range = Array.from({length: 10}).map((_, i) => Math.pow(0.1, i + 1)); // 0.1, 0.01, 0.001...
 
@@ -60,7 +64,7 @@ const config = {
   inverseTestCount: 200,
   forwardParams: [TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE],
   inverseParams: [TEST_FACE_TRIANGLE, TEST_SPHERICAL_TRIANGLE],
-  postGenerate: (testData) => {
+  postGenerate: testData => {
     testData.static = {
       TEST_SPHERICAL_TRIANGLE,
       TEST_FACE_TRIANGLE
@@ -69,4 +73,4 @@ const config = {
   }
 };
 
-generateProjectionTests(config); 
+generateProjectionTests(config);

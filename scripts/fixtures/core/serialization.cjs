@@ -2,21 +2,25 @@ const fs = require('fs');
 const path = require('path');
 
 const {
-  serialize, deserialize, getResolution,
-  lonLatToCell, u64ToHex,
-  origins, FIRST_HILBERT_RESOLUTION
+  serialize,
+  deserialize,
+  getResolution,
+  lonLatToCell,
+  u64ToHex,
+  origins,
+  FIRST_HILBERT_RESOLUTION
 } = require('../../a5-test.cjs');
 
 const MAX_RESOLUTION = 30;
 
 // Deterministic PRNG (mulberry32)
 function mulberry32(seed) {
-  return function() {
+  return function () {
     seed |= 0;
-    seed = seed + 0x6D2B79F5 | 0;
-    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
 
@@ -29,7 +33,7 @@ const origin0 = origins[0];
 const maskSegment = (0 + origin0.firstQuintant) % 5;
 const resolutionMasks = [];
 for (let res = 0; res <= MAX_RESOLUTION; res++) {
-  const cell = serialize({ origin: origin0, segment: maskSegment, S: 0n, resolution: res });
+  const cell = serialize({origin: origin0, segment: maskSegment, S: 0n, resolution: res});
   resolutionMasks.push(cell.toString(2).padStart(64, '0'));
 }
 
@@ -65,24 +69,24 @@ for (let res = 0; res <= MAX_RESOLUTION; res++) {
 // Specific geographic locations to test res 30 encoding & out-of-bounds fallback
 const res30Points = [
   // Locations that should encode at res 30 (in-bounds quintants 0-41)
-  { lon: -0.1276, lat: 51.5074, name: 'London' },
-  { lon: -73.9857, lat: 40.7484, name: 'New York' },
-  { lon: 139.6917, lat: 35.6895, name: 'Tokyo' },
-  { lon: -155.5, lat: 19.9, name: 'Hawaii Big Island' },
-  { lon: -157.8, lat: 21.3, name: 'Oahu' },
+  {lon: -0.1276, lat: 51.5074, name: 'London'},
+  {lon: -73.9857, lat: 40.7484, name: 'New York'},
+  {lon: 139.6917, lat: 35.6895, name: 'Tokyo'},
+  {lon: -155.5, lat: 19.9, name: 'Hawaii Big Island'},
+  {lon: -157.8, lat: 21.3, name: 'Oahu'},
   // Locations in Antarctica (high-quintant origins, likely out-of-bounds → fall back to res 29)
-  { lon: 0, lat: -85, name: 'Antarctica Weddell Sea' },
-  { lon: 90, lat: -80, name: 'Antarctica East' },
-  { lon: -75, lat: -80, name: 'Antarctica West' },
-  { lon: 180, lat: -75, name: 'Antarctica Ross' },
-  { lon: -135, lat: -78, name: 'Antarctica Pacific' },
+  {lon: 0, lat: -85, name: 'Antarctica Weddell Sea'},
+  {lon: 90, lat: -80, name: 'Antarctica East'},
+  {lon: -75, lat: -80, name: 'Antarctica West'},
+  {lon: 180, lat: -75, name: 'Antarctica Ross'},
+  {lon: -135, lat: -78, name: 'Antarctica Pacific'}
 ];
 
 const res30Locations = res30Points.map(loc => {
   const cell = lonLatToCell([loc.lon, loc.lat], 30);
   const hex = u64ToHex(cell);
   const resolution = getResolution(cell);
-  return { ...loc, hex, resolution };
+  return {...loc, hex, resolution};
 });
 
 // Report
@@ -102,10 +106,12 @@ if (outOfBounds.length === 0) {
 const fixtures = {
   resolutionMasks,
   testIds,
-  res30Locations,
+  res30Locations
 };
 
 const outputPath = path.join(__dirname, '../../../tests/fixtures/serialization.json');
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
-console.log(`Generated serialization fixture: ${resolutionMasks.length} masks, ${testIds.length} test IDs, ${res30Locations.length} res30 locations`);
+console.log(
+  `Generated serialization fixture: ${resolutionMasks.length} masks, ${testIds.length} test IDs, ${res30Locations.length} res30 locations`
+);
 console.log(`Saved to: ${outputPath}`);

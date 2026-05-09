@@ -1,13 +1,13 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, {useState, useCallback, useRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl, ViewStateChangeEvent} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
-import { lonLatToCell, cellToBoundary } from 'a5';
-import { _getPentagon } from 'a5';
+import {lonLatToCell, cellToBoundary} from 'a5';
+import {_getPentagon} from 'a5';
 
-const INITIAL_VIEW_STATE = { longitude: 10, latitude: 50, zoom: 4 };
+const INITIAL_VIEW_STATE = {longitude: 10, latitude: 50, zoom: 4};
 
 // Define interface for the DeckGLOverlay props
 interface DeckGLOverlayProps {
@@ -21,12 +21,12 @@ const App: React.FC = () => {
   const [cellsSet, setCellsSet] = useState<Set<bigint>>(new Set());
   // Keep track of current zoom level
   const zoomRef = useRef<number>(INITIAL_VIEW_STATE.zoom);
-  
+
   // Handle viewport changes
   const handleViewStateChange = useCallback((e: ViewStateChangeEvent) => {
     zoomRef.current = e.viewState.zoom;
   }, []);
-  
+
   // Handle map clicks
   const handleClick = useCallback((info, event) => {
     if (!info.coordinate) return;
@@ -74,11 +74,7 @@ const App: React.FC = () => {
         renderWorldCopies={true}
         onMove={handleViewStateChange}
       >
-        <DeckGLOverlay 
-          layers={[polygonLayer]} 
-          interleaved 
-          onClick={handleClick}
-        />
+        <DeckGLOverlay layers={[polygonLayer]} interleaved onClick={handleClick} />
       </Map>
     </div>
   );
@@ -95,4 +91,4 @@ function DeckGLOverlay(props: DeckGLOverlayProps) {
   const overlay = useControl(() => new DeckOverlay(props));
   overlay.setProps(props);
   return null;
-} 
+}

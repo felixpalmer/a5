@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { Quaternary, Flip } from './types';
+import type {Quaternary, Flip} from './types';
 
 // Patterns used to rearrange the cells when shifting. This adjusts the layout so that
 // children always overlap with their parent cells.
@@ -46,6 +46,6 @@ export const shiftDigits = (
   // Apply the pattern by setting the digits based on the value provided
   const src = first ? childK : childK + 4;
   const dst = pattern[src];
-  digits[i - 1] = dst % 4 as Quaternary;
-  digits[i] = (parentK + 4 + Math.floor(dst / 4) - Math.floor(src / 4)) % 4 as Quaternary;
-}
+  digits[i - 1] = (dst % 4) as Quaternary;
+  digits[i] = ((parentK + 4 + Math.floor(dst / 4) - Math.floor(src / 4)) % 4) as Quaternary;
+};

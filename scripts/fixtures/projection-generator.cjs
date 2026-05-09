@@ -1,5 +1,5 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Generic test generator for projection classes
@@ -27,7 +27,7 @@ function generateProjectionTestData(config) {
     forwardTestCount = 100,
     inverseTestCount = 100,
     forwardParams = [],
-    inverseParams = [],
+    inverseParams = []
   } = config;
 
   const projection = new ProjectionClass();
@@ -50,7 +50,7 @@ function generateProjectionTestData(config) {
   for (let i = 0; i < remainingForwardCases; i++) {
     const input = generateRandomForwardInput();
     const expected = projection.forward(input, ...forwardParams);
-    
+
     testData.forward.push({
       input: input,
       expected: expected
@@ -74,7 +74,7 @@ function generateProjectionTestData(config) {
   for (let i = 0; i < remainingInverseCases; i++) {
     const input = generateRandomInverseInput();
     const expected = projection.inverse(input, ...inverseParams);
-    
+
     testData.inverse.push({
       input: input,
       expected: expected
@@ -88,9 +88,9 @@ function generateProjectionTestData(config) {
 }
 
 function updateExistingTestData(existingData, config) {
-  const { ProjectionClass, forwardParams = [], inverseParams = [] } = config;
+  const {ProjectionClass, forwardParams = [], inverseParams = []} = config;
   const projection = new ProjectionClass();
-  
+
   // Update expected values for forward tests
   if (existingData.forward) {
     existingData.forward.forEach(testCase => {
@@ -109,8 +109,8 @@ function updateExistingTestData(existingData, config) {
 }
 
 function generateProjectionTests(config) {
-  const { projectionName } = config;
-  const DATA_DIR = path.join(__dirname, "./../../tests/projections/fixtures");
+  const {projectionName} = config;
+  const DATA_DIR = path.join(__dirname, './../../tests/projections/fixtures');
   const TEST_DATA_PATH = path.join(DATA_DIR, `${projectionName}.json`);
 
   try {
@@ -121,11 +121,13 @@ function generateProjectionTests(config) {
       console.log(`Reading existing ${projectionName} test data file...`);
       const existingData = JSON.parse(fs.readFileSync(TEST_DATA_PATH, 'utf8'));
       testData = updateExistingTestData(existingData, config);
-      console.log("Updated expected values in existing test data");
+      console.log('Updated expected values in existing test data');
     } else {
       console.log(`Generating new ${projectionName} test data...`);
       testData = generateProjectionTestData(config);
-      console.log(`Generated new test data with ${testData.forward.length} forward and ${testData.inverse.length} inverse test cases`);
+      console.log(
+        `Generated new test data with ${testData.forward.length} forward and ${testData.inverse.length} inverse test cases`
+      );
     }
 
     // Post-process the test data if provided
@@ -136,13 +138,12 @@ function generateProjectionTests(config) {
     // Ensure output directory exists
     const outputDir = path.dirname(TEST_DATA_PATH);
     if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+      fs.mkdirSync(outputDir, {recursive: true});
     }
 
     // Write test data to file
     fs.writeFileSync(TEST_DATA_PATH, JSON.stringify(testData, null, 2));
     console.log(`Test data written to: ${TEST_DATA_PATH}`);
-
   } catch (error) {
     console.error(`Failed to generate ${projectionName} test data:`, error);
     process.exit(1);
@@ -153,4 +154,4 @@ module.exports = {
   generateProjectionTestData,
   updateExistingTestData,
   generateProjectionTests
-}; 
+};

@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { mat2, vec2, glMatrix } from "gl-matrix";
+import {mat2, vec2, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { Pentagon, PentagonShape } from "../geometry/pentagon";
-import { BASIS, PENTAGON, TRIANGLE, v, w } from "./pentagon";
-import { TWO_PI_OVER_5 } from "./constants";
-import type { Anchor } from "../lattice";
-import { NO, YES } from "../lattice";
-import { Polar } from "./coordinate-systems";
+import {Pentagon, PentagonShape} from '../geometry/pentagon';
+import {BASIS, PENTAGON, TRIANGLE, v, w} from './pentagon';
+import {TWO_PI_OVER_5} from './constants';
+import type {Anchor} from '../lattice';
+import {NO, YES} from '../lattice';
+import {Polar} from './coordinate-systems';
 
 const TRIANGLE_MODE = false;
 
@@ -19,7 +19,7 @@ const shiftLeft = vec2.negate(vec2.create(), w);
 /**
  * Define transforms for each pentagon in the primitive unit
  * Using pentagon vertices and angle as the basis for the transform
- */ 
+ */
 const QUINTANT_ROTATIONS = [0, 1, 2, 3, 4].map(quintant => {
   const rotation = mat2.create();
   mat2.fromRotation(rotation, TWO_PI_OVER_5 * quintant);
@@ -37,11 +37,12 @@ const translation = vec2.create();
  */
 export function getPentagonVertices(resolution: number, quintant: number, anchor: Anchor): PentagonShape {
   const pentagon = (TRIANGLE_MODE ? TRIANGLE : PENTAGON).clone();
-  
+
   vec2.transformMat2(translation, anchor.offset, BASIS);
 
   // Apply transformations based on anchor properties
-  if (anchor.flips[0] === NO && anchor.flips[1] === YES) { // F == 0!
+  if (anchor.flips[0] === NO && anchor.flips[1] === YES) {
+    // F == 0!
     pentagon.rotate180();
   }
 
@@ -65,7 +66,7 @@ export function getPentagonVertices(resolution: number, quintant: number, anchor
 
   // Position within quintant
   pentagon.translate(translation);
-  pentagon.scale(1 / (2 ** resolution));
+  pentagon.scale(1 / 2 ** resolution);
   pentagon.transform(QUINTANT_ROTATIONS[quintant]);
 
   return pentagon;

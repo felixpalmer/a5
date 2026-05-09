@@ -9,9 +9,9 @@ const {
   FIRST_HILBERT_RESOLUTION,
   metersToH,
   estimateCellRadius,
-  pickCoarseResolution,
+  pickCoarseResolution
 } = require('../../a5-test.cjs');
-const { sphericalCap } = require('../../../dist/a5.cjs');
+const {sphericalCap} = require('../../../dist/a5.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'cap.json');
@@ -73,7 +73,7 @@ for (const radius of radii) {
     sphericalCapFixtures.push({
       cellId: u64ToHex(cellId),
       radius,
-      cells: result.map(c => u64ToHex(c)),
+      cells: result.map(c => u64ToHex(c))
     });
   }
 }
@@ -109,7 +109,7 @@ for (const radius of compactRadii) {
     sphericalCapCompactFixtures.push({
       cellId: u64ToHex(cellId),
       radius,
-      compactedCells: compactedSorted.map(c => u64ToHex(c)),
+      compactedCells: compactedSorted.map(c => u64ToHex(c))
     });
   }
 }
@@ -123,7 +123,7 @@ const helperFixtures = {};
 const meterValues = [0, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000];
 helperFixtures.metersToH = meterValues.map(meters => ({
   meters,
-  expectedH: metersToH(meters),
+  expectedH: metersToH(meters)
 }));
 console.log(`  metersToH: ${helperFixtures.metersToH.length} cases`);
 
@@ -133,7 +133,7 @@ helperFixtures.estimateCellRadius = [];
 for (let res = 0; res <= 30; res++) {
   helperFixtures.estimateCellRadius.push({
     resolution: res,
-    expectedMeters: estimateCellRadius(res),
+    expectedMeters: estimateCellRadius(res)
   });
 }
 console.log(`  estimateCellRadius: ${helperFixtures.estimateCellRadius.length} cases`);
@@ -147,21 +147,21 @@ const pickCases = [
   {radius: 1_000_000, targetRes: 12},
   {radius: 5_000_000, targetRes: 15},
   {radius: 10_000_000, targetRes: 10},
-  {radius: 500_000, targetRes: FIRST_HILBERT_RESOLUTION},
+  {radius: 500_000, targetRes: FIRST_HILBERT_RESOLUTION}
 ];
 helperFixtures.pickCoarseResolution = pickCases.map(({radius, targetRes}) => ({
   radius,
   targetRes,
-  expectedCoarseRes: pickCoarseResolution(radius, targetRes),
+  expectedCoarseRes: pickCoarseResolution(radius, targetRes)
 }));
 console.log(`  pickCoarseResolution: ${helperFixtures.pickCoarseResolution.length} cases`);
 
 const fixtures = {
   sphericalCap: sphericalCapFixtures,
   sphericalCapCompact: sphericalCapCompactFixtures,
-  helpers: helperFixtures,
+  helpers: helperFixtures
 };
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

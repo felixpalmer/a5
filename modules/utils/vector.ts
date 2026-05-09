@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec3 } from 'gl-matrix';
-import type { Cartesian } from '../core/coordinate-systems';
+import {vec3} from 'gl-matrix';
+import type {Cartesian} from '../core/coordinate-systems';
 
 const midpointAB = vec3.create() as Cartesian;
 const crossCD = vec3.create();
@@ -16,9 +16,9 @@ const scaledB = vec3.create();
  * D = 1: a and b are perpendicular
  * D = 0: a and b are the same
  * D = NaN: a and b are opposite (shouldn't happen in IVEA as we're using normalized vectors in the same hemisphere)
- * 
+ *
  * D is a measure of the angle between the two vectors. sqrt(2) can be ignored when comparing ratios.
- * 
+ *
  * @param A - The first vector
  * @param B - The second vector
  * @returns The difference between the two vectors
@@ -31,7 +31,7 @@ export function vectorDifference(A: Cartesian, B: Cartesian): number {
   // Using double angle formula for cos(2x) = 1 - 2sin(x)^2, can rewrite as:
   // 1 - cos(x) = 2 * sin(x/2)^2)
   //            = 2 * sin(x/2)^2
-  // ⇒ sqrt(1 - cos(x)) = sqrt(2) * sin(x/2) 
+  // ⇒ sqrt(1 - cos(x)) = sqrt(2) * sin(x/2)
   // Angle x/2 can be obtained as the angle between A and the normalized midpoint of A and B
   // ⇒ sin(x/2) = |cross(A, midpointAB)|
   vec3.lerp(midpointAB, A, B, 0.5);

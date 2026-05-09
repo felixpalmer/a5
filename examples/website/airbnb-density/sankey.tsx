@@ -79,12 +79,12 @@ const Sankey: React.FC<SankeyProps> = ({
     const sankeyOffset = (width - sankeyWidth) / 2;
     const colWidth = sankeyWidth;
 
-    const svg = d3.select(svgRef.current)
+    const svg = d3
+      .select(svgRef.current)
       .attr('width', width + margin.left + margin.right)
       .attr('height', height + margin.top + margin.bottom);
 
-    const g = svg.append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Add column labels
     g.append('text')
@@ -153,11 +153,13 @@ const Sankey: React.FC<SankeyProps> = ({
       const x1 = link.target.x;
       const y1 = link.target.y + 10;
       const xi = d3.interpolateNumber(x0, x1);
-      const x2 = xi(0.5), x3 = xi(0.5);
+      const x2 = xi(0.5),
+        x3 = xi(0.5);
       path.moveTo(x0, y0);
       path.bezierCurveTo(x2, y0, x3, y1, x1, y1);
 
-      linkGroup.append('path')
+      linkGroup
+        .append('path')
         .attr('class', 'link')
         .attr('data-location', link.source.location)
         .attr('d', path.toString())
@@ -166,53 +168,53 @@ const Sankey: React.FC<SankeyProps> = ({
         .attr('stroke-opacity', 0.4)
         .attr('fill', 'none')
         .style('cursor', 'pointer')
-        .on('mouseover', function() {
+        .on('mouseover', function () {
           const location = d3.select(this).attr('data-location');
           const cityName = formatCityName(location);
 
           g.selectAll('.link')
-            .attr('stroke-opacity', function() {
+            .attr('stroke-opacity', function () {
               return d3.select(this).attr('data-location') === location ? 1 : 0.2;
             })
-            .attr('stroke-width', function() {
+            .attr('stroke-width', function () {
               return d3.select(this).attr('data-location') === location ? 8 : 4;
             });
 
           g.selectAll('text')
-            .style('font-weight', function() {
+            .style('font-weight', function () {
               const text = d3.select(this).text();
               return text.includes(cityName) ? 'bold' : 'normal';
             })
-            .style('opacity', function() {
+            .style('opacity', function () {
               const text = d3.select(this).text();
               return text.includes(cityName) || d3.select(this).attr('class') === 'column-label' ? 1 : 0.3;
             });
         })
-        .on('mouseout', function() {
+        .on('mouseout', function () {
           g.selectAll('.link').attr('stroke-opacity', 0.4).attr('stroke-width', 4);
           g.selectAll('text').style('font-weight', 'normal').style('opacity', 1);
         });
     });
 
     for (let col = 0; col < 2; col++) {
-      const columnNodes = g.append('g')
+      const columnNodes = g
+        .append('g')
         .selectAll('g')
         .data(nodes.filter(n => n.column === col))
         .join('g')
         .attr('transform', d => `translate(${d.x}, ${d.y})`);
 
-      columnNodes.append('rect')
-        .attr('x', -5).attr('y', 0).attr('width', 10).attr('height', 20).attr('fill', '#000');
+      columnNodes.append('rect').attr('x', -5).attr('y', 0).attr('width', 10).attr('height', 20).attr('fill', '#000');
 
-      columnNodes.append('text')
+      columnNodes
+        .append('text')
         .attr('x', col === 0 ? -10 : 10)
         .attr('y', 10)
         .attr('dy', '.35em')
         .attr('text-anchor', col === 0 ? 'end' : 'start')
         .style('font-size', isMobile ? '9px' : '11px')
-        .text(d => col === 0 ? formatLeftLabel(d.data) : formatRightLabel(d.data));
+        .text(d => (col === 0 ? formatLeftLabel(d.data) : formatRightLabel(d.data)));
     }
-
   }, [data, leftLabel, rightLabel, getLeftData, getRightData, formatLeftLabel, formatRightLabel]);
 
   if (!data) {

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { describe, test, expect } from 'vitest';
-import { quat, vec3 } from 'gl-matrix';
-import { quaternions } from 'a5/core/dodecahedron-quaternions';
+import {describe, test, expect} from 'vitest';
+import {quat, vec3} from 'gl-matrix';
+import {quaternions} from 'a5/core/dodecahedron-quaternions';
 import quaternionsFixture from './fixtures/dodecahedron-quaternions.json';
 
 describe('dodecahedron-quaternions.ts', () => {
@@ -69,15 +69,15 @@ describe('dodecahedron-quaternions.ts', () => {
       // Test that rotating the north pole (0, 0, 1) by each quaternion
       // gives a valid point on the unit sphere
       const northPole = vec3.fromValues(0, 0, 1);
-      
+
       quaternions.forEach((q, i) => {
         const rotated = vec3.create();
         vec3.transformQuat(rotated, northPole, q);
-        
+
         // Should be on unit sphere
         const magnitude = vec3.length(rotated);
         expect(magnitude).toBeCloseTo(1.0, 10);
-        
+
         // For non-identity quaternions, should be different from north pole
         if (i !== 0) {
           const distance = vec3.distance(rotated, northPole);
@@ -89,13 +89,13 @@ describe('dodecahedron-quaternions.ts', () => {
     test('quaternions produce distinct face centers', () => {
       const northPole = vec3.fromValues(0, 0, 1);
       const facecenters: vec3[] = [];
-      
+
       quaternions.forEach(q => {
         const rotated = vec3.create();
         vec3.transformQuat(rotated, northPole, q);
         facecenters.push(rotated);
       });
-      
+
       // All face centers should be distinct
       for (let i = 0; i < facecenters.length; i++) {
         for (let j = i + 1; j < facecenters.length; j++) {
@@ -109,17 +109,17 @@ describe('dodecahedron-quaternions.ts', () => {
   describe('mathematical consistency', () => {
     test('quaternion conjugates reverse rotations', () => {
       const testVector = vec3.fromValues(1, 0, 0);
-      
+
       quaternions.forEach(q => {
         const conjugate = quat.create();
         quat.conjugate(conjugate, q);
-        
+
         const rotated = vec3.create();
         const backRotated = vec3.create();
-        
+
         vec3.transformQuat(rotated, testVector, q);
         vec3.transformQuat(backRotated, rotated, conjugate);
-        
+
         expect(vec3.distance(testVector, backRotated)).toBeCloseTo(0, 10);
       });
     });
@@ -128,14 +128,14 @@ describe('dodecahedron-quaternions.ts', () => {
       // Test that quaternion rotations preserve orthogonal vectors
       const v1 = vec3.fromValues(1, 0, 0);
       const v2 = vec3.fromValues(0, 1, 0);
-      
+
       quaternions.forEach(q => {
         const rotated1 = vec3.create();
         const rotated2 = vec3.create();
-        
+
         vec3.transformQuat(rotated1, v1, q);
         vec3.transformQuat(rotated2, v2, q);
-        
+
         const dotProduct = vec3.dot(rotated1, rotated2);
         expect(dotProduct).toBeCloseTo(0, 10);
       });
@@ -148,14 +148,14 @@ describe('dodecahedron-quaternions.ts', () => {
         vec3.fromValues(0, 0, 1),
         vec3.fromValues(1, 1, 1)
       ];
-      
+
       quaternions.forEach(q => {
         testVectors.forEach(v => {
           const originalLength = vec3.length(v);
           const rotated = vec3.create();
           vec3.transformQuat(rotated, v, q);
           const newLength = vec3.length(rotated);
-          
+
           expect(newLength).toBeCloseTo(originalLength, 10);
         });
       });
@@ -167,26 +167,26 @@ describe('dodecahedron-quaternions.ts', () => {
       // Generate all face centers by rotating north pole
       const northPole = vec3.fromValues(0, 0, 1);
       const facecenters: vec3[] = [];
-      
+
       quaternions.forEach(q => {
         const rotated = vec3.create();
         vec3.transformQuat(rotated, northPole, q);
         facecenters.push(rotated);
       });
-      
+
       // Check that we have correct z-distribution:
       // 1 at z=1 (north), 1 at z=-1 (south), 5 at each intermediate level
       const zValues = facecenters.map(fc => fc[2]);
       zValues.sort((a, b) => b - a);
-      
+
       expect(zValues[0]).toBeCloseTo(1, 10); // North pole
       expect(zValues[11]).toBeCloseTo(-1, 10); // South pole
-      
+
       // Two rings of 5 each at intermediate z values
       const INV_SQRT5 = Math.sqrt(0.2);
       const firstRingZ = zValues.slice(1, 6);
       const secondRingZ = zValues.slice(6, 11);
-      
+
       firstRingZ.forEach(z => expect(z).toBeCloseTo(INV_SQRT5, 5));
       secondRingZ.forEach(z => expect(z).toBeCloseTo(-INV_SQRT5, 5));
     });
@@ -194,13 +194,13 @@ describe('dodecahedron-quaternions.ts', () => {
     test('face centers form regular pentagonal arrangements', () => {
       const northPole = vec3.fromValues(0, 0, 1);
       const facecenters: vec3[] = [];
-      
+
       quaternions.forEach(q => {
         const rotated = vec3.create();
         vec3.transformQuat(rotated, northPole, q);
         facecenters.push(rotated);
       });
-      
+
       // Check angular distribution for first ring (indices 1-5)
       const firstRing = facecenters.slice(1, 6);
       for (let i = 0; i < 5; i++) {
@@ -210,9 +210,9 @@ describe('dodecahedron-quaternions.ts', () => {
         let angleDiff = angle2 - angle1;
         if (angleDiff < 0) angleDiff += 2 * Math.PI;
         if (angleDiff > Math.PI) angleDiff = 2 * Math.PI - angleDiff;
-        
+
         // Should be approximately 2π/5 = 72 degrees
-        expect(angleDiff).toBeCloseTo(2 * Math.PI / 5, 1);
+        expect(angleDiff).toBeCloseTo((2 * Math.PI) / 5, 1);
       }
     });
   });
@@ -221,7 +221,7 @@ describe('dodecahedron-quaternions.ts', () => {
     test('fixture metadata is current', () => {
       expect(quaternionsFixture.metadata.totalQuaternions).toBe(12);
       expect(quaternionsFixture.constants.INV_SQRT5).toBeCloseTo(Math.sqrt(0.2), 15);
-      expect(quaternionsFixture.constants.expectedPentagonAngle).toBeCloseTo(2 * Math.PI / 5, 15);
+      expect(quaternionsFixture.constants.expectedPentagonAngle).toBeCloseTo((2 * Math.PI) / 5, 15);
     });
   });
 });

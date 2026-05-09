@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, mat2, glMatrix } from 'gl-matrix';
+import {vec2, mat2, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import {distanceToEdge, PI_OVER_10, PI_OVER_5} from './constants';    
+import {distanceToEdge, PI_OVER_10, PI_OVER_5} from './constants';
 import {PentagonShape} from '../geometry/pentagon';
-import type { Face, Degrees } from "./coordinate-systems";
+import type {Face, Degrees} from './coordinate-systems';
 
 // Pentagon vertex angles
 const A = 72 as Degrees;
@@ -29,8 +29,8 @@ const edgeMidpointD = 2 * vec2.length(c) * Math.cos(PI_OVER_5);
 const BASIS_ROTATION = PI_OVER_5 - Math.atan2(c[1], c[0]); // -27.97 degrees
 
 // Scale to match unit sphere
-const scale = 2 * distanceToEdge / edgeMidpointD;
-[a,b,c,d,e].forEach(v => {
+const scale = (2 * distanceToEdge) / edgeMidpointD;
+[a, b, c, d, e].forEach(v => {
   vec2.scale(v, v, scale);
   vec2.rotate(v, v, [0, 0], BASIS_ROTATION);
 });

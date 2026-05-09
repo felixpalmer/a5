@@ -1,11 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {
-  tripleSpaceFloodFill,
-  getLatticeNeighbors,
-  lonLatToCell,
-  u64ToHex,
-} = require('../../a5-test.cjs');
+const {tripleSpaceFloodFill, getLatticeNeighbors, lonLatToCell, u64ToHex} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'lattice-flood-fill.json');
@@ -49,7 +44,7 @@ const cases = [];
     seedCells: [u64ToHex(center)],
     firewallCells: sortHex(firewallSnapshot),
     interiorCells: sortHex(result.interiorCells),
-    frontierCells: sortHex(result.frontierCellIds),
+    frontierCells: sortHex(result.frontierCellIds)
   });
 }
 
@@ -68,7 +63,7 @@ const cases = [];
     firewallCells: sortHex(firewallSnapshot),
     maxLayers,
     interiorCells: sortHex(result.interiorCells),
-    frontierCells: sortHex(result.frontierCellIds),
+    frontierCells: sortHex(result.frontierCellIds)
   });
 }
 
@@ -79,7 +74,7 @@ const cases = [];
   const seeds = [
     lonLatToCell([10, 50], resolution),
     lonLatToCell([10.5, 50.2], resolution),
-    lonLatToCell([9.7, 49.8], resolution),
+    lonLatToCell([9.7, 49.8], resolution)
   ];
   const firewall = new Set();
   for (const seed of seeds) {
@@ -93,7 +88,7 @@ const cases = [];
     seedCells: seeds.map(u64ToHex),
     firewallCells: sortHex(firewallSnapshot),
     interiorCells: sortHex(result.interiorCells),
-    frontierCells: sortHex(result.frontierCellIds),
+    frontierCells: sortHex(result.frontierCellIds)
   });
 }
 
@@ -110,15 +105,17 @@ const cases = [];
     seedCells: [u64ToHex(center)],
     firewallCells: sortHex(firewallSnapshot),
     interiorCells: sortHex(result.interiorCells),
-    frontierCells: sortHex(result.frontierCellIds),
+    frontierCells: sortHex(result.frontierCellIds)
   });
 }
 
 console.log('Generating traversal/lattice-flood-fill fixtures...');
 for (const c of cases) {
-  console.log(`  ${c.name} (res ${c.resolution}): firewall=${c.firewallCells.length} interior=${c.interiorCells.length} frontier=${c.frontierCells.length}`);
+  console.log(
+    `  ${c.name} (res ${c.resolution}): firewall=${c.firewallCells.length} interior=${c.interiorCells.length} frontier=${c.frontierCells.length}`
+  );
 }
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify({cases}, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

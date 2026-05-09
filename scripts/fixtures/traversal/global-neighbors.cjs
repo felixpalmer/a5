@@ -1,12 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {
-  getRes0Cells,
-  cellToChildren,
-  cellToBoundary,
-  u64ToHex,
-  FIRST_HILBERT_RESOLUTION
-} = require('../../a5-test.cjs');
+const {getRes0Cells, cellToChildren, cellToBoundary, u64ToHex, FIRST_HILBERT_RESOLUTION} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'global-neighbors.json');
@@ -228,6 +222,6 @@ for (const f of allFixtures) {
 console.log('Neighbor count distribution in fixtures:', JSON.stringify(neighborDist));
 console.log('Edge neighbor count distribution in fixtures:', JSON.stringify(edgeDist));
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify(allFixtures, null, 2));
 console.log(`Wrote fixtures to ${outputPath}`);

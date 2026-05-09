@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { getGlobalCellNeighbors } from './global-neighbors';
-import { compact } from '../core/compact';
+import {getGlobalCellNeighbors} from './global-neighbors';
+import {compact} from '../core/compact';
 
 /**
  * BFS grid disk with progressive compaction.

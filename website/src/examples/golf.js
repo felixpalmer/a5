@@ -18,7 +18,9 @@ class GolfDemo extends Component {
         <p>Golf ball dimple layout using A5 pentagonal tiling.</p>
         <p>240 equal area dimples, distributed on the surface of a sphere.</p>
         <p>Production golf balls typically have 300-400 dimples, but they vary in size</p>
-        <p>Background texture: <a href="https://polyhaven.org/a/spruit_sunrise">Spruit Sunrise</a></p>
+        <p>
+          Background texture: <a href="https://polyhaven.org/a/spruit_sunrise">Spruit Sunrise</a>
+        </p>
       </div>
     );
   }
@@ -37,4 +39,4 @@ class GolfDemo extends Component {
   }
 }
 
-export default makeExample(GolfDemo); 
+export default makeExample(GolfDemo);

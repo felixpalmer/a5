@@ -1,11 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {
-  getRes0Cells,
-  cellToChildren,
-  getLatticeNeighbors,
-  u64ToHex,
-} = require('../../a5-test.cjs');
+const {getRes0Cells, cellToChildren, getLatticeNeighbors, u64ToHex} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'lattice-neighbors.json');
@@ -41,7 +36,7 @@ for (const resolution of [2, 4, 6]) {
       cell: u64ToHex(cell),
       resolution,
       edgeOnlyNeighbors: sortHex(edge),
-      supersetNeighbors: sortHex(superset),
+      supersetNeighbors: sortHex(superset)
     });
   }
 }
@@ -49,6 +44,6 @@ for (const resolution of [2, 4, 6]) {
 console.log('Generating traversal/lattice-neighbors fixtures...');
 console.log(`  ${cases.length} cases`);
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify({cases}, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

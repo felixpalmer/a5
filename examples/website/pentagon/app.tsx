@@ -2,10 +2,10 @@ import React, {useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import DeckGL from '@deck.gl/react';
 import {PathLayer, PolygonLayer, ScatterplotLayer, TextLayer} from '@deck.gl/layers';
-import { TRANSITION_EVENTS } from '@deck.gl/core';
-import { mat2d, vec2 } from 'gl-matrix';
+import {TRANSITION_EVENTS} from '@deck.gl/core';
+import {mat2d, vec2} from 'gl-matrix';
 
-import { PENTAGON } from 'a5/core/pentagon';
+import {PENTAGON} from 'a5/core/pentagon';
 
 const vertices = PENTAGON.getVertices();
 const center = PENTAGON.getCenter();
@@ -17,16 +17,12 @@ const rotateVertex = (vertex: vec2, angle: number) => {
   const M = mat2d.multiply(mat2d.create(), M_translate, M_rotate);
   mat2d.multiply(M, M, M_translateBack);
   return M;
-}
+};
 
 // Create 5 triangles from the pentagon vertices
 const triangles = vertices.map((vertex, i) => {
   const nextVertex = vertices[(i + 1) % vertices.length];
-  return [
-    center,
-    vertex,
-    nextVertex
-  ];
+  return [center, vertex, nextVertex];
 });
 const trianglesExploded = JSON.parse(JSON.stringify(triangles));
 
@@ -38,7 +34,7 @@ trianglesExploded[2] = trianglesExploded[2].map(v => [...vec2.transformMat2d(vec
 const M2 = rotateVertex(vertices[4], -angle);
 trianglesExploded[3] = trianglesExploded[3].map(v => [...vec2.transformMat2d(vec2.create(), v, M2)]);
 
-const INITIAL_VIEW_STATE = { latitude: center[1], longitude: center[0], zoom: 9 };
+const INITIAL_VIEW_STATE = {latitude: center[1], longitude: center[0], zoom: 9};
 let firstRender = true;
 
 const A5GREEN = [0, 170, 85] as [number, number, number];
@@ -53,12 +49,12 @@ const getAngle = (v1: number[], v2: number[]): number => {
 const createArcPath = (center: number[], v1: number[], v2: number[], radius: number = 0.3) => {
   const startAngle = getAngle(center, v1);
   let endAngle = getAngle(center, v2);
-  
+
   // Take correct angle
   if (endAngle < startAngle) {
     endAngle += 2 * Math.PI;
   }
-  
+
   // Generate points along the arc
   const numPoints = 32;
   const points: number[][] = [];
@@ -91,7 +87,7 @@ const App: React.FC = () => {
     stiffness: 0.02,
     damping: 0.2,
     transitionInterruption: TRANSITION_EVENTS.IGNORE
-  }
+  };
   firstRender = false;
 
   const data = isExploded ? trianglesExploded : triangles;
@@ -148,7 +144,7 @@ const App: React.FC = () => {
       getFillColor: [0, 0, 0, 0],
       getLineColor: [255, 255, 255, 50],
       opacity: isExploded ? 1 : 0,
-      getRadius: (d, {index}) => index === 0 ? 76533: 47300,
+      getRadius: (d, {index}) => (index === 0 ? 76533 : 47300),
       stroked: true,
       filled: false,
       lineWidthMinPixels: 1,
@@ -163,8 +159,7 @@ const App: React.FC = () => {
       id: 'angle-arcs',
       data: arcData,
       getPath: d => d,
-      getColor: (d, {index}) => (!isExploded || (index === 1 || index === 4)) ?
-        [235, 235, 235, 200] : [235, 235, 235, 0],
+      getColor: (d, {index}) => (!isExploded || index === 1 || index === 4 ? [235, 235, 235, 200] : [235, 235, 235, 0]),
       widthMinPixels: 2,
       pickable: false,
       transitions: {
@@ -178,12 +173,15 @@ const App: React.FC = () => {
       data: data.flatMap(triangle => [triangle[1]]),
       getPosition: d => d,
       getText: (d, {index}) => {
-        if (index === 0) { return `72°`; }
-        else if (index === 2) { return `108°`; }
-        return ''
+        if (index === 0) {
+          return `72°`;
+        } else if (index === 2) {
+          return `108°`;
+        }
+        return '';
       },
       getPixelOffset: (d, {index}) => {
-        return index === 0 ? [40, -20] : (isExploded ? [12, 35] : [-15, 28]);
+        return index === 0 ? [40, -20] : isExploded ? [12, 35] : [-15, 28];
       },
       characterSet: '0123456789°',
       getColor: [255, 255, 255],
@@ -198,11 +196,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <DeckGL
-        initialViewState={INITIAL_VIEW_STATE}
-        controller={true}
-        layers={layers}
-      />
+      <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} layers={layers} />
     </>
   );
 };
@@ -212,4 +206,4 @@ export default App;
 export function renderToDOM(container: HTMLDivElement) {
   const root = createRoot(container);
   root.render(<App />);
-} 
+}

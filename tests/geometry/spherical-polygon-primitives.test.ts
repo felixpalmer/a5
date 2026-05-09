@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { pointInSphericalPolygon, ringWindingSign } from 'a5/geometry/spherical-polygon';
-import type { Cartesian } from 'a5/core/coordinate-systems';
+import {describe, it, expect} from 'vitest';
+import {pointInSphericalPolygon, ringWindingSign} from 'a5/geometry/spherical-polygon';
+import type {Cartesian} from 'a5/core/coordinate-systems';
 import fixtures from '../fixtures/geometry/spherical-polygon-primitives.json';
 
 type PipFixture = {
   name: string;
   ring: [number, number][];
-  points: { lonLat: [number, number]; vec: number[]; inside: boolean }[];
+  points: {lonLat: [number, number]; vec: number[]; inside: boolean}[];
 };
 
 type WindingFixture = {

@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec3 } from 'gl-matrix';
-import type { Cartesian } from '../core/coordinate-systems';
-import { AUTHALIC_RADIUS_EARTH } from '../core/constants';
-import { precomputeSlerp, slerp } from './vector';
+import {vec3} from 'gl-matrix';
+import type {Cartesian} from '../core/coordinate-systems';
+import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
+import {precomputeSlerp, slerp} from './vector';
 
 /**
  * Great-circle distance in meters between two unit vectors on the authalic sphere.
@@ -20,9 +20,7 @@ export function greatCircleDistance(a: Cartesian, b: Cartesian): number {
  * `sampleInterval` meters spacing. Endpoints are NOT included — the caller
  * already has them. Returned vectors live on the authalic unit sphere.
  */
-export function sampleGreatCircleArc(
-  a: Cartesian, b: Cartesian, sampleInterval: number,
-): Cartesian[] {
+export function sampleGreatCircleArc(a: Cartesian, b: Cartesian, sampleInterval: number): Cartesian[] {
   const dist = greatCircleDistance(a, b);
   const numSegments = Math.max(1, Math.ceil(dist / sampleInterval));
   const samples: Cartesian[] = [];

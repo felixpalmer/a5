@@ -25,24 +25,26 @@ function generateGeometryFixtures(config) {
 
   const outputDir = path.join(__dirname, './../../tests/geometry/fixtures');
   const outputPath = path.join(outputDir, `${name}.json`);
-  
+
   let fixtures = [];
   let existingFixtures = [];
-  
+
   // Try to read existing fixtures
   if (fs.existsSync(outputPath)) {
     console.log(`Reading existing ${name} fixtures...`);
     existingFixtures = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
     fixtures = [...existingFixtures];
   }
-  
+
   // Generate new fixtures if needed and update data
   for (let i = 0; i < count; i++) {
     const existingFixture = fixtures[i];
     const vertices = existingFixture.vertices || generateRandomInput(vertexCount);
     const geometry = new GeometryClass(vertices);
-    const testPoints = existingFixture ? existingFixture.containsPointTests.map(p => p.point) : generateTestPoints(geometry);
-    
+    const testPoints = existingFixture
+      ? existingFixture.containsPointTests.map(p => p.point)
+      : generateTestPoints(geometry);
+
     fixtures[i] = {
       vertices,
       ...computeExpected(geometry, testPoints)
@@ -51,7 +53,7 @@ function generateGeometryFixtures(config) {
 
   // Ensure output directory exists
   if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
+    fs.mkdirSync(outputDir, {recursive: true});
   }
 
   fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
@@ -62,4 +64,4 @@ function generateGeometryFixtures(config) {
 
 module.exports = {
   generateGeometryFixtures
-}; 
+};

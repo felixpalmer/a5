@@ -2,21 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, vec3, quat, glMatrix } from "gl-matrix";
+import {vec2, vec3, quat, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { toCartesian, toSpherical, toFace, toPolar } from "../core/coordinate-transforms";
-import type { Radians, Spherical, Cartesian, Polar, Face } from "../core/coordinate-systems";
-import { GnomonicProjection } from './gnomonic';
-import { origins } from "../core/origin";
-import { distanceToEdge, interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from '../core/constants';
-import { PolyhedralProjection } from "./polyhedral";
-import { getQuintantVertices } from "../core/tiling";
-import { OriginId } from "a5/core/utils";
-import { CRS } from "./crs";
+import {toCartesian, toSpherical, toFace, toPolar} from '../core/coordinate-transforms';
+import type {Radians, Spherical, Cartesian, Polar, Face} from '../core/coordinate-systems';
+import {GnomonicProjection} from './gnomonic';
+import {origins} from '../core/origin';
+import {distanceToEdge, interhedralAngle, PI_OVER_5, TWO_PI_OVER_5} from '../core/constants';
+import {PolyhedralProjection} from './polyhedral';
+import {getQuintantVertices} from '../core/tiling';
+import {OriginId} from 'a5/core/utils';
+import {CRS} from './crs';
 
 type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type FaceTriangle = [Face, Face, Face];
-import type { SphericalTriangle } from '../core/coordinate-systems';
+import type {SphericalTriangle} from '../core/coordinate-systems';
 
 const crs = new CRS();
 
@@ -30,7 +30,7 @@ export class DodecahedronProjection {
     this.polyhedral = new PolyhedralProjection();
     this.gnomonic = new GnomonicProjection();
   }
-  
+
   /**
    * Projects spherical coordinates to face coordinates using dodecahedron projection
    * @param spherical Spherical coordinates [theta, phi]
@@ -105,7 +105,7 @@ export class DodecahedronProjection {
    * @returns Face triangle index, value from 0 to 9
    */
   private getFaceTriangleIndex([_, gamma]: Polar): FaceTriangleIndex {
-    return (Math.floor(gamma / PI_OVER_5) + 10) % 10 as FaceTriangleIndex;
+    return ((Math.floor(gamma / PI_OVER_5) + 10) % 10) as FaceTriangleIndex;
   }
 
   /**
@@ -113,7 +113,11 @@ export class DodecahedronProjection {
    * @param faceTriangleIndex Face triangle index, value from 0 to 9
    * @returns FaceTriangle: 3 vertices in counter-clockwise order
    */
-  private getFaceTriangle(faceTriangleIndex: FaceTriangleIndex, reflected: boolean = false, squashed: boolean = false): FaceTriangle {
+  private getFaceTriangle(
+    faceTriangleIndex: FaceTriangleIndex,
+    reflected: boolean = false,
+    squashed: boolean = false
+  ): FaceTriangle {
     let index = faceTriangleIndex;
     if (reflected) {
       index += squashed ? 20 : 10;
@@ -122,9 +126,9 @@ export class DodecahedronProjection {
       return this.faceTriangles[index];
     }
 
-    this.faceTriangles[index] = reflected ?
-      this._getReflectedFaceTriangle(faceTriangleIndex, squashed) :
-      this._getFaceTriangle(faceTriangleIndex);
+    this.faceTriangles[index] = reflected
+      ? this._getReflectedFaceTriangle(faceTriangleIndex, squashed)
+      : this._getFaceTriangle(faceTriangleIndex);
     Object.freeze(this.faceTriangles[index]);
     return this.faceTriangles[index];
   }
@@ -167,7 +171,11 @@ export class DodecahedronProjection {
    * @param originId Origin ID
    * @returns Spherical triangle
    */
-  private getSphericalTriangle(faceTriangleIndex: FaceTriangleIndex, originId: OriginId, reflected: boolean = false): SphericalTriangle {
+  private getSphericalTriangle(
+    faceTriangleIndex: FaceTriangleIndex,
+    originId: OriginId,
+    reflected: boolean = false
+  ): SphericalTriangle {
     let index = 10 * originId + faceTriangleIndex; // 0-119
     if (reflected) {
       index += 120;
@@ -181,11 +189,14 @@ export class DodecahedronProjection {
     return this.sphericalTriangles[index];
   }
 
-
-  private _getSphericalTriangle(faceTriangleIndex: FaceTriangleIndex, originId: OriginId, reflected: boolean = false): SphericalTriangle {
+  private _getSphericalTriangle(
+    faceTriangleIndex: FaceTriangleIndex,
+    originId: OriginId,
+    reflected: boolean = false
+  ): SphericalTriangle {
     const origin = origins[originId];
     const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflected, true);
-    
+
     const sphericalTriangle = faceTriangle.map((face: Face) => {
       const [rho, gamma] = toPolar(face);
       const rotatedPolar = [rho, gamma + origin.angle] as Polar;
@@ -210,4 +221,4 @@ export class DodecahedronProjection {
     const beta = sOffset * TWO_PI_OVER_5;
     return beta as Radians;
   }
-} 
+}

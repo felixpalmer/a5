@@ -15,7 +15,10 @@ class PentagonDemo extends Component {
     return (
       <div>
         <p>Irregular Pentagon</p>
-        <p>With two of the angles being 72° and 108°, the remaining three can be calculated by intersecting the arcs traced by the rigid edges of the pentagon.</p>
+        <p>
+          With two of the angles being 72° and 108°, the remaining three can be calculated by intersecting the arcs
+          traced by the rigid edges of the pentagon.
+        </p>
       </div>
     );
   }

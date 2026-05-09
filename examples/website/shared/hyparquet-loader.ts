@@ -1,4 +1,4 @@
-import { parquetRead } from 'hyparquet';
+import {parquetRead} from 'hyparquet';
 
 /**
  * Custom loader for Parquet files using hyparquet
@@ -18,7 +18,7 @@ export const HyparquetLoader = {
         parquetRead({
           file: arrayBuffer,
           rowFormat: 'object',
-          onComplete: (rows) => resolve(rows)
+          onComplete: rows => resolve(rows)
         });
       } catch (error) {
         reject(error);

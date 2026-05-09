@@ -28,4 +28,4 @@ class RoadSafetyDemo extends Component {
   }
 }
 
-export default makeExample(RoadSafetyDemo); 
+export default makeExample(RoadSafetyDemo);

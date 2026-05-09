@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import type { IJ } from 'a5/core/coordinate-systems';
-import type { Flip, Quaternary } from 'a5/lattice';
-import { IJToQuaternary, quaternaryToKJ, quaternaryToFlips } from 'a5/lattice';
+import {describe, it, expect} from 'vitest';
+import type {IJ} from 'a5/core/coordinate-systems';
+import type {Flip, Quaternary} from 'a5/lattice';
+import {IJToQuaternary, quaternaryToKJ, quaternaryToFlips} from 'a5/lattice';
 import fixtures from '../fixtures/lattice/quaternary.json';
 
 type IJToQuaternaryFixture = {
@@ -25,10 +25,7 @@ describe('IJToQuaternary', () => {
   it('produces correct digit for all test cases', () => {
     for (const f of fixtures.IJToQuaternary as IJToQuaternaryFixture[]) {
       const digit = IJToQuaternary(f.ij as IJ, f.flips);
-      expect(
-        digit,
-        `ij=[${f.ij}] flips=[${f.flips}]`
-      ).toBe(f.digit);
+      expect(digit, `ij=[${f.ij}] flips=[${f.flips}]`).toBe(f.digit);
     }
   });
 });

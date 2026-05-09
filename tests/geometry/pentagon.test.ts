@@ -1,14 +1,14 @@
-import { describe, it, expect } from 'vitest'
-import { Pentagon, PentagonShape } from 'a5/geometry/pentagon'
-import fixtures from './fixtures/pentagon.json'
+import {describe, it, expect} from 'vitest';
+import {Pentagon, PentagonShape} from 'a5/geometry/pentagon';
+import fixtures from './fixtures/pentagon.json';
 
 describe('PentagonShape', () => {
   describe('containsPoint', () => {
     it('returns correct results for all test cases', () => {
       (fixtures as any[]).forEach((fixture: any) => {
         const pentagon = new PentagonShape(fixture.vertices as Pentagon);
-        
-        fixture.containsPointTests.forEach(({ point, result }: any) => {
+
+        fixture.containsPointTests.forEach(({point, result}: any) => {
           const actual = pentagon.containsPoint(point);
           expect(actual).toBeCloseTo(result, 6);
         });
@@ -44,7 +44,7 @@ describe('PentagonShape', () => {
         const pentagon = new PentagonShape(fixture.vertices as Pentagon);
         const scaled = pentagon.clone().scale(2);
         const vertices = scaled.getVertices();
-        
+
         fixture.transformTests.scale.forEach((expected: any, i: number) => {
           expect(vertices[i][0]).toBeCloseTo(expected[0], 6);
           expect(vertices[i][1]).toBeCloseTo(expected[1], 6);
@@ -57,7 +57,7 @@ describe('PentagonShape', () => {
         const pentagon = new PentagonShape(fixture.vertices as Pentagon);
         const rotated = pentagon.clone().rotate180();
         const vertices = rotated.getVertices();
-        
+
         fixture.transformTests.rotate180.forEach((expected: any, i: number) => {
           expect(vertices[i][0]).toBeCloseTo(expected[0], 6);
           expect(vertices[i][1]).toBeCloseTo(expected[1], 6);
@@ -70,7 +70,7 @@ describe('PentagonShape', () => {
         const pentagon = new PentagonShape(fixture.vertices as Pentagon);
         const reflected = pentagon.clone().reflectY();
         const vertices = reflected.getVertices();
-        
+
         fixture.transformTests.reflectY.forEach((expected: any, i: number) => {
           expect(vertices[i][0]).toBeCloseTo(expected[0], 6);
           expect(vertices[i][1]).toBeCloseTo(expected[1], 6);
@@ -83,7 +83,7 @@ describe('PentagonShape', () => {
         const pentagon = new PentagonShape(fixture.vertices as Pentagon);
         const translated = pentagon.clone().translate([1, 1]);
         const vertices = translated.getVertices();
-        
+
         fixture.transformTests.translate.forEach((expected: any, i: number) => {
           expect(vertices[i][0]).toBeCloseTo(expected[0], 6);
           expect(vertices[i][1]).toBeCloseTo(expected[1], 6);
@@ -96,7 +96,7 @@ describe('PentagonShape', () => {
     it('returns split edges with different segment counts', () => {
       (fixtures as any[]).forEach((fixture: any) => {
         const pentagon = new PentagonShape(fixture.vertices as Pentagon);
-        
+
         // Test boundaries with 2-3 segments
         [2, 3].forEach(nSegments => {
           const split = pentagon.clone().splitEdges(nSegments);
@@ -111,4 +111,4 @@ describe('PentagonShape', () => {
       });
     });
   });
-}); 
+});

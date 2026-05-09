@@ -50,8 +50,13 @@ function parseArgs() {
   }
 
   // Validate required arguments
-  if (options.lon === null || options.lat === null || options.radius === null ||
-    options.resolution === null || !options.output) {
+  if (
+    options.lon === null ||
+    options.lat === null ||
+    options.radius === null ||
+    options.resolution === null ||
+    !options.output
+  ) {
     console.error('Error: Missing required arguments\n');
     printUsage();
     process.exit(1);
@@ -97,7 +102,7 @@ function generatePointsInRadius(centerLonLat, radiusKm, spacingMeters) {
   // Convert radius to approximate degrees
   // At the given latitude, calculate degrees per km
   const latDegreesPerKm = 1 / 111;
-  const lonDegreesPerKm = 1 / (111 * Math.cos(centerLat * Math.PI / 180));
+  const lonDegreesPerKm = 1 / (111 * Math.cos((centerLat * Math.PI) / 180));
 
   const radiusDegLat = radiusKm * latDegreesPerKm;
   const radiusDegLon = radiusKm * lonDegreesPerKm;
@@ -121,10 +126,7 @@ function generatePointsInRadius(centerLonLat, radiusKm, spacingMeters) {
       // Check if point is within radius (simple Euclidean approximation)
       const dLat = lat - centerLat;
       const dLon = lon - centerLon;
-      const distKm = Math.sqrt(
-        (dLat / latDegreesPerKm) ** 2 +
-        (dLon / lonDegreesPerKm) ** 2
-      );
+      const distKm = Math.sqrt((dLat / latDegreesPerKm) ** 2 + (dLon / lonDegreesPerKm) ** 2);
 
       if (distKm <= radiusKm) {
         points.push([lon, lat]);
@@ -169,7 +171,7 @@ function generateCells(centerLonLat, radiusKm, resolution) {
   console.log(`  Compacted to: ${compacted.length} cells`);
   console.log(`  Compression ratio: ${(cells.length / compacted.length).toFixed(2)}x`);
 
-  return { uncompacted: cells, compacted };
+  return {uncompacted: cells, compacted};
 }
 
 /**
@@ -179,14 +181,12 @@ async function writeParquet(cells, outputPath) {
   const parquetPath = `${outputPath}.parquet`;
 
   // Ensure all values are BigInt (some might be plain numbers)
-  const cellIds = cells.map(id => typeof id === 'bigint' ? id : BigInt(id));
+  const cellIds = cells.map(id => (typeof id === 'bigint' ? id : BigInt(id)));
 
   // Import parquet writer functions
-  const { ByteWriter, parquetWrite, schemaFromColumnData, fileWriter } = await import('hyparquet-writer');
+  const {ByteWriter, parquetWrite, schemaFromColumnData, fileWriter} = await import('hyparquet-writer');
 
-  const columnData = [
-    { name: 'cell_id', data: cellIds }
-  ];
+  const columnData = [{name: 'cell_id', data: cellIds}];
 
   // Create file writer
   const writer = fileWriter(parquetPath);
@@ -203,10 +203,10 @@ async function writeParquet(cells, outputPath) {
           name: 'cell_id',
           type: 'INT64',
           converted_type: 'UINT_64',
-          repetition_type: 'REQUIRED',
-        },
-      },
-    }),
+          repetition_type: 'REQUIRED'
+        }
+      }
+    })
   });
 
   const fileSize = fs.statSync(parquetPath).size;
@@ -227,7 +227,7 @@ function writeGeoJSON(cells, outputPath) {
     const cellIdHex = u64ToHex(cellId);
     const boundary = cellToBoundary(cellId, {
       closedRing: true,
-      segments: 10,
+      segments: 10
     });
 
     features.push({
@@ -242,7 +242,7 @@ function writeGeoJSON(cells, outputPath) {
 
   const geojson = {
     type: 'FeatureCollection',
-    features,
+    features
   };
 
   fs.writeFileSync(geojsonPath, JSON.stringify(geojson, null, 2));
@@ -261,11 +261,7 @@ async function main() {
     console.log(`  Resolution: ${options.resolution}\n`);
 
     // Generate cells (both uncompacted and compacted)
-    const { uncompacted, compacted } = generateCells(
-      [options.lon, options.lat],
-      options.radius,
-      options.resolution
-    );
+    const {uncompacted, compacted} = generateCells([options.lon, options.lat], options.radius, options.resolution);
 
     // Choose which cells to output
     const cellsToOutput = options.uncompacted ? uncompacted : compacted;
@@ -279,7 +275,6 @@ async function main() {
     }
 
     console.log('\n✓ Generation complete!');
-
   } catch (error) {
     console.error('Error:', error.message);
     process.exit(1);

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { IJToQuaternary } = require('../../a5-test.cjs');
-const { quaternaryToKJ, quaternaryToFlips } = require('../../a5-test.cjs');
+const {IJToQuaternary} = require('../../a5-test.cjs');
+const {quaternaryToKJ, quaternaryToFlips} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/lattice');
 const outputPath = path.join(outputDir, 'quaternary.json');
@@ -16,7 +16,7 @@ const flipCombos = [
   [NO, NO],
   [NO, YES],
   [YES, NO],
-  [YES, YES],
+  [YES, YES]
 ];
 
 // --- IJToQuaternary ---
@@ -26,22 +26,22 @@ const ijToQuaternaryFixtures = [];
 
 // Systematic: probe fractional IJ values that land in each quadrant
 const testIJs = [
-  [0.3, 0.3],   // near origin
-  [0.7, 0.1],   // along i axis
-  [0.1, 0.7],   // along j axis
-  [1.5, 0.3],   // past first boundary in i
-  [0.3, 1.5],   // past first boundary in j
-  [1.2, 1.2],   // large both
-  [2.0, 0.5],   // far along i
-  [0.5, 2.0],   // far along j
-  [-0.3, 0.3],  // negative i
-  [0.3, -0.3],  // negative j
-  [-1.5, 0.3],  // large negative i
-  [0.3, -1.5],  // large negative j
+  [0.3, 0.3], // near origin
+  [0.7, 0.1], // along i axis
+  [0.1, 0.7], // along j axis
+  [1.5, 0.3], // past first boundary in i
+  [0.3, 1.5], // past first boundary in j
+  [1.2, 1.2], // large both
+  [2.0, 0.5], // far along i
+  [0.5, 2.0], // far along j
+  [-0.3, 0.3], // negative i
+  [0.3, -0.3], // negative j
+  [-1.5, 0.3], // large negative i
+  [0.3, -1.5], // large negative j
   [-1.2, -1.2], // both negative
-  [0.0, 0.0],   // origin
-  [1.0, 0.0],   // boundary
-  [0.0, 1.0],   // boundary
+  [0.0, 0.0], // origin
+  [1.0, 0.0], // boundary
+  [0.0, 1.0] // boundary
 ];
 
 for (const flips of flipCombos) {
@@ -50,7 +50,7 @@ for (const flips of flipCombos) {
     ijToQuaternaryFixtures.push({
       ij: [...ij],
       flips: [...flips],
-      digit,
+      digit
     });
   }
 }
@@ -64,7 +64,7 @@ for (const flips of flipCombos) {
     quaternaryToKJFixtures.push({
       q,
       flips: [...flips],
-      kj: [kj[0] || 0, kj[1] || 0],  // normalize -0 to 0 for JSON round-trip
+      kj: [kj[0] || 0, kj[1] || 0] // normalize -0 to 0 for JSON round-trip
     });
   }
 }
@@ -76,7 +76,7 @@ for (let q = 0; q < 4; q++) {
   const flips = quaternaryToFlips(q);
   quaternaryToFlipsFixtures.push({
     q,
-    flips: [flips[0], flips[1]],
+    flips: [flips[0], flips[1]]
   });
 }
 console.log(`  quaternaryToFlips: ${quaternaryToFlipsFixtures.length} cases`);
@@ -84,9 +84,9 @@ console.log(`  quaternaryToFlips: ${quaternaryToFlipsFixtures.length} cases`);
 const fixtures = {
   IJToQuaternary: ijToQuaternaryFixtures,
   quaternaryToKJ: quaternaryToKJFixtures,
-  quaternaryToFlips: quaternaryToFlipsFixtures,
+  quaternaryToFlips: quaternaryToFlipsFixtures
 };
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

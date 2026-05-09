@@ -23,16 +23,14 @@ const ComparisonView: React.FC = () => {
       rightLabel="H3 (variable area)"
       getLeftData={(data: AirbnbData) => {
         // Get top cities by A5 density
-        const topCities = [...data.a5]
-          .sort((a, b) => b.max_density_per_km2 - a.max_density_per_km2);
+        const topCities = [...data.a5].sort((a, b) => b.max_density_per_km2 - a.max_density_per_km2);
 
         // Return them sorted by listings per cell
         return [...topCities].sort((a, b) => b.max_listings_per_cell - a.max_listings_per_cell);
       }}
       getRightData={(data: AirbnbData) => {
         // Get top cities by A5 density
-        const topCities = [...data.a5]
-          .sort((a, b) => b.max_density_per_km2 - a.max_density_per_km2);
+        const topCities = [...data.a5].sort((a, b) => b.max_density_per_km2 - a.max_density_per_km2);
 
         // Get corresponding H3 data and sort by listings per cell
         const topLocations = new Set(topCities.map(c => c.location));

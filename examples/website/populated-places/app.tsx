@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {ColumnLayer, PolygonLayer, ScatterplotLayer} from '@deck.gl/layers';
-import { cellToBoundary, cellToLonLat, lonLatToCell } from 'a5';
-import { LonLat } from 'a5';
-import { Color, Position } from '@deck.gl/core';
+import {cellToBoundary, cellToLonLat, lonLatToCell} from 'a5';
+import {LonLat} from 'a5';
+import {Color, Position} from '@deck.gl/core';
 const PLACES = '/data/ne_10m_populated_places_simple.geojson';
-const INITIAL_VIEW_STATE = { longitude: -5, latitude: 50, zoom: 5 };
+const INITIAL_VIEW_STATE = {longitude: -5, latitude: 50, zoom: 5};
 const RESOLUTION = 8;
 
-type A5CellWithPopulation = { id: bigint, point: Position, population: number };
-type SourcePoint = { point: Position, population: number };
+type A5CellWithPopulation = {id: bigint; point: Position; population: number};
+type SourcePoint = {point: Position; population: number};
 type TransformedData = {
   cells: A5CellWithPopulation[];
   sourcePoints: SourcePoint[];
@@ -27,10 +27,10 @@ function dataTransform(d: GeoJSON.FeatureCollection): TransformedData {
   const data: (A5CellWithPopulation | null)[] = d.features.map(feature => {
     const point = (feature.geometry as GeoJSON.Point).coordinates;
     const population = feature.properties ? feature.properties.pop_max : 10000;
-    
+
     // Store source point
-    sourcePoints.push({ point, population });
-    
+    sourcePoints.push({point, population});
+
     const id = lonLatToCell(point as LonLat, RESOLUTION);
     const originSegmentProduct = Number(id >> 58n);
     const lowRes = originSegmentProduct > 32 + 8 + 2 + 0.5;
@@ -45,7 +45,7 @@ function dataTransform(d: GeoJSON.FeatureCollection): TransformedData {
       population
     };
   });
-  console.log('population in HD', 100 - 0.001 * Math.round(100000 * outside / (inside + outside)), '%');
+  console.log('population in HD', 100 - 0.001 * Math.round((100000 * outside) / (inside + outside)), '%');
   const filteredData = data.filter(Boolean) as A5CellWithPopulation[];
   const bins = new Map<bigint, A5CellWithPopulation>();
   for (const feature of filteredData) {
@@ -58,7 +58,7 @@ function dataTransform(d: GeoJSON.FeatureCollection): TransformedData {
   }
 
   let aggregated = [...bins.values()];
-  return { cells: aggregated, sourcePoints };
+  return {cells: aggregated, sourcePoints};
 }
 
 const App: React.FC = () => {
@@ -80,9 +80,9 @@ const App: React.FC = () => {
       return [255 * scale, 5 * scale, 255 - 25 * scale, 255] as Color;
     },
     extruded: true,
-    getElevation: (d: A5CellWithPopulation) => (10000 + d.population / 10),
+    getElevation: (d: A5CellWithPopulation) => 10000 + d.population / 10,
     beforeId: 'watername_ocean',
-    parameters: { cullMode: 'back' } as const
+    parameters: {cullMode: 'back'} as const
   };
 
   // Create layers
@@ -105,43 +105,50 @@ const App: React.FC = () => {
     visible: layerType === 'column'
   });
 
-  const pointLayers = [true, false].map(original => new ScatterplotLayer<SourcePoint>({
-    id: `cell-point-${original ? 'visible' : 'hidden'}`,
-    data: original ? data?.sourcePoints : data?.cells,
-    getPosition: original ? d => d.point : d => cellToLonLat(d.id),
-    radiusUnits: 'meters',
-    radiusMaxPixels: original ? 10 : 20,
-    lineWidthMaxPixels: 2,
-    filled: true,
-    stroked: true,
-    lineWidthUnits: 'meters',
-    getRadius: original ? 2000 : 4000,
-    getLineWidth: 500,
-    getFillColor: original ? [255, 255, 255, 255] : d => {
-      const scale = d.population / 100000;
-      return [255 * scale, 5 * scale, 255 - 25 * scale, 255] as Color;
-    },
-    getLineColor: [255, 255, 255, 255],
-    parameters: { depthCompare: 'always', cullMode: 'back' } as const,
-    getPolygonOffset: d => [1, 0],
-    visible: layerType === 'polygon'
-  }));
+  const pointLayers = [true, false].map(
+    original =>
+      new ScatterplotLayer<SourcePoint>({
+        id: `cell-point-${original ? 'visible' : 'hidden'}`,
+        data: original ? data?.sourcePoints : data?.cells,
+        getPosition: original ? d => d.point : d => cellToLonLat(d.id),
+        radiusUnits: 'meters',
+        radiusMaxPixels: original ? 10 : 20,
+        lineWidthMaxPixels: 2,
+        filled: true,
+        stroked: true,
+        lineWidthUnits: 'meters',
+        getRadius: original ? 2000 : 4000,
+        getLineWidth: 500,
+        getFillColor: original
+          ? [255, 255, 255, 255]
+          : d => {
+              const scale = d.population / 100000;
+              return [255 * scale, 5 * scale, 255 - 25 * scale, 255] as Color;
+            },
+        getLineColor: [255, 255, 255, 255],
+        parameters: {depthCompare: 'always', cullMode: 'back'} as const,
+        getPolygonOffset: d => [1, 0],
+        visible: layerType === 'polygon'
+      })
+  );
 
   const Controls: React.FC<{
     layerType: 'polygon' | 'column';
     setLayerType: (type: 'polygon' | 'column') => void;
-  }> = ({ layerType, setLayerType }) => {
+  }> = ({layerType, setLayerType}) => {
     const toggleLayer = () => {
       setLayerType(layerType === 'polygon' ? 'column' : 'polygon');
     };
 
     return (
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        zIndex: 1
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: '20px',
+          left: '20px',
+          zIndex: 1
+        }}
+      >
         <button
           onClick={toggleLayer}
           style={{
@@ -179,15 +186,9 @@ const App: React.FC = () => {
         dragRotate={false}
         maxPitch={0}
       >
-        <DeckGLOverlay 
-          layers={[cellLayer, columnLayer, ...pointLayers]}
-          interleaved={true}
-        />
+        <DeckGLOverlay layers={[cellLayer, columnLayer, ...pointLayers]} interleaved={true} />
       </Maplibre>
-      <Controls 
-        layerType={layerType}
-        setLayerType={setLayerType}
-      />
+      <Controls layerType={layerType} setLayerType={setLayerType} />
     </div>
   );
 };
@@ -203,4 +204,4 @@ function DeckGLOverlay(props) {
   const overlay = useControl(() => new DeckOverlay(props));
   overlay.setProps(props);
   return null;
-} 
+}

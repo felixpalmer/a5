@@ -1,15 +1,15 @@
-import React, { useMemo } from 'react';
-import { BufferGeometry, Float32BufferAttribute, DoubleSide, Vector3, Raycaster, Sphere as ThreeSphere } from 'three';
-import { SphericalPolygonShape } from 'a5/geometry/spherical-polygon';
-import { toCartesian, fromLonLat, toSpherical } from 'a5/core/coordinate-transforms';
-import { cellToBoundary } from 'a5/index';
-import type { Spherical, Radians, Cartesian } from 'a5/core/coordinate-systems';
-import { useThree } from '@react-three/fiber';
+import React, {useMemo} from 'react';
+import {BufferGeometry, Float32BufferAttribute, DoubleSide, Vector3, Raycaster, Sphere as ThreeSphere} from 'three';
+import {SphericalPolygonShape} from 'a5/geometry/spherical-polygon';
+import {toCartesian, fromLonLat, toSpherical} from 'a5/core/coordinate-transforms';
+import {cellToBoundary} from 'a5/index';
+import type {Spherical, Radians, Cartesian} from 'a5/core/coordinate-systems';
+import {useThree} from '@react-three/fiber';
 
-export function Sphere({ onSphereClick }: { onSphereClick: (point: Spherical) => void }) {
-  const { camera} = useThree();
+export function Sphere({onSphereClick}: {onSphereClick: (point: Spherical) => void}) {
+  const {camera} = useThree();
 
-  const handleClick = (event: { clientX: number; clientY: number }) => {
+  const handleClick = (event: {clientX: number; clientY: number}) => {
     const spherical = toSpherical(camera.position.toArray() as Cartesian);
     onSphereClick(spherical);
   };
@@ -17,7 +17,7 @@ export function Sphere({ onSphereClick }: { onSphereClick: (point: Spherical) =>
   return (
     <mesh onClick={handleClick}>
       <sphereGeometry args={[0.999, 64, 64]} />
-      <meshPhysicalMaterial 
+      <meshPhysicalMaterial
         color="#00aa55"
         opacity={0.05}
         metalness={0.5}
@@ -29,13 +29,19 @@ export function Sphere({ onSphereClick }: { onSphereClick: (point: Spherical) =>
   );
 }
 
-export function PentagonLines(props: { sphericalPentagon: SphericalPolygonShape, disabled: boolean }) {
-  const { sphericalPentagon, disabled } = props;
+export function PentagonLines(props: {sphericalPentagon: SphericalPolygonShape; disabled: boolean}) {
+  const {sphericalPentagon, disabled} = props;
   const geometry = useMemo(() => {
     // Use 20 segments per edge for smooth curves
     const vertices = sphericalPentagon.getBoundary(20);
     const geometry = new BufferGeometry();
-    geometry.setAttribute('position', new Float32BufferAttribute(vertices.flatMap(p => [...p]), 3));
+    geometry.setAttribute(
+      'position',
+      new Float32BufferAttribute(
+        vertices.flatMap(p => [...p]),
+        3
+      )
+    );
     return geometry;
   }, [sphericalPentagon]);
 
@@ -51,22 +57,18 @@ export function sphericalPentagonFromCell(cell: bigint): SphericalPolygonShape {
   return new SphericalPolygonShape(cartesianBoundary);
 }
 
-export function A5Pentagon(props: { cell: bigint, disabled: boolean }) {
+export function A5Pentagon(props: {cell: bigint; disabled: boolean}) {
   const {cell, disabled} = props;
   const a5Pentagon = sphericalPentagonFromCell(cell);
   return <PentagonLines sphericalPentagon={a5Pentagon} disabled={disabled} />;
 }
 
-export function Marker(props: { cartesian: Cartesian }) {
+export function Marker(props: {cartesian: Cartesian}) {
   const cartesian = props.cartesian;
   return (
     <mesh position={cartesian}>
       <sphereGeometry args={[0.003, 16, 16]} />
-      <meshPhysicalMaterial
-        color="#ff0000"
-        metalness={0.2}
-        roughness={0}
-      />
+      <meshPhysicalMaterial color="#ff0000" metalness={0.2} roughness={0} />
     </mesh>
   );
-} 
+}

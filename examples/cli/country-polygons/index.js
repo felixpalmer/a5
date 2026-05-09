@@ -18,7 +18,9 @@ function parseArgs() {
     else if (a === '--output') opts.output = args[++i];
     else if (a === '--resolution') opts.resolution = parseInt(args[++i]);
     else if (a === '--help' || a === '-h') {
-      console.log(`Usage: node index.js [--input <geojson>] [--output <parquet>] [--resolution <n>]\n\nDefaults:\n  --input ${DEFAULT_INPUT}\n  --output ${DEFAULT_OUTPUT}\n  --resolution ${DEFAULT_RESOLUTION}\n`);
+      console.log(
+        `Usage: node index.js [--input <geojson>] [--output <parquet>] [--resolution <n>]\n\nDefaults:\n  --input ${DEFAULT_INPUT}\n  --output ${DEFAULT_OUTPUT}\n  --resolution ${DEFAULT_RESOLUTION}\n`
+      );
       process.exit(0);
     } else {
       console.error(`Unknown option: ${a}`);
@@ -90,7 +92,7 @@ async function main() {
   const {parquetWrite, schemaFromColumnData, fileWriter} = await import('hyparquet-writer');
   const columnData = [
     {name: 'cell_id', data: cellIds},
-    {name: 'color', data: colors},
+    {name: 'color', data: colors}
   ];
   const writer = fileWriter(opts.output);
   parquetWrite({
@@ -99,9 +101,9 @@ async function main() {
     schema: schemaFromColumnData({
       columnData,
       schemaOverrides: {
-        cell_id: {name: 'cell_id', type: 'INT64', converted_type: 'UINT_64', repetition_type: 'REQUIRED'},
-      },
-    }),
+        cell_id: {name: 'cell_id', type: 'INT64', converted_type: 'UINT_64', repetition_type: 'REQUIRED'}
+      }
+    })
   });
 
   const size = fs.statSync(opts.output).size;

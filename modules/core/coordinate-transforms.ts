@@ -2,21 +2,32 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, quat, vec3, glMatrix } from 'gl-matrix';
+import {vec2, quat, vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Degrees, Radians, Face, Polar, IJ, Cartesian, Spherical, LonLat, Barycentric, FaceTriangle } from "./coordinate-systems";
-import { BASIS_INVERSE, BASIS } from "./pentagon";
-import { AuthalicProjection } from "../projections/authalic";
+import type {
+  Degrees,
+  Radians,
+  Face,
+  Polar,
+  IJ,
+  Cartesian,
+  Spherical,
+  LonLat,
+  Barycentric,
+  FaceTriangle
+} from './coordinate-systems';
+import {BASIS_INVERSE, BASIS} from './pentagon';
+import {AuthalicProjection} from '../projections/authalic';
 
 const authalic = new AuthalicProjection();
 
 export type Contour = LonLat[];
 
 export function degToRad(deg: Degrees): Radians {
-  return deg * (Math.PI / 180) as Radians;
+  return (deg * (Math.PI / 180)) as Radians;
 }
 export function radToDeg(rad: Radians): Degrees {
-  return rad * (180 / Math.PI) as Degrees;
+  return (rad * (180 / Math.PI)) as Degrees;
 }
 
 export function toPolar(xy: Face): Polar {
@@ -46,7 +57,7 @@ export function faceToBarycentric(p: Face, [p1, p2, p3]: FaceTriangle): Barycent
   const d31: [number, number] = [p1[0] - p3[0], p1[1] - p3[1]];
   const d23: [number, number] = [p3[0] - p2[0], p3[1] - p2[1]];
   const d3p: [number, number] = [p[0] - p3[0], p[1] - p3[1]];
-  
+
   const det = d23[0] * d31[1] - d23[1] * d31[0];
   const b0 = (d23[0] * d3p[1] - d23[1] * d3p[0]) / det;
   const b1 = (d31[0] * d3p[1] - d31[1] * d3p[0]) / det;
@@ -58,10 +69,7 @@ export function faceToBarycentric(p: Face, [p1, p2, p3]: FaceTriangle): Barycent
  * Convert barycentric coordinates to face coordinates
  */
 export function barycentricToFace(b: Barycentric, [p1, p2, p3]: FaceTriangle): Face {
-  return [
-    b[0] * p1[0] + b[1] * p2[0] + b[2] * p3[0],
-    b[0] * p1[1] + b[1] * p2[1] + b[2] * p3[1]
-  ] as Face;
+  return [b[0] * p1[0] + b[1] * p2[0] + b[2] * p3[0], b[0] * p1[1] + b[1] * p2[1] + b[2] * p3[1]] as Face;
 }
 
 export function toSpherical(xyz: Cartesian): Spherical {
@@ -83,7 +91,7 @@ export function toCartesian([theta, phi]: Spherical): Cartesian {
  * Determine the offset longitude for the spherical coordinate system
  * This is the angle between the Greenwich meridian and vector between the centers
  * of the first two origins (dodecahedron face centers)
- * 
+ *
  * It is chosen such that the majority of the world's population, around 99.9% (and thus land mass) is located
  * in the first 8.5 dodecahedron faces, and thus come first along the Hilbert curve.
  */
@@ -96,8 +104,8 @@ const LONGITUDE_OFFSET = 93 as Degrees;
  * @returns [theta, phi] in radians
  */
 export function fromLonLat([longitude, latitude]: LonLat): Spherical {
-  const theta = degToRad(longitude + LONGITUDE_OFFSET as Degrees);
-  
+  const theta = degToRad((longitude + LONGITUDE_OFFSET) as Degrees);
+
   const geodeticLat = degToRad(latitude as Degrees);
   const authalicLat = authalic.forward(geodeticLat);
   const phi = (Math.PI / 2 - authalicLat) as Radians;
@@ -108,7 +116,7 @@ export function fromLonLat([longitude, latitude]: LonLat): Spherical {
  * Normalize a longitude value to the range [-180, 180)
  */
 export function normalizeLongitude(lon: Degrees): Degrees {
-  return ((lon + 180) % 360 + 360) % 360 - 180 as Degrees;
+  return (((((lon + 180) % 360) + 360) % 360) - 180) as Degrees;
 }
 
 /**
@@ -118,9 +126,9 @@ export function normalizeLongitude(lon: Degrees): Degrees {
  * @returns [longitude, latitude] in degrees
  */
 export function toLonLat([theta, phi]: Spherical): LonLat {
-  const longitude = normalizeLongitude(radToDeg(theta) - LONGITUDE_OFFSET as Degrees);
+  const longitude = normalizeLongitude((radToDeg(theta) - LONGITUDE_OFFSET) as Degrees);
 
-  const authalicLat = Math.PI / 2 - phi as Radians;
+  const authalicLat = (Math.PI / 2 - phi) as Radians;
   const geodeticLat = authalic.inverse(authalicLat);
   const latitude = radToDeg(geodeticLat) as Degrees;
   return [longitude, latitude] as LonLat;
@@ -152,8 +160,8 @@ export function normalizeLongitudes(contour: Contour): Contour {
     let longitude = contour[i][0];
     const latitude = contour[i][1];
     // Adjust longitude to be closer to center
-    while (longitude - centerLon > 180) longitude = longitude - 360 as Degrees;
-    while (longitude - centerLon < -180) longitude = longitude + 360 as Degrees;
+    while (longitude - centerLon > 180) longitude = (longitude - 360) as Degrees;
+    while (longitude - centerLon < -180) longitude = (longitude + 360) as Degrees;
     out[i] = [longitude, latitude] as LonLat;
   }
   return out;

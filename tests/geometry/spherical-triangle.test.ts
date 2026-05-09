@@ -1,19 +1,31 @@
-import { describe, it, expect } from 'vitest'
-import { SphericalTriangleShape } from 'a5/geometry/spherical-triangle'
-import type { Cartesian } from 'a5/core/coordinate-systems'
-import { vec3 } from 'gl-matrix'
-import fixtures from './fixtures/spherical-triangle.json'
+import {describe, it, expect} from 'vitest';
+import {SphericalTriangleShape} from 'a5/geometry/spherical-triangle';
+import type {Cartesian} from 'a5/core/coordinate-systems';
+import {vec3} from 'gl-matrix';
+import fixtures from './fixtures/spherical-triangle.json';
 
 describe('spherical-triangle.ts', () => {
   describe('constructor', () => {
     it('requires exactly 3 vertices', () => {
       expect(() => new SphericalTriangleShape([])).toThrow('SphericalTriangleShape requires exactly 3 vertices');
-      expect(() => new SphericalTriangleShape([[1,0,0] as Cartesian, [0,1,0] as Cartesian])).toThrow('SphericalTriangleShape requires exactly 3 vertices');
-      expect(() => new SphericalTriangleShape([[1,0,0] as Cartesian, [0,1,0] as Cartesian, [0,0,1] as Cartesian, [1,1,1] as Cartesian])).toThrow('SphericalTriangleShape requires exactly 3 vertices');
+      expect(() => new SphericalTriangleShape([[1, 0, 0] as Cartesian, [0, 1, 0] as Cartesian])).toThrow(
+        'SphericalTriangleShape requires exactly 3 vertices'
+      );
+      expect(
+        () =>
+          new SphericalTriangleShape([
+            [1, 0, 0] as Cartesian,
+            [0, 1, 0] as Cartesian,
+            [0, 0, 1] as Cartesian,
+            [1, 1, 1] as Cartesian
+          ])
+      ).toThrow('SphericalTriangleShape requires exactly 3 vertices');
     });
 
     it('accepts exactly 3 vertices', () => {
-      expect(() => new SphericalTriangleShape([[1,0,0] as Cartesian, [0,1,0] as Cartesian, [0,0,1] as Cartesian])).not.toThrow();
+      expect(
+        () => new SphericalTriangleShape([[1, 0, 0] as Cartesian, [0, 1, 0] as Cartesian, [0, 0, 1] as Cartesian])
+      ).not.toThrow();
     });
   });
 
@@ -21,7 +33,7 @@ describe('spherical-triangle.ts', () => {
     it('returns boundary points with different segment counts', () => {
       (fixtures as any[]).forEach((fixture: any, i: number) => {
         const triangle = new SphericalTriangleShape(fixture.vertices as Cartesian[]);
-        
+
         // Test boundaries with 1-3 segments
         [1, 2, 3].forEach(nSegments => {
           const boundary = triangle.getBoundary(nSegments, true);
@@ -39,8 +51,8 @@ describe('spherical-triangle.ts', () => {
     it('interpolates between vertices', () => {
       (fixtures as any[]).forEach((fixture: any) => {
         const triangle = new SphericalTriangleShape(fixture.vertices as Cartesian[]);
-        
-        fixture.slerpTests.forEach(({ t, result }: any) => {
+
+        fixture.slerpTests.forEach(({t, result}: any) => {
           const actual = triangle.slerp(t);
           expect(actual).toBeCloseToArray(result, 6);
           // Should be normalized
@@ -54,8 +66,8 @@ describe('spherical-triangle.ts', () => {
     it('correctly identifies points inside and outside triangle', () => {
       (fixtures as any[]).forEach((fixture: any) => {
         const triangle = new SphericalTriangleShape(fixture.vertices as Cartesian[]);
-        
-        fixture.containsPointTests.forEach(({ point, result }: any) => {
+
+        fixture.containsPointTests.forEach(({point, result}: any) => {
           const actual = triangle.containsPoint(point as Cartesian);
           expect(actual).toBeCloseTo(result, 6);
         });
@@ -75,4 +87,4 @@ describe('spherical-triangle.ts', () => {
       });
     });
   });
-}); 
+});

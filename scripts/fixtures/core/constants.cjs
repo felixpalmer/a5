@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Import constants from the built module
-const { 
+const {
   φ,
   TWO_PI,
   TWO_PI_OVER_5,
@@ -37,35 +37,35 @@ const constantsData = {
     },
     TWO_PI_OVER_5: {
       value: TWO_PI_OVER_5,
-      expectedValue: 2 * Math.PI / 5,
-      degrees: TWO_PI_OVER_5 * 180 / Math.PI
+      expectedValue: (2 * Math.PI) / 5,
+      degrees: (TWO_PI_OVER_5 * 180) / Math.PI
     },
     PI_OVER_5: {
       value: PI_OVER_5,
       expectedValue: Math.PI / 5,
-      degrees: PI_OVER_5 * 180 / Math.PI
+      degrees: (PI_OVER_5 * 180) / Math.PI
     },
     PI_OVER_10: {
       value: PI_OVER_10,
       expectedValue: Math.PI / 10,
-      degrees: PI_OVER_10 * 180 / Math.PI
+      degrees: (PI_OVER_10 * 180) / Math.PI
     }
   },
   dodecahedronAngles: {
     dihedralAngle: {
       value: dihedralAngle,
       expectedValue: 2 * Math.atan(φ),
-      degrees: dihedralAngle * 180 / Math.PI
+      degrees: (dihedralAngle * 180) / Math.PI
     },
     interhedralAngle: {
       value: interhedralAngle,
       expectedValue: Math.PI - dihedralAngle,
-      degrees: interhedralAngle * 180 / Math.PI
+      degrees: (interhedralAngle * 180) / Math.PI
     },
     faceEdgeAngle: {
       value: faceEdgeAngle,
       expectedValue: -0.5 * Math.PI + Math.acos(-1 / Math.sqrt(3 - φ)),
-      degrees: faceEdgeAngle * 180 / Math.PI
+      degrees: (faceEdgeAngle * 180) / Math.PI
     },
     angleSum: dihedralAngle + interhedralAngle
   },
@@ -92,7 +92,7 @@ const constantsData = {
     },
     Rcircumscribed: {
       value: Rcircumscribed,
-      expectedValue: Math.sqrt(3) * Rmidedge / φ
+      expectedValue: (Math.sqrt(3) * Rmidedge) / φ
     },
     relationships: {
       inscribedLessThanMidedge: Rinscribed < Rmidedge,
@@ -101,17 +101,34 @@ const constantsData = {
   },
   validationTests: {
     finiteNumbers: [
-      φ, TWO_PI, TWO_PI_OVER_5, PI_OVER_5, PI_OVER_10,
-      dihedralAngle, interhedralAngle, faceEdgeAngle,
-      distanceToEdge, distanceToVertex,
-      Rinscribed, Rmidedge, Rcircumscribed
-    ].map(val => ({ value: val, isFinite: Number.isFinite(val), isNaN: Number.isNaN(val) })),
+      φ,
+      TWO_PI,
+      TWO_PI_OVER_5,
+      PI_OVER_5,
+      PI_OVER_10,
+      dihedralAngle,
+      interhedralAngle,
+      faceEdgeAngle,
+      distanceToEdge,
+      distanceToVertex,
+      Rinscribed,
+      Rmidedge,
+      Rcircumscribed
+    ].map(val => ({value: val, isFinite: Number.isFinite(val), isNaN: Number.isNaN(val)})),
     positiveConstants: [
-      φ, TWO_PI, TWO_PI_OVER_5, PI_OVER_5, PI_OVER_10,
-      dihedralAngle, interhedralAngle,
-      distanceToEdge, distanceToVertex,
-      Rinscribed, Rmidedge, Rcircumscribed
-    ].map(val => ({ value: val, isPositive: val > 0 }))
+      φ,
+      TWO_PI,
+      TWO_PI_OVER_5,
+      PI_OVER_5,
+      PI_OVER_10,
+      dihedralAngle,
+      interhedralAngle,
+      distanceToEdge,
+      distanceToVertex,
+      Rinscribed,
+      Rmidedge,
+      Rcircumscribed
+    ].map(val => ({value: val, isPositive: val > 0}))
   }
 };
 

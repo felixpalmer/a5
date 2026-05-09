@@ -2,21 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { mat2, vec2, vec3, glMatrix } from "gl-matrix";
+import {mat2, vec2, vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Cartesian, Face, LonLat, Spherical } from "./coordinate-systems";
-import { FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes } from "./coordinate-transforms";
-import { findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmentToQuintant } from "./origin";
-import { DodecahedronProjection } from "../projections/dodecahedron";
-import { A5Cell, OriginId } from "./utils";
-import { PentagonShape } from "../geometry/pentagon";
-import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices } from "./tiling";
-import { PI_OVER_5 } from "./constants";
-import { IJToS, sToAnchor } from "../lattice";
-import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./serialization";
-import { getGlobalCellNeighbors } from "../traversal/global-neighbors";
-import { Spiral, SPIRAL_SAMPLE_COUNT } from "../utils/spiral";
+import type {Cartesian, Face, LonLat, Spherical} from './coordinate-systems';
+import {FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes} from './coordinate-transforms';
+import {findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmentToQuintant} from './origin';
+import {DodecahedronProjection} from '../projections/dodecahedron';
+import {A5Cell, OriginId} from './utils';
+import {PentagonShape} from '../geometry/pentagon';
+import {getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
+import {PI_OVER_5} from './constants';
+import {IJToS, sToAnchor} from '../lattice';
+import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL} from './serialization';
+import {getGlobalCellNeighbors} from '../traversal/global-neighbors';
+import {Spiral, SPIRAL_SAMPLE_COUNT} from '../utils/spiral';
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -28,10 +28,10 @@ const dodecahedron = new DodecahedronProjection();
 // pre-computed pentagon + origin so the hit-test is just one projection
 // + one pentagon containment check.
 let _lastResult: {
-  cellId: bigint,
-  pentagon: PentagonShape,
-  originId: OriginId,
-  resolution: number,
+  cellId: bigint;
+  pentagon: PentagonShape;
+  originId: OriginId;
+  resolution: number;
 } | null = null;
 
 /** Update the single-entry cache with a successful (cell, cellId) pair. */
@@ -81,7 +81,7 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
   const scale = SPIRAL_SCALE_RAD / Math.pow(2, hilbertResolution);
   const estimateSet = new Set<bigint>([firstKey]);
-  const cells: {cellId: bigint, distance: number}[] = [{cellId: firstKey, distance: firstDistance}];
+  const cells: {cellId: bigint; distance: number}[] = [{cellId: firstKey, distance: firstDistance}];
 
   const spiral = new Spiral(spherical, scale);
   for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
@@ -124,7 +124,7 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
 // Spiral perturbation radius at hilbertResolution=1 (in radians of tangent
 // offset). For higher resolutions we scale by 1/2^hilbertResolution. Tuned
 // via debug-scripts/tune-spiral.ts.
-const SPIRAL_SCALE_RAD = 70 * Math.PI / 180;
+const SPIRAL_SCALE_RAD = (70 * Math.PI) / 180;
 
 // Reusable output buffer for spiral.sample() — written once per iteration,
 // consumed immediately by _cartesianToEstimate. Single-threaded JS makes
@@ -174,10 +174,10 @@ function _faceToEstimate(dodecPoint: Face, origin: A5Cell['origin'], resolution:
 // TODO move into tiling.ts
 export function _getPentagon({S, segment, origin, resolution}: A5Cell): PentagonShape {
   const {quintant, orientation} = segmentToQuintant(segment, origin);
-  if (resolution === (FIRST_HILBERT_RESOLUTION - 1)) {
+  if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
     const out = getQuintantVertices(quintant);
     return out;
-  } else if (resolution === (FIRST_HILBERT_RESOLUTION - 2)) {
+  } else if (resolution === FIRST_HILBERT_RESOLUTION - 2) {
     return getFaceVertices();
   }
 
@@ -212,9 +212,12 @@ type CellToBoundaryOptions = {
    * @default 'auto'
    */
   segments?: number | 'auto';
-}
+};
 
-export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}): LonLat[] {
+export function cellToBoundary(
+  cellId: bigint,
+  {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}
+): LonLat[] {
   if (cellId === WORLD_CELL) {
     // WORLD_CELL represents the entire world and is unbounded
     return [];
@@ -222,7 +225,7 @@ export function cellToBoundary(cellId: bigint, {closedRing = true, segments = 'a
 
   const {S, segment, origin, resolution} = deserialize(cellId);
   if (segments === 'auto') {
-    segments = Math.max(1,  Math.pow(2, 6 - resolution));
+    segments = Math.max(1, Math.pow(2, 6 - resolution));
   }
 
   const pentagon = _getPentagon({S, segment, origin, resolution});

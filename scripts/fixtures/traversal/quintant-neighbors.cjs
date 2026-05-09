@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { sToAnchor, anchorToTriple, tripleToAnchor, isNeighbor } = require('../../a5-test.cjs');
+const {sToAnchor, anchorToTriple, tripleToAnchor, isNeighbor} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'quintant-neighbors.json');
@@ -45,7 +45,7 @@ const fixtures = [];
 for (const orientation of orientations) {
   const testCells = [];
   for (let i = 0; i < cellsPerOrientation; i++) {
-    testCells.push(Math.floor(i * numCells / cellsPerOrientation));
+    testCells.push(Math.floor((i * numCells) / cellsPerOrientation));
   }
 
   for (const s of testCells) {
@@ -88,8 +88,10 @@ fixtures.sort((a, b) => {
 });
 
 console.log(`Generated ${fixtures.length} test cases across ${orientations.length} orientations`);
-console.log(`Average neighbors per cell: ${(fixtures.reduce((sum, f) => sum + f.output.neighbors.length, 0) / fixtures.length).toFixed(1)}`);
+console.log(
+  `Average neighbors per cell: ${(fixtures.reduce((sum, f) => sum + f.output.neighbors.length, 0) / fixtures.length).toFixed(1)}`
+);
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
 console.log(`Wrote fixtures to ${outputPath}`);

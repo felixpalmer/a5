@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { sphericalCap, uncompact, getResolution, hexToU64, u64ToHex } from 'a5';
-import { metersToH, estimateCellRadius, pickCoarseResolution } from 'a5/traversal/cap';
+import {describe, it, expect} from 'vitest';
+import {sphericalCap, uncompact, getResolution, hexToU64, u64ToHex} from 'a5';
+import {metersToH, estimateCellRadius, pickCoarseResolution} from 'a5/traversal/cap';
 import fixtures from '../fixtures/traversal/cap.json';
 
 type SphericalCapFixture = {
@@ -28,8 +28,7 @@ describe('sphericalCap', () => {
     for (const f of flatCases) {
       const cellId = hexToU64(f.cellId);
       const targetRes = getResolution(cellId);
-      const result = Array.from(uncompact(sphericalCap(cellId, f.radius), targetRes))
-        .map(n => u64ToHex(n));
+      const result = Array.from(uncompact(sphericalCap(cellId, f.radius), targetRes)).map(n => u64ToHex(n));
       expect(result).toEqual(f.cells);
     }
   });

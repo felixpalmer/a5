@@ -1,5 +1,5 @@
-const { parse } = require('csv-parse/sync');
-const { lonLatToCell, cellToLonLat, u64ToHex } = require('../../../dist/a5.cjs');
+const {parse} = require('csv-parse/sync');
+const {lonLatToCell, cellToLonLat, u64ToHex} = require('../../../dist/a5.cjs');
 const fs = require('fs');
 
 // Read and parse the CSV file
@@ -22,7 +22,7 @@ if (outputFormat !== 'json' && outputFormat !== 'parquet') {
 
 async function writeParquet(aggregatedData, outputPath) {
   // Import parquet writer functions
-  const { parquetWrite, schemaFromColumnData, fileWriter } = await import('hyparquet-writer');
+  const {parquetWrite, schemaFromColumnData, fileWriter} = await import('hyparquet-writer');
 
   // Prepare data arrays
   const cellIds = [];
@@ -35,8 +35,8 @@ async function writeParquet(aggregatedData, outputPath) {
   }
 
   const columnData = [
-    { name: 'a5', data: cellIds },
-    { name: 'count', data: counts }
+    {name: 'a5', data: cellIds},
+    {name: 'count', data: counts}
   ];
 
   // Create file writer
@@ -53,10 +53,10 @@ async function writeParquet(aggregatedData, outputPath) {
           name: 'a5',
           type: 'INT64',
           converted_type: 'UINT_64',
-          repetition_type: 'REQUIRED',
-        },
-      },
-    }),
+          repetition_type: 'REQUIRED'
+        }
+      }
+    })
   });
 
   const fileSize = fs.statSync(outputPath).size;
@@ -98,7 +98,9 @@ async function main() {
       }
     }
 
-    console.log(`Successfully processed ${records.length} points into ${aggregatedData.size} A5 cells at resolution ${resolution}`);
+    console.log(
+      `Successfully processed ${records.length} points into ${aggregatedData.size} A5 cells at resolution ${resolution}`
+    );
 
     // Write output in requested format
     if (outputFormat === 'parquet') {
@@ -110,11 +112,10 @@ async function main() {
       fs.writeFileSync(outputFile, JSON.stringify(result, null, 2));
       console.log(`Output written to ${outputFile}`);
     }
-
   } catch (error) {
     console.error('Error processing data:', error);
     process.exit(1);
   }
 }
 
-main(); 
+main();

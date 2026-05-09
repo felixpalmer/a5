@@ -28,4 +28,4 @@ class CellsDemo extends Component {
   }
 }
 
-export default makeExample(CellsDemo); 
+export default makeExample(CellsDemo);

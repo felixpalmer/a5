@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
-import { cellToBoundary, uncompact } from 'a5';
-import { parquetRead } from 'hyparquet';
+import {cellToBoundary, uncompact} from 'a5';
+import {parquetRead} from 'hyparquet';
 
 // Generated using examples/cli/compact with:
 // node index.js --lon -0.1278 --lat 51.5074 --radius 10 --resolution 16 --output london-10km-compacted
 const COMPACTED_DATA = '/data/london-10km-compacted.parquet';
-const INITIAL_VIEW_STATE = { longitude: -0.1278, latitude: 51.5074, zoom: 11 };
+const INITIAL_VIEW_STATE = {longitude: -0.1278, latitude: 51.5074, zoom: 11};
 const RESOLUTION = 16;
 
 // Define interface for the DeckGLOverlay props
@@ -125,24 +125,20 @@ const App: React.FC = () => {
           <div>Loading...</div>
         ) : (
           <>
-            <div style={{ marginBottom: '10px' }}>
+            <div style={{marginBottom: '10px'}}>
               <label>
-                <input
-                  type="checkbox"
-                  checked={showCompacted}
-                  onChange={(e) => setShowCompacted(e.target.checked)}
-                />
-                {' '}Show Compacted
+                <input type="checkbox" checked={showCompacted} onChange={e => setShowCompacted(e.target.checked)} />{' '}
+                Show Compacted
               </label>
             </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
+            <div style={{fontSize: '12px', color: '#666'}}>
               {showCompacted ? (
                 <div>Compacted: {compactedCells.length} cells</div>
               ) : (
                 <div>Uncompacted: {uncompactedCells.length} cells</div>
               )}
             </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
+            <div style={{fontSize: '12px', color: '#666'}}>
               Ratio: {(uncompactedCells.length / compactedCells.length).toFixed(2)}x
             </div>
           </>

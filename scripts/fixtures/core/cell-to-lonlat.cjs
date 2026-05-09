@@ -1,9 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const {
-  lonLatToCell, cellToLonLat, u64ToHex
-} = require('../../a5-test.cjs');
+const {lonLatToCell, cellToLonLat, u64ToHex} = require('../../a5-test.cjs');
 
 // Test cases: various longitudes including the reported bug at lon > 87°
 // (where radToDeg(theta) - 93° offset can exceed [-180, 180])
@@ -28,9 +26,9 @@ const testPoints = [
   [130.0, -70.0],
   // Standard locations
   [0.0, 0.0],
-  [-73.9857, 40.7484],  // New York
-  [2.3522, 48.8566],    // Paris
-  [151.2093, -33.8688], // Sydney
+  [-73.9857, 40.7484], // New York
+  [2.3522, 48.8566], // Paris
+  [151.2093, -33.8688] // Sydney
 ];
 
 const resolutions = [4, 8, 12, 16, 20];
@@ -44,7 +42,7 @@ for (const [lon, lat] of testPoints) {
       input_lonlat: [lon, lat],
       resolution,
       cell_id: u64ToHex(cell),
-      center_lonlat: [center[0], center[1]],
+      center_lonlat: [center[0], center[1]]
     });
   }
 }
@@ -53,7 +51,7 @@ const outputDir = path.join(__dirname, '../../../tests/fixtures');
 const outputPath = path.join(outputDir, 'cell-to-lonlat.json');
 
 if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir, { recursive: true });
+  fs.mkdirSync(outputDir, {recursive: true});
 }
 
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));

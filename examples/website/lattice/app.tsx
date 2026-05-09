@@ -1,18 +1,18 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
 import DeckGL from '@deck.gl/react';
 import {PolygonLayer, PathLayer, ScatterplotLayer, TextLayer} from '@deck.gl/layers';
 import {DataFilterExtension} from '@deck.gl/extensions';
-import { colorContinuous } from '@deck.gl/carto';
-import { vec2 } from 'gl-matrix';
+import {colorContinuous} from '@deck.gl/carto';
+import {vec2} from 'gl-matrix';
 
-import type { Anchor, Orientation } from 'a5/lattice';
-import type { Triple } from 'a5/lattice';
-import { sToAnchor, anchorToTriple } from 'a5/lattice';
-import { Pentagon, PentagonShape } from 'a5/geometry/pentagon';
-import { getPentagonVertices } from 'a5/core/tiling';
-import { getCellNeighbors } from 'a5/traversal/quintant-neighbors';
-import { BASIS } from 'a5/core/pentagon';
+import type {Anchor, Orientation} from 'a5/lattice';
+import type {Triple} from 'a5/lattice';
+import {sToAnchor, anchorToTriple} from 'a5/lattice';
+import {Pentagon, PentagonShape} from 'a5/geometry/pentagon';
+import {getPentagonVertices} from 'a5/core/tiling';
+import {getCellNeighbors} from 'a5/traversal/quintant-neighbors';
+import {BASIS} from 'a5/core/pentagon';
 
 export type Cell = {
   origin: vec2;
@@ -21,7 +21,7 @@ export type Cell = {
   center: vec2;
   index: number;
   tripleCoords: Triple;
-}
+};
 
 function crossCheck(cells: Cell[], cells2: Cell[]) {
   for (let i = 0; i < cells2.length; i++) {
@@ -61,28 +61,33 @@ const App: React.FC = () => {
   const [gridDiskK, setGridDiskK] = useState(0);
 
   // Memoize the cell generation function
-  const generateCells = useCallback((resolution: number) => {
-    const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
-    const scale = Math.pow(2, -resolution);
-    
-    let anchors = sequence.map(s => sToAnchor(s, resolution, orientation));
+  const generateCells = useCallback(
+    (resolution: number) => {
+      const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
+      const scale = Math.pow(2, -resolution);
 
-    return anchors.map((anchor, i) => {
-      const origin = vec2.transformMat2(vec2.create(), anchor.offset, BASIS);
-      const vertices = getPentagonVertices(resolution, 0, anchor).getVertices().map(v => [...v]);
-      // Calculate center as average of vertices
-      const center = vertices.reduce((sum, v) => vec2.add(sum, sum, vec2.fromValues(v[0], v[1])), [0, 0] as vec2);
-      vec2.scale(center, center, 1/vertices.length);
-      return {
-        origin: vec2.scale(vec2.create(), origin, scale),
-        anchor,
-        vertices,
-        center,
-        index: i,
-        tripleCoords: anchorToTriple(anchor)
-      };
-    });
-  }, [orientation]);
+      let anchors = sequence.map(s => sToAnchor(s, resolution, orientation));
+
+      return anchors.map((anchor, i) => {
+        const origin = vec2.transformMat2(vec2.create(), anchor.offset, BASIS);
+        const vertices = getPentagonVertices(resolution, 0, anchor)
+          .getVertices()
+          .map(v => [...v]);
+        // Calculate center as average of vertices
+        const center = vertices.reduce((sum, v) => vec2.add(sum, sum, vec2.fromValues(v[0], v[1])), [0, 0] as vec2);
+        vec2.scale(center, center, 1 / vertices.length);
+        return {
+          origin: vec2.scale(vec2.create(), origin, scale),
+          anchor,
+          vertices,
+          center,
+          index: i,
+          tripleCoords: anchorToTriple(anchor)
+        };
+      });
+    },
+    [orientation]
+  );
 
   const generatePaths = useCallback((cells: Cell[]) => {
     return cells.slice(0, -1).map((cell, i) => ({
@@ -144,22 +149,38 @@ const App: React.FC = () => {
     return [0, maxValue] as [number, number];
   }, [paths.length, maxFilterValue]);
 
-  const INITIAL_VIEW_STATE = { latitude: 0, longitude: 0.4, zoom: 9 };
+  const INITIAL_VIEW_STATE = {latitude: 0, longitude: 0.4, zoom: 9};
 
   // UI Components
   const Controls: React.FC<{
-    resolution: number,
-    onResolutionChange: (res: number) => void,
-    layerVisibility: {triangles: boolean, path: boolean, points: boolean, labels: boolean, anchors: boolean, children: boolean, centerLines: boolean},
-    setLayerVisibility: (vis: {triangles: boolean, path: boolean, points: boolean, labels: boolean, anchors: boolean, children: boolean, centerLines: boolean}) => void,
-    orientation: Orientation,
-    setOrientation: (o: Orientation) => void,
-    colorByParent: boolean,
-    setColorByParent: (colorByParent: boolean) => void,
-    showTripleCoords: boolean,
-    setShowTripleCoords: (show: boolean) => void,
-    gridDiskK: number,
-    setGridDiskK: (k: number) => void
+    resolution: number;
+    onResolutionChange: (res: number) => void;
+    layerVisibility: {
+      triangles: boolean;
+      path: boolean;
+      points: boolean;
+      labels: boolean;
+      anchors: boolean;
+      children: boolean;
+      centerLines: boolean;
+    };
+    setLayerVisibility: (vis: {
+      triangles: boolean;
+      path: boolean;
+      points: boolean;
+      labels: boolean;
+      anchors: boolean;
+      children: boolean;
+      centerLines: boolean;
+    }) => void;
+    orientation: Orientation;
+    setOrientation: (o: Orientation) => void;
+    colorByParent: boolean;
+    setColorByParent: (colorByParent: boolean) => void;
+    showTripleCoords: boolean;
+    setShowTripleCoords: (show: boolean) => void;
+    gridDiskK: number;
+    setGridDiskK: (k: number) => void;
   }> = ({
     resolution,
     onResolutionChange,
@@ -175,20 +196,22 @@ const App: React.FC = () => {
     setGridDiskK
   }) => {
     return (
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        background: 'white',
-        padding: '10px',
-        borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        zIndex: 1
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: '20px',
+          left: '20px',
+          background: 'white',
+          padding: '10px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          zIndex: 1
+        }}
+      >
         <div style={{marginBottom: '10px'}}>
           <label>
-            Orientation: {' '}
-            <select 
+            Orientation:{' '}
+            <select
               value={orientation}
               onChange={e => setOrientation(e.target.value as Orientation)}
               style={{marginLeft: '5px'}}
@@ -202,24 +225,18 @@ const App: React.FC = () => {
             </select>
           </label>
         </div>
-        
+
         <div style={{marginBottom: '10px'}}>
           <label>
-            <input
-              type="checkbox"
-              checked={colorByParent}
-              onChange={e => setColorByParent(e.target.checked)}
-            /> Color by Parent
+            <input type="checkbox" checked={colorByParent} onChange={e => setColorByParent(e.target.checked)} /> Color
+            by Parent
           </label>
         </div>
 
         <div style={{marginBottom: '10px'}}>
           <label>
-            <input
-              type="checkbox"
-              checked={showTripleCoords}
-              onChange={e => setShowTripleCoords(e.target.checked)}
-            /> Triple Coordinates
+            <input type="checkbox" checked={showTripleCoords} onChange={e => setShowTripleCoords(e.target.checked)} />{' '}
+            Triple Coordinates
           </label>
         </div>
 
@@ -240,72 +257,81 @@ const App: React.FC = () => {
         <div style={{marginBottom: '10px', borderTop: '1px solid #ccc', paddingTop: '10px'}}>
           <label>
             Resolution: {resolution}
-            <input 
-              type="range" 
-              min="1" 
-              max="8" 
-              value={resolution} 
+            <input
+              type="range"
+              min="1"
+              max="8"
+              value={resolution}
               onChange={e => onResolutionChange(Number(e.target.value))}
               style={{marginLeft: '10px'}}
             />
           </label>
         </div>
 
-        <div style={{
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '5px',
-          borderTop: '1px solid #ccc',
-          paddingTop: '10px'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '5px',
+            borderTop: '1px solid #ccc',
+            paddingTop: '10px'
+          }}
+        >
           <label>
             <input
               type="checkbox"
               checked={layerVisibility.triangles}
               onChange={e => setLayerVisibility({...layerVisibility, triangles: e.target.checked})}
-            /> Show Cells
+            />{' '}
+            Show Cells
           </label>
           <label>
             <input
               type="checkbox"
               checked={layerVisibility.path}
               onChange={e => setLayerVisibility({...layerVisibility, path: e.target.checked})}
-            /> Show Path
+            />{' '}
+            Show Path
           </label>
           <label>
             <input
               type="checkbox"
               checked={layerVisibility.points}
               onChange={e => setLayerVisibility({...layerVisibility, points: e.target.checked})}
-            /> Show Points
+            />{' '}
+            Show Points
           </label>
           <label>
             <input
               type="checkbox"
               checked={layerVisibility.labels}
               onChange={e => setLayerVisibility({...layerVisibility, labels: e.target.checked})}
-            /> Show Labels
+            />{' '}
+            Show Labels
           </label>
           <label>
             <input
               type="checkbox"
               checked={layerVisibility.anchors}
               onChange={e => setLayerVisibility({...layerVisibility, anchors: e.target.checked})}
-            /> Show Anchors
+            />{' '}
+            Show Anchors
           </label>
           <label>
             <input
               type="checkbox"
               checked={layerVisibility.children}
               onChange={e => setLayerVisibility({...layerVisibility, children: e.target.checked})}
-            /> Show Children
+            />{' '}
+            Show Children
           </label>
           <label>
             <input
               type="checkbox"
               checked={layerVisibility.centerLines}
               onChange={e => setLayerVisibility({...layerVisibility, centerLines: e.target.checked})}
-            /> Show Center Lines
+            />{' '}
+            Show Center Lines
           </label>
         </div>
       </div>
@@ -314,33 +340,33 @@ const App: React.FC = () => {
 
   // New component for the filter slider
   const FilterSlider: React.FC<{
-    value: number,
-    onChange: (value: number) => void
-  }> = ({ value, onChange }) => {
+    value: number;
+    onChange: (value: number) => void;
+  }> = ({value, onChange}) => {
     return (
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'white',
-        padding: '10px',
-        borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        zIndex: 1,
-        width: '300px',
-        textAlign: 'center'
-      }}>
-        <div style={{ marginBottom: '5px' }}>
-          Show {value}% of Path
-        </div>
-        <input 
-          type="range" 
-          min="1" 
-          max="100" 
-          value={value} 
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'white',
+          padding: '10px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          zIndex: 1,
+          width: '300px',
+          textAlign: 'center'
+        }}
+      >
+        <div style={{marginBottom: '5px'}}>Show {value}% of Path</div>
+        <input
+          type="range"
+          min="1"
+          max="100"
+          value={value}
           onChange={e => onChange(Number(e.target.value))}
-          style={{ width: '100%' }}
+          style={{width: '100%'}}
         />
       </div>
     );
@@ -360,15 +386,15 @@ const App: React.FC = () => {
       extensions: [new DataFilterExtension({filterSize: 1})],
       getFilterValue: (d: any) => d.index,
       filterSoftRange: filterRange,
-      filterRange: filterRange.map((x, i) => i === 0 ? x - softBuffer : x + softBuffer)
+      filterRange: filterRange.map((x, i) => (i === 0 ? x - softBuffer : x + softBuffer))
     };
 
-    const lineProps = { lineWidthMinPixels: 1, stroked: true };
+    const lineProps = {lineWidthMinPixels: 1, stroked: true};
 
     const getSegmentColor = colorContinuous({
       attr: (p: any) => p.index,
       colors: 'Geyser',
-      domain: Array.from({length: 10}).map((_, i) => i * pathsLength / 10),
+      domain: Array.from({length: 10}).map((_, i) => (i * pathsLength) / 10)
     });
     const getParentColor = (d: Cell) => {
       if ((d as any).crossCheckFailed) {
@@ -388,7 +414,7 @@ const App: React.FC = () => {
       }
 
       return getBaseColor(d, 200);
-    }
+    };
     function getBaseColor(d: Cell, alpha: number) {
       const parent = Math.floor(d.index / 4) + 5;
       const r = Math.sin(2748127411 * parent) * 127 + 128;
@@ -402,7 +428,7 @@ const App: React.FC = () => {
         data: cells,
         getPolygon: d => d.vertices,
         getFillColor: getParentColor,
-        updateTriggers: { getFillColor: [colorByParent, highlightedCells] },
+        updateTriggers: {getFillColor: [colorByParent, highlightedCells]},
         getLineColor: [255, 255, 255, 255],
         filled: true,
         visible: layerVisibility.triangles,
@@ -447,7 +473,7 @@ const App: React.FC = () => {
         getTextAnchor: 'middle',
         getAlignmentBaseline: 'center',
         visible: layerVisibility.labels,
-        updateTriggers: { getText: [showTripleCoords] },
+        updateTriggers: {getText: [showTripleCoords]},
         ...filterProps
       }),
 
@@ -470,7 +496,7 @@ const App: React.FC = () => {
         getPosition: d => d.origin,
         getFillColor: [0, 0, 0],
         getLineColor: [255, 255, 255],
-        getRadius: d => [1, 6, 9, 14, 18, 21, 26, 29].includes(d.index % 32) ? 10 : 5,
+        getRadius: d => ([1, 6, 9, 14, 18, 21, 26, 29].includes(d.index % 32) ? 10 : 5),
         radiusUnits: 'pixels',
         stroked: true,
         lineWidthMinPixels: 1,
@@ -489,9 +515,7 @@ const App: React.FC = () => {
         visible: layerVisibility.children,
         extensions: [new DataFilterExtension({filterSize: 1})],
         getFilterValue: (d: any) => Math.floor(d.index / 4),
-        filterRange: hoveredCellIndex !== null ? 
-          [hoveredCellIndex - 0.5, hoveredCellIndex + 0.5] : 
-          [0, 0]
+        filterRange: hoveredCellIndex !== null ? [hoveredCellIndex - 0.5, hoveredCellIndex + 0.5] : [0, 0]
       }),
 
       // New layer for center-to-anchor lines
@@ -502,7 +526,7 @@ const App: React.FC = () => {
         getColor: [0, 244, 50, 100],
         getWidth: 1,
         widthUnits: 'pixels',
-        visible: layerVisibility.centerLines,
+        visible: layerVisibility.centerLines
       })
     ];
   };
@@ -512,15 +536,7 @@ const App: React.FC = () => {
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
-        layers={createLayers(
-          filterRange,
-          paths.length,
-          cells,
-          paths,
-          softBuffer,
-          showTripleCoords,
-          highlightedCells
-        )}
+        layers={createLayers(filterRange, paths.length, cells, paths, softBuffer, showTripleCoords, highlightedCells)}
       />
       <Controls
         resolution={resolution}
@@ -536,10 +552,7 @@ const App: React.FC = () => {
         gridDiskK={gridDiskK}
         setGridDiskK={setGridDiskK}
       />
-      <FilterSlider 
-        value={maxFilterValue}
-        onChange={setMaxFilterValue}
-      />
+      <FilterSlider value={maxFilterValue} onChange={setMaxFilterValue} />
     </>
   );
 };

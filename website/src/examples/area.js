@@ -16,7 +16,10 @@ class AreaDemo extends Component {
     return (
       <div>
         <p>Area comparison between H3 and A5 tiling systems.</p>
-        <p>H3 cells vary in size across the globe, with the ratio between the largest and smallest cell areas being <a href="https://h3geo.org/docs/core-library/restable/#hexagon-min-and-max-areas">roughly 2</a>.</p>
+        <p>
+          H3 cells vary in size across the globe, with the ratio between the largest and smallest cell areas being{' '}
+          <a href="https://h3geo.org/docs/core-library/restable/#hexagon-min-and-max-areas">roughly 2</a>.
+        </p>
         <p>A5 cells areas are exactly equal for all cells at a given resolution.</p>
       </div>
     );

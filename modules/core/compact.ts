@@ -18,8 +18,8 @@ import {
   FIRST_HILBERT_RESOLUTION
 } from './serialization';
 
-import { getNumChildren } from './cell-info';
-import { compareBigint } from '../utils/bigint';
+import {getNumChildren} from './cell-info';
+import {compareBigint} from '../utils/bigint';
 
 /**
  * Expand a set of cells to a target resolution by generating all descendant cells.
@@ -39,9 +39,7 @@ export function uncompact(cells: bigint[] | BigUint64Array, targetResolution: nu
     const resolution = getResolution(cell);
     const resolutionDiff = targetResolution - resolution;
     if (resolutionDiff < 0) {
-      throw new Error(
-        `Cannot uncompact cell at resolution ${resolution} to lower resolution ${targetResolution}`
-      );
+      throw new Error(`Cannot uncompact cell at resolution ${resolution} to lower resolution ${targetResolution}`);
     }
 
     resolutions[i] = resolution;
@@ -102,10 +100,12 @@ export function compact(cells: bigint[] | BigUint64Array): BigUint64Array {
       }
 
       // Check for complete sibling group using unified stride-based approach
-      const expectedChildren = resolution >= FIRST_HILBERT_RESOLUTION ?
-        4 : ( // Hilbert levels have 4 siblings
-          resolution === 0 ? 12 : 5 // First two levels are exceptions, with 12 & 5 siblings
-        );
+      const expectedChildren =
+        resolution >= FIRST_HILBERT_RESOLUTION
+          ? 4 // Hilbert levels have 4 siblings
+          : resolution === 0
+            ? 12
+            : 5; // First two levels are exceptions, with 12 & 5 siblings
 
       if (i + expectedChildren <= currentCells.length) {
         let hasAllSiblings = true;

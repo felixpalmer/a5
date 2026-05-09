@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { IJ } from '../core/coordinate-systems';
-import type { Anchor, Orientation } from './types';
-import { YES, NO } from './types';
-import { offsetFlipsToAnchor } from './anchor';
-import { sToAnchor, anchorToS, IJToS, IJToFlips } from './hilbert';
+import type {IJ} from '../core/coordinate-systems';
+import type {Anchor, Orientation} from './types';
+import {YES, NO} from './types';
+import {offsetFlipsToAnchor} from './anchor';
+import {sToAnchor, anchorToS, IJToS, IJToFlips} from './hilbert';
 
 /**
  * Triple coordinates for the triangular grid underlying the pentagonal A5 grid.
@@ -83,8 +83,8 @@ export function anchorToTriple(anchor: Anchor): Triple {
   const j = anchor.offset[1] + shiftJ;
 
   // Compute row and column in triangular grid
-  const r = (i + j) - 0.5;
-  const c = (i - j) + r;
+  const r = i + j - 0.5;
+  const c = i - j + r;
 
   // Compute triple coordinates
   const x = Math.floor((c + 1) / 2 - r);
@@ -107,7 +107,7 @@ export function anchorToTriple(anchor: Anchor): Triple {
  * @returns Anchor if valid, null otherwise
  */
 export function tripleToAnchor(t: Triple, resolution: number, orientation: Orientation = 'uv'): Anchor | null {
-  const { x, y, z } = t;
+  const {x, y, z} = t;
 
   // Verify parity constraint
   const sum = x + y + z;
@@ -135,10 +135,18 @@ export function tripleToAnchor(t: Triple, resolution: number, orientation: Orien
     // Compute shift from flips (inverse of anchorToTriple logic)
     let shiftI = 0.25;
     let shiftJ = 0.25;
-    if (flips[0] === NO && flips[1] === YES) { shiftI = -shiftI; shiftJ = -shiftJ; }
-    if (flips[0] === YES && flips[1] === YES) { shiftI = -shiftI; shiftJ = -shiftJ; }
-    else if (flips[0] === YES) { shiftJ -= 1; }
-    else if (flips[1] === YES) { shiftJ += 1; }
+    if (flips[0] === NO && flips[1] === YES) {
+      shiftI = -shiftI;
+      shiftJ = -shiftJ;
+    }
+    if (flips[0] === YES && flips[1] === YES) {
+      shiftI = -shiftI;
+      shiftJ = -shiftJ;
+    } else if (flips[0] === YES) {
+      shiftJ -= 1;
+    } else if (flips[1] === YES) {
+      shiftJ += 1;
+    }
 
     const offset = [Math.round(centerI - shiftI), Math.round(centerJ - shiftJ)] as IJ;
     return offsetFlipsToAnchor(offset, flips, orientation);

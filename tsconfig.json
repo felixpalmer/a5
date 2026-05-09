@@ -19,4 +19,4 @@
   },
   "include": ["modules/**/*", "tests/**/*", "examples/**/*"],
   "exclude": ["node_modules"]
-} 
+}

@@ -1,50 +1,50 @@
-const path = require("path");
+const path = require('path');
 
 // Core tests
-require("./fixtures/core/serialization.cjs");
-require("./fixtures/core/cell-info.cjs");
-require("./fixtures/core/crs-vertices.cjs");
-require("./fixtures/core/origins.cjs");
-require("./fixtures/core/tiling.cjs");
-require("./fixtures/core/constants.cjs");
-require("./fixtures/core/dodecahedron-quaternions.cjs");
-require("./fixtures/core/cell-to-lonlat.cjs");
+require('./fixtures/core/serialization.cjs');
+require('./fixtures/core/cell-info.cjs');
+require('./fixtures/core/crs-vertices.cjs');
+require('./fixtures/core/origins.cjs');
+require('./fixtures/core/tiling.cjs');
+require('./fixtures/core/constants.cjs');
+require('./fixtures/core/dodecahedron-quaternions.cjs');
+require('./fixtures/core/cell-to-lonlat.cjs');
 // Lattice generators
-require("./fixtures/lattice/hilbert.cjs");
-require("./fixtures/lattice/shift-digits.cjs");
-require("./fixtures/lattice/quaternary.cjs");
-require("./fixtures/lattice/triple.cjs");
+require('./fixtures/lattice/hilbert.cjs');
+require('./fixtures/lattice/shift-digits.cjs');
+require('./fixtures/lattice/quaternary.cjs');
+require('./fixtures/lattice/triple.cjs');
 
 // Traversal generators
-require("./fixtures/traversal/quintant-neighbors.cjs");
-require("./fixtures/traversal/global-neighbors.cjs");
-require("./fixtures/traversal/grid-disk.cjs");
-require("./fixtures/traversal/cap.cjs");
-require("./fixtures/traversal/line.cjs");
-require("./fixtures/traversal/lattice-neighbors.cjs");
-require("./fixtures/traversal/lattice-flood-fill.cjs");
-require("./fixtures/core/compact.cjs");
+require('./fixtures/traversal/quintant-neighbors.cjs');
+require('./fixtures/traversal/global-neighbors.cjs');
+require('./fixtures/traversal/grid-disk.cjs');
+require('./fixtures/traversal/cap.cjs');
+require('./fixtures/traversal/line.cjs');
+require('./fixtures/traversal/lattice-neighbors.cjs');
+require('./fixtures/traversal/lattice-flood-fill.cjs');
+require('./fixtures/core/compact.cjs');
 
 // Utils generators
-require("./fixtures/utils/great-circle.cjs");
-require("./fixtures/utils/spiral.cjs");
+require('./fixtures/utils/great-circle.cjs');
+require('./fixtures/utils/spiral.cjs');
 
 // Region generators
-require("./fixtures/regions/polygon.cjs");
+require('./fixtures/regions/polygon.cjs');
 
 // Geometry generators
-require("./fixtures/geometry/spherical-polygon.cjs");
-require("./fixtures/geometry/spherical-polygon-primitives.cjs");
-require("./fixtures/geometry/spherical-triangle.cjs");
-require("./fixtures/geometry/pentagon.cjs");
+require('./fixtures/geometry/spherical-polygon.cjs');
+require('./fixtures/geometry/spherical-polygon-primitives.cjs');
+require('./fixtures/geometry/spherical-triangle.cjs');
+require('./fixtures/geometry/pentagon.cjs');
 
 // Projection generators
-require("./fixtures/projections/gnomonic.cjs");
-require("./fixtures/projections/authalic.cjs");
-require("./fixtures/projections/polyhedral.cjs");
-require("./fixtures/projections/dodecahedron.cjs");
+require('./fixtures/projections/gnomonic.cjs');
+require('./fixtures/projections/authalic.cjs');
+require('./fixtures/projections/polyhedral.cjs');
+require('./fixtures/projections/dodecahedron.cjs');
 
 // Integration tests
-require("./generate-wireframe-tests.cjs");
+require('./generate-wireframe-tests.cjs');
 
-console.log("All fixtures generated successfully!"); 
+console.log('All fixtures generated successfully!');

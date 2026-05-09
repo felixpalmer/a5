@@ -21,15 +21,18 @@ const CollapsibleViz: React.FC<CollapsibleVizProps> = ({children, defaultHeight 
       >
         {children}
         {!isExpanded && (
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '150px',
-            background: 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.95) 70%, rgba(255,255,255,1) 100%)',
-            pointerEvents: 'none'
-          }} />
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '150px',
+              background:
+                'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 40%, rgba(255,255,255,0.95) 70%, rgba(255,255,255,1) 100%)',
+              pointerEvents: 'none'
+            }}
+          />
         )}
       </div>
       <div style={{textAlign: 'center', margin: '20px 0'}}>
@@ -49,12 +52,12 @@ const CollapsibleViz: React.FC<CollapsibleVizProps> = ({children, defaultHeight 
             boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
             transition: 'all 0.2s ease'
           }}
-          onMouseEnter={(e) => {
+          onMouseEnter={e => {
             e.currentTarget.style.background = '#059669';
             e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)';
             e.currentTarget.style.transform = 'translateY(-1px)';
           }}
-          onMouseLeave={(e) => {
+          onMouseLeave={e => {
             e.currentTarget.style.background = '#10b981';
             e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)';
             e.currentTarget.style.transform = 'translateY(0)';

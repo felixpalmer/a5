@@ -1,16 +1,12 @@
-const {
-  cellToBoundary,
-  u64ToHex,
-  cellToChildren,
-} = require("../../../dist/a5.cjs");
-const fs = require("fs");
+const {cellToBoundary, u64ToHex, cellToChildren} = require('../../../dist/a5.cjs');
+const fs = require('fs');
 
 const resolution = parseInt(process.argv[2]);
 const outputFile = process.argv[3];
 
 if (!outputFile || isNaN(resolution)) {
-  console.error("Usage: node index.js <resolution> <output.json>");
-  console.error("  resolution: A5 cell resolution (integer)");
+  console.error('Usage: node index.js <resolution> <output.json>');
+  console.error('  resolution: A5 cell resolution (integer)');
   process.exit(1);
 }
 
@@ -41,13 +37,13 @@ try {
     const cellIdHex = u64ToHex(cellId);
     const boundary = cellToBoundary(cellId, {
       closedRing: true,
-      segments: 10,
+      segments: 10
     });
 
     cells.push({
-      type: "Feature",
+      type: 'Feature',
       geometry: {
-        type: "Polygon",
+        type: 'Polygon',
         coordinates: [boundary]
       },
       properties: {cellIdHex}
@@ -56,18 +52,16 @@ try {
 
   // Create GeoJSON FeatureCollection
   const geojson = {
-    type: "FeatureCollection",
-    features: cells,
+    type: 'FeatureCollection',
+    features: cells
   };
 
   // Write to JSON file
   fs.writeFileSync(outputFile, JSON.stringify(geojson, null, 2));
 
-  console.log(
-    `Successfully generated ${cells.length} A5 cells at resolution ${resolution}`
-  );
+  console.log(`Successfully generated ${cells.length} A5 cells at resolution ${resolution}`);
   console.log(`Output written to ${outputFile}`);
 } catch (error) {
-  console.error("Error generating cells:", error);
+  console.error('Error generating cells:', error);
   process.exit(1);
 }

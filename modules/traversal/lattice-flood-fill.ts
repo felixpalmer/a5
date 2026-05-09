@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { Orientation } from '../lattice';
-import { sToAnchor, anchorToTriple, tripleToS } from '../lattice';
-import type { Origin } from '../core/utils';
-import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from '../core/serialization';
-import { segmentToQuintant } from '../core/origin';
+import type {Orientation} from '../lattice';
+import {sToAnchor, anchorToTriple, tripleToS} from '../lattice';
+import type {Origin} from '../core/utils';
+import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {segmentToQuintant} from '../core/origin';
 
 /** Per-quintant context needed to convert triples back to cell IDs. */
 interface QuintantCtx {
@@ -45,8 +45,13 @@ function unpackTripleKey(key: number, maxRow: number, yStride: number) {
 
 /** Convert a packed triple key back to a cell ID, or null if it doesn't map to a valid cell. */
 function packedKeyToCellId(
-  key: number, ctx: QuintantCtx, hilbertRes: number, maxRow: number,
-  yStride: number, maxS: bigint, resolution: number,
+  key: number,
+  ctx: QuintantCtx,
+  hilbertRes: number,
+  maxRow: number,
+  yStride: number,
+  maxS: bigint,
+  resolution: number
 ): bigint | null {
   const {x, y, z} = unpackTripleKey(key, maxRow, yStride);
   const s = tripleToS({x, y, z}, hilbertRes, ctx.orientation);
@@ -56,8 +61,11 @@ function packedKeyToCellId(
 
 /** Convert a cell ID into its quintant context and packed triple key. */
 function cellToQuintantKey(
-  cellId: bigint, hilbertRes: number, maxRow: number, yStride: number,
-): {quintantIdx: number, key: number, ctx: QuintantCtx} {
+  cellId: bigint,
+  hilbertRes: number,
+  maxRow: number,
+  yStride: number
+): {quintantIdx: number; key: number; ctx: QuintantCtx} {
   const {origin, segment, S} = deserialize(cellId);
   const {orientation} = segmentToQuintant(segment, origin);
   const anchor = sToAnchor(S, hilbertRes, orientation);
@@ -66,7 +74,7 @@ function cellToQuintantKey(
   return {
     quintantIdx: origin.id * 60 + segment,
     key: packTripleKey(triple.x, triple.y, parity, maxRow, yStride),
-    ctx: {origin, segment, orientation},
+    ctx: {origin, segment, orientation}
   };
 }
 
@@ -83,11 +91,11 @@ function cellToQuintantKey(
  * @param maxLayers   Max BFS layers; undefined = run to convergence.
  */
 export function tripleSpaceFloodFill(
-  firewall: Set<bigint> | {state: PackedFloodState, delta: Iterable<bigint>},
+  firewall: Set<bigint> | {state: PackedFloodState; delta: Iterable<bigint>},
   seedCellIds: bigint[],
   resolution: number,
-  maxLayers?: number,
-): {interiorCells: bigint[], frontierCellIds: bigint[], state: PackedFloodState} {
+  maxLayers?: number
+): {interiorCells: bigint[]; frontierCellIds: bigint[]; state: PackedFloodState} {
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
   const yStride = (maxRow + 1) * 2;
@@ -140,11 +148,14 @@ export function tripleSpaceFloodFill(
     for (const [qIdx, q] of quintants) {
       if (q.frontier.length === 0) continue;
       let discovered = discoveredPerQ.get(qIdx);
-      if (!discovered) { discovered = []; discoveredPerQ.set(qIdx, discovered); }
+      if (!discovered) {
+        discovered = [];
+        discoveredPerQ.set(qIdx, discovered);
+      }
       const nextFrontier: number[] = [];
       for (const key of q.frontier) {
         const parity = key % 2;
-        const yPart = ((key - parity) % yStride);
+        const yPart = (key - parity) % yStride;
         const y = yPart / 2;
         const x = (key - yPart - parity) / yStride - maxRow;
         const step = parity === 0 ? 1 : -1;

@@ -1,14 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 
-const { serialize, cellToChildren, WORLD_CELL, u64ToHex, compact, uncompact } = require('../../a5-test.cjs');
-const { origins } = require('../../a5-test.cjs');
+const {serialize, cellToChildren, WORLD_CELL, u64ToHex, compact, uncompact} = require('../../a5-test.cjs');
+const {origins} = require('../../a5-test.cjs');
 
 function generateCompactFixtures() {
   const fixtures = [];
 
   // Test case 1: All 4 siblings at resolution 3 -> compact to parent at res 2
-  const res2Cell = serialize({ origin: origins[0], segment: 0, S: 0n, resolution: 2 });
+  const res2Cell = serialize({origin: origins[0], segment: 0, S: 0n, resolution: 2});
   const res3Children = cellToChildren(res2Cell, 3);
   fixtures.push({
     name: 'four_siblings_res3',
@@ -26,7 +26,7 @@ function generateCompactFixtures() {
   });
 
   // Test case 3: All 5 segments at resolution 1 -> compact to res 0
-  const res0Cell = serialize({ origin: origins[0], segment: 0, S: 0n, resolution: 0 });
+  const res0Cell = serialize({origin: origins[0], segment: 0, S: 0n, resolution: 0});
   const res1Children = cellToChildren(res0Cell, 1);
   fixtures.push({
     name: 'five_segments_res1',
@@ -45,8 +45,8 @@ function generateCompactFixtures() {
   });
 
   // Test case 5: Mixed resolutions
-  const res4Cell = serialize({ origin: origins[1], segment: 2, S: 5n, resolution: 4 });
-  const res5Cell = serialize({ origin: origins[2], segment: 1, S: 10n, resolution: 5 });
+  const res4Cell = serialize({origin: origins[1], segment: 2, S: 5n, resolution: 4});
+  const res5Cell = serialize({origin: origins[2], segment: 1, S: 10n, resolution: 5});
   fixtures.push({
     name: 'mixed_resolutions',
     description: 'Cells at different resolutions with no sibling relationships',
@@ -55,7 +55,7 @@ function generateCompactFixtures() {
   });
 
   // Test case 6: Nested compaction - 16 cells at res 4 -> 4 at res 3 -> 1 at res 2
-  const res2CellNested = serialize({ origin: origins[3], segment: 1, S: 0n, resolution: 2 });
+  const res2CellNested = serialize({origin: origins[3], segment: 1, S: 0n, resolution: 2});
   const res4Descendants = cellToChildren(res2CellNested, 4);
   fixtures.push({
     name: 'nested_compaction_res4_to_res2',
@@ -73,7 +73,7 @@ function generateCompactFixtures() {
   });
 
   // Test case 8: Single cell
-  const singleCell = serialize({ origin: origins[5], segment: 3, S: 7n, resolution: 6 });
+  const singleCell = serialize({origin: origins[5], segment: 3, S: 7n, resolution: 6});
   fixtures.push({
     name: 'single_cell',
     description: 'Single cell remains unchanged',
@@ -90,8 +90,8 @@ function generateCompactFixtures() {
   });
 
   // Test case 10: Partial compaction - some groups complete, some incomplete
-  const parent1 = serialize({ origin: origins[0], segment: 0, S: 0n, resolution: 2 });
-  const parent2 = serialize({ origin: origins[0], segment: 0, S: 1n, resolution: 2 });
+  const parent1 = serialize({origin: origins[0], segment: 0, S: 0n, resolution: 2});
+  const parent2 = serialize({origin: origins[0], segment: 0, S: 1n, resolution: 2});
   const children1 = cellToChildren(parent1, 3); // All 4 children
   const children2 = cellToChildren(parent2, 3).slice(0, 2); // Only 2 of 4 children
   fixtures.push({
@@ -111,8 +111,8 @@ function generateCompactFixtures() {
   });
 
   // Test case 12: Cross-origin compaction (cells from different origins that don't form sibling groups)
-  const origin0Cell = serialize({ origin: origins[0], segment: 2, S: 3n, resolution: 4 });
-  const origin1Cell = serialize({ origin: origins[1], segment: 2, S: 3n, resolution: 4 });
+  const origin0Cell = serialize({origin: origins[0], segment: 2, S: 3n, resolution: 4});
+  const origin1Cell = serialize({origin: origins[1], segment: 2, S: 3n, resolution: 4});
   fixtures.push({
     name: 'cross_origin_no_compact',
     description: 'Cells from different origins with same segment/S should not compact',
@@ -127,7 +127,7 @@ function generateUncompactFixtures() {
   const fixtures = [];
 
   // Test case 1: Expand res 2 cell to res 3 (4 children)
-  const res2Cell = serialize({ origin: origins[0], segment: 0, S: 0n, resolution: 2 });
+  const res2Cell = serialize({origin: origins[0], segment: 0, S: 0n, resolution: 2});
   fixtures.push({
     name: 'expand_res2_to_res3',
     description: 'Single cell at resolution 2 expands to 4 cells at resolution 3',
@@ -146,7 +146,7 @@ function generateUncompactFixtures() {
   });
 
   // Test case 3: Expand res 0 cell to res 1 (5 segments)
-  const res0Cell = serialize({ origin: origins[0], segment: 0, S: 0n, resolution: 0 });
+  const res0Cell = serialize({origin: origins[0], segment: 0, S: 0n, resolution: 0});
   fixtures.push({
     name: 'expand_res0_to_res1',
     description: 'Resolution 0 cell expands to 5 segments at resolution 1',
@@ -165,18 +165,18 @@ function generateUncompactFixtures() {
   });
 
   // Test case 5: Mixed input resolutions
-  const res3Cell = serialize({ origin: origins[1], segment: 1, S: 2n, resolution: 3 });
-  const res4Cell = serialize({ origin: origins[2], segment: 2, S: 5n, resolution: 4 });
+  const res3Cell = serialize({origin: origins[1], segment: 1, S: 2n, resolution: 3});
+  const res4Cell = serialize({origin: origins[2], segment: 2, S: 5n, resolution: 4});
   fixtures.push({
     name: 'mixed_input_to_res5',
     description: 'Cells at resolutions 3 and 4 both expand to resolution 5',
     input: [u64ToHex(res3Cell), u64ToHex(res4Cell)],
     targetResolution: 5,
-    expectedCount: 16 + 4  // res3->res5 = 16, res4->res5 = 4
+    expectedCount: 16 + 4 // res3->res5 = 16, res4->res5 = 4
   });
 
   // Test case 6: Cell already at target resolution
-  const res6Cell = serialize({ origin: origins[4], segment: 3, S: 10n, resolution: 6 });
+  const res6Cell = serialize({origin: origins[4], segment: 3, S: 10n, resolution: 6});
   fixtures.push({
     name: 'already_at_target',
     description: 'Cell already at target resolution remains unchanged',
@@ -195,7 +195,7 @@ function generateUncompactFixtures() {
   });
 
   // Test case 8: Error case - trying to uncompact to lower resolution
-  const highResCell = serialize({ origin: origins[3], segment: 1, S: 15n, resolution: 5 });
+  const highResCell = serialize({origin: origins[3], segment: 1, S: 15n, resolution: 5});
   fixtures.push({
     name: 'uncompact_to_lower_resolution',
     description: 'Attempting to uncompact to lower resolution should throw error',
@@ -211,7 +211,7 @@ function generateRoundTripFixtures() {
   const fixtures = [];
 
   // Test case 1: Basic round-trip - compact then uncompact maintains coverage
-  const parent = serialize({ origin: origins[0], segment: 1, S: 5n, resolution: 3 });
+  const parent = serialize({origin: origins[0], segment: 1, S: 5n, resolution: 3});
   const children = cellToChildren(parent, 6);
   const compacted = compact(children);
   fixtures.push({
@@ -225,9 +225,9 @@ function generateRoundTripFixtures() {
 
   // Test case 2: Mixed resolutions round-trip
   const mixedCells = [
-    serialize({ origin: origins[0], segment: 0, S: 0n, resolution: 2 }),
-    serialize({ origin: origins[1], segment: 1, S: 2n, resolution: 4 }),
-    serialize({ origin: origins[2], segment: 2, S: 5n, resolution: 5 })
+    serialize({origin: origins[0], segment: 0, S: 0n, resolution: 2}),
+    serialize({origin: origins[1], segment: 1, S: 2n, resolution: 4}),
+    serialize({origin: origins[2], segment: 2, S: 5n, resolution: 5})
   ];
   const compactedMixed = compact(mixedCells);
   const uncompactedMixed = uncompact(compactedMixed, 5);
@@ -241,7 +241,7 @@ function generateRoundTripFixtures() {
   });
 
   // Test case 3: Cell coverage verification
-  const coverageParent = serialize({ origin: origins[3], segment: 2, S: 10n, resolution: 4 });
+  const coverageParent = serialize({origin: origins[3], segment: 2, S: 10n, resolution: 4});
   const coverageCells = cellToChildren(coverageParent, 7);
   const compactedCoverage = compact(coverageCells);
   fixtures.push({

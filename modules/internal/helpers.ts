@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, mat2, glMatrix } from 'gl-matrix';
+import {vec2, mat2, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { fromLonLat } from '../core/coordinate-transforms';
-import type { LonLat, Face } from '../core/coordinate-systems';
-import { findNearestOrigin } from '../core/origin';
-import { DodecahedronProjection } from '../projections/dodecahedron';
-import { PI_OVER_5 } from '../core/constants';
+import {fromLonLat} from '../core/coordinate-transforms';
+import type {LonLat, Face} from '../core/coordinate-systems';
+import {findNearestOrigin} from '../core/origin';
+import {DodecahedronProjection} from '../projections/dodecahedron';
+import {PI_OVER_5} from '../core/constants';
 
 const rotation = mat2.create();
 const shift = vec2.create();
@@ -23,7 +23,7 @@ export function lonLatToFace(lonLat: LonLat, resolution: number, centroid?: LonL
     origin = {...findNearestOrigin(spherical)};
   }
 
-  const ROTATIONS = [0, 0, 9, 6, 7, 6, 5, 4, 7, 7, 9, 0]; 
+  const ROTATIONS = [0, 0, 9, 6, 7, 6, 5, 4, 7, 7, 9, 0];
   mat2.fromRotation(rotation, ROTATIONS[origin.id] * PI_OVER_5 + origin.angle);
 
   const dodecPoint = dodecahedron.forward(spherical, origin.id);

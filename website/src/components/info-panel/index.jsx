@@ -93,12 +93,7 @@ export default function ExampleInfoPanel({title, sourceLink, params, meta, child
         {Object.keys(params)
           .sort()
           .map((name, i) => (
-            <GenericInput
-              key={`${i}-${name}`}
-              name={name}
-              {...params[name]}
-              onChange={updateParam}
-            />
+            <GenericInput key={`${i}-${name}`} name={name} {...params[name]} onChange={updateParam} />
           ))}
       </InfoPanelContent>
 
