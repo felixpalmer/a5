@@ -4,13 +4,14 @@
 
 import {glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Radians, Spherical } from './coordinate-systems';
+import type { Cartesian, Radians, Spherical } from './coordinate-systems';
 import type { Orientation } from "../lattice";
 
 export type OriginId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export type Origin = {
   id: OriginId;
   axis: Spherical;
+  axisCartesian: Cartesian;  // precomputed unit vector form of `axis`
   quat: quat;
   inverseQuat: quat;
   angle: Radians;

@@ -4,7 +4,8 @@
 
 import { quat, glMatrix } from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Radians, Spherical } from "./coordinate-systems";
+import type { Cartesian, Radians, Spherical } from "./coordinate-systems";
+import { toCartesian } from './coordinate-transforms';
 import { interhedralAngle, PI_OVER_5, TWO_PI_OVER_5 } from './constants';
 import type { Orientation } from "../lattice";
 import type { Origin, OriginId } from './utils';
@@ -67,6 +68,7 @@ function addOrigin(axis: Spherical, angle: Radians, quaternion: quat) {
   const origin: Origin = {
     id: originId,
     axis,
+    axisCartesian: toCartesian(axis),
     quat: quaternion,
     inverseQuat,
     angle,
@@ -132,6 +134,25 @@ export function findNearestOrigin(point: Spherical): Origin {
 
 export function isNearestOrigin(point: Spherical, origin: Origin): boolean {
   return haversine(point, origin.axis) > 0.49999999;
+}
+
+/**
+ * Same as `findNearestOrigin` but takes a Cartesian unit vector. The
+ * argmin of `1 − a·b` matches the argmin of haversine, so this returns
+ * the same origin without any spherical-trig conversions.
+ */
+export function findNearestOriginCartesian(c: Cartesian): Origin {
+  let minDistance = Infinity;
+  let nearest = origins[0];
+  for (const origin of origins) {
+    const ax = origin.axisCartesian;
+    const distance = 1 - (c[0] * ax[0] + c[1] * ax[1] + c[2] * ax[2]);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearest = origin;
+    }
+  }
+  return nearest;
 }
 
 /**

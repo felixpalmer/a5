@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { mat2, vec2, glMatrix } from "gl-matrix";
+import { mat2, vec2, vec3, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Face, LonLat, Spherical } from "./coordinate-systems";
+import type { Cartesian, Face, LonLat, Spherical } from "./coordinate-systems";
 import { FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes } from "./coordinate-transforms";
-import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
+import { findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmentToQuintant } from "./origin";
 import { DodecahedronProjection } from "../projections/dodecahedron";
 import { A5Cell, OriginId } from "./utils";
 import { PentagonShape } from "../geometry/pentagon";
@@ -15,6 +15,8 @@ import { getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVert
 import { PI_OVER_5 } from "./constants";
 import { IJToS, sToAnchor } from "../lattice";
 import { deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL } from "./serialization";
+import { getGlobalCellNeighbors } from "../traversal/global-neighbors";
+import { Spiral, SPIRAL_SAMPLE_COUNT } from "../utils/spiral";
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -74,43 +76,78 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   const firstDistance = a5cellContainsPoint(firstEstimate, spherical);
   if (firstDistance > 0) return cacheResult(firstEstimate, firstKey, resolution);
 
-  // Spiral search: perturb the point to find nearby estimate cells (the
-  // projection approximation can land in a neighbor at pentagon boundaries).
-  // Samples are generated lazily — if the first sample hits we skip 25 trig+alloc ops.
+  // Spiral search: perturb the point in the tangent plane to find nearby
+  // estimate cells (see modules/utils/spiral.ts).
   const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-  const N = 25;
-  // 50 degrees / 2^hilbertResolution, expressed as radians for spherical-space perturbation.
-  const scale = (50 * Math.PI / 180) / Math.pow(2, hilbertResolution);
+  const scale = SPIRAL_SCALE_RAD / Math.pow(2, hilbertResolution);
   const estimateSet = new Set<bigint>([firstKey]);
-  const cells: {cell: A5Cell, distance: number}[] = [{cell: firstEstimate, distance: firstDistance}];
+  const cells: {cellId: bigint, distance: number}[] = [{cellId: firstKey, distance: firstDistance}];
 
-  // i=0 yields R=0 → same as the original sample, so start at i=1.
-  for (let i = 1; i < N; i++) {
-    const R = (i / N) * scale;
-    const sample: Spherical = [spherical[0] + Math.cos(i) * R, spherical[1] + Math.sin(i) * R] as Spherical;
-    const estimate = _sphericalToEstimate(sample, resolution);
+  const spiral = new Spiral(spherical, scale);
+  for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
+    const estimate = _cartesianToEstimate(spiral.sample(_spiralOut, i), resolution);
     const estimateKey = serialize(estimate);
     if (estimateSet.has(estimateKey)) continue;
     estimateSet.add(estimateKey);
     const distance = a5cellContainsPoint(estimate, spherical);
     if (distance > 0) return cacheResult(estimate, estimateKey, resolution);
-    cells.push({cell: estimate, distance});
+    cells.push({cellId: estimateKey, distance});
   }
 
-  // Fallback: pick the closest estimate. Cache it so subsequent dense-sample
-  // calls still benefit even though this lookup was approximate.
+  // Spiral exhausted without finding a strict container. This is reachable
+  // for points right at the polar singularity at very high resolutions,
+  // where re-projecting any tangent sample snaps back to a small set of
+  // cells while the geometrically-containing cell is offset by one
+  // adjacency step. Fall back to direct neighbours of the closest spiral
+  // candidate, which always finds it.
   cells.sort((a, b) => b.distance - a.distance);
-  const fallback = cells[0].cell;
-  return cacheResult(fallback, serialize(fallback), resolution);
+  const K = Math.min(3, cells.length);
+  for (let k = 0; k < K; k++) {
+    const neighbors = getGlobalCellNeighbors(cells[k].cellId);
+    for (let n = 0; n < neighbors.length; n++) {
+      const neighborKey = neighbors[n];
+      if (estimateSet.has(neighborKey)) continue;
+      estimateSet.add(neighborKey);
+      const neighborCell = deserialize(neighborKey);
+      const distance = a5cellContainsPoint(neighborCell, spherical);
+      if (distance > 0) return cacheResult(neighborCell, neighborKey, resolution);
+      cells.push({cellId: neighborKey, distance});
+    }
+  }
+
+  // True fallback: closest cell wins, even if technically just outside.
+  cells.sort((a, b) => b.distance - a.distance);
+  const fallbackKey = cells[0].cellId;
+  return cacheResult(deserialize(fallbackKey), fallbackKey, resolution);
 }
 
+// Spiral perturbation radius at hilbertResolution=1 (in radians of tangent
+// offset). For higher resolutions we scale by 1/2^hilbertResolution. Tuned
+// via debug-scripts/tune-spiral.ts.
+const SPIRAL_SCALE_RAD = 70 * Math.PI / 180;
+
+// Reusable output buffer for spiral.sample() — written once per iteration,
+// consumed immediately by _cartesianToEstimate. Single-threaded JS makes
+// this safe; ports use stack allocation or per-call locals.
+const _spiralOut = vec3.create() as unknown as Cartesian;
+
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
-// Thus this function only returns an cell nearby, and we need to search the neighborhood to find the correct cell
+// Thus these functions only return a cell nearby, and we need to search the neighborhood to find the correct cell
 // TODO: Implement a more accurate function
+
 function _sphericalToEstimate(spherical: Spherical, resolution: number): A5Cell {
   const origin = {...findNearestOrigin(spherical)};
-
   const dodecPoint = dodecahedron.forward(spherical, origin.id);
+  return _faceToEstimate(dodecPoint, origin, resolution);
+}
+
+function _cartesianToEstimate(cartesian: Cartesian, resolution: number): A5Cell {
+  const origin = {...findNearestOriginCartesian(cartesian)};
+  const dodecPoint = dodecahedron.forwardCartesian(cartesian, origin.id);
+  return _faceToEstimate(dodecPoint, origin, resolution);
+}
+
+function _faceToEstimate(dodecPoint: Face, origin: A5Cell['origin'], resolution: number): A5Cell {
   const polar = toPolar(dodecPoint);
   const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);
@@ -131,8 +168,7 @@ function _sphericalToEstimate(spherical: Spherical, resolution: number): A5Cell 
 
   const ij = FaceToIJ(dodecPoint);
   let S = IJToS(ij, hilbertResolution, orientation);
-  const estimate: A5Cell = {S, segment, origin, resolution};
-  return estimate;
+  return {S, segment, origin, resolution};
 }
 
 // TODO move into tiling.ts
