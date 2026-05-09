@@ -5,9 +5,9 @@
 import { mat2, vec2, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Face, LonLat, Spherical } from "./coordinate-systems";
+import type { Cartesian, Face, LonLat, Spherical } from "./coordinate-systems";
 import { FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes } from "./coordinate-transforms";
-import { findNearestOrigin, quintantToSegment, segmentToQuintant } from "./origin";
+import { findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmentToQuintant } from "./origin";
 import { DodecahedronProjection } from "../projections/dodecahedron";
 import { A5Cell, OriginId } from "./utils";
 import { PentagonShape } from "../geometry/pentagon";
@@ -85,7 +85,7 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
 
   const spiral = new Spiral(spherical, scale);
   for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
-    const estimate = _sphericalToEstimate(spiral.sample(i), resolution);
+    const estimate = _cartesianToEstimate(spiral.sample(i), resolution);
     const estimateKey = serialize(estimate);
     if (estimateSet.has(estimateKey)) continue;
     estimateSet.add(estimateKey);
@@ -127,12 +127,22 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
 const SPIRAL_SCALE_RAD = 70 * Math.PI / 180;
 
 // The IJToS function uses the triangular lattice which only approximates the pentagon lattice
-// Thus this function only returns an cell nearby, and we need to search the neighborhood to find the correct cell
+// Thus these functions only return a cell nearby, and we need to search the neighborhood to find the correct cell
 // TODO: Implement a more accurate function
+
 function _sphericalToEstimate(spherical: Spherical, resolution: number): A5Cell {
   const origin = {...findNearestOrigin(spherical)};
-
   const dodecPoint = dodecahedron.forward(spherical, origin.id);
+  return _faceToEstimate(dodecPoint, origin, resolution);
+}
+
+function _cartesianToEstimate(cartesian: Cartesian, resolution: number): A5Cell {
+  const origin = {...findNearestOriginCartesian(cartesian)};
+  const dodecPoint = dodecahedron.forwardCartesian(cartesian, origin.id);
+  return _faceToEstimate(dodecPoint, origin, resolution);
+}
+
+function _faceToEstimate(dodecPoint: Face, origin: A5Cell['origin'], resolution: number): A5Cell {
   const polar = toPolar(dodecPoint);
   const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);
@@ -153,8 +163,7 @@ function _sphericalToEstimate(spherical: Spherical, resolution: number): A5Cell 
 
   const ij = FaceToIJ(dodecPoint);
   let S = IJToS(ij, hilbertResolution, orientation);
-  const estimate: A5Cell = {S, segment, origin, resolution};
-  return estimate;
+  return {S, segment, origin, resolution};
 }
 
 // TODO move into tiling.ts

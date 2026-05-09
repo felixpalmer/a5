@@ -29,7 +29,7 @@ const fixtures = cases.map(c => {
   const samples = [];
   for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
     const s = spiral.sample(i);
-    samples.push([s[0], s[1]]);
+    samples.push([s[0], s[1], s[2]]);
   }
   return {
     name: c.name,

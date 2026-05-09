@@ -38,10 +38,18 @@ export class DodecahedronProjection {
    * @returns Face coordinates [x, y]
    */
   forward(spherical: Spherical, originId: OriginId): Face {
+    return this.forwardCartesian(toCartesian(spherical), originId);
+  }
+
+  /**
+   * Same as `forward` but takes a Cartesian unit vector — skips the
+   * `toCartesian` round-trip when the caller already has the Cartesian
+   * form (e.g. in the spiral-search path inside `sphericalToCell`).
+   */
+  forwardCartesian(unprojected: Cartesian, originId: OriginId): Face {
     const origin = origins[originId];
 
     // Transform back origin space
-    const unprojected = toCartesian(spherical);
     const out = vec3.create() as Cartesian;
     vec3.transformQuat(out, unprojected, origin.inverseQuat);
 

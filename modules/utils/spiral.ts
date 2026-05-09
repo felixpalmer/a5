@@ -6,7 +6,7 @@ import { vec3, quat, glMatrix } from "gl-matrix";
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type { Cartesian, Spherical } from "../core/coordinate-systems";
-import { toCartesian, toSpherical } from "../core/coordinate-transforms";
+import { toCartesian } from "../core/coordinate-transforms";
 
 /**
  * Number of perturbed sample points the spiral can produce. Tuned via
@@ -44,9 +44,11 @@ const SPIRAL_DIRECTIONS: vec3[] = (() => {
  *
  * Construction precomputes the pole→center quaternion. `sample(i)`
  * rotates the i-th cached direction into the tangent plane at `center`,
- * scales by the appropriate radius, and returns a spherical coordinate
- * — so the caller can break out of the loop as soon as a sample produces
- * a hit.
+ * scales by the appropriate radius, and returns a Cartesian point near
+ * the unit sphere — the consumer of the spiral (the dodecahedron
+ * projection) wants Cartesian anyway, so we skip the spherical
+ * round-trip entirely. The point is slightly off the unit sphere by
+ * O(R²); downstream callers either tolerate this or normalise.
  *
  * All state is per-instance (no module-level mutable scratch), so each
  * thread/task can hold its own without locking.
@@ -73,21 +75,17 @@ export class Spiral {
 
   /**
    * Return the i-th spiral sample (0 ≤ i < SPIRAL_SAMPLE_COUNT) as a
-   * spherical coordinate. Sample i sits at tangent-plane offset of
-   * magnitude `(i+1)/(SPIRAL_SAMPLE_COUNT+1) · scaleRad` from `center`,
-   * rotated by azimuth `(i+1) · 1.4 rad` in `center`'s tangent frame.
-   *
-   * The Cartesian point `center + offset` is slightly off the unit
-   * sphere by O(R²); `toSpherical` projects it back implicitly.
+   * Cartesian point. Sample i sits at tangent-plane offset of magnitude
+   * `(i+1)/(SPIRAL_SAMPLE_COUNT+1) · scaleRad` from `center`, rotated
+   * by azimuth `(i+1) · 1.4 rad` in `center`'s tangent frame.
    */
-  sample(i: number): Spherical {
+  sample(i: number): Cartesian {
     vec3.transformQuat(this.scratch, SPIRAL_DIRECTIONS[i], this.q);
     const R = ((i + 1) / (SPIRAL_SAMPLE_COUNT + 1)) * this.scaleRad;
-    const perturbed: Cartesian = [
+    return [
       this.c0[0] + R * this.scratch[0],
       this.c0[1] + R * this.scratch[1],
       this.c0[2] + R * this.scratch[2],
     ] as Cartesian;
-    return toSpherical(perturbed);
   }
 }

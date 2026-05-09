@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Spiral, SPIRAL_SAMPLE_COUNT } from 'a5/utils/spiral';
 import type { Spherical } from 'a5/core/coordinate-systems';
+// fixtures store [x, y, z]; samples return Cartesian.
 import fixtures from '../fixtures/utils/spiral.json';
 import './matchers';
 
