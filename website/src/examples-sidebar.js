@@ -8,7 +8,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Visualization',
-      items: ['airbnb', 'populated-places', 'road-safety'] 
+      items: ['airbnb', 'country-polygons', 'populated-places', 'road-safety']
     },
     {
       type: 'category',
@@ -18,7 +18,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Inspection',
-      items: ['accuracy', 'area', 'cells', 'compaction', 'hierarchy', 'traversal']
+      items: ['accuracy', 'area', 'cells', 'compaction', 'hierarchy', 'polygons', 'traversal']
     },
     {
       type: 'category',
