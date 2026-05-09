@@ -1,5 +1,5 @@
-const { PentagonShape } = require('../../a5-test.cjs');
-const { generateGeometryFixtures } = require('../geometry-generator.cjs');
+const {PentagonShape} = require('../../a5-test.cjs');
+const {generateGeometryFixtures} = require('../geometry-generator.cjs');
 
 function generateRandomFace() {
   // Generate random 2D point
@@ -36,14 +36,38 @@ function computeExpected(pentagon, testPoints) {
       result: pentagon.containsPoint(point)
     })),
     transformTests: {
-      scale: pentagon.clone().scale(2).getVertices().map(v => [...v]),
-      rotate180: pentagon.clone().rotate180().getVertices().map(v => [...v]),
-      reflectY: pentagon.clone().reflectY().getVertices().map(v => [...v]),
-      translate: pentagon.clone().translate([1, 1]).getVertices().map(v => [...v])
+      scale: pentagon
+        .clone()
+        .scale(2)
+        .getVertices()
+        .map(v => [...v]),
+      rotate180: pentagon
+        .clone()
+        .rotate180()
+        .getVertices()
+        .map(v => [...v]),
+      reflectY: pentagon
+        .clone()
+        .reflectY()
+        .getVertices()
+        .map(v => [...v]),
+      translate: pentagon
+        .clone()
+        .translate([1, 1])
+        .getVertices()
+        .map(v => [...v])
     },
     splitEdgesTests: {
-      segments2: pentagon.clone().splitEdges(2).getVertices().map(v => [...v]),
-      segments3: pentagon.clone().splitEdges(3).getVertices().map(v => [...v])
+      segments2: pentagon
+        .clone()
+        .splitEdges(2)
+        .getVertices()
+        .map(v => [...v]),
+      segments3: pentagon
+        .clone()
+        .splitEdges(3)
+        .getVertices()
+        .map(v => [...v])
     }
   };
 }
@@ -56,4 +80,4 @@ generateGeometryFixtures({
   generateTestPoints,
   computeExpected,
   vertexCount: 5
-}); 
+});

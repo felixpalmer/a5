@@ -4,15 +4,15 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PolygonLayer} from '@deck.gl/layers';
-import { cellToBoundary } from 'a5';
-import { Color } from '@deck.gl/core';
-import { HyparquetLoader } from '../shared/hyparquet-loader';
+import {cellToBoundary} from 'a5';
+import {Color} from '@deck.gl/core';
+import {HyparquetLoader} from '../shared/hyparquet-loader';
 
 const RESTAURANTS_DATA = '/data/restaurants_paris_aggregated.parquet';
-const INITIAL_VIEW_STATE = { longitude: 2.35, latitude: 48.85, zoom: 10, pitch: 0, maxZoom: 12, minZoom: 9 };
+const INITIAL_VIEW_STATE = {longitude: 2.35, latitude: 48.85, zoom: 10, pitch: 0, maxZoom: 12, minZoom: 9};
 const MAX_COUNT = 14;
 
-type A5CellWithCount = {a5: bigint; count: number;};
+type A5CellWithCount = {a5: bigint; count: number};
 
 const App: React.FC = () => {
   // Create layer with custom Parquet loader
@@ -26,10 +26,10 @@ const App: React.FC = () => {
 
       // Color based on restaurant count (French tricolor: white -> blue -> red)
       if (value < 0.5) {
-        const t = value * 2;  // 0 to 1
+        const t = value * 2; // 0 to 1
         return [255 - 255 * t, 255 - 220 * t, 255 - 113 * t, 200] as Color;
       } else {
-        const t = (value - 0.5) * 2;  // 0 to 1
+        const t = (value - 0.5) * 2; // 0 to 1
         return [0 + 255 * t, 35 - 35 * t, 142 - 142 * t, 200] as Color;
       }
     },

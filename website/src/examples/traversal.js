@@ -15,7 +15,10 @@ class TraversalDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
-        <p>The <code>gridDisk</code> and <code>sphericalCap</code> APIs compute neighboring cells, either by number of hops <code>(k)</code> or distance.</p>
+        <p>
+          The <code>gridDisk</code> and <code>sphericalCap</code> APIs compute neighboring cells, either by number of
+          hops <code>(k)</code> or distance.
+        </p>
         <p>Pan and zoom to explore cells at different resolutions.</p>
         <p>Cells are returned compacted for efficiency, but can be uncompacted for visualization if needed.</p>
       </div>
@@ -25,9 +28,7 @@ class TraversalDemo extends Component {
   render() {
     return (
       <div style={{width: '100%', height: '100%', position: 'absolute', background: '#111'}}>
-        <BrowserOnly>
-          {() => <App {...this.props} />}
-        </BrowserOnly>
+        <BrowserOnly>{() => <App {...this.props} />}</BrowserOnly>
       </div>
     );
   }

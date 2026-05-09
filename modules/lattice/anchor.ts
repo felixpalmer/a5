@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { IJ } from '../core/coordinate-systems';
-import type { Anchor, Quaternary, Flip, Orientation } from './types';
+import type {IJ} from '../core/coordinate-systems';
+import type {Anchor, Quaternary, Flip, Orientation} from './types';
 
 /**
  * Determine which orientation group is used for lookup table selection.
@@ -36,10 +36,11 @@ export function computeQ(offset: IJ, flips: [Flip, Flip], orientation: Orientati
 
   const imod2 = i & 1;
   const jmod2 = j & 1;
-  const f0idx = (flip0 + 1) >> 1;  // Map: YES (-1) -> 0, NO (1) -> 1
+  const f0idx = (flip0 + 1) >> 1; // Map: YES (-1) -> 0, NO (1) -> 1
   const f1idx = (flip1 + 1) >> 1;
 
   if (isGroup2Orientation(orientation)) {
+    // prettier-ignore
     const group2Lookup = [
       [[[0, 3], [3, 0]], [[3, 2], [2, 3]]],
       [[[2, 1], [1, 2]], [[1, 0], [0, 1]]]
@@ -49,6 +50,7 @@ export function computeQ(offset: IJ, flips: [Flip, Flip], orientation: Orientati
     if (imod2 === 0) {
       return jmod2 === 0 ? 0 : 2;
     }
+    // prettier-ignore
     const oddILookup = [
       [[3, 1], [1, 3]],
       [[1, 3], [3, 1]]
@@ -65,5 +67,5 @@ export function computeQ(offset: IJ, flips: [Flip, Flip], orientation: Orientati
  */
 export function offsetFlipsToAnchor(offset: IJ, flips: [Flip, Flip], orientation: Orientation = 'uv'): Anchor {
   const q = computeQ(offset, flips, orientation);
-  return { q, offset, flips };
+  return {q, offset, flips};
 }

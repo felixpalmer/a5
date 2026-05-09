@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { quat, vec2, glMatrix } from 'gl-matrix';
+import {quat, vec2, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 
 const SQRT5 = Math.sqrt(5);
@@ -32,8 +32,8 @@ const cosAlpha = Math.sqrt((1 + INV_SQRT5) / 2);
 
 // The resulting value simplify a set of expressions. It is much better to compute
 // these directly than using trigonometry
-const A = 0.5; // sin72 * sinAlpha or sin36 * cosAlpha 
-const B = Math.sqrt((2.5 - SQRT5) / 10); // cos72 * sinAlpha 
+const A = 0.5; // sin72 * sinAlpha or sin36 * cosAlpha
+const B = Math.sqrt((2.5 - SQRT5) / 10); // cos72 * sinAlpha
 const C = Math.sqrt((2.5 + SQRT5) / 10); // cos36 * cosAlpha
 const D = Math.sqrt((1 + INV_SQRT5) / 8); // cos36 * sinAlpha
 const E = Math.sqrt((1 - INV_SQRT5) / 8); // cos72 * cosAlpha
@@ -75,4 +75,4 @@ const quaternions = axes.map((axis, i) => {
   return [...axis, 0, i < 6 ? cosAlpha : sinAlpha];
 }) as quat[];
 
-export { quaternions };
+export {quaternions};

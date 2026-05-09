@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import type { Orientation, Triple } from 'a5/lattice';
-import { sToAnchor, anchorToTriple, tripleToAnchor, tripleToS, tripleParity, tripleInBounds } from 'a5/lattice';
+import {describe, it, expect} from 'vitest';
+import type {Orientation, Triple} from 'a5/lattice';
+import {sToAnchor, anchorToTriple, tripleToAnchor, tripleToS, tripleParity, tripleInBounds} from 'a5/lattice';
 import fixtures from '../fixtures/lattice/triple.json';
 
 type AnchorToTripleFixture = {

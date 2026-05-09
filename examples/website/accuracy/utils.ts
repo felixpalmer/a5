@@ -25,17 +25,24 @@ export type HoverCells = {
 const SAMPLE_SPACING_DEG = 1e-7;
 
 function bezierPoint(
-  p0: [number, number], p1: [number, number], p2: [number, number], p3: [number, number], t: number
+  p0: [number, number],
+  p1: [number, number],
+  p2: [number, number],
+  p3: [number, number],
+  t: number
 ): [number, number] {
   const u = 1 - t;
   return [
-    u*u*u*p0[0] + 3*u*u*t*p1[0] + 3*u*t*t*p2[0] + t*t*t*p3[0],
-    u*u*u*p0[1] + 3*u*u*t*p1[1] + 3*u*t*t*p2[1] + t*t*t*p3[1]
+    u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0],
+    u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]
   ];
 }
 
 function estimateSegmentLength(
-  p0: [number, number], p1: [number, number], p2: [number, number], p3: [number, number]
+  p0: [number, number],
+  p1: [number, number],
+  p2: [number, number],
+  p3: [number, number]
 ): number {
   // Estimate arc length by sampling 20 points along the curve
   let length = 0;
@@ -57,7 +64,10 @@ export function sampleBezierPath(vertices: BezierVertex[], closed: boolean): [nu
   for (let seg = 0; seg < segCount; seg++) {
     const v0 = vertices[seg];
     const v1 = vertices[(seg + 1) % vertices.length];
-    const p0 = v0.anchor, p1 = v0.ctrlOut, p2 = v1.ctrlIn, p3 = v1.anchor;
+    const p0 = v0.anchor,
+      p1 = v0.ctrlOut,
+      p2 = v1.ctrlIn,
+      p3 = v1.anchor;
     const arcLen = estimateSegmentLength(p0, p1, p2, p3);
     const samples = Math.max(2, Math.ceil(arcLen / SAMPLE_SPACING_DEG));
     for (let s = 0; s <= samples; s++) {
@@ -81,27 +91,33 @@ function dedup(points: [number, number][]): [number, number][] {
 }
 
 export function roundTripA5(points: [number, number][]): [number, number][] {
-  return dedup(points.map(([lon, lat]) => {
-    const cell = lonLatToCell([lon, lat], 30);
-    const r = cellToLonLat(cell);
-    return [r[0], r[1]] as [number, number];
-  }));
+  return dedup(
+    points.map(([lon, lat]) => {
+      const cell = lonLatToCell([lon, lat], 30);
+      const r = cellToLonLat(cell);
+      return [r[0], r[1]] as [number, number];
+    })
+  );
 }
 
 export function roundTripH3(points: [number, number][]): [number, number][] {
-  return dedup(points.map(([lon, lat]) => {
-    const cell = latLngToCell(lat, lon, 15);
-    const [rlat, rlon] = cellToLatLng(cell);
-    return [rlon, rlat] as [number, number];
-  }));
+  return dedup(
+    points.map(([lon, lat]) => {
+      const cell = latLngToCell(lat, lon, 15);
+      const [rlat, rlon] = cellToLatLng(cell);
+      return [rlon, rlat] as [number, number];
+    })
+  );
 }
 
 export function roundTripS2(points: [number, number][]): [number, number][] {
-  return dedup(points.map(([lon, lat]) => {
-    const key = S2.latLngToKey(lat, lon, 30);
-    const r = S2.keyToLatLng(key);
-    return [r.lng, r.lat] as [number, number];
-  }));
+  return dedup(
+    points.map(([lon, lat]) => {
+      const key = S2.latLngToKey(lat, lon, 30);
+      const r = S2.keyToLatLng(key);
+      return [r.lng, r.lat] as [number, number];
+    })
+  );
 }
 
 export function getCellsAtLocation(lon: number, lat: number): HoverCells {

@@ -2,48 +2,40 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { Radians } from "../core/coordinate-systems";
+import type {Radians} from '../core/coordinate-systems';
 
 // Authalic conversion coefficients obtained from: https://arxiv.org/pdf/2212.05818
 // See: authalic_constants.py for the derivation of the coefficients
 const GEODETIC_TO_AUTHALIC = new Float64Array([
-  -2.2392098386786394e-03,
-  2.1308606513250217e-06,
-  -2.5592576864212742e-09,
-  3.3701965267802837e-12,
-  -4.6675453126112487e-15,
-  6.6749287038481596e-18
+  -2.2392098386786394e-3, 2.1308606513250217e-6, -2.5592576864212742e-9, 3.3701965267802837e-12,
+  -4.6675453126112487e-15, 6.6749287038481596e-18
 ]);
 
 const AUTHALIC_TO_GEODETIC = new Float64Array([
-  2.2392089963541657e-03,
-  2.8831978048607556e-06,
-  5.0862207399726603e-09,
-  1.0201812377816100e-11,
-  2.1912872306767718e-14,
+  2.2392089963541657e-3, 2.8831978048607556e-6, 5.0862207399726603e-9, 1.02018123778161e-11, 2.1912872306767718e-14,
   4.9284235482523806e-17
 ]);
 
 // Adaptation of applyCoefficients from DGGAL project: authalic.ec
 //
 // BSD 3-Clause License
-// 
+//
 // Copyright (c) 2014-2025, Ecere Corporation
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // 1. Redistributions of source code must retain the above copyright notice, this
 //    list of conditions and the following disclaimer.
-// 
+//
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
 //    and/or other materials provided with the distribution.
-// 
+//
 // 3. Neither the name of the copyright holder nor the names of its
 //    contributors may be used to endorse or promote products derived from
 //    this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -74,7 +66,7 @@ export class AuthalicProjection {
     u1 = X * u0 - u1 + C[1];
     u0 = X * u1 - u0 + C[0];
 
-    return phi + 2 * sinPhi * cosPhi * u0 as Radians;
+    return (phi + 2 * sinPhi * cosPhi * u0) as Radians;
   }
 
   /**
@@ -94,4 +86,4 @@ export class AuthalicProjection {
   inverse(phi: Radians): Radians {
     return this.applyCoefficients(phi, AUTHALIC_TO_GEODETIC);
   }
-} 
+}

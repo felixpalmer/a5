@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { Anchor, Orientation, Triple } from '../lattice';
-import { sToAnchor, anchorToTriple, tripleToAnchor, tripleToS, tripleInBounds } from '../lattice';
-import { compareBigint } from '../utils/bigint';
-import { isNeighbor } from './neighbors';
+import type {Anchor, Orientation, Triple} from '../lattice';
+import {sToAnchor, anchorToTriple, tripleToAnchor, tripleToS, tripleInBounds} from '../lattice';
+import {compareBigint} from '../utils/bigint';
+import {isNeighbor} from './neighbors';
 
 /**
  * Find within-quintant neighbors via triple coordinate search.
@@ -90,7 +90,7 @@ export function getCellNeighbors(
   const triple = anchorToTriple(anchor);
   const uvSourceAnchor = tripleToAnchor(triple, resolution, 'uv');
 
-  return findQuintantNeighborS(
-    triple, uvSourceAnchor, s, resolution, orientation, options?.edgeOnly ?? false
-  ).sort(compareBigint);
+  return findQuintantNeighborS(triple, uvSourceAnchor, s, resolution, orientation, options?.edgeOnly ?? false).sort(
+    compareBigint
+  );
 }

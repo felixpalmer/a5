@@ -24,8 +24,10 @@ type SegmentMap = Map<bigint, number[]>;
  * `cellRadius * 0.4` spacing, calling `sphericalToCell` per sample.
  */
 function denseSampleBoundary(
-  ring: LonLat[], ringVecs: Cartesian[], resolution: number,
-): {boundaryCells: bigint[], boundarySet: Set<bigint>, segmentMap: SegmentMap} {
+  ring: LonLat[],
+  ringVecs: Cartesian[],
+  resolution: number
+): {boundaryCells: bigint[]; boundarySet: Set<bigint>; segmentMap: SegmentMap} {
   const boundaryCells: bigint[] = [];
   const boundarySet = new Set<bigint>();
   const segmentMap: SegmentMap = new Map();
@@ -74,8 +76,11 @@ function denseSampleBoundary(
  * cell wasn't recorded, fall back to full PIP.
  */
 function filterBoundaryCells(
-  boundaryCells: bigint[], segmentMap: SegmentMap,
-  segNormals: Cartesian[], ringVecs: Cartesian[], interiorSign: 1 | -1,
+  boundaryCells: bigint[],
+  segmentMap: SegmentMap,
+  segNormals: Cartesian[],
+  ringVecs: Cartesian[],
+  interiorSign: 1 | -1
 ): bigint[] {
   const out: bigint[] = [];
   for (const cell of boundaryCells) {
@@ -91,7 +96,10 @@ function filterBoundaryCells(
     for (const segIdx of segments) {
       const n = segNormals[segIdx];
       const dot = n[0] * cv[0] + n[1] * cv[1] + n[2] * cv[2];
-      if (Math.abs(dot) < 1e-14) { ambiguous = true; break; } // on segment within float epsilon
+      if (Math.abs(dot) < 1e-14) {
+        ambiguous = true;
+        break;
+      } // on segment within float epsilon
       if (dot * interiorSign > 0) anyInside = true;
       else allInside = false;
     }
@@ -131,16 +139,17 @@ function expandShell(boundaryCells: bigint[], boundarySet: Set<bigint>): bigint[
  * when the polygon is too small to amortize its setup overhead.
  */
 function floodInterior(
-  interiorSeeds: bigint[], visited: Set<bigint>, boundarySize: number, resolution: number,
+  interiorSeeds: bigint[],
+  visited: Set<bigint>,
+  boundarySize: number,
+  resolution: number
 ): bigint[] {
   for (const cell of interiorSeeds) visited.add(cell);
 
   // Isoperimetric bound: B² / (4π) is the max interior for B boundary cells.
-  const maxInterior = boundarySize * boundarySize / (4 * Math.PI);
+  const maxInterior = (boundarySize * boundarySize) / (4 * Math.PI);
   // res 30 has a different encoding the parent-emit optimization can't use.
-  const useCoarsePhase = resolution > FIRST_HILBERT_RESOLUTION
-    && resolution < MAX_RESOLUTION
-    && maxInterior > 1000;
+  const useCoarsePhase = resolution > FIRST_HILBERT_RESOLUTION && resolution < MAX_RESOLUTION && maxInterior > 1000;
 
   if (!useCoarsePhase) {
     const result = tripleSpaceFloodFill(visited, interiorSeeds, resolution);
@@ -201,11 +210,7 @@ function floodInterior(
   }
 
   // Phase 3: resume fine BFS, reusing phase 1's packed state.
-  const phase3 = tripleSpaceFloodFill(
-    {state: phase1.state, delta: phase3Delta},
-    phase1.frontierCellIds,
-    resolution,
-  );
+  const phase3 = tripleSpaceFloodFill({state: phase1.state, delta: phase3Delta}, phase1.frontierCellIds, resolution);
   interiorCells.push(...phase3.interiorCells);
 
   return interiorCells;

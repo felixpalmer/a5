@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec2, glMatrix } from 'gl-matrix';
+import {vec2, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { IJ, KJ } from '../core/coordinate-systems';
-import type { Quaternary, Flip } from './types';
-import { YES, NO } from './types';
+import type {IJ, KJ} from '../core/coordinate-systems';
+import type {Quaternary, Flip} from './types';
+import {YES, NO} from './types';
 
 // Using KJ allows simplification of definitions
 const kPos = vec2.fromValues(1, 0) as KJ; // k
@@ -37,7 +37,7 @@ export const quaternaryToKJ = (n: Quaternary, [flipX, flipY]: [Flip, Flip]): KJ 
     q = jNeg;
   }
 
-  switch(n) {
+  switch (n) {
     case 0:
       return ZERO; // Length 0
     case 1:
@@ -45,15 +45,20 @@ export const quaternaryToKJ = (n: Quaternary, [flipX, flipY]: [Flip, Flip]): KJ 
     case 2:
       return vec2.add(vec2.create(), q, p) as KJ; // Length SQRT2
     case 3:
-      return vec2.scaleAndAdd(vec2.create(), q, p, 2) as KJ // Length SQRT5
+      return vec2.scaleAndAdd(vec2.create(), q, p, 2) as KJ; // Length SQRT5
     default:
       throw new Error(`Invalid Quaternary value: ${n}`);
   }
-}
+};
 
 export const quaternaryToFlips = (n: Quaternary): [Flip, Flip] => {
-  return [[NO, NO], [NO, YES], [NO, NO], [YES, NO]][n] as [Flip, Flip];
-}
+  return [
+    [NO, NO],
+    [NO, YES],
+    [NO, NO],
+    [YES, NO]
+  ][n] as [Flip, Flip];
+};
 
 // This function uses the ij basis, unlike its inverse!
 export const IJToQuaternary = ([i, j]: IJ, flips: [Flip, Flip]): Quaternary => {
@@ -66,17 +71,27 @@ export const IJToQuaternary = ([i, j]: IJ, flips: [Flip, Flip]): Quaternary => {
 
   // Only one flip
   if (flips[0] + flips[1] === 0) {
-    if (c < 1) { digit = 0; }
-    else if (b > 1) { digit = 3; }
-    else if (a > 1) { digit = 2; }
-    else { digit = 1 }
-  // No flips or both
+    if (c < 1) {
+      digit = 0;
+    } else if (b > 1) {
+      digit = 3;
+    } else if (a > 1) {
+      digit = 2;
+    } else {
+      digit = 1;
+    }
+    // No flips or both
   } else {
-    if (a < 1) { digit = 0; }
-    else if (b > 1) { digit = 3; }
-    else if (c > 1) { digit = 2; }
-    else { digit = 1; }
+    if (a < 1) {
+      digit = 0;
+    } else if (b > 1) {
+      digit = 3;
+    } else if (c > 1) {
+      digit = 2;
+    } else {
+      digit = 1;
+    }
   }
 
   return digit;
-}
+};

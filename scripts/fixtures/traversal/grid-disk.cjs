@@ -1,12 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {
-  getRes0Cells,
-  cellToChildren,
-  cellToBoundary,
-  u64ToHex,
-  FIRST_HILBERT_RESOLUTION,
-} = require('../../a5-test.cjs');
+const {getRes0Cells, cellToChildren, cellToBoundary, u64ToHex, FIRST_HILBERT_RESOLUTION} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'grid-disk.json');
@@ -85,15 +79,13 @@ for (const resolution of [0, 1]) {
       const edgeCells = bruteForceGridDisk(cellId, k, cells, boundaries, true);
       const vertexCells = bruteForceGridDisk(cellId, k, cells, boundaries, false);
       const edgeSet = new Set(edgeCells.map(c => u64ToHex(c)));
-      const extraVertexCells = vertexCells
-        .filter(c => !edgeSet.has(u64ToHex(c)))
-        .map(c => u64ToHex(c));
+      const extraVertexCells = vertexCells.filter(c => !edgeSet.has(u64ToHex(c))).map(c => u64ToHex(c));
 
       fixtures.push({
         cellId: u64ToHex(cellId),
         k,
         cells: edgeCells.map(c => u64ToHex(c)),
-        extraVertexCells,
+        extraVertexCells
       });
     }
   }
@@ -133,21 +125,19 @@ for (const k of [1, 2]) {
     const edgeCells = bruteForceGridDisk(cellId, k, cells, boundaries, true);
     const vertexCells = bruteForceGridDisk(cellId, k, cells, boundaries, false);
     const edgeSet = new Set(edgeCells.map(c => u64ToHex(c)));
-    const extraVertexCells = vertexCells
-      .filter(c => !edgeSet.has(u64ToHex(c)))
-      .map(c => u64ToHex(c));
+    const extraVertexCells = vertexCells.filter(c => !edgeSet.has(u64ToHex(c))).map(c => u64ToHex(c));
 
     fixtures.push({
       cellId: u64ToHex(cellId),
       k,
       cells: edgeCells.map(c => u64ToHex(c)),
-      extraVertexCells,
+      extraVertexCells
     });
   }
 }
 
 console.log(`  ${fixtures.length} cases`);
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

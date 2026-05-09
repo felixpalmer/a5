@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { getLatticeNeighbors } from 'a5/traversal/lattice-neighbors';
-import { hexToU64, u64ToHex } from 'a5/core/hex';
+import {describe, it, expect} from 'vitest';
+import {getLatticeNeighbors} from 'a5/traversal/lattice-neighbors';
+import {hexToU64, u64ToHex} from 'a5/core/hex';
 import fixtures from '../fixtures/traversal/lattice-neighbors.json';
 
 type Fixture = {

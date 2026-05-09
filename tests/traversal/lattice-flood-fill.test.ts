@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { tripleSpaceFloodFill } from 'a5/traversal/lattice-flood-fill';
-import { hexToU64, u64ToHex } from 'a5/core/hex';
+import {describe, it, expect} from 'vitest';
+import {tripleSpaceFloodFill} from 'a5/traversal/lattice-flood-fill';
+import {hexToU64, u64ToHex} from 'a5/core/hex';
 import fixtures from '../fixtures/traversal/lattice-flood-fill.json';
 
 type Fixture = {

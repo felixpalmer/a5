@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { LonLat } from '../core/coordinate-systems';
-import { cellToBoundary } from '../core/cell';
-import { cellToChildren, FIRST_HILBERT_RESOLUTION } from '../core/serialization';
+import type {LonLat} from '../core/coordinate-systems';
+import {cellToBoundary} from '../core/cell';
+import {cellToChildren, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 
 // TODO find a nicer way to expose this
 export function generateWireframe(resolution: number, {segments = 1}: {segments?: number} = {}): LonLat[][] {
@@ -25,9 +25,9 @@ export function generateWireframe(resolution: number, {segments = 1}: {segments?
     if (resolution < FIRST_HILBERT_RESOLUTION) {
       cells.push(cellToBoundary(index, {closedRing: false, segments}));
     } else {
-      const children = cellToChildren(index, resolution)
+      const children = cellToChildren(index, resolution);
       cells = cells.concat(children.map(child => cellToBoundary(child, {closedRing: false, segments})));
     }
   }
   return cells;
-} 
+}

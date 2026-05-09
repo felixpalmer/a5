@@ -6,7 +6,7 @@ const {
   tripleToAnchor,
   tripleToS,
   tripleParity,
-  tripleInBounds,
+  tripleInBounds
 } = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/lattice');
@@ -21,7 +21,7 @@ const resolutions = [3, 5, 7];
 const anchorToTripleFixtures = [];
 for (const resolution of resolutions) {
   const numCells = Math.pow(4, resolution);
-  const sValues = Array.from({length: 10}, (_, i) => Math.floor(i * numCells / 10));
+  const sValues = Array.from({length: 10}, (_, i) => Math.floor((i * numCells) / 10));
 
   for (const orientation of orientations) {
     for (const s of sValues) {
@@ -32,17 +32,21 @@ for (const resolution of resolutions) {
       // Verify round-trip: tripleToS should return the original s
       const roundTrip = tripleToS(triple, resolution, orientation);
       if (roundTrip === null || Number(roundTrip) !== s) {
-        console.error(`  ERROR: tripleToS round-trip failed for s=${s}, res=${resolution}, ori=${orientation}: got ${roundTrip}`);
+        console.error(
+          `  ERROR: tripleToS round-trip failed for s=${s}, res=${resolution}, ori=${orientation}: got ${roundTrip}`
+        );
         process.exit(1);
       }
 
       // Verify tripleToAnchor produces a matching anchor
       const anchorBack = tripleToAnchor(triple, resolution, orientation);
-      if (!anchorBack ||
-          anchorBack.offset[0] !== anchor.offset[0] ||
-          anchorBack.offset[1] !== anchor.offset[1] ||
-          anchorBack.flips[0] !== anchor.flips[0] ||
-          anchorBack.flips[1] !== anchor.flips[1]) {
+      if (
+        !anchorBack ||
+        anchorBack.offset[0] !== anchor.offset[0] ||
+        anchorBack.offset[1] !== anchor.offset[1] ||
+        anchorBack.flips[0] !== anchor.flips[0] ||
+        anchorBack.flips[1] !== anchor.flips[1]
+      ) {
         console.error(`  ERROR: tripleToAnchor mismatch for s=${s}, res=${resolution}, ori=${orientation}`);
         process.exit(1);
       }
@@ -54,7 +58,7 @@ for (const resolution of resolutions) {
         x: triple.x,
         y: triple.y,
         z: triple.z,
-        parity,
+        parity
       });
     }
   }
@@ -73,13 +77,15 @@ const boundsCases = [
   {x: 0, y: maxRow + 1, z: 0, maxRow, expected: false},
   {x: 1, y: 1, z: -1, maxRow, expected: false},
   {x: -1, y: 1, z: 1, maxRow, expected: false},
-  {x: 0, y: 2, z: 0, maxRow, expected: false},
+  {x: 0, y: 2, z: 0, maxRow, expected: false}
 ];
 // Verify
 for (const tc of boundsCases) {
   const actual = tripleInBounds({x: tc.x, y: tc.y, z: tc.z}, tc.maxRow);
   if (actual !== tc.expected) {
-    console.error(`  ERROR: tripleInBounds({${tc.x},${tc.y},${tc.z}}, ${tc.maxRow}) = ${actual}, expected ${tc.expected}`);
+    console.error(
+      `  ERROR: tripleInBounds({${tc.x},${tc.y},${tc.z}}, ${tc.maxRow}) = ${actual}, expected ${tc.expected}`
+    );
     process.exit(1);
   }
 }
@@ -87,9 +93,9 @@ console.log(`  tripleInBounds: ${boundsCases.length} cases (all verified)`);
 
 const fixtures = {
   anchorToTriple: anchorToTripleFixtures,
-  tripleInBounds: boundsCases,
+  tripleInBounds: boundsCases
 };
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

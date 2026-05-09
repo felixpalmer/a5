@@ -1,19 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import type { Quaternary, Flip } from 'a5/lattice';
-import {
-  shiftDigits,
-  PATTERN,
-  PATTERN_FLIPPED,
-  PATTERN_REVERSED,
-  PATTERN_FLIPPED_REVERSED,
-} from 'a5/lattice';
+import {describe, it, expect} from 'vitest';
+import type {Quaternary, Flip} from 'a5/lattice';
+import {shiftDigits, PATTERN, PATTERN_FLIPPED, PATTERN_REVERSED, PATTERN_FLIPPED_REVERSED} from 'a5/lattice';
 import fixtures from '../fixtures/lattice/shift-digits.json';
 
 const PATTERNS: Record<string, number[]> = {
   PATTERN,
   PATTERN_FLIPPED,
   PATTERN_REVERSED,
-  PATTERN_FLIPPED_REVERSED,
+  PATTERN_FLIPPED_REVERSED
 };
 
 type ShiftDigitsFixture = {

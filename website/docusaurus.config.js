@@ -31,10 +31,7 @@ const config = {
           editUrl: 'https://github.com/felixpalmer/a5/tree/master/website'
         },
         theme: {
-          customCss: [
-            resolve('./src/styles.css'),
-            resolve('./node_modules/maplibre-gl/dist/maplibre-gl.css')
-          ]
+          customCss: [resolve('./src/styles.css'), resolve('./node_modules/maplibre-gl/dist/maplibre-gl.css')]
         }
       })
     ]
@@ -55,7 +52,7 @@ const config = {
           modules: [resolve('node_modules'), resolve('../node_modules')],
           alias: {
             'website-examples': resolve('../examples/website'),
-            'a5': resolve('../modules/'),
+            a5: resolve('../modules/'),
             'a5-internal': resolve('../modules/internal/'),
             react: resolve('node_modules/react'),
             'react-dom': resolve('node_modules/react-dom')

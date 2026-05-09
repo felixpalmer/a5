@@ -4,7 +4,7 @@
 
 import {vec2, mat2, mat2d, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Face } from '../core/coordinate-systems';
+import type {Face} from '../core/coordinate-systems';
 
 export type Pentagon = [Face, Face, Face, Face, Face];
 
@@ -13,12 +13,15 @@ export type Pentagon = [Face, Face, Face, Face, Face];
  * Returns true iff the closed segments p1→p2 and p3→p4 share at least one point.
  */
 function segments2dIntersect(p1: vec2, p2: vec2, p3: vec2, p4: vec2): boolean {
-  const d1x = p2[0] - p1[0], d1y = p2[1] - p1[1];
-  const d2x = p4[0] - p3[0], d2y = p4[1] - p3[1];
+  const d1x = p2[0] - p1[0],
+    d1y = p2[1] - p1[1];
+  const d2x = p4[0] - p3[0],
+    d2y = p4[1] - p3[1];
   const denom = d1x * d2y - d1y * d2x;
   if (Math.abs(denom) < 1e-12) return false;
 
-  const dx = p3[0] - p1[0], dy = p3[1] - p1[1];
+  const dx = p3[0] - p1[0],
+    dy = p3[1] - p1[1];
   const t = (dx * d2y - dy * d2x) / denom;
   const u = (dx * d1y - dy * d1x) / denom;
   return t >= 0 && t <= 1 && u >= 0 && u <= 1;
@@ -80,10 +83,10 @@ export class PentagonShape {
     for (const vertex of this.vertices) {
       vertex[1] = -vertex[1];
     }
-    
+
     // Then reverse the winding order to maintain consistent orientation
     this.vertices.reverse();
-    
+
     return this;
   }
 
@@ -128,7 +131,7 @@ export class PentagonShape {
   containsPoint(point: vec2): number {
     // TODO later we can likely remove this, but for now it's useful for debugging
     if (!this.isWindingCorrect()) {
-      throw new Error("Pentagon is not counter-clockwise");
+      throw new Error('Pentagon is not counter-clockwise');
     }
 
     const N = this.vertices.length;
@@ -136,18 +139,18 @@ export class PentagonShape {
     for (let i = 0; i < N; i++) {
       const v1 = this.vertices[i];
       const v2 = this.vertices[(i + 1) % N];
-      
+
       // Calculate the cross product to determine which side of the line the point is on
       // (v1 - v2) × (point - v1)
       const dx = v1[0] - v2[0];
       const dy = v1[1] - v2[1];
       const px = point[0] - v1[0];
       const py = point[1] - v1[1];
-      
+
       // Cross product: dx * py - dy * px
       // If positive, point is on the wrong side
       // If negative, point is on the correct side
-      const crossProduct = (dx * py - dy * px);
+      const crossProduct = dx * py - dy * px;
       if (crossProduct < 0) {
         // Only normalize by distance of point to edge as we can assume the edges of the
         // pentagon are all the same length
@@ -155,7 +158,7 @@ export class PentagonShape {
         dMax = Math.min(dMax, crossProduct / pLength);
       }
     }
-    
+
     return dMax;
   }
 
@@ -189,14 +192,14 @@ export class PentagonShape {
 
     const newVertices: Face[] = [];
     const N = this.vertices.length;
-    
+
     for (let i = 0; i < N; i++) {
       const v1 = this.vertices[i];
       const v2 = this.vertices[(i + 1) % N];
-      
+
       // Add the current vertex
       newVertices.push(vec2.clone(v1) as Face);
-      
+
       // Add interpolated points along the edge (excluding the endpoints)
       for (let j = 1; j < segments; j++) {
         const t = j / segments;
@@ -205,7 +208,7 @@ export class PentagonShape {
         newVertices.push(interpolated as Face);
       }
     }
-    
+
     return new PentagonShape(newVertices as Pentagon);
   }
-} 
+}

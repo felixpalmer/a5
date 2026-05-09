@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { vec3, quat, glMatrix } from "gl-matrix";
+import {vec3, quat, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 
-import type { Cartesian, Spherical } from "../core/coordinate-systems";
-import { toCartesian } from "../core/coordinate-transforms";
+import type {Cartesian, Spherical} from '../core/coordinate-systems';
+import {toCartesian} from '../core/coordinate-transforms';
 
 /**
  * Number of perturbed sample points the spiral can produce. Tuned via

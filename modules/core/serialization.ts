@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { A5Cell } from "./utils";
-import { Origin } from './utils';
-import { origins } from "./origin";
+import {A5Cell} from './utils';
+import {Origin} from './utils';
+import {origins} from './origin';
 
 export const FIRST_HILBERT_RESOLUTION = 2;
 export const MAX_RESOLUTION = 30;
@@ -21,7 +21,7 @@ export function getResolution(index: bigint): number {
   //   ...1     → 5-bit quintant (0-31),  58-bit S
   //   ...100   → 3-bit quintant (32-39), 58-bit S
   //   ...10000 → 1-bit quintant (40-41), 58-bit S
-  if ((index & 1n) || (index & 0b111n) === 0b100n || (index & 0b11111n) === 0b10000n) return MAX_RESOLUTION;
+  if (index & 1n || (index & 0b111n) === 0b100n || (index & 0b11111n) === 0b10000n) return MAX_RESOLUTION;
 
   let resolution = MAX_RESOLUTION - 1;
   let shifted = index >> 1n;
@@ -29,7 +29,7 @@ export function getResolution(index: bigint): number {
 
   // Fast path: split into 32-bit chunks and work with regular numbers (much faster than bigints)
   // Check low 32 bits first
-  let low32 = Number(shifted & 0xFFFFFFFFn);
+  let low32 = Number(shifted & 0xffffffffn);
   let remaining: number;
 
   if (low32 === 0) {
@@ -44,19 +44,19 @@ export function getResolution(index: bigint): number {
   }
 
   // Check remaining 16 bits
-  if ((remaining & 0xFFFF) === 0) {
+  if ((remaining & 0xffff) === 0) {
     remaining >>= 16;
     resolution -= 8;
   }
 
   // Check remaining 8 bits
-  if (resolution >= 6 && (remaining & 0xFF) === 0) {
+  if (resolution >= 6 && (remaining & 0xff) === 0) {
     remaining >>= 8;
     resolution -= 4;
   }
 
   // Check remaining 4 bits
-  if (resolution >= 4 && (remaining & 0xF) === 0) {
+  if (resolution >= 4 && (remaining & 0xf) === 0) {
     remaining >>= 4;
     resolution -= 2;
   }
@@ -78,7 +78,7 @@ export function deserialize(index: bigint): A5Cell {
   // Technically not a resolution, but can be useful to think of as an
   // abstract cell that contains the whole world
   if (resolution === -1) {
-    return { origin: origins[0], segment: 0, S: 0n, resolution };
+    return {origin: origins[0], segment: 0, S: 0n, resolution};
   }
 
   // For res 30, quintant bits are fewer to make room for S:
@@ -88,7 +88,7 @@ export function deserialize(index: bigint): A5Cell {
   let quintantShift = HILBERT_START_BIT;
   let quintantOffset = 0;
   if (resolution === MAX_RESOLUTION) {
-    const markerBits = (index & 1n) ? 1n : (index & 0b100n) ? 3n : 5n;
+    const markerBits = index & 1n ? 1n : index & 0b100n ? 3n : 5n;
     quintantShift = HILBERT_START_BIT + markerBits;
     quintantOffset = markerBits === 1n ? 0 : markerBits === 3n ? 32 : 40;
   }
@@ -113,7 +113,7 @@ export function deserialize(index: bigint): A5Cell {
   }
 
   if (resolution < FIRST_HILBERT_RESOLUTION) {
-    return { origin, segment, S: 0n, resolution };
+    return {origin, segment, S: 0n, resolution};
   }
 
   // Mask away origin & segment and shift away resolution and marker bits
@@ -121,7 +121,7 @@ export function deserialize(index: bigint): A5Cell {
   const hilbertBits = BigInt(2 * hilbertLevels);
   const removalMask = (1n << quintantShift) - 1n;
   const S = (index & removalMask) >> (quintantShift - hilbertBits);
-  return { origin, segment, S, resolution };
+  return {origin, segment, S, resolution};
 }
 
 export function serialize(cell: A5Cell): bigint {
@@ -179,7 +179,7 @@ export function serialize(cell: A5Cell): bigint {
   if (resolution >= FIRST_HILBERT_RESOLUTION) {
     const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
     const hilbertBits = BigInt(2 * hilbertLevels);
-    if (BigInt(S) >= (1n << hilbertBits)) {
+    if (BigInt(S) >= 1n << hilbertBits) {
       throw new Error(`S (${S}) is too large for resolution level ${resolution}`);
     }
     index += BigInt(S) << (quintantShift - hilbertBits);
@@ -196,7 +196,9 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
   const newResolution = childResolution ?? currentResolution + 1;
 
   if (newResolution < currentResolution) {
-    throw new Error(`Target resolution (${newResolution}) must be equal to or greater than current resolution (${currentResolution})`);
+    throw new Error(
+      `Target resolution (${newResolution}) must be equal to or greater than current resolution (${currentResolution})`
+    );
   }
 
   if (newResolution > MAX_RESOLUTION) {
@@ -213,10 +215,7 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
   if (currentResolution === -1) {
     newOrigins = origins;
   }
-  if (
-    (currentResolution === -1 && newResolution > 0)
-    || currentResolution === 0
-    ) {
+  if ((currentResolution === -1 && newResolution > 0) || currentResolution === 0) {
     newSegments = [0, 1, 2, 3, 4];
   }
 
@@ -232,7 +231,7 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
       }
     }
   }
-  
+
   return children;
 }
 
@@ -242,11 +241,7 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
  * variable-width quintant marker patterns.
  */
 function isMaxResolution(index: bigint): boolean {
-  return (
-    (index & 1n) !== 0n
-    || (index & 0b111n) === 0b100n
-    || (index & 0b11111n) === 0b10000n
-  );
+  return (index & 1n) !== 0n || (index & 0b111n) === 0b100n || (index & 0b11111n) === 0b10000n;
 }
 
 /**
@@ -256,9 +251,19 @@ function isMaxResolution(index: bigint): boolean {
  */
 function normalizeRes30(index: bigint): bigint {
   let qShift: bigint, qOffset: bigint, markerBits: bigint;
-  if (index & 1n)               { qShift = 59n; qOffset = 0n;  markerBits = 1n; }
-  else if (index & 0b100n)      { qShift = 61n; qOffset = 32n; markerBits = 3n; }
-  else                          { qShift = 63n; qOffset = 40n; markerBits = 5n; }
+  if (index & 1n) {
+    qShift = 59n;
+    qOffset = 0n;
+    markerBits = 1n;
+  } else if (index & 0b100n) {
+    qShift = 61n;
+    qOffset = 32n;
+    markerBits = 3n;
+  } else {
+    qShift = 63n;
+    qOffset = 40n;
+    markerBits = 5n;
+  }
   const quintant = (index >> qShift) + qOffset;
   const s58 = (index >> markerBits) & ((1n << 58n) - 1n);
   return (quintant << 58n) | ((s58 >> 2n) << 2n) | (1n << 1n);
@@ -318,7 +323,7 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
 /**
  * Returns resolution 0 cells of the A5 system, which serve as a starting point
  * for all higher-resolution subdivisions in the hierarchy.
- * 
+ *
  * @returns Array of 12 cell indices
  */
 export function getRes0Cells(): bigint[] {
@@ -341,7 +346,7 @@ export function isFirstChild(index: bigint, resolution?: number): boolean {
 
   if (resolution === MAX_RESOLUTION) {
     // S's 2 LSBs sit just above the marker bits
-    const markerBits = (index & 1n) ? 1n : (index & 0b100n) ? 3n : 5n;
+    const markerBits = index & 1n ? 1n : index & 0b100n ? 3n : 5n;
     return (index & (3n << markerBits)) === 0n;
   }
 
@@ -366,7 +371,7 @@ export function isChildOf(child: bigint, parent: bigint, parentResolution: numbe
   // Shifting both right by (60-2P) keeps exactly those identifying bits and
   // discards the marker, so a descendant matches iff the high bits match.
   const shift = BigInt(60 - 2 * parentResolution);
-  return (child >> shift) === (parent >> shift);
+  return child >> shift === parent >> shift;
 }
 
 /**
@@ -374,7 +379,7 @@ export function isChildOf(child: bigint, parent: bigint, parentResolution: numbe
  */
 export function getStride(resolution: number): bigint {
   // Both level 0 & 1 just write values 0-11 or 0-59 to the first 6 bits
-  if (resolution < 2) return (1n << HILBERT_START_BIT);
+  if (resolution < 2) return 1n << HILBERT_START_BIT;
 
   // For res 30, S is shifted left by 1 (marker bit at position 0)
   if (resolution === MAX_RESOLUTION) return 2n;

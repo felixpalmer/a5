@@ -4,8 +4,14 @@ import DeckGL from '@deck.gl/react';
 import {MapViewState} from '@deck.gl/core';
 import {BitmapLayer, PathLayer, PolygonLayer, ScatterplotLayer} from '@deck.gl/layers';
 import {
-  BezierVertex, ContourData, HoverCells,
-  sampleBezierPath, roundTripA5, roundTripH3, roundTripS2, getCellsAtLocation
+  BezierVertex,
+  ContourData,
+  HoverCells,
+  sampleBezierPath,
+  roundTripA5,
+  roundTripH3,
+  roundTripS2,
+  getCellsAtLocation
 } from './utils';
 
 const INITIAL_VIEW_STATE: MapViewState = {
@@ -18,9 +24,7 @@ const INITIAL_VIEW_STATE: MapViewState = {
   bearing: -43
 };
 
-const IMAGE_BOUNDS: [number, number, number, number] = [
-  -73.9235733535, 40.8209720877, -73.9214787230, 40.8223914219
-];
+const IMAGE_BOUNDS: [number, number, number, number] = [-73.9235733535, 40.8209720877, -73.921478723, 40.8223914219];
 
 type SystemKey = 'original' | 'a5' | 'h3' | 's2';
 
@@ -76,14 +80,17 @@ const App: React.FC = () => {
     setViewState(viewState);
   }, []);
 
-  const onHover = useCallback((info: any) => {
-    if (showCell && info.coordinate) {
-      const [lon, lat] = info.coordinate;
-      setHoverCells(getCellsAtLocation(lon, lat));
-    } else {
-      setHoverCells(null);
-    }
-  }, [showCell]);
+  const onHover = useCallback(
+    (info: any) => {
+      if (showCell && info.coordinate) {
+        const [lon, lat] = info.coordinate;
+        setHoverCells(getCellsAtLocation(lon, lat));
+      } else {
+        setHoverCells(null);
+      }
+    },
+    [showCell]
+  );
 
   const sys = SYSTEMS.find(s => s.key === selected)!;
 
@@ -155,24 +162,22 @@ const App: React.FC = () => {
         layers={layers}
       />
 
-      <div style={{
-        position: 'absolute',
-        top: 20,
-        left: 20,
-        background: 'white',
-        padding: 10,
-        borderRadius: 4,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        zIndex: 1
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          background: 'white',
+          padding: 10,
+          borderRadius: 4,
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          zIndex: 1
+        }}
+      >
         <div style={{marginBottom: 10}}>
           <label>
             Grid system:{' '}
-            <select
-              value={selected}
-              onChange={e => setSelected(e.target.value as SystemKey)}
-              style={{marginLeft: 5}}
-            >
+            <select value={selected} onChange={e => setSelected(e.target.value as SystemKey)} style={{marginLeft: 5}}>
               {SYSTEMS.map(s => (
                 <option key={s.key} value={s.key}>
                   {s.label}
@@ -183,11 +188,7 @@ const App: React.FC = () => {
         </div>
         <div>
           <label>
-            <input
-              type="checkbox"
-              checked={showCell}
-              onChange={e => setShowCell(e.target.checked)}
-            /> Show nearest cell
+            <input type="checkbox" checked={showCell} onChange={e => setShowCell(e.target.checked)} /> Show nearest cell
           </label>
         </div>
       </div>

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { sampleGreatCircleArc, greatCircleDistance } = require('../../a5-test.cjs');
+const {sampleGreatCircleArc, greatCircleDistance} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/utils');
 const outputPath = path.join(outputDir, 'great-circle.json');
@@ -29,7 +29,7 @@ const cases = [
   // Antimeridian crossing.
   {name: 'antimeridian', a: [170, 5], b: [-170, -5], sampleInterval: 200_000},
   // Polar arc (great circle through both poles).
-  {name: 'over_pole', a: [0, 80], b: [180, 80], sampleInterval: 500_000},
+  {name: 'over_pole', a: [0, 80], b: [180, 80], sampleInterval: 500_000}
 ];
 
 const fixtures = cases.map(c => {
@@ -46,15 +46,15 @@ const fixtures = cases.map(c => {
     sampleInterval: c.sampleInterval,
     distance,
     sampleCount: samples.length,
-    samples: samples.map(s => [s[0], s[1], s[2]]),
+    samples: samples.map(s => [s[0], s[1], s[2]])
   };
 });
 
 console.log('Generating utils/great-circle fixtures...');
 for (const f of fixtures) {
-  console.log(`  ${f.name}: dist=${(f.distance/1000).toFixed(1)}km samples=${f.sampleCount}`);
+  console.log(`  ${f.name}: dist=${(f.distance / 1000).toFixed(1)}km samples=${f.sampleCount}`);
 }
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify({sampleGreatCircleArc: fixtures}, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

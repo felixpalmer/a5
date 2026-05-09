@@ -35,4 +35,4 @@ class TeohedronDodecahedronDemo extends Component {
   }
 }
 
-export default makeExample(TeohedronDodecahedronDemo); 
+export default makeExample(TeohedronDodecahedronDemo);

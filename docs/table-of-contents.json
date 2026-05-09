@@ -2,10 +2,7 @@
   {
     "type": "category",
     "label": "Overview",
-    "items": [
-      "README",
-      "motivation"
-    ]
+    "items": ["README", "motivation"]
   },
   {
     "type": "category",
@@ -21,11 +18,7 @@
   {
     "type": "category",
     "label": "Recipes",
-    "items": [
-      "recipes/README",
-      "recipes/a5-vs-h3",
-      "recipes/paris-restaurant-density"
-    ]
+    "items": ["recipes/README", "recipes/a5-vs-h3", "recipes/paris-restaurant-density"]
   },
   {
     "type": "category",
@@ -53,10 +46,6 @@
   {
     "type": "category",
     "label": "Ecosystem",
-    "items": [
-      "ecosystem/README",
-      "ecosystem/podcasts-and-talks",
-      "ecosystem/polyglot-mirroring"
-    ]
+    "items": ["ecosystem/README", "ecosystem/podcasts-and-talks", "ecosystem/polyglot-mirroring"]
   }
 ]

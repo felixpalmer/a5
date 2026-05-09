@@ -1,12 +1,12 @@
-import { glMatrix, vec3 } from 'gl-matrix';
+import {glMatrix, vec3} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import { describe, it, expect } from 'vitest';
-import { PolyhedralProjection } from '../../modules/projections/polyhedral';
+import {describe, it, expect} from 'vitest';
+import {PolyhedralProjection} from '../../modules/projections/polyhedral';
 import TEST_DATA from './fixtures/polyhedral.json';
-import { Cartesian } from '../../modules/core/coordinate-systems';
+import {Cartesian} from '../../modules/core/coordinate-systems';
 
 // Extract static data from test data
-const { TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE } = TEST_DATA.static;
+const {TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE} = TEST_DATA.static;
 
 const AUTHALIC_RADIUS = 6371.0072; // km
 const MAX_ANGLE = Math.max(
@@ -20,10 +20,14 @@ const DESIRED_MM_PRECISION = 0.01;
 describe('PolyhedralProjection forward', () => {
   const polyhedral = new PolyhedralProjection();
   let largestError = 0;
-  
+
   it('forward projections', () => {
     TEST_DATA.forward.forEach((testCase, index) => {
-      const result = polyhedral.forward(testCase.input as any, TEST_SPHERICAL_TRIANGLE as any, TEST_FACE_TRIANGLE as any);
+      const result = polyhedral.forward(
+        testCase.input as any,
+        TEST_SPHERICAL_TRIANGLE as any,
+        TEST_FACE_TRIANGLE as any
+      );
       expect(result).toBeCloseToArray(testCase.expected as number[]);
     });
   });
@@ -45,10 +49,14 @@ describe('PolyhedralProjection forward', () => {
 
 describe('PolyhedralProjection inverse', () => {
   const polyhedral = new PolyhedralProjection();
-  
+
   it('inverse projections', () => {
     TEST_DATA.inverse.forEach((testCase, index) => {
-      const result = polyhedral.inverse(testCase.input as any, TEST_FACE_TRIANGLE as any, TEST_SPHERICAL_TRIANGLE as any);
+      const result = polyhedral.inverse(
+        testCase.input as any,
+        TEST_FACE_TRIANGLE as any,
+        TEST_SPHERICAL_TRIANGLE as any
+      );
       expect(result).toBeCloseToArray(testCase.expected as number[]);
     });
   });

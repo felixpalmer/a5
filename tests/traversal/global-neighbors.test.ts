@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { hexToU64, u64ToHex, getResolution } from 'a5';
-import { getGlobalCellNeighbors } from 'a5/traversal/global-neighbors';
+import {describe, it, expect} from 'vitest';
+import {hexToU64, u64ToHex, getResolution} from 'a5';
+import {getGlobalCellNeighbors} from 'a5/traversal/global-neighbors';
 import fixtures from '../fixtures/traversal/global-neighbors.json';
 
 type Fixture = {
-  input: { cellId: string };
-  output: { neighbors: string[]; edgeNeighbors: string[] };
+  input: {cellId: string};
+  output: {neighbors: string[]; edgeNeighbors: string[]};
 };
 
 describe('getGlobalCellNeighbors', () => {
@@ -20,7 +20,7 @@ describe('getGlobalCellNeighbors', () => {
   it('should find edge-only neighbors', () => {
     for (const f of fixtures as Fixture[]) {
       const cellId = hexToU64(f.input.cellId);
-      const result = getGlobalCellNeighbors(cellId, { edgeOnly: true }).map(n => u64ToHex(n));
+      const result = getGlobalCellNeighbors(cellId, {edgeOnly: true}).map(n => u64ToHex(n));
       expect(result).toEqual(f.output.edgeNeighbors);
     }
   });

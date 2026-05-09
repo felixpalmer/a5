@@ -1,23 +1,23 @@
 // IVEA (Icosahedral Vertex Equal Area) projection implementation
 // Adaptation of icoVertexGreatCircle.ec from DGGAL project
 // BSD 3-Clause License
-// 
+//
 // Copyright (c) 2014-2025, Ecere Corporation
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // 1. Redistributions of source code must retain the above copyright notice, this
 //    list of conditions and the following disclaimer.
-// 
+//
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
 //    and/or other materials provided with the distribution.
-// 
+//
 // 3. Neither the name of the copyright holder nor the names of its
 //    contributors may be used to endorse or promote products derived from
 //    this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,12 +32,12 @@
 // BSD 3-Clause License
 // Copyright (c) 2024, A5 Project Contributors
 // All rights reserved.
-import { vec3, glMatrix } from "gl-matrix";
+import {vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Cartesian, Face, Barycentric, FaceTriangle, SphericalTriangle } from "../core/coordinate-systems";
-import { faceToBarycentric, barycentricToFace } from "../core/coordinate-transforms";
-import { SphericalTriangleShape } from "../geometry/spherical-triangle";
-import { vectorDifference, quadrupleProduct, slerp } from "../utils/vector";
+import type {Cartesian, Face, Barycentric, FaceTriangle, SphericalTriangle} from '../core/coordinate-systems';
+import {faceToBarycentric, barycentricToFace} from '../core/coordinate-transforms';
+import {SphericalTriangleShape} from '../geometry/spherical-triangle';
+import {vectorDifference, quadrupleProduct, slerp} from '../utils/vector';
 
 export class PolyhedralProjection {
   /**
@@ -86,7 +86,7 @@ export class PolyhedralProjection {
     if (b[0] > threshold) return A;
     if (b[1] > threshold) return B;
     if (b[2] > threshold) return C;
-    
+
     const c1 = vec3.create();
     vec3.cross(c1, B, C);
     const Area_ABC = triangleShape.getArea();
@@ -115,14 +115,14 @@ export class PolyhedralProjection {
 
   /**
    * Computes acos(1 - 2 * x * x) without loss of precision for small x
-   * @param x 
+   * @param x
    * @returns acos(1 - x)
    */
   private safeAcos(x: number): number {
     if (x < 1e-3) {
-      return (2 * x + x * x * x / 3);
+      return 2 * x + (x * x * x) / 3;
     } else {
       return Math.acos(1 - 2 * x * x);
     }
   }
-} 
+}

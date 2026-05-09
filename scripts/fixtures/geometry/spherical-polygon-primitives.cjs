@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { pointInSphericalPolygon, ringWindingSign } = require('../../a5-test.cjs');
+const {pointInSphericalPolygon, ringWindingSign} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/geometry');
 const outputPath = path.join(outputDir, 'spherical-polygon-primitives.json');
@@ -17,6 +17,7 @@ function llToVec(ll) {
 
 // --- pointInSphericalPolygon ---
 // Each case: ring (lon/lat polygon, CCW), points (test points in lon/lat).
+// prettier-ignore
 const pipCases = [
   {
     name: 'simple_quad',
@@ -27,8 +28,8 @@ const pipCases = [
       [20, 49],  // outside east
       [-10, 49], // outside west
       [5, 60],   // outside north
-      [5, 40],   // outside south
-    ],
+      [5, 40]    // outside south
+    ]
   },
   {
     name: 'concave_l_shape',
@@ -39,19 +40,19 @@ const pipCases = [
       [0, 52],   // inside (upper bar)
       [10, 52],  // outside (notch)
       [12, 52],  // outside (notch, right)
-      [-10, 49], // outside
-    ],
+      [-10, 49]  // outside
+    ]
   },
   {
     name: 'concave_zigzag',
     ring: [[0, 0], [10, 0], [10, 5], [5, 5], [5, 10], [10, 10], [10, 15], [0, 15]],
     points: [
-      [2, 7],   // inside
-      [7, 2],   // inside
-      [7, 7],   // outside (notch)
-      [7, 12],  // inside
-      [-1, 7],  // outside
-    ],
+      [2, 7],  // inside
+      [7, 2],  // inside
+      [7, 7],  // outside (notch)
+      [7, 12], // inside
+      [-1, 7]  // outside
+    ]
   },
   {
     // Triangle straddling the antimeridian. Verifies the great-circle PIP
@@ -59,33 +60,33 @@ const pipCases = [
     name: 'antimeridian_triangle',
     ring: [[170, 10], [-170, 10], [-180, -10]],
     points: [
-      [180, 0],   // inside (on antimeridian)
-      [175, 5],   // inside (near east edge)
-      [-175, 5],  // inside (near west edge)
-      [160, 0],   // outside
-      [-160, 0],  // outside
-    ],
+      [180, 0],  // inside (on antimeridian)
+      [175, 5],  // inside (near east edge)
+      [-175, 5], // inside (near west edge)
+      [160, 0],  // outside
+      [-160, 0]  // outside
+    ]
   },
   {
     // Polygon enclosing the north pole. Sums to ±2π only with proper signed-angle handling.
     name: 'arctic_cap',
     ring: [[0, 75], [120, 75], [-120, 75]],
     points: [
-      [0, 89],    // inside (near pole)
-      [60, 80],   // inside
-      [0, 60],    // outside
-      [180, 70],  // outside
-    ],
+      [0, 89],   // inside (near pole)
+      [60, 80],  // inside
+      [0, 60],   // outside
+      [180, 70]  // outside
+    ]
   },
   {
     name: 'tiny_equatorial',
     ring: [[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01]],
     points: [
-      [0.005, 0.005], // inside
-      [0.02, 0.005],  // outside
-      [-0.005, 0.005], // outside
-    ],
-  },
+      [0.005, 0.005],  // inside
+      [0.02, 0.005],   // outside
+      [-0.005, 0.005]  // outside
+    ]
+  }
 ];
 
 const pipFixtures = pipCases.map(c => {
@@ -98,14 +99,15 @@ const pipFixtures = pipCases.map(c => {
       return {
         lonLat: p,
         vec: v,
-        inside: pointInSphericalPolygon(v, ringVecs),
+        inside: pointInSphericalPolygon(v, ringVecs)
       };
-    }),
+    })
   };
 });
 
 // --- ringWindingSign ---
 // Same lon/lat ring tested in CCW and CW orientations.
+// prettier-ignore
 const windingCases = [
   {name: 'quad_ccw', ring: [[-5, 44], [15, 44], [15, 54], [-5, 54]]},
   {name: 'quad_cw',  ring: [[-5, 44], [-5, 54], [15, 54], [15, 44]]},
@@ -115,7 +117,7 @@ const windingCases = [
   // Triangle on the southern hemisphere — centroid is on the south side
   // but the same CCW-when-viewed-from-outside convention should hold.
   {name: 'southern_triangle_ccw', ring: [[-5, -25], [15, -25], [5, -35]]},
-  {name: 'southern_triangle_cw',  ring: [[-5, -25], [5, -35], [15, -25]]},
+  {name: 'southern_triangle_cw',  ring: [[-5, -25], [5, -35], [15, -25]]}
 ];
 
 const windingFixtures = windingCases.map(c => {
@@ -123,7 +125,7 @@ const windingFixtures = windingCases.map(c => {
   return {
     name: c.name,
     ring: c.ring,
-    sign: ringWindingSign(ringVecs),
+    sign: ringWindingSign(ringVecs)
   };
 });
 
@@ -139,9 +141,16 @@ for (const f of windingFixtures) {
   console.log(`    ${f.name}: sign=${f.sign}`);
 }
 
-fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(outputPath, JSON.stringify({
-  pointInSphericalPolygon: pipFixtures,
-  ringWindingSign: windingFixtures,
-}, null, 2));
+fs.mkdirSync(outputDir, {recursive: true});
+fs.writeFileSync(
+  outputPath,
+  JSON.stringify(
+    {
+      pointInSphericalPolygon: pipFixtures,
+      ringWindingSign: windingFixtures
+    },
+    null,
+    2
+  )
+);
 console.log(`  Wrote fixtures to ${outputPath}`);

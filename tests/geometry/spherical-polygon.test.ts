@@ -1,15 +1,15 @@
-import { describe, it, expect } from 'vitest'
-import { SphericalPolygonShape, type SphericalPolygon } from 'a5/geometry/spherical-polygon'
-import type { Cartesian } from 'a5/core/coordinate-systems'
-import { vec3 } from 'gl-matrix'
-import fixtures from './fixtures/spherical-polygon.json'
+import {describe, it, expect} from 'vitest';
+import {SphericalPolygonShape, type SphericalPolygon} from 'a5/geometry/spherical-polygon';
+import type {Cartesian} from 'a5/core/coordinate-systems';
+import {vec3} from 'gl-matrix';
+import fixtures from './fixtures/spherical-polygon.json';
 
 describe('spherical-polygon.ts', () => {
   describe('getBoundary', () => {
     it('returns boundary points with different segment counts', () => {
       (fixtures as any[]).forEach((fixture: any, i: number) => {
         const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
-        
+
         // Test boundaries with 1-3 segments
         [1, 2, 3].forEach(nSegments => {
           const boundary = polygon.getBoundary(nSegments, true);
@@ -27,8 +27,8 @@ describe('spherical-polygon.ts', () => {
     it('interpolates between vertices', () => {
       (fixtures as any[]).forEach((fixture: any) => {
         const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
-        
-        fixture.slerpTests.forEach(({ t, result }: any) => {
+
+        fixture.slerpTests.forEach(({t, result}: any) => {
           const actual = polygon.slerp(t);
           expect(actual).toBeCloseToArray(result, 6);
           // Should be normalized
@@ -42,8 +42,8 @@ describe('spherical-polygon.ts', () => {
     it('correctly identifies points inside and outside polygon', () => {
       (fixtures as any[]).forEach((fixture: any) => {
         const polygon = new SphericalPolygonShape(fixture.vertices as Cartesian[]);
-        
-        fixture.containsPointTests.forEach(({ point, result }: any) => {
+
+        fixture.containsPointTests.forEach(({point, result}: any) => {
           const actual = polygon.containsPoint(point as Cartesian);
           expect(actual).toBeCloseTo(result, 6);
         });
@@ -65,8 +65,8 @@ describe('spherical-polygon.ts', () => {
 
     it('returns 0 for degenerate polygons', () => {
       expect(new SphericalPolygonShape([]).getArea()).toBe(0);
-      expect(new SphericalPolygonShape([[1,0,0] as Cartesian]).getArea()).toBe(0);
-      expect(new SphericalPolygonShape([[1,0,0] as Cartesian, [0,1,0] as Cartesian]).getArea()).toBe(0);
+      expect(new SphericalPolygonShape([[1, 0, 0] as Cartesian]).getArea()).toBe(0);
+      expect(new SphericalPolygonShape([[1, 0, 0] as Cartesian, [0, 1, 0] as Cartesian]).getArea()).toBe(0);
     });
   });
-}); 
+});

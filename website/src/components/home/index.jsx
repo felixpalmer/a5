@@ -19,7 +19,7 @@ export default function renderPage({HeroExample, children}) {
         <BannerContainer>
           <ProjectName>{siteConfig.title}</ProjectName>
           <p>{siteConfig.tagline}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
             <GetStartedLink href="./docs/">INTRODUCTION</GetStartedLink>
             <GetStartedLink href="./examples/">EXAMPLES</GetStartedLink>
           </div>

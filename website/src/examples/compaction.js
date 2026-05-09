@@ -14,8 +14,13 @@ class CompactionDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
-        <p>When cells have a common parent, they can be "compacted", that is represented solely by their parent cell. To retrieve the original cells, the compacted cells are uncompacted</p>
-        <p>The gaps in the compacted view are expected, as compacted cells represent children logically, not spatially.</p>
+        <p>
+          When cells have a common parent, they can be "compacted", that is represented solely by their parent cell. To
+          retrieve the original cells, the compacted cells are uncompacted
+        </p>
+        <p>
+          The gaps in the compacted view are expected, as compacted cells represent children logically, not spatially.
+        </p>
       </div>
     );
   }

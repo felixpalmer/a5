@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { Spiral, SPIRAL_SAMPLE_COUNT } from 'a5/utils/spiral';
-import type { Cartesian, Spherical } from 'a5/core/coordinate-systems';
+import {describe, it, expect} from 'vitest';
+import {Spiral, SPIRAL_SAMPLE_COUNT} from 'a5/utils/spiral';
+import type {Cartesian, Spherical} from 'a5/core/coordinate-systems';
 import fixtures from '../fixtures/utils/spiral.json';
 import './matchers';
 

@@ -13,7 +13,7 @@ class HomeDemo extends Component {
   }
 
   render() {
-    return <App showCellId={false}/>;
+    return <App showCellId={false} />;
   }
 }
 

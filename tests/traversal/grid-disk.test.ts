@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { gridDisk, gridDiskVertex, uncompact, getResolution, hexToU64, u64ToHex } from 'a5';
+import {describe, it, expect} from 'vitest';
+import {gridDisk, gridDiskVertex, uncompact, getResolution, hexToU64, u64ToHex} from 'a5';
 import fixtures from '../fixtures/traversal/grid-disk.json';
 
 type Fixture = {
@@ -21,8 +21,7 @@ describe('gridDisk', () => {
     for (const f of cases) {
       const cellId = hexToU64(f.cellId);
       const targetRes = getResolution(cellId);
-      const result = sortHex(Array.from(uncompact(gridDisk(cellId, f.k), targetRes))
-        .map(n => u64ToHex(n)));
+      const result = sortHex(Array.from(uncompact(gridDisk(cellId, f.k), targetRes)).map(n => u64ToHex(n)));
       expect(result).toEqual(sortHex([...f.cells]));
     }
   });
@@ -45,8 +44,7 @@ describe('gridDiskVertex', () => {
       const cellId = hexToU64(f.cellId);
       const targetRes = getResolution(cellId);
       const expected = sortHex([...f.cells, ...f.extraVertexCells]);
-      const result = sortHex(Array.from(uncompact(gridDiskVertex(cellId, f.k), targetRes))
-        .map(n => u64ToHex(n)));
+      const result = sortHex(Array.from(uncompact(gridDiskVertex(cellId, f.k), targetRes)).map(n => u64ToHex(n)));
       expect(result).toEqual(expected);
     }
   });

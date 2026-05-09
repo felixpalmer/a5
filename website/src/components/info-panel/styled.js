@@ -26,7 +26,9 @@ export const PanelContainer = styled.div`
     width: auto;
     left: 0;
     padding: 10px 106x;
-    ${props => !props.$expanded && `
+    ${props =>
+      !props.$expanded &&
+      `
       background: transparent;
       box-shadow: none;
       pointer-events: none;
@@ -58,7 +60,7 @@ export const PanelExpander = styled.div`
     color: ${props => (props.$expanded ? 'var(--ifm-color-black)' : 'var(--ifm-color-gray-900)')};
     border-radius: 32px;
     padding: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     pointer-events: auto;
   }
 `;
@@ -71,7 +73,9 @@ export const PanelTitle = styled.div`
   margin: 8px 0;
   ${isMobile} {
     cursor: pointer;
-    ${props => !props.$expanded && `
+    ${props =>
+      !props.$expanded &&
+      `
       > div:first-child {
         display: none;
       }

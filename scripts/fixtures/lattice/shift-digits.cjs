@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { shiftDigits } = require('../../a5-test.cjs');
+const {shiftDigits} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/lattice');
 const outputPath = path.join(outputDir, 'shift-digits.json');
@@ -15,12 +15,12 @@ const flipCombos = [
   [NO, NO],
   [NO, YES],
   [YES, NO],
-  [YES, YES],
+  [YES, YES]
 ];
 
 const patterns = {
   PATTERN: [0, 1, 3, 4, 5, 6, 7, 2],
-  PATTERN_FLIPPED: [0, 1, 2, 7, 3, 4, 5, 6],
+  PATTERN_FLIPPED: [0, 1, 2, 7, 3, 4, 5, 6]
 };
 
 // Reverse pattern helper (same as in shift-digits.ts)
@@ -40,9 +40,7 @@ for (const [patternName, pattern] of Object.entries(patterns)) {
       for (let i = 1; i <= 2; i++) {
         for (let parentK = 0; parentK < 4; parentK++) {
           for (let childK = 0; childK < 4; childK++) {
-            const digits = i === 1
-              ? [childK, parentK, 0]
-              : [0, childK, parentK];
+            const digits = i === 1 ? [childK, parentK, 0] : [0, childK, parentK];
 
             const digitsBefore = [...digits];
             shiftDigits(digits, i, flips, invertJ, pattern);
@@ -53,7 +51,7 @@ for (const [patternName, pattern] of Object.entries(patterns)) {
               flips: [...flips],
               invertJ,
               patternName,
-              digitsAfter: [...digits],
+              digitsAfter: [...digits]
             });
           }
         }
@@ -73,16 +71,16 @@ for (const [patternName, pattern] of Object.entries(patterns)) {
     flips: [NO, NO],
     invertJ: false,
     patternName,
-    digitsAfter: [...digits],
+    digitsAfter: [...digits]
   });
 }
 
 console.log(`  shiftDigits: ${shiftDigitsFixtures.length} cases`);
 
 const fixtures = {
-  shiftDigits: shiftDigitsFixtures,
+  shiftDigits: shiftDigitsFixtures
 };
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

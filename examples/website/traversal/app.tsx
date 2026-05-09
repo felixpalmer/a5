@@ -17,7 +17,7 @@ const INITIAL_VIEW_STATE = {
   latitude: 30,
   zoom: 2,
   pitch: 0,
-  bearing: 0,
+  bearing: 0
 };
 
 const SELECTED_COLOR: [number, number, number, number] = [255, 255, 0, 200];
@@ -59,8 +59,7 @@ function haversineDistance(a: LonLat, b: LonLat): number {
   const dLon = (b[0] - a[0]) * DEG_TO_RAD;
   const sinLat = Math.sin(dLat / 2);
   const sinLon = Math.sin(dLon / 2);
-  const h = sinLat * sinLat +
-    Math.cos(a[1] * DEG_TO_RAD) * Math.cos(b[1] * DEG_TO_RAD) * sinLon * sinLon;
+  const h = sinLat * sinLat + Math.cos(a[1] * DEG_TO_RAD) * Math.cos(b[1] * DEG_TO_RAD) * sinLon * sinLon;
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
 }
 
@@ -137,7 +136,11 @@ function formatRadius(meters: number): string {
     return km >= 100 ? `${Math.round(km)} km` : km >= 10 ? `${km.toFixed(1)} km` : `${km.toFixed(2)} km`;
   }
   if (meters >= 1) {
-    return meters >= 100 ? `${Math.round(meters)} m` : meters >= 10 ? `${meters.toFixed(1)} m` : `${meters.toFixed(2)} m`;
+    return meters >= 100
+      ? `${Math.round(meters)} m`
+      : meters >= 10
+        ? `${meters.toFixed(1)} m`
+        : `${meters.toFixed(2)} m`;
   }
   const mm = meters * 1000;
   return mm >= 100 ? `${Math.round(mm)} mm` : mm >= 10 ? `${mm.toFixed(1)} mm` : `${mm.toFixed(2)} mm`;
@@ -157,7 +160,7 @@ const App: React.FC = () => {
   // Compensate Mercator zoom for latitude: Mercator inflates by 1/cos(lat),
   // so subtract log2(cos(lat)) to get ground-truth zoom.
   const effectiveZoom = useMemo(() => {
-    const latRad = center[1] * Math.PI / 180;
+    const latRad = (center[1] * Math.PI) / 180;
     return zoom - Math.log2(Math.max(Math.cos(latRad), 0.01));
   }, [zoom, center]);
 
@@ -166,7 +169,7 @@ const App: React.FC = () => {
   const selectedId = useMemo(() => lonLatToCell(center, resolution), [center, resolution]);
 
   const baseRadius = useMemo(() => zoomToBaseRadius(effectiveZoom), [effectiveZoom]);
-  const radiusM = baseRadius * radiusFraction / 100;
+  const radiusM = (baseRadius * radiusFraction) / 100;
 
   const onMove = useCallback((e: any) => {
     setZoom(e.viewState.zoom);
@@ -184,13 +187,16 @@ const App: React.FC = () => {
   // Compact data (default mode)
   const compactData = useMemo((): CompactCell[] => {
     if (doUncompact) return [];
-    const cells = mode === 'cap'
-      ? sphericalCap(selectedId, radiusM)
-      : edgeOnly ? gridDisk(selectedId, k) : gridDiskVertex(selectedId, k);
+    const cells =
+      mode === 'cap'
+        ? sphericalCap(selectedId, radiusM)
+        : edgeOnly
+          ? gridDisk(selectedId, k)
+          : gridDiskVertex(selectedId, k);
     return Array.from(cells).map(id => ({
       id,
       boundary: cellBoundary(id),
-      resolution: getResolution(id),
+      resolution: getResolution(id)
     }));
   }, [selectedId, mode, k, radiusM, edgeOnly, doUncompact]);
 
@@ -211,7 +217,8 @@ const App: React.FC = () => {
 
   const [minCompactRes, maxCompactRes] = useMemo(() => {
     if (compactData.length === 0) return [0, 0];
-    let min = Infinity, max = -Infinity;
+    let min = Infinity,
+      max = -Infinity;
     for (const c of compactData) {
       if (c.resolution < min) min = c.resolution;
       if (c.resolution > max) max = c.resolution;
@@ -219,38 +226,40 @@ const App: React.FC = () => {
     return [min, max];
   }, [compactData]);
 
-  const layers = useMemo(() => [
-    new PolygonLayer<OverlayCell>({
-      id: 'gridDisk-overlay',
-      data: overlayData,
-      getPolygon: d => d.boundary,
-      getFillColor: d => d.ring === 0 ? SELECTED_COLOR : ringColor(d.ring, maxRing),
-      getLineColor: [255, 255, 255, 120],
-      getLineWidth: 1,
-      lineWidthUnits: 'pixels',
-      filled: true,
-      stroked: true,
-      pickable: false,
-      beforeId: 'watername_ocean',
-      parameters: {cullMode: 'back', depthCompare: 'always'},
-    }),
-    new PolygonLayer<CompactCell>({
-      id: 'compact-overlay',
-      data: compactData,
-      getPolygon: d => d.boundary,
-      getFillColor: d => d.id === selectedId
-        ? SELECTED_COLOR
-        : resolutionColor(d.resolution, minCompactRes, maxCompactRes),
-      getLineColor: [255, 255, 255, 150],
-      getLineWidth: 1,
-      lineWidthUnits: 'pixels',
-      filled: true,
-      stroked: true,
-      pickable: false,
-      beforeId: 'watername_ocean',
-      parameters: {cullMode: 'back', depthCompare: 'always'},
-    }),
-  ], [overlayData, maxRing, compactData, selectedId, minCompactRes, maxCompactRes]);
+  const layers = useMemo(
+    () => [
+      new PolygonLayer<OverlayCell>({
+        id: 'gridDisk-overlay',
+        data: overlayData,
+        getPolygon: d => d.boundary,
+        getFillColor: d => (d.ring === 0 ? SELECTED_COLOR : ringColor(d.ring, maxRing)),
+        getLineColor: [255, 255, 255, 120],
+        getLineWidth: 1,
+        lineWidthUnits: 'pixels',
+        filled: true,
+        stroked: true,
+        pickable: false,
+        beforeId: 'watername_ocean',
+        parameters: {cullMode: 'back', depthCompare: 'always'}
+      }),
+      new PolygonLayer<CompactCell>({
+        id: 'compact-overlay',
+        data: compactData,
+        getPolygon: d => d.boundary,
+        getFillColor: d =>
+          d.id === selectedId ? SELECTED_COLOR : resolutionColor(d.resolution, minCompactRes, maxCompactRes),
+        getLineColor: [255, 255, 255, 150],
+        getLineWidth: 1,
+        lineWidthUnits: 'pixels',
+        filled: true,
+        stroked: true,
+        pickable: false,
+        beforeId: 'watername_ocean',
+        parameters: {cullMode: 'back', depthCompare: 'always'}
+      })
+    ],
+    [overlayData, maxRing, compactData, selectedId, minCompactRes, maxCompactRes]
+  );
 
   return (
     <div
@@ -260,7 +269,7 @@ const App: React.FC = () => {
         width: '100%',
         top: 0,
         left: 0,
-        background: 'linear-gradient(0, #000, #223)',
+        background: 'linear-gradient(0, #000, #223)'
       }}
     >
       <MapGL
@@ -288,7 +297,7 @@ const App: React.FC = () => {
           zIndex: 1,
           userSelect: 'none',
           fontSize: 12,
-          lineHeight: 1.8,
+          lineHeight: 1.8
         }}
       >
         <div style={{marginBottom: 8}}>
@@ -296,12 +305,11 @@ const App: React.FC = () => {
         </div>
         <div style={{marginBottom: 8, display: 'flex', gap: 8}}>
           <label style={{cursor: 'pointer'}}>
-            <input type="radio" name="mode" checked={mode === 'gridDisk'}
-              onChange={() => setMode('gridDisk')} /> gridDisk
+            <input type="radio" name="mode" checked={mode === 'gridDisk'} onChange={() => setMode('gridDisk')} />{' '}
+            gridDisk
           </label>
           <label style={{cursor: 'pointer'}}>
-            <input type="radio" name="mode" checked={mode === 'cap'}
-              onChange={() => setMode('cap')} /> sphericalCap
+            <input type="radio" name="mode" checked={mode === 'cap'} onChange={() => setMode('cap')} /> sphericalCap
           </label>
         </div>
         {mode === 'gridDisk' && (
@@ -332,35 +340,33 @@ const App: React.FC = () => {
         )}
         <div style={{marginBottom: 8}}>
           <label style={{display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'}}>
-            <input
-              type="checkbox"
-              checked={doUncompact}
-              onChange={e => setDoUncompact(e.target.checked)}
-            />
+            <input type="checkbox" checked={doUncompact} onChange={e => setDoUncompact(e.target.checked)} />
             Uncompact
           </label>
         </div>
         {mode === 'gridDisk' && (
           <div style={{marginBottom: 8}}>
             <label style={{display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'}}>
-              <input
-                type="checkbox"
-                checked={includeVertex}
-                onChange={e => setIncludeVertex(e.target.checked)}
-              />
+              <input type="checkbox" checked={includeVertex} onChange={e => setIncludeVertex(e.target.checked)} />
               Include vertex neighbors
             </label>
           </div>
         )}
         <div style={{marginBottom: 8}}>
           {!doUncompact ? (
-            <>Compact cells: <strong>{compactData.length}</strong>
+            <>
+              Compact cells: <strong>{compactData.length}</strong>
               {minCompactRes < maxCompactRes && (
-                <span style={{color: '#888'}}> (res {minCompactRes}-{maxCompactRes})</span>
+                <span style={{color: '#888'}}>
+                  {' '}
+                  (res {minCompactRes}-{maxCompactRes})
+                </span>
               )}
             </>
           ) : (
-            <>Cells: <strong>{ringData.size}</strong></>
+            <>
+              Cells: <strong>{ringData.size}</strong>
+            </>
           )}
         </div>
       </div>

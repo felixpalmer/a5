@@ -75,21 +75,27 @@ export default function IndexPage() {
           <FeatureImage src={`${baseUrl}images/maps.jpg`} />
           <TextContainer>
             <h3>
-              <img src={`${baseUrl}images/pentagon.svg`} />Pentagonal Discrete Global Grid System
+              <img src={`${baseUrl}images/pentagon.svg`} />
+              Pentagonal Discrete Global Grid System
             </h3>
             <p>
-              A5 is a global geospatial index. It is the pentagonal equivalent of other DGGSs, like <a href="http://s2geometry.io/">S2</a> or <a href="https://h3geo.org/">H3</a>, but with higher accuracy and lower distortion.
+              A5 is a global geospatial index. It is the pentagonal equivalent of other DGGSs, like{' '}
+              <a href="http://s2geometry.io/">S2</a> or <a href="https://h3geo.org/">H3</a>, but with higher accuracy
+              and lower distortion.
             </p>
 
             <h3>
-              <img src={`${baseUrl}images/pentagon.svg`} />Flexible representation of geospatial data
+              <img src={`${baseUrl}images/pentagon.svg`} />
+              Flexible representation of geospatial data
             </h3>
             <p>
-              A5 is used for representing points, lines, and polygons in a unified cell format, which is well suited for combining datasets and aggregating data.
+              A5 is used for representing points, lines, and polygons in a unified cell format, which is well suited for
+              combining datasets and aggregating data.
             </p>
 
             <h3>
-              <img src={`${baseUrl}images/pentagon.svg`} />Uniform Cell Sizes with Minimal Distortion
+              <img src={`${baseUrl}images/pentagon.svg`} />
+              Uniform Cell Sizes with Minimal Distortion
             </h3>
             <p>
               Data from all around the world can be directly compared due to the exactly equal areas of all A5 cells.

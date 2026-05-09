@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { getResolution, cellToParent, cellToChildren, FIRST_HILBERT_RESOLUTION } from '../core/serialization';
-import { cellToSpherical } from '../core/cell';
-import { cellArea } from '../core/cell-info';
-import { AUTHALIC_RADIUS_EARTH } from '../core/constants';
-import { getGlobalCellNeighbors } from './global-neighbors';
-import { haversine } from '../core/origin';
+import {getResolution, cellToParent, cellToChildren, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {cellToSpherical} from '../core/cell';
+import {cellArea} from '../core/cell-info';
+import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
+import {getGlobalCellNeighbors} from './global-neighbors';
+import {haversine} from '../core/origin';
 
 /** Safety factor applied to equal-area circle radius to get conservative circumradius estimate */
 const CELL_RADIUS_SAFETY_FACTOR = 2.0;
@@ -37,9 +37,9 @@ export function metersToH(meters: number): number {
  * giving: cellRadius(r) = BASE_CELL_RADIUS / 2^(r-1)
  * i.e. the radius exactly halves at each resolution level.
  */
-const BASE_CELL_RADIUS = CELL_RADIUS_SAFETY_FACTOR * AUTHALIC_RADIUS_EARTH / Math.sqrt(15);
+const BASE_CELL_RADIUS = (CELL_RADIUS_SAFETY_FACTOR * AUTHALIC_RADIUS_EARTH) / Math.sqrt(15);
 const _cellRadius: number[] = new Array(31);
-_cellRadius[0] = CELL_RADIUS_SAFETY_FACTOR * AUTHALIC_RADIUS_EARTH / Math.sqrt(3);
+_cellRadius[0] = (CELL_RADIUS_SAFETY_FACTOR * AUTHALIC_RADIUS_EARTH) / Math.sqrt(3);
 for (let r = 1; r <= 30; r++) {
   _cellRadius[r] = BASE_CELL_RADIUS / (1 << (r - 1));
 }
@@ -54,8 +54,8 @@ export function estimateCellRadius(resolution: number): number {
  */
 export function pickCoarseResolution(radius: number, targetRes: number): number {
   // Spherical cap area in m²
-  const capAreaM2 = 2 * Math.PI * AUTHALIC_RADIUS_EARTH * AUTHALIC_RADIUS_EARTH *
-    (1 - Math.cos(radius / AUTHALIC_RADIUS_EARTH));
+  const capAreaM2 =
+    2 * Math.PI * AUTHALIC_RADIUS_EARTH * AUTHALIC_RADIUS_EARTH * (1 - Math.cos(radius / AUTHALIC_RADIUS_EARTH));
 
   for (let res = FIRST_HILBERT_RESOLUTION; res <= targetRes; res++) {
     const cArea = cellArea(res);
@@ -87,9 +87,7 @@ export function pickCoarseResolution(radius: number, targetRes: number): number 
  * @param radius - Radius in meters
  * @returns Sorted BigUint64Array of cell IDs at mixed resolutions (compacted)
  */
-export function sphericalCap(
-  cellId: bigint, radius: number
-): BigUint64Array {
+export function sphericalCap(cellId: bigint, radius: number): BigUint64Array {
   const targetRes = getResolution(cellId);
   const coarseRes = pickCoarseResolution(radius, targetRes);
   const center = cellToSpherical(cellId);

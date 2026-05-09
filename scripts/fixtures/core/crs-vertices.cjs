@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { CRS } = require('../../a5-test.cjs');
+const {CRS} = require('../../a5-test.cjs');
 
 // Generate CRS vertices data
 const crs = new CRS();
@@ -16,4 +16,4 @@ const outputPath = path.join(fixturesDir, 'crs-vertices.json');
 fs.writeFileSync(outputPath, JSON.stringify(verticesData, null, 2));
 
 console.log(`Generated CRS vertices fixture with ${verticesData.length} vertices`);
-console.log(`Saved to: ${outputPath}`); 
+console.log(`Saved to: ${outputPath}`);

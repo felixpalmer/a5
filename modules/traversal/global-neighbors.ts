@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { sToAnchor, anchorToTriple, tripleToAnchor, tripleParity } from '../lattice';
-import type { Origin } from '../core/utils';
-import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from '../core/serialization';
-import { segmentToQuintant, quintantToSegment, origins } from '../core/origin';
-import { FACE_ADJACENCY } from '../core/face-adjacency';
-import { compareBigint } from '../utils/bigint';
-import { findQuintantNeighborS } from './quintant-neighbors';
-import { getBoundaryNeighbors } from './lattice-boundary';
+import {sToAnchor, anchorToTriple, tripleToAnchor, tripleParity} from '../lattice';
+import type {Origin} from '../core/utils';
+import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {segmentToQuintant, quintantToSegment, origins} from '../core/origin';
+import {FACE_ADJACENCY} from '../core/face-adjacency';
+import {compareBigint} from '../utils/bigint';
+import {findQuintantNeighborS} from './quintant-neighbors';
+import {getBoundaryNeighbors} from './lattice-boundary';
 
 /** Serialize a res 1 cell from origin and quintant. */
 function serializeRes1(origin: Origin, quintant: number): bigint {
@@ -106,16 +106,19 @@ export function getGlobalCellNeighbors(cellId: bigint, options?: {edgeOnly?: boo
   }
 
   // --- Cross-quintant / cross-face / apex / corner: shared lattice-boundary helper ---
-  const boundaryNeighbors = getBoundaryNeighbors({
-    triple,
-    parity: tripleParity(triple),
-    sourceQuintant,
-    origin,
-    hilbertRes,
-    maxS: 4n ** BigInt(hilbertRes),
-    maxRow: (1 << hilbertRes) - 1,
-    resolution,
-  }, edgeOnly);
+  const boundaryNeighbors = getBoundaryNeighbors(
+    {
+      triple,
+      parity: tripleParity(triple),
+      sourceQuintant,
+      origin,
+      hilbertRes,
+      maxS: 4n ** BigInt(hilbertRes),
+      maxRow: (1 << hilbertRes) - 1,
+      resolution
+    },
+    edgeOnly
+  );
   for (const cellId of boundaryNeighbors) neighborSet.add(cellId);
 
   return Array.from(neighborSet).sort(compareBigint);

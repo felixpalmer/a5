@@ -1,9 +1,9 @@
-import React, { Suspense, useState, useMemo } from 'react';
-import { createRoot } from 'react-dom/client';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import { DoubleSide, BufferGeometry, BufferAttribute, Vector3 } from 'three';
-import { generateWireframe } from 'a5-internal/wireframe';
+import React, {Suspense, useState, useMemo} from 'react';
+import {createRoot} from 'react-dom/client';
+import {Canvas} from '@react-three/fiber';
+import {OrbitControls} from '@react-three/drei';
+import {DoubleSide, BufferGeometry, BufferAttribute, Vector3} from 'three';
+import {generateWireframe} from 'a5-internal/wireframe';
 
 import {fromLonLat, toCartesian} from 'a5/core/coordinate-transforms';
 
@@ -15,15 +15,15 @@ const geometryCache = new Map<number, BufferGeometry>();
 // Create a merged geometry from all cells (triangles and pentagons)
 function createMergedGeometry(resolution: number) {
   const cells = generateWireframe(resolution);
-  
+
   // Arrays to hold all vertices, UVs, and indices
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
-  
+
   let vertexOffset = 0;
-  
+
   // Process each cell
   cells.forEach((cell, cellIndex) => {
     // Convert vertices to Cartesian coordinates
@@ -31,45 +31,45 @@ function createMergedGeometry(resolution: number) {
       const cartesian = toCartesian(fromLonLat(lonLat));
       return new Vector3(...cartesian);
     });
-    
+
     // Calculate normal for this cell (works for both triangles and pentagons)
     const v1 = vertices[1].clone().sub(vertices[0]);
     const v2 = vertices[2].clone().sub(vertices[0]);
     const normal = new Vector3().crossVectors(v1, v2).normalize();
-    
+
     // Add vertices to positions array
     vertices.forEach(vertex => {
       positions.push(vertex.x, vertex.y, vertex.z);
       normals.push(normal.x, normal.y, normal.z);
     });
-    
+
     // Add UVs to uvs array (simple mapping for now)
     vertices.forEach((_, i) => {
       const u = i / vertices.length; // Use actual vertex count instead of hardcoded 5
       const v = 0;
       uvs.push(u, v);
     });
-    
+
     // Add indices for this cell
     for (let i = 1; i < vertices.length - 1; i++) {
       indices.push(vertexOffset, vertexOffset + i, vertexOffset + i + 1);
     }
-    
+
     // Update vertex offset for next cell
     vertexOffset += vertices.length;
   });
-  
+
   // Create the merged geometry
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
   geometry.setAttribute('normal', new BufferAttribute(new Float32Array(normals), 3));
   geometry.setAttribute('uv', new BufferAttribute(new Float32Array(uvs), 2));
   geometry.setIndex(new BufferAttribute(new Uint32Array(indices), 1));
-  
+
   return geometry;
 }
 
-function Scene({ resolution }: { resolution: number }) {
+function Scene({resolution}: {resolution: number}) {
   // Create merged geometry once, but update when resolution changes
   const mergedGeometry = useMemo(() => {
     if (geometryCache.has(resolution)) return geometryCache.get(resolution)!;
@@ -77,27 +77,20 @@ function Scene({ resolution }: { resolution: number }) {
     geometryCache.set(resolution, geometry);
     return geometry;
   }, [resolution]);
-  
+
   return (
     <>
       {/* Ambient light for overall scene illumination */}
       <ambientLight intensity={0.3} />
-      
+
       {/* Main directional light */}
-      <directionalLight 
-        position={[10, 10, 10]} 
-        intensity={1.5} 
-        castShadow
-      />
-      
+      <directionalLight position={[10, 10, 10]} intensity={1.5} castShadow />
+
       {/* Fill light from the opposite side */}
-      <directionalLight 
-        position={[-10, -10, -10]} 
-        intensity={0.8} 
-      />
+      <directionalLight position={[-10, -10, -10]} intensity={0.8} />
 
       <mesh geometry={mergedGeometry}>
-        <meshPhysicalMaterial 
+        <meshPhysicalMaterial
           color="#00aa55"
           metalness={0.0}
           roughness={0.2}
@@ -108,8 +101,8 @@ function Scene({ resolution }: { resolution: number }) {
         />
       </mesh>
 
-      <OrbitControls 
-        enableDamping 
+      <OrbitControls
+        enableDamping
         enableZoom={true}
         minPolarAngle={0}
         maxPolarAngle={Math.PI}
@@ -125,37 +118,39 @@ const App: React.FC = () => {
   const [resolution, setResolution] = useState(RESOLUTION);
 
   return (
-    <div style={{
-      position: 'absolute',
-      height: '100%',
-      width: '100%',
-      top: 0,
-      left: 0,
-      background: 'linear-gradient(0, #000, #223)'
-    }}>
-      <div style={{
+    <div
+      style={{
         position: 'absolute',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'white',
-        padding: '10px',
-        borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        zIndex: 1,
-        width: '300px',
-        textAlign: 'center'
-      }}>
-        <div style={{ marginBottom: '5px' }}>
-          Resolution: {resolution}
-        </div>
+        height: '100%',
+        width: '100%',
+        top: 0,
+        left: 0,
+        background: 'linear-gradient(0, #000, #223)'
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'white',
+          padding: '10px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          zIndex: 1,
+          width: '300px',
+          textAlign: 'center'
+        }}
+      >
+        <div style={{marginBottom: '5px'}}>Resolution: {resolution}</div>
         <input
           type="range"
           min="0"
           max="4"
           value={resolution}
-          onChange={(e) => setResolution(Number(e.target.value))}
-          style={{ 
+          onChange={e => setResolution(Number(e.target.value))}
+          style={{
             width: '100%',
             height: '20px',
             WebkitAppearance: 'none',
@@ -166,7 +161,7 @@ const App: React.FC = () => {
         />
       </div>
 
-      <Canvas camera={{ position: [0, 0, 5] }}>
+      <Canvas camera={{position: [0, 0, 5]}}>
         <Suspense fallback={null}>
           <Scene resolution={resolution} />
         </Suspense>
@@ -180,4 +175,4 @@ export default App;
 export async function renderToDOM(container: HTMLDivElement) {
   const root = createRoot(container);
   root.render(<App />);
-} 
+}

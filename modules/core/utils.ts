@@ -4,20 +4,20 @@
 
 import {glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Cartesian, Radians, Spherical } from './coordinate-systems';
-import type { Orientation } from "../lattice";
+import type {Cartesian, Radians, Spherical} from './coordinate-systems';
+import type {Orientation} from '../lattice';
 
 export type OriginId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export type Origin = {
   id: OriginId;
   axis: Spherical;
-  axisCartesian: Cartesian;  // precomputed unit vector form of `axis`
+  axisCartesian: Cartesian; // precomputed unit vector form of `axis`
   quat: quat;
   inverseQuat: quat;
   angle: Radians;
   orientation: Orientation[];
   firstQuintant: number;
-}; 
+};
 
 export type A5Cell = {
   /**
@@ -36,4 +36,4 @@ export type A5Cell = {
    * Resolution of the cell
    */
   resolution: number;
-}
+};

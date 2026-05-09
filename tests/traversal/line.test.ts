@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { u64ToHex, lineStringToCells } from 'a5';
-import type { LonLat } from 'a5/core/coordinate-systems';
+import {describe, it, expect} from 'vitest';
+import {u64ToHex, lineStringToCells} from 'a5';
+import type {LonLat} from 'a5/core/coordinate-systems';
 import fixtures from '../fixtures/traversal/line.json';
 
 type LineSegmentFixture = {
@@ -33,7 +33,11 @@ describe('lineStringToCells', () => {
   });
 
   it('should deduplicate cells at segment junctions', () => {
-    const waypoints = [[0, 50], [10, 50], [10, 45]] as LonLat[];
+    const waypoints = [
+      [0, 50],
+      [10, 50],
+      [10, 45]
+    ] as LonLat[];
     const result = lineStringToCells(waypoints, 3);
     const unique = new Set(result);
     expect(result.length).toBe(unique.size);

@@ -1,5 +1,5 @@
-const { SphericalPolygonShape } = require('../../a5-test.cjs');
-const { generateGeometryFixtures } = require('../geometry-generator.cjs');
+const {SphericalPolygonShape} = require('../../a5-test.cjs');
+const {generateGeometryFixtures} = require('../geometry-generator.cjs');
 
 function generateRandomCartesian() {
   // Generate random unit vector
@@ -24,7 +24,7 @@ function generateTestPoints(polygon) {
     [0, 0, 1], // North pole
     [0, 0, -1], // South pole
     generateRandomCartesian(), // Random point
-    generateRandomCartesian()  // Another random point
+    generateRandomCartesian() // Another random point
   ];
 }
 
@@ -35,12 +35,12 @@ function computeExpected(polygon, testPoints) {
     boundary2: polygon.getBoundary(2, true).map(p => [...p]),
     boundary3: polygon.getBoundary(3, true).map(p => [...p]),
     slerpTests: [
-      { t: 0, result: [...polygon.slerp(0)] },
-      { t: 0.25, result: [...polygon.slerp(0.25)] },
-      { t: 0.5, result: [...polygon.slerp(0.5)] },
-      { t: 0.75, result: [...polygon.slerp(0.75)] },
-      { t: 1.0, result: [...polygon.slerp(1.0)] },
-      { t: 1.5, result: [...polygon.slerp(1.5)] }
+      {t: 0, result: [...polygon.slerp(0)]},
+      {t: 0.25, result: [...polygon.slerp(0.25)]},
+      {t: 0.5, result: [...polygon.slerp(0.5)]},
+      {t: 0.75, result: [...polygon.slerp(0.75)]},
+      {t: 1.0, result: [...polygon.slerp(1.0)]},
+      {t: 1.5, result: [...polygon.slerp(1.5)]}
     ],
     containsPointTests: testPoints.map(point => ({
       point: [...point],
@@ -57,4 +57,4 @@ generateGeometryFixtures({
   generateTestPoints,
   computeExpected,
   vertexCount: 5
-}); 
+});

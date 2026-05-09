@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { IJ } from '../core/coordinate-systems';
+import type {IJ} from '../core/coordinate-systems';
 
 /**
  * Orientation of the Hilbert curve. The curve fills a space defined by the triangle with vertices

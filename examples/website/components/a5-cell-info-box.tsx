@@ -1,5 +1,5 @@
 import React from 'react';
-import { getResolution, lonLatToCell } from 'a5';
+import {getResolution, lonLatToCell} from 'a5';
 
 export interface A5CellInfoBoxProps {
   /** Location [lon, lat] */
@@ -38,7 +38,7 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
   const originSegmentBits = 6;
 
   // Then follow bits to encode the position along the hilbert curve
-  const hilbertBits = (2 * Math.max(0, resolution - 1)) + originSegmentBits;
+  const hilbertBits = 2 * Math.max(0, resolution - 1) + originSegmentBits;
 
   // Then two bits to encode the resolution (not shown for resolution -1)
   const resolutionBits = resolution >= 0 ? 2 + hilbertBits : hilbertBits;
@@ -51,7 +51,7 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
   const [longitude, latitude] = location;
 
   return (
-    <div style={{ marginBottom: '20px' }}>
+    <div style={{marginBottom: '20px'}}>
       <div
         style={{
           backgroundColor: 'white',
@@ -65,11 +65,10 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
         }}
       >
         <div>
-          Cell ID (binary):{' '}
-          <span style={{ fontWeight: 'bold', color: '#0066FF' }}>{originSegmentSection}</span>
-          <span style={{ fontWeight: 'bold', color: '#000000' }}>{hilbertSection}</span>
-          <span style={{ fontWeight: 'bold', color: '#FF0066' }}>{resolutionSection}</span>
-          <span style={{ fontWeight: 'bold', color: '#999999' }}>{zeroSection}</span>
+          Cell ID (binary): <span style={{fontWeight: 'bold', color: '#0066FF'}}>{originSegmentSection}</span>
+          <span style={{fontWeight: 'bold', color: '#000000'}}>{hilbertSection}</span>
+          <span style={{fontWeight: 'bold', color: '#FF0066'}}>{resolutionSection}</span>
+          <span style={{fontWeight: 'bold', color: '#999999'}}>{zeroSection}</span>
         </div>
         <div>Cell ID (hex): {`0x${cellId.toString(16).padStart(16, '0')}`}</div>
         <div>

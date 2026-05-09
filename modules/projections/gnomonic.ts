@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { Polar, Spherical } from '../core/coordinate-systems';
+import type {Polar, Spherical} from '../core/coordinate-systems';
 
 export class GnomonicProjection {
   /**
@@ -22,4 +22,4 @@ export class GnomonicProjection {
   inverse([rho, gamma]: Polar): Spherical {
     return [gamma, Math.atan(rho)] as Spherical;
   }
-} 
+}

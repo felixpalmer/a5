@@ -8,7 +8,7 @@ const {
   u64ToHex,
   lineStringToCells,
   fromLonLat,
-  toCartesian,
+  toCartesian
 } = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
@@ -35,8 +35,12 @@ function segmentsIntersect(av, bv, cv, dv) {
 
   // Reject antipodal intersections: the midpoints of the two segments
   // must be in the same hemisphere (dot product > 0)
-  const m1x = av[0] + bv[0], m1y = av[1] + bv[1], m1z = av[2] + bv[2];
-  const m2x = cv[0] + dv[0], m2y = cv[1] + dv[1], m2z = cv[2] + dv[2];
+  const m1x = av[0] + bv[0],
+    m1y = av[1] + bv[1],
+    m1z = av[2] + bv[2];
+  const m2x = cv[0] + dv[0],
+    m2y = cv[1] + dv[1],
+    m2z = cv[2] + dv[2];
   if (m1x * m2x + m1y * m2y + m1z * m2z < 0) return false;
 
   return true;
@@ -96,10 +100,10 @@ const resolution = 3;
 
 // --- Line segment test cases ---
 const lineSegmentCases = [
-  { name: 'short_europe', start: [0, 51], end: [10, 48] },
-  { name: 'long_diagonal', start: [-10, 55], end: [20, 40] },
-  { name: 'cross_meridian', start: [-5, 50], end: [5, 50] },
-  { name: 'near_equator', start: [-10, 2], end: [10, -2] },
+  {name: 'short_europe', start: [0, 51], end: [10, 48]},
+  {name: 'long_diagonal', start: [-10, 55], end: [20, 40]},
+  {name: 'cross_meridian', start: [-5, 50], end: [5, 50]},
+  {name: 'near_equator', start: [-10, 2], end: [10, -2]}
 ];
 
 console.log(`\nLine segment fixtures (res ${resolution}):`);
@@ -115,14 +119,14 @@ for (const tc of lineSegmentCases) {
     start: tc.start,
     end: tc.end,
     resolution,
-    cells: expected.map(c => u64ToHex(c)),
+    cells: expected.map(c => u64ToHex(c))
   });
 }
 
 const fixtures = {
-  lineSegment: lineSegmentFixtures,
+  lineSegment: lineSegmentFixtures
 };
 
-fs.mkdirSync(outputDir, { recursive: true });
+fs.mkdirSync(outputDir, {recursive: true});
 fs.writeFileSync(outputPath, JSON.stringify(fixtures, null, 2));
 console.log(`\nWrote line fixtures to ${outputPath}`);

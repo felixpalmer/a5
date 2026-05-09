@@ -4,8 +4,8 @@
 
 import {vec3, glMatrix, quat} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
-import type { Cartesian, Radians } from '../core/coordinate-systems';
-import { slerp, tripleProduct } from '../utils/vector';
+import type {Cartesian, Radians} from '../core/coordinate-systems';
+import {slerp, tripleProduct} from '../utils/vector';
 
 const _windingCentroid = vec3.create() as Cartesian;
 
@@ -32,8 +32,12 @@ export function pointInSphericalPolygon(point: Cartesian, vertices: Cartesian[])
     const bv = vertices[(i + 1) % vertices.length];
     const dotPA = point[0] * av[0] + point[1] * av[1] + point[2] * av[2];
     const dotPB = point[0] * bv[0] + point[1] * bv[1] + point[2] * bv[2];
-    const apx = av[0] - dotPA * point[0], apy = av[1] - dotPA * point[1], apz = av[2] - dotPA * point[2];
-    const bpx = bv[0] - dotPB * point[0], bpy = bv[1] - dotPB * point[1], bpz = bv[2] - dotPB * point[2];
+    const apx = av[0] - dotPA * point[0],
+      apy = av[1] - dotPA * point[1],
+      apz = av[2] - dotPA * point[2];
+    const bpx = bv[0] - dotPB * point[0],
+      bpy = bv[1] - dotPB * point[1],
+      bpz = bv[2] - dotPB * point[2];
     const cx = apy * bpz - apz * bpy;
     const cy = apz * bpx - apx * bpz;
     const cz = apx * bpy - apy * bpx;
@@ -80,7 +84,7 @@ export class SphericalPolygonShape {
   }
 
   /**
-   * 
+   *
    * @param nSegments Returns a closed boundary of the polygon, with nSegments points per edge
    * @returns SphericalPolygon
    */
@@ -94,13 +98,13 @@ export class SphericalPolygonShape {
     if (closedRing) {
       points.push(points[0]);
     }
-    
+
     return points;
   }
 
   /**
    * Interpolates along boundary of polygon. Pass t = 1.5 to get the midpoint between 2nd and 3rd vertices
-   * @param t 
+   * @param t
    * @returns Cartesian coordinate
    */
   slerp(t: number): Cartesian {
@@ -115,8 +119,8 @@ export class SphericalPolygonShape {
    * Returns the vertex given by index t, along with the vectors:
    * - VA: Vector from vertex to point A
    * - VB: Vector from vertex to point B
-   * @param t 
-   * @returns 
+   * @param t
+   * @returns
    */
   getTransformedVertices(t: number): [Cartesian, Cartesian, Cartesian] {
     const N = this.vertices.length;
@@ -174,7 +178,7 @@ export class SphericalPolygonShape {
   /**
    * Calculate the area of a spherical triangle given three vertices
    * @param v1 First vertex
-   * @param v2 Second vertex  
+   * @param v2 Second vertex
    * @param v3 Third vertex
    * @returns Area of the spherical triangle in radians
    */
@@ -186,16 +190,16 @@ export class SphericalPolygonShape {
     vec3.normalize(midA, midA);
     vec3.normalize(midB, midB);
     vec3.normalize(midC, midC);
-    
+
     // Calculate area using asin of dot product, clamped to valid range
     const S = tripleProduct(midA, midB, midC);
     const clamped = Math.max(-1.0, Math.min(1.0, S));
-    
+
     // sin(x) = x for x < 1e-8
     if (Math.abs(clamped) < 1e-8) {
-      return 2 * clamped as Radians;
+      return (2 * clamped) as Radians;
     } else {
-      return Math.asin(clamped) * 2 as Radians;
+      return (Math.asin(clamped) * 2) as Radians;
     }
   }
 
@@ -253,4 +257,4 @@ export class SphericalPolygonShape {
       debugger;
     }
   }
-} 
+}

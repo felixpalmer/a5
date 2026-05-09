@@ -1,31 +1,39 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {ScatterplotLayer, PolygonLayer, TextLayer} from '@deck.gl/layers';
 import {HeatmapLayer} from '@deck.gl/aggregation-layers';
-import { Color, Position } from '@deck.gl/core';
-import { colorContinuous } from '@deck.gl/carto';
-import { cellToBoundary, lonLatToCell } from 'a5';
+import {Color, Position} from '@deck.gl/core';
+import {colorContinuous} from '@deck.gl/carto';
+import {cellToBoundary, lonLatToCell} from 'a5';
 import {H3HexagonLayer} from '@deck.gl/geo-layers';
 import {cellToBoundary as h3CellToBoundary, latLngToCell} from 'h3-js';
 
 const ATHENS_DATA = '/data/malta.json';
 const OSLO_DATA = '/data/oslo.json';
 
-const COLOR_RANGE = [ [211, 242, 163], [151, 225, 150], [108, 192, 139], [76, 155, 130], [33, 122, 121], [16, 89, 101], [7, 64, 80] ] as Color[];
+const COLOR_RANGE = [
+  [211, 242, 163],
+  [151, 225, 150],
+  [108, 192, 139],
+  [76, 155, 130],
+  [33, 122, 121],
+  [16, 89, 101],
+  [7, 64, 80]
+] as Color[];
 
 const A5_RESOLUTION = 13;
 const H3_RESOLUTION = 8;
 
 const INITIAL_VIEW_STATE = {
-  athens: { longitude: 14.385, latitude: 35.87, pitch: 30, bearing: 240, zoom: 10.5},
-  oslo: { longitude: 10.85, latitude: 60, pitch: 30, bearing: 40, zoom: 9.8 }
+  athens: {longitude: 14.385, latitude: 35.87, pitch: 30, bearing: 240, zoom: 10.5},
+  oslo: {longitude: 10.85, latitude: 60, pitch: 30, bearing: 40, zoom: 9.8}
 };
 
-type A5CellWithCount = { id: bigint, count: number };
-type H3CellWithCount = { id: string, count: number };
+type A5CellWithCount = {id: bigint; count: number};
+type H3CellWithCount = {id: string; count: number};
 type AggregatedData = {
   a5: {
     cells: A5CellWithCount[];
@@ -48,12 +56,14 @@ const MapView: React.FC<{
   aggregatedData: AggregatedData;
   center: [number, number];
   labelPosition: [number, number];
-}> = ({ dataUrl, initialViewState, layerType, globalMaxCount, tilingSystem, aggregatedData, center, labelPosition }) => {
+}> = ({dataUrl, initialViewState, layerType, globalMaxCount, tilingSystem, aggregatedData, center, labelPosition}) => {
   const [rawData, setRawData] = useState<[number, number][] | null>(null);
 
   // Load raw data
   useEffect(() => {
-    fetch(dataUrl).then(r => r.json()).then(setRawData);
+    fetch(dataUrl)
+      .then(r => r.json())
+      .then(setRawData);
   }, [dataUrl]);
 
   if (!rawData) return null;
@@ -101,7 +111,7 @@ const MapView: React.FC<{
     stroked: true,
     filled: false,
     lineWidthMinPixels: 2,
-    pickable: false,
+    pickable: false
   });
 
   // Create label layer for the 10km circle
@@ -113,38 +123,43 @@ const MapView: React.FC<{
     getColor: [255, 255, 255, 200],
     getSize: 16,
     fontFamily: 'Arial, sans-serif',
-    fontSettings: { sdf: true, buffer: 8 },
-    pickable: false,
+    fontSettings: {sdf: true, buffer: 8},
+    pickable: false
   });
 
   const cellProps = {
-    getFillColor: colorContinuous({ attr: d => Math.sqrt(d.count), domain: [0, Math.sqrt(globalMaxCount)], colors: 'Emrld' }),
+    getFillColor: colorContinuous({
+      attr: d => Math.sqrt(d.count),
+      domain: [0, Math.sqrt(globalMaxCount)],
+      colors: 'Emrld'
+    }),
     getLineColor: [255, 255, 255, 200],
     stroked: true,
     wireframe: true,
-    getElevation: d => 25000 * d.count / globalMaxCount,
+    getElevation: d => (25000 * d.count) / globalMaxCount,
     extruded: true
   } as any;
 
   // Create cell layer based on tiling system
-  const cellLayer = tilingSystem === 'a5' 
-    ? new PolygonLayer<A5CellWithCount>({
-        id: 'airbnb-cells',
-        data: aggregatedData.a5.cells,
-        getPolygon: d => cellToBoundary(d.id),
-        ...cellProps,
-        ...commonProps
-      })
-    : new H3HexagonLayer<H3CellWithCount>({
-        id: 'airbnb-cells',
-        data: aggregatedData.h3.cells,
-        getHexagon: d => d.id,
-        ...cellProps,
-        ...commonProps
-      });
+  const cellLayer =
+    tilingSystem === 'a5'
+      ? new PolygonLayer<A5CellWithCount>({
+          id: 'airbnb-cells',
+          data: aggregatedData.a5.cells,
+          getPolygon: d => cellToBoundary(d.id),
+          ...cellProps,
+          ...commonProps
+        })
+      : new H3HexagonLayer<H3CellWithCount>({
+          id: 'airbnb-cells',
+          data: aggregatedData.h3.cells,
+          getHexagon: d => d.id,
+          ...cellProps,
+          ...commonProps
+        });
 
   return (
-    <div style={{ width: '50%', height: '100%', position: 'relative' }}>
+    <div style={{width: '50%', height: '100%', position: 'relative'}}>
       <Maplibre
         id="map"
         initialViewState={initialViewState}
@@ -154,7 +169,7 @@ const MapView: React.FC<{
         maxPitch={initialViewState.pitch}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       >
-        <DeckGLOverlay 
+        <DeckGLOverlay
           layers={[cellLayer, scatterplotLayer, heatmapLayer, centerPointLayer, labelLayer]}
           interleaved={false}
           getTooltip={({object}) => {
@@ -184,7 +199,7 @@ const App: React.FC = () => {
   const [globalMaxCounts, setGlobalMaxCounts] = useState<{
     a5: number;
     h3: number;
-  }>({ a5: 0, h3: 0 });
+  }>({a5: 0, h3: 0});
 
   // Load and aggregate data
   useEffect(() => {
@@ -198,12 +213,12 @@ const App: React.FC = () => {
         // Aggregate for A5
         const a5Cells = data.map(point => {
           const id = lonLatToCell(point, A5_RESOLUTION);
-          return { id, count: 1 };
+          return {id, count: 1};
         });
 
         const a5Bins = new Map<bigint, A5CellWithCount>();
         let a5MaxCount = 0;
-        
+
         for (const feature of a5Cells) {
           const {id} = feature;
           if (!a5Bins.has(id)) {
@@ -217,12 +232,12 @@ const App: React.FC = () => {
         // Aggregate for H3
         const h3Cells = data.map(point => {
           const id = latLngToCell(point[1], point[0], H3_RESOLUTION);
-          return { id, count: 1 };
+          return {id, count: 1};
         });
 
         const h3Bins = new Map<string, H3CellWithCount>();
         let h3MaxCount = 0;
-        
+
         for (const feature of h3Cells) {
           const {id} = feature;
           if (!h3Bins.has(id)) {
@@ -255,14 +270,8 @@ const App: React.FC = () => {
 
       // Calculate global max counts for each tiling system
       setGlobalMaxCounts({
-        a5: Math.max(
-          maltaAggregated.a5.maxCount,
-          osloAggregated.a5.maxCount
-        ),
-        h3: Math.max(
-          maltaAggregated.h3.maxCount,
-          osloAggregated.h3.maxCount
-        )
+        a5: Math.max(maltaAggregated.a5.maxCount, osloAggregated.a5.maxCount),
+        h3: Math.max(maltaAggregated.h3.maxCount, osloAggregated.h3.maxCount)
       });
     };
 
@@ -272,25 +281,23 @@ const App: React.FC = () => {
   const Controls: React.FC<{
     viewType: ViewType;
     setViewType: (type: ViewType) => void;
-  }> = ({ viewType, setViewType }) => {
+  }> = ({viewType, setViewType}) => {
     return (
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        zIndex: 1,
-        background: 'white',
-        padding: '10px',
-        borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-      }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: '20px',
+          left: '20px',
+          zIndex: 1,
+          background: 'white',
+          padding: '10px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        }}
+      >
         <div>
-          <label style={{ marginRight: '8px' }}>View:</label>
-          <select 
-            value={viewType} 
-            onChange={(e) => setViewType(e.target.value as ViewType)}
-            style={{ padding: '4px' }}
-          >
+          <label style={{marginRight: '8px'}}>View:</label>
+          <select value={viewType} onChange={e => setViewType(e.target.value as ViewType)} style={{padding: '4px'}}>
             <option value="points">Points</option>
             <option value="a5">A5 (Pentagons)</option>
             <option value="h3">H3 (Hexagons)</option>
@@ -335,10 +342,7 @@ const App: React.FC = () => {
         center={[10.7522, 59.9139]}
         labelPosition={[10.61, 59.88]}
       />
-      <Controls 
-        viewType={viewType}
-        setViewType={setViewType}
-      />
+      <Controls viewType={viewType} setViewType={setViewType} />
     </div>
   );
 };
@@ -354,4 +358,4 @@ function DeckGLOverlay(props) {
   const overlay = useControl(() => new DeckOverlay(props));
   overlay.setProps(props);
   return null;
-} 
+}

@@ -31,4 +31,4 @@ class HilbertDemo extends Component {
   }
 }
 
-export default makeExample(HilbertDemo); 
+export default makeExample(HilbertDemo);

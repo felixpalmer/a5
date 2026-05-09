@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { hexToU64, u64ToHex, polygonToCells, uncompact, getResolution } from 'a5';
-import type { LonLat } from 'a5/core/coordinate-systems';
+import {describe, it, expect} from 'vitest';
+import {hexToU64, u64ToHex, polygonToCells, uncompact, getResolution} from 'a5';
+import type {LonLat} from 'a5/core/coordinate-systems';
 import fixtures from '../fixtures/regions/polygon.json';
 
 type PolygonFixture = {
@@ -32,7 +32,15 @@ describe('polygonToCells', () => {
 
   it('should return empty for less than 3 vertices', () => {
     expect(polygonToCells([] as LonLat[], 5).length).toBe(0);
-    expect(polygonToCells([[0, 0], [1, 1]] as LonLat[], 5).length).toBe(0);
+    expect(
+      polygonToCells(
+        [
+          [0, 0],
+          [1, 1]
+        ] as LonLat[],
+        5
+      ).length
+    ).toBe(0);
   });
 
   const countryCases = (fixtures as any).country as CountryFixture[];

@@ -1,15 +1,25 @@
-import { describe, it, expect } from 'vitest'
-import { 
-  A, B, C, D, E,           // Pentagon angles
-  a, b, c, d, e,           // Pentagon vertices
-  PENTAGON,                 // Pentagon shape
-  u, v, w,                 // Triangle vertices
-  V,                       // Triangle angle
-  TRIANGLE,                // Triangle shape
-  BASIS,                   // Basis matrix
-  BASIS_INVERSE            // Inverse basis matrix
-} from 'a5/core/pentagon'
-import { vec2, mat2 } from 'gl-matrix'
+import {describe, it, expect} from 'vitest';
+import {
+  A,
+  B,
+  C,
+  D,
+  E, // Pentagon angles
+  a,
+  b,
+  c,
+  d,
+  e, // Pentagon vertices
+  PENTAGON, // Pentagon shape
+  u,
+  v,
+  w, // Triangle vertices
+  V, // Triangle angle
+  TRIANGLE, // Triangle shape
+  BASIS, // Basis matrix
+  BASIS_INVERSE // Inverse basis matrix
+} from 'a5/core/pentagon';
+import {vec2, mat2} from 'gl-matrix';
 
 describe('pentagon.ts', () => {
   describe('pentagon angles', () => {
@@ -101,19 +111,9 @@ describe('pentagon.ts', () => {
 
   describe('basis matrices', () => {
     it('has correct basis and inverse', () => {
-      const expectedBasis = [
-        0.6180339887498949,
-        0.4490279765795854,
-        0.6180339887498949,
-        -0.4490279765795854
-      ];
+      const expectedBasis = [0.6180339887498949, 0.4490279765795854, 0.6180339887498949, -0.4490279765795854];
 
-      const expectedInverse = [
-        0.8090169943749475,
-        0.8090169943749475,
-        1.1135163644116068,
-        -1.1135163644116068
-      ];
+      const expectedInverse = [0.8090169943749475, 0.8090169943749475, 1.1135163644116068, -1.1135163644116068];
 
       Array.from(BASIS).forEach((value, i) => {
         expect(value).toBe(expectedBasis[i]);
@@ -129,4 +129,4 @@ describe('pentagon.ts', () => {
       expect(product).toBeCloseToArray([1, 0, 0, 1], 10);
     });
   });
-}); 
+});

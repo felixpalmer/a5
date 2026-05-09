@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type { Orientation, Triple } from '../lattice';
-import { sToAnchor, anchorToTriple, tripleToS, tripleParity, tripleInBounds } from '../lattice';
-import type { Origin } from '../core/utils';
-import { deserialize, serialize, FIRST_HILBERT_RESOLUTION } from '../core/serialization';
-import { segmentToQuintant } from '../core/origin';
-import { getGlobalCellNeighbors } from './global-neighbors';
-import { type BoundaryContext, getBoundaryNeighbors } from './lattice-boundary';
+import type {Orientation, Triple} from '../lattice';
+import {sToAnchor, anchorToTriple, tripleToS, tripleParity, tripleInBounds} from '../lattice';
+import type {Origin} from '../core/utils';
+import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {segmentToQuintant} from '../core/origin';
+import {getGlobalCellNeighbors} from './global-neighbors';
+import {type BoundaryContext, getBoundaryNeighbors} from './lattice-boundary';
 
 /** Decoded source-cell state used by the lattice neighbor finder. */
 interface LatticeSource {
@@ -35,10 +35,16 @@ function decodeSource(cellId: bigint): LatticeSource | null {
   const triple = anchorToTriple(anchor);
 
   return {
-    origin, segment, S, resolution,
-    hilbertRes, quintant, orientation, triple,
+    origin,
+    segment,
+    S,
+    resolution,
+    hilbertRes,
+    quintant,
+    orientation,
+    triple,
     maxS: 4n ** BigInt(hilbertRes),
-    maxRow: (1 << hilbertRes) - 1,
+    maxRow: (1 << hilbertRes) - 1
   };
 }
 
@@ -52,7 +58,7 @@ function boundaryContext(src: LatticeSource): BoundaryContext {
     hilbertRes: src.hilbertRes,
     maxS: src.maxS,
     maxRow: src.maxRow,
-    resolution: src.resolution,
+    resolution: src.resolution
   };
 }
 
@@ -73,7 +79,9 @@ const SUPERSET_DELTAS: readonly Delta[] = (() => {
 })();
 
 /** The 3 parity-valid single-axis moves matching `tripleSpaceFloodFill`'s edge connectivity. */
+// prettier-ignore
 const PARITY_EVEN_DELTAS: readonly Delta[] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+// prettier-ignore
 const PARITY_ODD_DELTAS: readonly Delta[] = [[-1, 0, 0], [0, -1, 0], [0, 0, -1]];
 
 /**
@@ -90,9 +98,7 @@ export function getLatticeNeighbors(cellId: bigint, edgeOnly: boolean): bigint[]
   if (!src) return getGlobalCellNeighbors(cellId, {edgeOnly});
 
   const {origin, segment, S, resolution, hilbertRes, orientation, triple, maxS, maxRow} = src;
-  const deltas = edgeOnly
-    ? (tripleParity(triple) === 0 ? PARITY_EVEN_DELTAS : PARITY_ODD_DELTAS)
-    : SUPERSET_DELTAS;
+  const deltas = edgeOnly ? (tripleParity(triple) === 0 ? PARITY_EVEN_DELTAS : PARITY_ODD_DELTAS) : SUPERSET_DELTAS;
   const result: bigint[] = [];
 
   for (const [dx, dy, dz] of deltas) {

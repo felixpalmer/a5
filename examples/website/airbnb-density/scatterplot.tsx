@@ -30,7 +30,7 @@ const ScatterplotView: React.FC = () => {
     const scatterData = data.map(city => ({
       location: city.location,
       cellAreaM2: city.avg_cell_area_km2 * 1000000,
-      rankChange: city.density_rank - city.listings_rank,
+      rankChange: city.density_rank - city.listings_rank
     }));
 
     d3.select(svgRef.current).selectAll('*').remove();
@@ -40,20 +40,19 @@ const ScatterplotView: React.FC = () => {
     const width = Math.min(containerWidth, 1000) - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
-    const svg = d3.select(svgRef.current)
+    const svg = d3
+      .select(svgRef.current)
       .attr('width', width + margin.left + margin.right)
       .attr('height', height + margin.top + margin.bottom);
 
-    const g = svg.append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const xScale = d3.scaleLinear()
+    const xScale = d3
+      .scaleLinear()
       .domain([d3.min(scatterData, d => d.cellAreaM2)! * 0.95, d3.max(scatterData, d => d.cellAreaM2)! * 1.05])
       .range([0, width]);
 
-    const yScale = d3.scaleLinear()
-      .domain([-15, 15])
-      .range([height, 0]);
+    const yScale = d3.scaleLinear().domain([-15, 15]).range([height, 0]);
 
     const colorScale = (d: any) => {
       if (d.rankChange === 0) return '#000000';
@@ -68,7 +67,8 @@ const ScatterplotView: React.FC = () => {
       }
     };
 
-    const xAxis = d3.axisBottom(xScale)
+    const xAxis = d3
+      .axisBottom(xScale)
       .ticks(10)
       .tickFormat(d => `${(Number(d) / 1000).toFixed(0)}k`);
 
@@ -123,7 +123,6 @@ const ScatterplotView: React.FC = () => {
       .attr('font-size', '16px')
       .attr('font-weight', 'bold')
       .text('Ranking shift due to H3 cell area');
-
   }, [data]);
 
   if (!data) {

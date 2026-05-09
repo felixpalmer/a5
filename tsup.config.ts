@@ -1,8 +1,8 @@
-import { defineConfig } from 'tsup'
+import {defineConfig} from 'tsup';
 
 export default defineConfig([
   {
-    entry: {'a5': 'modules/index.ts'},
+    entry: {a5: 'modules/index.ts'},
     format: ['cjs', 'esm', 'iife'],
     dts: true,
     splitting: false,
@@ -14,13 +14,13 @@ export default defineConfig([
     target: 'es2020',
     esbuildOptions(options) {
       options.supported = {
-        'bigint': true
-      }
+        bigint: true
+      };
     },
-    outExtension({ format }) {
+    outExtension({format}) {
       return {
-        js: format === 'cjs' ? '.cjs' : format === 'iife' ? '.umd.js' : '.js',
-      }
+        js: format === 'cjs' ? '.cjs' : format === 'iife' ? '.umd.js' : '.js'
+      };
     }
   },
   {
@@ -36,11 +36,11 @@ export default defineConfig([
     outDir: 'scripts',
     esbuildOptions(options) {
       options.supported = {
-        'bigint': true
-      }
+        bigint: true
+      };
     },
     outExtension() {
-      return { js: '.cjs' }
+      return {js: '.cjs'};
     }
   }
-]) 
+]);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, {useState, useMemo, useCallback} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map} from 'react-map-gl/maplibre';
@@ -7,12 +7,12 @@ import {cellToBoundary, cellToChildren, cellToLonLat, getResolution, u64ToHex} f
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 
-const INITIAL_VIEW_STATE = { 
-  longitude: 0, 
-  latitude: 20, 
-  zoom: 1.5, 
-  minZoom: 0, 
-  maxZoom: 5 
+const INITIAL_VIEW_STATE = {
+  longitude: 0,
+  latitude: 20,
+  zoom: 1.5,
+  minZoom: 0,
+  maxZoom: 5
 };
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
@@ -20,13 +20,10 @@ const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json
 const A5_GREEN = [0, 170, 85] as [number, number, number];
 
 type WireframeDemoOptions = {
-  cellIds?: bigint[],
-  showControls?: boolean
-}
-const App: React.FC<WireframeDemoOptions> = ({
-  cellIds, 
-  showControls = true
-}: WireframeDemoOptions) => {
+  cellIds?: bigint[];
+  showControls?: boolean;
+};
+const App: React.FC<WireframeDemoOptions> = ({cellIds, showControls = true}: WireframeDemoOptions) => {
   const initialViewState = {...INITIAL_VIEW_STATE};
   if (cellIds) {
     let [lon, lat] = [0, 0];
@@ -80,7 +77,7 @@ const App: React.FC<WireframeDemoOptions> = ({
   });
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '500px' }}>
+    <div style={{position: 'relative', width: '100%', height: '500px'}}>
       <DeckGL
         views={new MapView({repeat: true})}
         layers={[polygonLayer]}
@@ -89,29 +86,27 @@ const App: React.FC<WireframeDemoOptions> = ({
         controller={true}
         getTooltip={({object}) => object && `Cell ID: ${object.cellId}`}
       >
-        <Map 
-          mapStyle={MAP_STYLE} 
-        />
+        <Map mapStyle={MAP_STYLE} />
       </DeckGL>
-      
+
       {showControls && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '20px',
-          backgroundColor: 'white',
-          color: 'black',
-          padding: '15px',
-          borderRadius: '5px',
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '14px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          minWidth: '200px'
-        }}>
-          <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>
-            A5 Wireframe Example
-          </div>
-          <div style={{ marginBottom: '10px' }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            backgroundColor: 'white',
+            color: 'black',
+            padding: '15px',
+            borderRadius: '5px',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            minWidth: '200px'
+          }}
+        >
+          <div style={{marginBottom: '10px', fontWeight: 'bold'}}>A5 Wireframe Example</div>
+          <div style={{marginBottom: '10px'}}>
             <label htmlFor="resolution">Resolution: {resolution}</label>
             <input
               id="resolution"
@@ -119,16 +114,12 @@ const App: React.FC<WireframeDemoOptions> = ({
               min="1"
               max="3"
               value={resolution}
-              onChange={(e) => setResolution(parseInt(e.target.value))}
-              style={{ width: '100%', marginTop: '5px' }}
+              onChange={e => setResolution(parseInt(e.target.value))}
+              style={{width: '100%', marginTop: '5px'}}
             />
           </div>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            Cells shown: {polygons.length}
-          </div>
-          <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-            Hover over cells to see their IDs
-          </div>
+          <div style={{fontSize: '12px', color: '#666'}}>Cells shown: {polygons.length}</div>
+          <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>Hover over cells to see their IDs</div>
         </div>
       )}
     </div>

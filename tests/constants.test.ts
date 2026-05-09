@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import { describe, test, expect } from 'vitest';
+import {describe, test, expect} from 'vitest';
 import {
   φ,
   TWO_PI,
@@ -28,11 +28,17 @@ describe('constants.ts', () => {
     });
 
     test('satisfies golden ratio property φ² = φ + 1', () => {
-      expect(constantsFixture.φ.properties.goldenRatioSquared).toBeCloseTo(constantsFixture.φ.properties.goldenRatioPlusOne, 15);
+      expect(constantsFixture.φ.properties.goldenRatioSquared).toBeCloseTo(
+        constantsFixture.φ.properties.goldenRatioPlusOne,
+        15
+      );
     });
 
     test('satisfies reciprocal property 1/φ = φ - 1', () => {
-      expect(constantsFixture.φ.properties.reciprocal).toBeCloseTo(constantsFixture.φ.properties.reciprocalMinusOne, 15);
+      expect(constantsFixture.φ.properties.reciprocal).toBeCloseTo(
+        constantsFixture.φ.properties.reciprocalMinusOne,
+        15
+      );
     });
   });
 

@@ -7,7 +7,7 @@ import {FIRST_HILBERT_RESOLUTION} from './serialization';
 
 /**
  * Returns the number of cells at a given resolution.
- * 
+ *
  * @param resolution The resolution level (use BigInt for exact value for high resolutions, 28+)
  * @returns Number of cells at the given resolution
  */
@@ -17,11 +17,11 @@ export function getNumCells(resolution: number | bigint): number | bigint {
   if (typeof resolution === 'bigint') {
     if (resolution < 0n) return 0n;
     if (resolution === 0n) return 12n;
-    return 60n * (4n ** (resolution - 1n));
+    return 60n * 4n ** (resolution - 1n);
   } else {
     if (resolution < 0) return 0;
     if (resolution === 0) return 12;
-    return 60 * (4 ** (resolution - 1));
+    return 60 * 4 ** (resolution - 1);
   }
 }
 
@@ -47,4 +47,4 @@ export function getNumChildren(parentResolution: number, childResolution: number
 export function cellArea(resolution: number): number {
   if (resolution < 0) return AUTHALIC_AREA_EARTH;
   return AUTHALIC_AREA_EARTH / getNumCells(resolution);
-} 
+}

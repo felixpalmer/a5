@@ -29,4 +29,4 @@ class SphericalPolygonDemo extends Component {
   }
 }
 
-export default makeExample(SphericalPolygonDemo); 
+export default makeExample(SphericalPolygonDemo);
