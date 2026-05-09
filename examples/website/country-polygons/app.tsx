@@ -18,7 +18,7 @@ const INITIAL_VIEW_STATE = {
   longitude: 0,
   latitude: 20,
   zoom: 2,
-  minZoom: 2,
+  minZoom: 1,
   maxZoom: 3,
   pitch: 0,
   bearing: 0
