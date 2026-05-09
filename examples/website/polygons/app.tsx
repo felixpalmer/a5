@@ -11,7 +11,8 @@ import { Map, useControl, ViewStateChangeEvent } from "react-map-gl/maplibre";
 import { MapboxOverlay as DeckOverlay } from "@deck.gl/mapbox";
 import { PolygonLayer, ScatterplotLayer, ArcLayer } from "@deck.gl/layers";
 import { cellToBoundary } from "a5/core/cell";
-import { lineStringToCells, polygonToCells } from "a5/traversal/line";
+import { lineStringToCells } from "a5/traversal/line";
+import { polygonToCells } from "a5/regions/polygon";
 import { uncompact } from "a5/core/compact";
 import { getResolution } from "a5/core/serialization";
 import type { LonLat } from "a5/core/coordinate-systems";
@@ -104,24 +105,14 @@ const App: React.FC = () => {
 
   // Load countries
   useEffect(() => {
-    fetch("/data/ne_50m_countries.geojson")
+    // Pre-stripped: each feature is a single Polygon (largest ring of the
+    // original MultiPolygon) with only the `admin` property retained.
+    fetch("/data/ne_50m_countries_geom.geojson")
       .then((r) => r.json())
       .then((data: any) => {
         const entries: CountryEntry[] = [];
         for (const f of data.features) {
-          const g = f.geometry;
-          // Extract the largest ring (first polygon or largest part of MultiPolygon)
-          let coords: [number, number][];
-          if (g.type === "Polygon") {
-            coords = g.coordinates[0];
-          } else if (g.type === "MultiPolygon") {
-            // Pick the part with the most vertices
-            let best = g.coordinates[0][0];
-            for (const part of g.coordinates) {
-              if (part[0].length > best.length) best = part[0];
-            }
-            coords = best;
-          } else continue;
+          const coords: [number, number][] = f.geometry.coordinates[0];
           // Remove closing vertex if ring is closed
           const ring =
             coords[coords.length - 1][0] === coords[0][0] &&
@@ -136,7 +127,9 @@ const App: React.FC = () => {
         entries.sort((a, b) => a.name.localeCompare(b.name));
         setCountries(entries);
       })
-      .catch(() => console.warn("Could not load ne_50m_countries.geojson"));
+      .catch(() =>
+        console.warn("Could not load ne_50m_countries_geom.geojson"),
+      );
   }, []);
 
   // Latitude-corrected zoom for resolution
@@ -240,7 +233,14 @@ const App: React.FC = () => {
       ? compactedCells
       : uncompact(compactedCells, resolution);
     return Array.from(cells).map((id) => ({ id, boundary: cellBoundary(id) }));
-  }, [waypoints, resolution, isPolygon, outlineOnly, showCompacted, compactedCells]);
+  }, [
+    waypoints,
+    resolution,
+    isPolygon,
+    outlineOnly,
+    showCompacted,
+    compactedCells,
+  ]);
 
   const uncompactedCount = useMemo(() => {
     if (!compactedCells) return 0;
