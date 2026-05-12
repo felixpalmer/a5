@@ -19,6 +19,14 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v0.8.0] - May 12 2026
+
+- fix(cell): Spiral unstable in polar regions (#98)
+- feat(regions): Implement polygonToCells (#97)
+- feat(traversal): lineStringToCells (#96)
+- Refactor: lattice boundary helpers (#95)
+- feat(serialization): Improve cellToParent speed (#94)
+
 #### A5 [v0.7.3] - Apr 9 2026
 
 - fix: normalize longitude in toLonLat to -180-180 (#90)
