@@ -20,6 +20,32 @@ const center = vec3.create() as Cartesian;
 export type SphericalPolygon = Cartesian[];
 
 /**
+ * Area of the spherical triangle (v1, v2, v3) on the unit sphere, in radians.
+ *
+ * Uses the midpoint triple-product method, well-conditioned for the tiny
+ * triangles produced by deep-resolution sub-tris. Free-function form avoids
+ * the class/array allocations of `new SphericalTriangleShape([…])` on the
+ * lonLatToCell / cellToLonLat hot path.
+ */
+export function sphericalTriangleArea(v1: Cartesian, v2: Cartesian, v3: Cartesian): Radians {
+  vec3.lerp(midA, v2, v3, 0.5);
+  vec3.normalize(midA, midA);
+  vec3.lerp(midB, v3, v1, 0.5);
+  vec3.normalize(midB, midB);
+  vec3.lerp(midC, v1, v2, 0.5);
+  vec3.normalize(midC, midC);
+
+  const S = tripleProduct(midA, midB, midC);
+  const clamped = Math.max(-1.0, Math.min(1.0, S));
+
+  // sin(x) ≈ x for small x — keep precision on tiny triangles.
+  if (Math.abs(clamped) < 1e-8) {
+    return (2 * clamped) as Radians;
+  }
+  return (Math.asin(clamped) * 2) as Radians;
+}
+
+/**
  * Spherical point-in-polygon via signed-angle summation. Works for concave
  * polygons (unlike `SphericalPolygonShape.containsPoint`, which assumes convex
  * "necessary strike"). The math is fully inlined as it's called per-cell in
@@ -176,34 +202,6 @@ export class SphericalPolygonShape {
   }
 
   /**
-   * Calculate the area of a spherical triangle given three vertices
-   * @param v1 First vertex
-   * @param v2 Second vertex
-   * @param v3 Third vertex
-   * @returns Area of the spherical triangle in radians
-   */
-  private getTriangleArea(v1: Cartesian, v2: Cartesian, v3: Cartesian): Radians {
-    // Calculate midpoints
-    vec3.lerp(midA, v2, v3, 0.5);
-    vec3.lerp(midB, v3, v1, 0.5);
-    vec3.lerp(midC, v1, v2, 0.5);
-    vec3.normalize(midA, midA);
-    vec3.normalize(midB, midB);
-    vec3.normalize(midC, midC);
-
-    // Calculate area using asin of dot product, clamped to valid range
-    const S = tripleProduct(midA, midB, midC);
-    const clamped = Math.max(-1.0, Math.min(1.0, S));
-
-    // sin(x) = x for x < 1e-8
-    if (Math.abs(clamped) < 1e-8) {
-      return (2 * clamped) as Radians;
-    } else {
-      return (Math.asin(clamped) * 2) as Radians;
-    }
-  }
-
-  /**
    * Calculate the area of the spherical polygon by decomposing it into a fan of triangles
    * @returns The area of the spherical polygon in radians
    */
@@ -221,7 +219,7 @@ export class SphericalPolygonShape {
     }
 
     if (this.vertices.length === 3) {
-      this._area = this.getTriangleArea(this.vertices[0], this.vertices[1], this.vertices[2]);
+      this._area = sphericalTriangleArea(this.vertices[0], this.vertices[1], this.vertices[2]);
       return this._area;
     }
 
@@ -237,7 +235,7 @@ export class SphericalPolygonShape {
     for (let i = 0; i < this.vertices.length; i++) {
       const v1 = this.vertices[i];
       const v2 = this.vertices[(i + 1) % this.vertices.length];
-      const triArea = this.getTriangleArea(center, v1, v2);
+      const triArea = sphericalTriangleArea(center, v1, v2);
       if (!isNaN(triArea)) {
         area += triArea;
       }

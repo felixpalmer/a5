@@ -36,8 +36,16 @@ import {vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type {Cartesian, Face, Barycentric, FaceTriangle, SphericalTriangle} from '../core/coordinate-systems';
 import {faceToBarycentric, barycentricToFace} from '../core/coordinate-transforms';
-import {SphericalTriangleShape} from '../geometry/spherical-triangle';
+import {sphericalTriangleArea} from '../geometry/spherical-polygon';
 import {vectorDifference, quadrupleProduct, slerp} from '../utils/vector';
+
+// Per-instance scratch buffers — forward/inverse are on the lonLatToCell hot
+// path, so we avoid vec3.create() per call. Per-instance (not module-scoped)
+// keeps the projection re-entrant across DodecahedronProjection instances.
+const _Z = vec3.create() as Cartesian;
+const _p = vec3.create() as Cartesian;
+const _c1 = vec3.create() as Cartesian;
+const _P = vec3.create() as Cartesian;
 
 export class PolyhedralProjection {
   /**
@@ -49,23 +57,22 @@ export class PolyhedralProjection {
    */
   forward(v: Cartesian, sphericalTriangle: SphericalTriangle, faceTriangle: FaceTriangle): Face {
     const [A, B, C] = sphericalTriangle;
-    const triangleShape = new SphericalTriangleShape([A, B, C]);
 
     // When v is close to A, the quadruple product is unstable.
     // As we just need the intersection of two great circles we can use difference
     // between A and v, as it lies in the same plane of the great circle containing A & v
-    const Z = vec3.subtract(vec3.create(), v, A) as Cartesian;
-    vec3.normalize(Z, Z);
-    const p = quadrupleProduct(vec3.create() as Cartesian, A, Z, B, C);
+    vec3.subtract(_Z, v, A);
+    vec3.normalize(_Z, _Z);
+    const p = quadrupleProduct(_p, A, _Z, B, C);
     vec3.normalize(p, p);
 
     const h = vectorDifference(A, v) / vectorDifference(A, p);
-    const Area_ABC = triangleShape.getArea();
+    const Area_ABC = sphericalTriangleArea(A, B, C);
     const scaledArea = h / Area_ABC;
     const b = [
       1 - h,
-      scaledArea * new SphericalTriangleShape([A, p, C as Cartesian]).getArea(),
-      scaledArea * new SphericalTriangleShape([A, B, p as Cartesian]).getArea()
+      scaledArea * sphericalTriangleArea(A, p, C),
+      scaledArea * sphericalTriangleArea(A, B, p)
     ] as Barycentric;
     return barycentricToFace(b, faceTriangle);
   }
@@ -79,7 +86,6 @@ export class PolyhedralProjection {
    */
   inverse(facePoint: Face, faceTriangle: FaceTriangle, sphericalTriangle: SphericalTriangle): Cartesian {
     const [A, B, C] = sphericalTriangle;
-    const triangleShape = new SphericalTriangleShape([A, B, C]);
     const b = faceToBarycentric(facePoint, faceTriangle);
 
     const threshold = 1 - 1e-14;
@@ -87,9 +93,8 @@ export class PolyhedralProjection {
     if (b[1] > threshold) return B;
     if (b[2] > threshold) return C;
 
-    const c1 = vec3.create();
-    vec3.cross(c1, B, C);
-    const Area_ABC = triangleShape.getArea();
+    vec3.cross(_c1, B, C);
+    const Area_ABC = sphericalTriangleArea(A, B, C);
     const h = 1 - b[0];
     const R = b[2] / h;
     const alpha = R * Area_ABC;
@@ -100,16 +105,18 @@ export class PolyhedralProjection {
     const c01 = vec3.dot(A, B);
     const c12 = vec3.dot(B, C);
     const c20 = vec3.dot(C, A);
-    const s12 = vec3.length(c1);
+    const s12 = vec3.length(_c1);
 
-    const V = vec3.dot(A, c1); // Triple product of A, B, C. Constant??
+    const V = vec3.dot(A, _c1); // Triple product of A, B, C. Constant??
     const f = S * V + CC * (c01 * c12 - c20);
     const g = CC * s12 * (1 + c01);
     const q = (2 / Math.acos(c12)) * Math.atan2(g, f);
-    const P = slerp(vec3.create() as Cartesian, B, C, q);
+    const P = slerp(_P, B, C, q);
     const K = vectorDifference(A, P);
     const t = this.safeAcos(h * K) / this.safeAcos(K);
-    const out = slerp([0, 0, 0] as Cartesian, A, P, t);
+    // `out` is returned to the caller, which immediately reads it via
+    // toSpherical — so it must be a fresh allocation, not a scratch buffer.
+    const out = slerp(vec3.create() as Cartesian, A, P, t);
     return out;
   }
 
