@@ -1,7 +1,7 @@
 import {glMatrix, vec3} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import {describe, it, expect} from 'vitest';
-import {PolyhedralProjection} from '../../modules/projections/polyhedral';
+import {EqualAreaProjection} from '../../modules/projections/equal-area';
 import TEST_DATA from './fixtures/polyhedral.json';
 import {Cartesian} from '../../modules/core/coordinate-systems';
 
@@ -17,8 +17,8 @@ const MAX_ANGLE = Math.max(
 const MAX_ARC_LENGTH_MM = AUTHALIC_RADIUS * MAX_ANGLE * 1e9;
 const DESIRED_MM_PRECISION = 0.01;
 
-describe('PolyhedralProjection forward', () => {
-  const polyhedral = new PolyhedralProjection();
+describe('EqualAreaProjection forward', () => {
+  const polyhedral = new EqualAreaProjection();
   let largestError = 0;
 
   it('forward projections', () => {
@@ -47,8 +47,8 @@ describe('PolyhedralProjection forward', () => {
   });
 });
 
-describe('PolyhedralProjection inverse', () => {
-  const polyhedral = new PolyhedralProjection();
+describe('EqualAreaProjection inverse', () => {
+  const polyhedral = new EqualAreaProjection();
 
   it('inverse projections', () => {
     TEST_DATA.inverse.forEach((testCase, index) => {

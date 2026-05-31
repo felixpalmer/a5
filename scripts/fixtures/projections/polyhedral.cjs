@@ -1,4 +1,4 @@
-const {PolyhedralProjection} = require('../../a5-test.cjs');
+const {EqualAreaProjection} = require('../../a5-test.cjs');
 const {generateProjectionTests} = require('../projection-generator.cjs');
 const {vec3} = require('gl-matrix');
 
@@ -48,7 +48,7 @@ function generateRandomFacePoint() {
   return [x, y];
 }
 
-const polyhedral = new PolyhedralProjection();
+const polyhedral = new EqualAreaProjection();
 function generateRandomSphericalPoint() {
   return polyhedral.inverse(generateRandomFacePoint(), TEST_FACE_TRIANGLE, TEST_SPHERICAL_TRIANGLE);
 }
@@ -56,7 +56,7 @@ function generateRandomSphericalPoint() {
 // Custom configuration for polyhedral projection
 const config = {
   projectionName: 'polyhedral',
-  ProjectionClass: PolyhedralProjection,
+  ProjectionClass: EqualAreaProjection,
   generateRandomForwardInput: generateRandomSphericalPoint,
   generateRandomInverseInput: generateRandomFacePoint,
   specificInverseInputs: SPECIFIC_FACE_POINTS,

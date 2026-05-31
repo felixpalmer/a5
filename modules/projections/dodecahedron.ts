@@ -9,7 +9,7 @@ import type {Radians, Spherical, Cartesian, Polar, Face} from '../core/coordinat
 import {GnomonicProjection} from './gnomonic';
 import {origins} from '../core/origin';
 import {distanceToEdge, interhedralAngle, PI_OVER_5, TWO_PI_OVER_5} from '../core/constants';
-import {PolyhedralProjection} from './polyhedral';
+import {EqualAreaProjection} from './equal-area';
 import {getQuintantVertices} from '../core/tiling';
 import {OriginId} from 'a5/core/utils';
 import {CRS} from './crs';
@@ -23,11 +23,11 @@ const crs = new CRS();
 export class DodecahedronProjection {
   private faceTriangles: FaceTriangle[] = [];
   private sphericalTriangles: SphericalTriangle[] = [];
-  private polyhedral: PolyhedralProjection;
+  private equalArea: EqualAreaProjection;
   private gnomonic: GnomonicProjection;
 
   constructor() {
-    this.polyhedral = new PolyhedralProjection();
+    this.equalArea = new EqualAreaProjection();
     this.gnomonic = new GnomonicProjection();
   }
 
@@ -64,7 +64,7 @@ export class DodecahedronProjection {
     const reflect = this.shouldReflect(polar);
     let faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
     let sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
-    return this.polyhedral.forward(unprojected, sphericalTriangle, faceTriangle);
+    return this.equalArea.forward(unprojected, sphericalTriangle, faceTriangle);
   }
 
   /**
@@ -80,7 +80,7 @@ export class DodecahedronProjection {
     const reflect = this.shouldReflect(polar);
     const faceTriangle = this.getFaceTriangle(faceTriangleIndex, reflect, false);
     const sphericalTriangle = this.getSphericalTriangle(faceTriangleIndex, originId, reflect);
-    const unprojected = this.polyhedral.inverse(face, faceTriangle, sphericalTriangle);
+    const unprojected = this.equalArea.inverse(face, faceTriangle, sphericalTriangle);
     return toSpherical(unprojected);
   }
 

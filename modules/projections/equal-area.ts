@@ -39,15 +39,47 @@ import {faceToBarycentric, barycentricToFace} from '../core/coordinate-transform
 import {sphericalTriangleArea} from '../geometry/spherical-polygon';
 import {vectorDifference, quadrupleProduct, slerp} from '../utils/vector';
 
-// Per-instance scratch buffers — forward/inverse are on the lonLatToCell hot
-// path, so we avoid vec3.create() per call. Per-instance (not module-scoped)
-// keeps the projection re-entrant across DodecahedronProjection instances.
+// Module-scoped scratch buffers — forward/inverse are on the lonLatToCell hot
+// path, so we avoid vec3.create() per call.
 const _Z = vec3.create() as Cartesian;
 const _p = vec3.create() as Cartesian;
-const _c1 = vec3.create() as Cartesian;
 const _P = vec3.create() as Cartesian;
 
-export class PolyhedralProjection {
+interface TriangleConstants {
+  V: number; // A · (B × C) — signed triple product
+  c12: number; // B · C
+  s12: number; // |B × C|
+  kQ: number; // 2 / acos(c12)
+  areaABC: number; // spherical triangle area
+}
+
+export class EqualAreaProjection {
+  // Shape-only invariants of the spherical triangle. A5 only ever projects the
+  // congruent face-triangles of a single dodecahedron, so these depend only on
+  // the triangle's shape, not its position — we compute them once on the first
+  // call and reuse them for every subsequent projection.
+  //
+  // NOTE: `V` is a *signed* triple product, so this caching is only valid while
+  // every triangle shares the same winding (chirality). DodecahedronProjection
+  // guarantees this by ordering vertices consistently across normal and
+  // reflected faces; reflecting a triangle without re-ordering its vertices
+  // would flip the sign of `V` and silently corrupt the inverse projection.
+  private constants: TriangleConstants | null = null;
+
+  private computeConstants(sphericalTriangle: SphericalTriangle): TriangleConstants {
+    const [A, B, C] = sphericalTriangle;
+    const c1 = vec3.create() as Cartesian;
+    vec3.cross(c1, B, C);
+    const c12 = vec3.dot(B, C);
+    return {
+      V: vec3.dot(A, c1),
+      c12,
+      s12: vec3.length(c1),
+      kQ: 2 / Math.acos(c12),
+      areaABC: sphericalTriangleArea(A, B, C)
+    };
+  }
+
   /**
    * Forward projection: converts a spherical point to face coordinates
    * @param v - The spherical point to project
@@ -56,6 +88,8 @@ export class PolyhedralProjection {
    * @returns The face coordinates
    */
   forward(v: Cartesian, sphericalTriangle: SphericalTriangle, faceTriangle: FaceTriangle): Face {
+    if (!this.constants) this.constants = this.computeConstants(sphericalTriangle);
+
     const [A, B, C] = sphericalTriangle;
 
     // When v is close to A, the quadruple product is unstable.
@@ -67,8 +101,7 @@ export class PolyhedralProjection {
     vec3.normalize(p, p);
 
     const h = vectorDifference(A, v) / vectorDifference(A, p);
-    const Area_ABC = sphericalTriangleArea(A, B, C);
-    const scaledArea = h / Area_ABC;
+    const scaledArea = h / this.constants.areaABC;
     const b = [
       1 - h,
       scaledArea * sphericalTriangleArea(A, p, C),
@@ -85,6 +118,8 @@ export class PolyhedralProjection {
    * @returns The spherical coordinates
    */
   inverse(facePoint: Face, faceTriangle: FaceTriangle, sphericalTriangle: SphericalTriangle): Cartesian {
+    if (!this.constants) this.constants = this.computeConstants(sphericalTriangle);
+
     const [A, B, C] = sphericalTriangle;
     const b = faceToBarycentric(facePoint, faceTriangle);
 
@@ -93,24 +128,21 @@ export class PolyhedralProjection {
     if (b[1] > threshold) return B;
     if (b[2] > threshold) return C;
 
-    vec3.cross(_c1, B, C);
-    const Area_ABC = sphericalTriangleArea(A, B, C);
+    const {V, c12, s12, kQ, areaABC} = this.constants;
+
     const h = 1 - b[0];
     const R = b[2] / h;
-    const alpha = R * Area_ABC;
+    const alpha = R * areaABC;
     const S = Math.sin(alpha);
     const halfC = Math.sin(alpha / 2);
     const CC = 2 * halfC * halfC; // Half angle formula
 
     const c01 = vec3.dot(A, B);
-    const c12 = vec3.dot(B, C);
     const c20 = vec3.dot(C, A);
-    const s12 = vec3.length(_c1);
 
-    const V = vec3.dot(A, _c1); // Triple product of A, B, C. Constant??
     const f = S * V + CC * (c01 * c12 - c20);
     const g = CC * s12 * (1 + c01);
-    const q = (2 / Math.acos(c12)) * Math.atan2(g, f);
+    const q = kQ * Math.atan2(g, f);
     const P = slerp(_P, B, C, q);
     const K = vectorDifference(A, P);
     const t = this.safeAcos(h * K) / this.safeAcos(K);
