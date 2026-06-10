@@ -45,6 +45,9 @@ const _Z = vec3.create() as Cartesian;
 const _p = vec3.create() as Cartesian;
 const _P = vec3.create() as Cartesian;
 
+// NOTE: A · B and C · A are deliberately NOT cached — even/odd face triangles
+// swap the roles of the B and C vertices, so those dot products differ by
+// ~0.056 between triangles and must be computed per call.
 interface TriangleConstants {
   V: number; // A · (B × C) — signed triple product
   c12: number; // B · C
@@ -56,17 +59,27 @@ interface TriangleConstants {
 export class EqualAreaProjection {
   // Shape-only invariants of the spherical triangle. A5 only ever projects the
   // congruent face-triangles of a single dodecahedron, so these depend only on
-  // the triangle's shape, not its position — we compute them once on the first
-  // call and reuse them for every subsequent projection.
+  // the triangle's shape, not its position — they are computed once from the
+  // canonical triangle passed to the constructor and reused for every
+  // projection. Deriving them eagerly from a fixed triangle (rather than
+  // lazily from whichever triangle is projected first) keeps results
+  // independent of call order: congruent triangles agree only to ~1 ulp, so a
+  // lazy cache would make outputs depend on process history.
   //
   // NOTE: `V` is a *signed* triple product, so this caching is only valid while
   // every triangle shares the same winding (chirality). DodecahedronProjection
   // guarantees this by ordering vertices consistently across normal and
   // reflected faces; reflecting a triangle without re-ordering its vertices
   // would flip the sign of `V` and silently corrupt the inverse projection.
-  private constants: TriangleConstants | null = null;
+  // This invariant is enforced by the constants-agreement test in
+  // tests/projections/equal-area.test.ts.
+  private constants: TriangleConstants;
 
-  private computeConstants(sphericalTriangle: SphericalTriangle): TriangleConstants {
+  constructor(canonicalTriangle: SphericalTriangle) {
+    this.constants = EqualAreaProjection.computeConstants(canonicalTriangle);
+  }
+
+  static computeConstants(sphericalTriangle: SphericalTriangle): TriangleConstants {
     const [A, B, C] = sphericalTriangle;
     const c1 = vec3.create() as Cartesian;
     vec3.cross(c1, B, C);
@@ -88,8 +101,6 @@ export class EqualAreaProjection {
    * @returns The face coordinates
    */
   forward(v: Cartesian, sphericalTriangle: SphericalTriangle, faceTriangle: FaceTriangle): Face {
-    if (!this.constants) this.constants = this.computeConstants(sphericalTriangle);
-
     const [A, B, C] = sphericalTriangle;
 
     // When v is close to A, the quadruple product is unstable.
@@ -118,8 +129,6 @@ export class EqualAreaProjection {
    * @returns The spherical coordinates
    */
   inverse(facePoint: Face, faceTriangle: FaceTriangle, sphericalTriangle: SphericalTriangle): Cartesian {
-    if (!this.constants) this.constants = this.computeConstants(sphericalTriangle);
-
     const [A, B, C] = sphericalTriangle;
     const b = faceToBarycentric(facePoint, faceTriangle);
 
@@ -137,6 +146,8 @@ export class EqualAreaProjection {
     const halfC = Math.sin(alpha / 2);
     const CC = 2 * halfC * halfC; // Half angle formula
 
+    // Per-triangle: A·B and C·A swap between even/odd face triangles (see
+    // TriangleConstants note), so they cannot come from the cached constants.
     const c01 = vec3.dot(A, B);
     const c20 = vec3.dot(C, A);
 

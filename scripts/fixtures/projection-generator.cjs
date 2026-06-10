@@ -12,6 +12,7 @@ const path = require('path');
  * @param {Array} config.specificInverseInputs - Array of specific inputs to include in inverse tests
  * @param {number} config.forwardTestCount - Number of forward tests to generate (default: 100)
  * @param {number} config.inverseTestCount - Number of inverse tests to generate (default: 100)
+ * @param {Array} config.constructorParams - Array of parameters for the projection constructor
  * @param {Array} config.forwardParams - Array of additional parameters for forward operations
  * @param {Array} config.inverseParams - Array of additional parameters for inverse operations
  * @param {Function} config.postGenerate - Function to post-process the generated test data
@@ -26,11 +27,12 @@ function generateProjectionTestData(config) {
     specificInverseInputs = [],
     forwardTestCount = 100,
     inverseTestCount = 100,
+    constructorParams = [],
     forwardParams = [],
     inverseParams = []
   } = config;
 
-  const projection = new ProjectionClass();
+  const projection = new ProjectionClass(...constructorParams);
   const testData = {
     forward: [],
     inverse: []
@@ -88,8 +90,8 @@ function generateProjectionTestData(config) {
 }
 
 function updateExistingTestData(existingData, config) {
-  const {ProjectionClass, forwardParams = [], inverseParams = []} = config;
-  const projection = new ProjectionClass();
+  const {ProjectionClass, constructorParams = [], forwardParams = [], inverseParams = []} = config;
+  const projection = new ProjectionClass(...constructorParams);
 
   // Update expected values for forward tests
   if (existingData.forward) {

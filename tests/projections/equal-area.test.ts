@@ -18,7 +18,7 @@ const MAX_ARC_LENGTH_MM = AUTHALIC_RADIUS * MAX_ANGLE * 1e9;
 const DESIRED_MM_PRECISION = 0.01;
 
 describe('EqualAreaProjection forward', () => {
-  const equalArea = new EqualAreaProjection();
+  const equalArea = new EqualAreaProjection(TEST_SPHERICAL_TRIANGLE as any);
   let largestError = 0;
 
   it('forward projections', () => {
@@ -47,8 +47,38 @@ describe('EqualAreaProjection forward', () => {
   });
 });
 
+describe('EqualAreaProjection triangle constants', () => {
+  // The projection caches shape constants from one canonical triangle, which
+  // is only valid if every spherical triangle the dodecahedron can supply is
+  // congruent AND consistently wound (the sign of V is chirality-sensitive).
+  // This enforces the invariant documented in equal-area.ts.
+  it('agree across all face triangles, origins and reflections', async () => {
+    const {DodecahedronProjection} = await import('../../modules/projections/dodecahedron');
+    const dodecahedron = new DodecahedronProjection() as any;
+    const canonical = EqualAreaProjection.computeConstants(dodecahedron.getSphericalTriangle(0, 0, false));
+
+    const RELATIVE_TOLERANCE = 1e-13;
+    for (let originId = 0; originId < 12; originId++) {
+      for (let faceTriangleIndex = 0; faceTriangleIndex < 10; faceTriangleIndex++) {
+        for (const reflected of [false, true]) {
+          const triangle = dodecahedron.getSphericalTriangle(faceTriangleIndex, originId, reflected);
+          const constants = EqualAreaProjection.computeConstants(triangle);
+          for (const key of Object.keys(canonical) as (keyof typeof canonical)[]) {
+            const expected = canonical[key];
+            const actual = constants[key];
+            expect(
+              Math.abs(actual - expected),
+              `${key} mismatch at face ${faceTriangleIndex}, origin ${originId}, reflected ${reflected}`
+            ).toBeLessThan(Math.abs(expected) * RELATIVE_TOLERANCE);
+          }
+        }
+      }
+    }
+  });
+});
+
 describe('EqualAreaProjection inverse', () => {
-  const equalArea = new EqualAreaProjection();
+  const equalArea = new EqualAreaProjection(TEST_SPHERICAL_TRIANGLE as any);
 
   it('inverse projections', () => {
     TEST_DATA.inverse.forEach((testCase, index) => {

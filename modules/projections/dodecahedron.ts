@@ -27,8 +27,12 @@ export class DodecahedronProjection {
   private gnomonic: GnomonicProjection;
 
   constructor() {
-    this.equalArea = new EqualAreaProjection();
     this.gnomonic = new GnomonicProjection();
+    // All face triangles are congruent, so the equal-area projection derives
+    // its shape constants once from a canonical triangle. Using a fixed
+    // triangle (face 0, origin 0, unreflected) keeps results bit-identical
+    // regardless of which face is projected first.
+    this.equalArea = new EqualAreaProjection(this.getSphericalTriangle(0, 0 as OriginId, false));
   }
 
   /**

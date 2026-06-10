@@ -48,7 +48,7 @@ function generateRandomFacePoint() {
   return [x, y];
 }
 
-const equalArea = new EqualAreaProjection();
+const equalArea = new EqualAreaProjection(TEST_SPHERICAL_TRIANGLE);
 function generateRandomSphericalPoint() {
   return equalArea.inverse(generateRandomFacePoint(), TEST_FACE_TRIANGLE, TEST_SPHERICAL_TRIANGLE);
 }
@@ -62,6 +62,7 @@ const config = {
   specificInverseInputs: SPECIFIC_FACE_POINTS,
   forwardTestCount: 200,
   inverseTestCount: 200,
+  constructorParams: [TEST_SPHERICAL_TRIANGLE],
   forwardParams: [TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE],
   inverseParams: [TEST_FACE_TRIANGLE, TEST_SPHERICAL_TRIANGLE],
   postGenerate: testData => {
