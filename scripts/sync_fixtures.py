@@ -31,6 +31,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/fixtures/compact.json"),
         (RS_ROOT, "tests/fixtures/compact.json"),
     ],
+    "tests/fixtures/cell-to-lonlat.json": [
+        (PY_ROOT, "tests/core/fixtures/cell-to-lonlat.json"),
+        (RS_ROOT, "tests/fixtures/cell-to-lonlat.json"),
+    ],
     "tests/fixtures/crs-vertices.json": [
         (PY_ROOT, "tests/projections/fixtures/crs-vertices.json"),
         (RS_ROOT, "tests/fixtures/crs-vertices.json"),
@@ -104,6 +108,7 @@ FIXTURE_MAP = {
     ],
     "tests/projections/fixtures/dodecahedron.json": [
         (PY_ROOT, "tests/projections/fixtures/dodecahedron.json"),
+        (RS_ROOT, "tests/fixtures/dodecahedron-test-data.json"),
     ],
     "tests/projections/fixtures/gnomonic.json": [
         (PY_ROOT, "tests/projections/fixtures/gnomonic.json"),
