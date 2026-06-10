@@ -99,21 +99,26 @@ function pointInPolygonSpherical(point, ring) {
 
 /**
  * Brute-force: test if a cell should be in the polygon.
- * A cell is included if and only if its center is inside the polygon.
+ * A cell is included if and only if its center is inside the outer ring
+ * and outside every hole ring.
  * This ensures non-overlapping coverage for adjacent polygons.
  */
-function cellInPolygonBruteForce(cellId, ring, closedRingVecs, resolution) {
+function cellInPolygonBruteForce(cellId, rings) {
   const center = cellToLonLat(cellId);
-  return pointInPolygonSpherical(center, ring);
+  if (!pointInPolygonSpherical(center, rings[0])) return false;
+  for (let r = 1; r < rings.length; r++) {
+    if (pointInPolygonSpherical(center, rings[r])) return false;
+  }
+  return true;
 }
 
 /**
  * Brute-force polygonToCells using a spherical cap to limit candidate cells.
- * The cap is centered on the polygon centroid with radius = max vertex distance * 1.5.
+ * The cap is centered on the outer-ring centroid with radius = max vertex distance * 1.5.
+ * `rings` is GeoJSON-style: [outer, ...holes].
  */
-function bruteForcePolygonToCells(ring, resolution) {
-  const closedRing = [...ring, ring[0]];
-  const closedRingVecs = closedRing.map(ll => toVec3(ll));
+function bruteForcePolygonToCells(rings, resolution) {
+  const ring = rings[0];
 
   // Compute centroid and max distance for the spherical cap
   const centroidLl = ring.reduce((acc, ll) => [acc[0] + ll[0], acc[1] + ll[1]], [0, 0]);
@@ -142,7 +147,7 @@ function bruteForcePolygonToCells(ring, resolution) {
 
   const result = [];
   for (const cellId of candidateCells) {
-    if (cellInPolygonBruteForce(cellId, ring, closedRingVecs, resolution)) {
+    if (cellInPolygonBruteForce(cellId, rings)) {
       result.push(cellId);
     }
   }
@@ -196,15 +201,27 @@ const polygonCases = [
   {name: 'no_interior_sliver', ring: [[0, 0], [0.4, 0], [0.4, 0.05]], resolution: 5},
   // Resolution 30 micro polygon — exercises the MAX_RESOLUTION fallback in
   // floodInterior (skips the coarse phase for res 30's special encoding).
-  {name: 'res30_micro', ring: [[10, 50], [10.0000001, 50], [10.0000001, 50.0000001], [10, 50.0000001]], resolution: 30}
+  {name: 'res30_micro', ring: [[10, 50], [10.0000001, 50], [10.0000001, 50.0000001], [10, 50.0000001]], resolution: 30},
+  // Polygons with holes (GeoJSON-style: outer ring + hole rings)
+  {name: 'donut', ring: [[-5, 54], [15, 54], [15, 44], [-5, 44]], holes: [[[2, 51], [8, 51], [8, 47], [2, 47]]], resolution: 6},
+  {name: 'two_holes', ring: [[-10, 58], [20, 58], [20, 40], [-10, 40]], holes: [[[-4, 53], [2, 53], [2, 48], [-4, 48]], [[8, 52], [14, 52], [14, 46], [8, 46]]], resolution: 5},
+  // Hole smaller than a cell — no cell center falls inside, result matches the unholed polygon.
+  {name: 'tiny_hole_no_effect', ring: [[-5, 54], [15, 54], [15, 44], [-5, 44]], holes: [[[4, 49], [4.05, 49], [4.05, 49.05], [4, 49.05]]], resolution: 5},
+  // Concave outer ring with a hole in the bottom strip of the L.
+  {name: 'l_shape_with_hole', ring: [[-5, 54], [5, 54], [5, 50], [15, 50], [15, 44], [-5, 44]], holes: [[[-3, 47], [3, 47], [3, 45], [-3, 45]]], resolution: 6},
+  // Large hole leaving only a thin rim — boundary and hole firewall nearly touch.
+  {name: 'donut_thin_rim', ring: [[0, 52], [10, 52], [10, 44], [0, 44]], holes: [[[1, 51], [9, 51], [9, 45], [1, 45]]], resolution: 6},
+  // Big enough interior to trigger the hierarchical coarse flood phase with a hole present.
+  {name: 'donut_coarse_phase', ring: [[-10, 55], [15, 55], [15, 40], [-10, 40]], holes: [[[-2, 50], [7, 50], [7, 45], [-2, 45]]], resolution: 7}
 ];
 
 console.log('\nPolygon fixtures:');
 const polygonFixtures = [];
 for (const tc of polygonCases) {
   console.log(`  ${tc.name} (res ${tc.resolution})...`);
-  const expected = bruteForcePolygonToCells(tc.ring, tc.resolution);
-  const actualCompact = polygonToCells(tc.ring, tc.resolution);
+  const rings = [tc.ring, ...(tc.holes || [])];
+  const expected = bruteForcePolygonToCells(rings, tc.resolution);
+  const actualCompact = polygonToCells(rings, tc.resolution);
   const actual = uncompact(actualCompact, tc.resolution);
   const actualSorted = [...actual].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
@@ -220,7 +237,7 @@ for (const tc of polygonCases) {
   console.log(`    brute-force: ${expected.length}, algorithm (compact): ${actualCompact.length} → ${actual.length}`);
   polygonFixtures.push({
     name: tc.name,
-    ring: tc.ring,
+    polygon: rings,
     resolution: tc.resolution,
     cells: expected.map(c => u64ToHex(c))
   });
@@ -253,35 +270,49 @@ if (fs.existsSync(geojsonPath)) {
   ];
   const countryResolution = 3;
 
-  console.log(`\nCountry fixtures (res ${countryResolution}):`);
-  for (const name of countrySelection) {
+  /** Remove the closing vertex if the ring is closed */
+  const stripClosing = coords =>
+    coords[coords.length - 1][0] === coords[0][0] && coords[coords.length - 1][1] === coords[0][1]
+      ? coords.slice(0, -1)
+      : coords;
+
+  /** Extract the mainland part of a country as [outer, ...holes] rings */
+  const countryRings = name => {
     const feature = geojson.features.find(f => f.properties.admin === name);
-    if (!feature) {
-      console.log(`  ${name}: NOT FOUND`);
+    if (!feature) return null;
+    const g = feature.geometry;
+    let part;
+    if (g.type === 'Polygon') {
+      part = g.coordinates;
+    } else if (g.type === 'MultiPolygon') {
+      // Pick the part with the most outer-ring vertices (mainland)
+      part = g.coordinates[0];
+      for (const p of g.coordinates) {
+        if (p[0].length > part[0].length) part = p;
+      }
+    } else return null;
+    return part.map(stripClosing);
+  };
+
+  // Mainland (incl. holes) at res 3, plus South Africa at res 6 where the
+  // Lesotho hole is large enough to exclude cell centers.
+  const countryCases = [
+    ...countrySelection.map(name => ({name, resolution: countryResolution})),
+    {name: 'South Africa', resolution: 6}
+  ];
+
+  console.log(`\nCountry fixtures:`);
+  for (const tc of countryCases) {
+    const rings = countryRings(tc.name);
+    if (!rings) {
+      console.log(`  ${tc.name}: NOT FOUND`);
       continue;
     }
-    const g = feature.geometry;
-    let coords;
-    if (g.type === 'Polygon') {
-      coords = g.coordinates[0];
-    } else if (g.type === 'MultiPolygon') {
-      // Pick the part with the most vertices (mainland)
-      let best = g.coordinates[0][0];
-      for (const part of g.coordinates) {
-        if (part[0].length > best.length) best = part[0];
-      }
-      coords = best;
-    } else continue;
-    // Remove closing vertex if ring is closed
-    const ring =
-      coords[coords.length - 1][0] === coords[0][0] && coords[coords.length - 1][1] === coords[0][1]
-        ? coords.slice(0, -1)
-        : coords;
 
-    console.log(`  ${name} (${ring.length} vertices)...`);
-    const expected = bruteForcePolygonToCells(ring, countryResolution);
-    const actualCompact = polygonToCells(ring, countryResolution);
-    const actual = uncompact(actualCompact, countryResolution);
+    console.log(`  ${tc.name} (res ${tc.resolution}, ${rings[0].length} vertices, ${rings.length - 1} holes)...`);
+    const expected = bruteForcePolygonToCells(rings, tc.resolution);
+    const actualCompact = polygonToCells(rings, tc.resolution);
+    const actual = uncompact(actualCompact, tc.resolution);
     const actualSorted = [...actual].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
     const expectedSet = new Set(expected.map(c => c.toString()));
@@ -294,9 +325,9 @@ if (fs.existsSync(geojsonPath)) {
 
     console.log(`    brute-force: ${expected.length}, algorithm (compact): ${actualCompact.length} → ${actual.length}`);
     countryFixtures.push({
-      name,
-      ring,
-      resolution: countryResolution,
+      name: tc.name,
+      polygon: rings,
+      resolution: tc.resolution,
       cellCount: expected.length
     });
   }

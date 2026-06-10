@@ -15,17 +15,30 @@ import {tripleSpaceFloodFill} from '../traversal/lattice-flood-fill';
 
 /**
  * Maps each boundary cell to the indices of the ring segments that produced it.
+ * Segment indices are global across rings (outer ring first, then holes).
  * Used by `filterBoundaryCells` to short-circuit PIP via segment-side dot products.
  */
 type SegmentMap = Map<bigint, number[]>;
 
 /**
- * Dense-sample boundary cells along the closed polygon ring at
+ * Point-in-polygon for a polygon with holes: inside the outer ring and
+ * outside every hole ring.
+ */
+function pointInPolygonRings(point: Cartesian, ringVecsList: Cartesian[][]): boolean {
+  if (!pointInSphericalPolygon(point, ringVecsList[0])) return false;
+  for (let r = 1; r < ringVecsList.length; r++) {
+    if (pointInSphericalPolygon(point, ringVecsList[r])) return false;
+  }
+  return true;
+}
+
+/**
+ * Dense-sample boundary cells along every closed ring (outer + holes) at
  * `cellRadius * 0.4` spacing, calling `sphericalToCell` per sample.
  */
 function denseSampleBoundary(
-  ring: LonLat[],
-  ringVecs: Cartesian[],
+  rings: LonLat[][],
+  ringVecsList: Cartesian[][],
   resolution: number
 ): {boundaryCells: bigint[]; boundarySet: Set<bigint>; segmentMap: SegmentMap} {
   const boundaryCells: bigint[] = [];
@@ -47,21 +60,28 @@ function denseSampleBoundary(
     }
   };
 
-  const vertexCells: bigint[] = new Array(ring.length);
-  for (let i = 0; i < ring.length; i++) {
-    vertexCells[i] = lonLatToCell(ring[i], resolution);
-  }
+  let segOffset = 0;
+  for (let r = 0; r < rings.length; r++) {
+    const ring = rings[r];
+    const ringVecs = ringVecsList[r];
 
-  for (let i = 0; i < ring.length; i++) {
-    const nextI = (i + 1) % ring.length;
-    recordCell(vertexCells[i], i);
-
-    // Skip the lonLat round-trip: samples are authalic-Cartesian already.
-    const samples = sampleGreatCircleArc(ringVecs[i], ringVecs[nextI], sampleInterval);
-    for (const s of samples) {
-      recordCell(sphericalToCell(toSpherical(s), resolution), i);
+    const vertexCells: bigint[] = new Array(ring.length);
+    for (let i = 0; i < ring.length; i++) {
+      vertexCells[i] = lonLatToCell(ring[i], resolution);
     }
-    recordCell(vertexCells[nextI], i);
+
+    for (let i = 0; i < ring.length; i++) {
+      const nextI = (i + 1) % ring.length;
+      recordCell(vertexCells[i], segOffset + i);
+
+      // Skip the lonLat round-trip: samples are authalic-Cartesian already.
+      const samples = sampleGreatCircleArc(ringVecs[i], ringVecs[nextI], sampleInterval);
+      for (const s of samples) {
+        recordCell(sphericalToCell(toSpherical(s), resolution), segOffset + i);
+      }
+      recordCell(vertexCells[nextI], segOffset + i);
+    }
+    segOffset += ring.length;
   }
 
   return {boundaryCells, boundarySet, segmentMap};
@@ -79,15 +99,15 @@ function filterBoundaryCells(
   boundaryCells: bigint[],
   segmentMap: SegmentMap,
   segNormals: Cartesian[],
-  ringVecs: Cartesian[],
-  interiorSign: 1 | -1
+  segSigns: number[],
+  ringVecsList: Cartesian[][]
 ): bigint[] {
   const out: bigint[] = [];
   for (const cell of boundaryCells) {
     const cv = toCartesian(cellToSpherical(cell));
     const segments = segmentMap.get(cell);
     if (!segments) {
-      if (pointInSphericalPolygon(cv, ringVecs)) out.push(cell);
+      if (pointInPolygonRings(cv, ringVecsList)) out.push(cell);
       continue;
     }
     let allInside = true;
@@ -100,11 +120,11 @@ function filterBoundaryCells(
         ambiguous = true;
         break;
       } // on segment within float epsilon
-      if (dot * interiorSign > 0) anyInside = true;
+      if (dot * segSigns[segIdx] > 0) anyInside = true;
       else allInside = false;
     }
     if (ambiguous || (anyInside && !allInside)) {
-      if (pointInSphericalPolygon(cv, ringVecs)) out.push(cell);
+      if (pointInPolygonRings(cv, ringVecsList)) out.push(cell);
     } else if (allInside) {
       out.push(cell);
     }
@@ -218,28 +238,55 @@ function floodInterior(
 
 /**
  * Find all cells within a polygon using center-point containment: a cell is
- * included iff its center lies inside the ring. The result is compacted — use
- * `uncompact` to expand to the input resolution.
+ * included iff its center lies inside the polygon. The result is compacted —
+ * use `uncompact` to expand to the input resolution.
  *
- * @param ring - Polygon vertices [longitude, latitude] (unclosed — closed automatically)
+ * @param polygon - Either a single ring of [longitude, latitude] vertices, or
+ *   GeoJSON-style rings `[outer, ...holes]` where cells inside a hole are
+ *   excluded. Rings are unclosed (closed automatically); holes with fewer than
+ *   3 vertices are ignored.
  * @returns Sorted, compacted BigUint64Array of cell IDs whose centers lie inside the polygon
  */
-export function polygonToCells(ring: LonLat[], resolution: number): BigUint64Array {
-  if (ring.length < 3) return new BigUint64Array(0);
+export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number): BigUint64Array {
+  // Normalize: a flat ring is shorthand for a polygon with no holes.
+  const isNested = polygon.length > 0 && typeof (polygon[0] as LonLat | LonLat[])[0] !== 'number';
+  const inputRings = (isNested ? polygon : [polygon]) as LonLat[][];
+
+  if (inputRings.length === 0 || inputRings[0].length < 3) return new BigUint64Array(0);
+  const rings: LonLat[][] = [inputRings[0]];
+  for (let r = 1; r < inputRings.length; r++) {
+    if (inputRings[r].length >= 3) rings.push(inputRings[r]);
+  }
 
   // Authalic-sphere ring vectors — A5's internal sphere, so cell centers
   // compare directly with no geodetic↔authalic round-trip.
-  const ringVecs: Cartesian[] = new Array(ring.length);
-  for (let i = 0; i < ring.length; i++) {
-    ringVecs[i] = toCartesian(fromLonLat(ring[i]));
+  const ringVecsList: Cartesian[][] = new Array(rings.length);
+  for (let r = 0; r < rings.length; r++) {
+    const ring = rings[r];
+    const ringVecs: Cartesian[] = new Array(ring.length);
+    for (let i = 0; i < ring.length; i++) {
+      ringVecs[i] = toCartesian(fromLonLat(ring[i]));
+    }
+    ringVecsList[r] = ringVecs;
   }
 
-  const {boundaryCells, boundarySet, segmentMap} = denseSampleBoundary(ring, ringVecs, resolution);
+  const {boundaryCells, boundarySet, segmentMap} = denseSampleBoundary(rings, ringVecsList, resolution);
 
-  const interiorSign = ringWindingSign(ringVecs);
-  const segNormals = ringSegmentNormals(ringVecs);
+  // Flattened per-segment normals and interior-side signs, indexed like the
+  // segment map. The polygon interior lies on the *outside* of a hole ring,
+  // so hole segments get the opposite sign.
+  const segNormals: Cartesian[] = [];
+  const segSigns: number[] = [];
+  for (let r = 0; r < rings.length; r++) {
+    const sign = (r === 0 ? 1 : -1) * ringWindingSign(ringVecsList[r]);
+    const normals = ringSegmentNormals(ringVecsList[r]);
+    for (let i = 0; i < normals.length; i++) {
+      segNormals.push(normals[i]);
+      segSigns.push(sign);
+    }
+  }
 
-  const filteredBoundary = filterBoundaryCells(boundaryCells, segmentMap, segNormals, ringVecs, interiorSign);
+  const filteredBoundary = filterBoundaryCells(boundaryCells, segmentMap, segNormals, segSigns, ringVecsList);
 
   // Dense sampling can leave gaps; the shell catches them, classifying each cell.
   const shellCells = expandShell(boundaryCells, boundarySet);
@@ -248,10 +295,10 @@ export function polygonToCells(ring: LonLat[], resolution: number): BigUint64Arr
   const interiorSeeds: bigint[] = [];
   const visited = new Set(boundarySet);
   for (const cell of shellCells) {
-    if (pointInSphericalPolygon(toCartesian(cellToSpherical(cell)), ringVecs)) {
+    if (pointInPolygonRings(toCartesian(cellToSpherical(cell)), ringVecsList)) {
       interiorSeeds.push(cell);
     } else {
-      visited.add(cell); // exterior shell joins the firewall
+      visited.add(cell); // exterior shell (and hole interiors) join the firewall
     }
   }
   if (interiorSeeds.length === 0) return compact(filteredBoundary);

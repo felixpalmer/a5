@@ -101,6 +101,13 @@ FIXTURE_MAP = {
         (RS_ROOT, "tests/fixtures/spherical-triangle.json"),
     ],
 
+    # Region fixtures
+    # NOTE: not yet synced to PY_ROOT — the Python port still uses the old
+    # single-ring polygon_to_cells; add the PY entry when porting hole support.
+    "tests/fixtures/regions/polygon.json": [
+        (RS_ROOT, "tests/fixtures/regions/polygon.json"),
+    ],
+
     # Projection fixtures
     "tests/projections/fixtures/authalic.json": [
         (PY_ROOT, "tests/projections/fixtures/authalic.json"),
