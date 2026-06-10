@@ -149,8 +149,7 @@ function generateProjectionTests(config) {
     // and breaks the `toBeCloseToArray` matcher in the tests.
     fs.writeFileSync(
       TEST_DATA_PATH,
-      JSON.stringify(testData, (_k, v) =>
-        ArrayBuffer.isView(v) && !(v instanceof DataView) ? Array.from(v) : v, 2)
+      JSON.stringify(testData, (_k, v) => (ArrayBuffer.isView(v) && !(v instanceof DataView) ? Array.from(v) : v), 2)
     );
     console.log(`Test data written to: ${TEST_DATA_PATH}`);
   } catch (error) {
