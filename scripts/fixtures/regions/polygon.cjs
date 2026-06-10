@@ -212,7 +212,9 @@ const polygonCases = [
   // Large hole leaving only a thin rim — boundary and hole firewall nearly touch.
   {name: 'donut_thin_rim', ring: [[0, 52], [10, 52], [10, 44], [0, 44]], holes: [[[1, 51], [9, 51], [9, 45], [1, 45]]], resolution: 6},
   // Big enough interior to trigger the hierarchical coarse flood phase with a hole present.
-  {name: 'donut_coarse_phase', ring: [[-10, 55], [15, 55], [15, 40], [-10, 40]], holes: [[[-2, 50], [7, 50], [7, 45], [-2, 45]]], resolution: 7}
+  {name: 'donut_coarse_phase', ring: [[-10, 55], [15, 55], [15, 40], [-10, 40]], holes: [[[-2, 50], [7, 50], [7, 45], [-2, 45]]], resolution: 7},
+  // GeoJSON-style closed rings (first vertex repeated) — must match `donut` exactly.
+  {name: 'closed_ring_donut', ring: [[-5, 54], [15, 54], [15, 44], [-5, 44], [-5, 54]], holes: [[[2, 51], [8, 51], [8, 47], [2, 47], [2, 51]]], resolution: 6}
 ];
 
 console.log('\nPolygon fixtures:');

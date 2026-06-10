@@ -243,8 +243,9 @@ function floodInterior(
  *
  * @param polygon - Either a single ring of [longitude, latitude] vertices, or
  *   GeoJSON-style rings `[outer, ...holes]` where cells inside a hole are
- *   excluded. Rings are unclosed (closed automatically); holes with fewer than
- *   3 vertices are ignored.
+ *   excluded. Rings may be open or closed (GeoJSON-style, first vertex
+ *   repeated at the end) — closure is automatic either way. Holes with fewer
+ *   than 3 distinct vertices are ignored.
  * @returns Sorted, compacted BigUint64Array of cell IDs whose centers lie inside the polygon
  */
 export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number): BigUint64Array {
@@ -252,10 +253,19 @@ export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: numbe
   const isNested = polygon.length > 0 && typeof (polygon[0] as LonLat | LonLat[])[0] !== 'number';
   const inputRings = (isNested ? polygon : [polygon]) as LonLat[][];
 
-  if (inputRings.length === 0 || inputRings[0].length < 3) return new BigUint64Array(0);
-  const rings: LonLat[][] = [inputRings[0]];
+  // GeoJSON rings repeat the first vertex at the end — drop the duplicate.
+  const stripClosing = (ring: LonLat[]): LonLat[] => {
+    const last = ring.length - 1;
+    return last > 0 && ring[0][0] === ring[last][0] && ring[0][1] === ring[last][1] ? ring.slice(0, -1) : ring;
+  };
+
+  if (inputRings.length === 0) return new BigUint64Array(0);
+  const outer = stripClosing(inputRings[0]);
+  if (outer.length < 3) return new BigUint64Array(0);
+  const rings: LonLat[][] = [outer];
   for (let r = 1; r < inputRings.length; r++) {
-    if (inputRings[r].length >= 3) rings.push(inputRings[r]);
+    const hole = stripClosing(inputRings[r]);
+    if (hole.length >= 3) rings.push(hole);
   }
 
   // Authalic-sphere ring vectors — A5's internal sphere, so cell centers

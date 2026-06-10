@@ -8,9 +8,11 @@ Cell membership uses **center-point containment**: a cell belongs to a polygon i
 
 Returns all cells whose centers lie inside a polygon, defined either by a single ring of `[longitude, latitude]` vertices or by GeoJSON-style rings `[outer, ...holes]`. Cells whose centers fall inside a hole are excluded.
 
-Rings are closed automatically — do not repeat the first vertex at the end. Either winding order is accepted; the orientation is detected from the ring geometry. Hole rings with fewer than 3 vertices are ignored.
+Rings may be open or closed (GeoJSON-style, with the first vertex repeated at the end) — closure is automatic either way. Either winding order is accepted; the orientation is detected from the ring geometry. Hole rings with fewer than 3 distinct vertices are ignored.
 
-The result is compacted — use [`uncompact`](compaction#uncompact) to expand to the input resolution. Multi-polygons are not supported directly — call `polygonToCells` per polygon and union the results.
+The result is compacted — use [`uncompact`](compaction#uncompact) to expand to the input resolution. The compacted form is intended for storage, transfer and set operations: cell boundaries of different resolutions do not nest geometrically, so a mixed-resolution covering will show overlaps and gaps when rendered. Uncompact to a single resolution before drawing cells on a map.
+
+Multi-polygons are not supported directly — call `polygonToCells` per polygon and concatenate the results (coverings of disjoint polygons never overlap).
 
 ```ts
 function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number): BigUint64Array;

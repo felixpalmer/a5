@@ -53,6 +53,34 @@ describe('polygonToCells', () => {
         5
       ).length
     ).toBe(0);
+    // Closed ring with only 2 distinct vertices
+    expect(
+      polygonToCells(
+        [
+          [0, 0],
+          [1, 1],
+          [0, 0]
+        ] as LonLat[],
+        5
+      ).length
+    ).toBe(0);
+  });
+
+  it('should accept GeoJSON-style closed rings', () => {
+    const ring = [
+      [-5, 54],
+      [15, 54],
+      [15, 44],
+      [-5, 44]
+    ] as LonLat[];
+    const hole = [
+      [2, 51],
+      [8, 51],
+      [8, 47],
+      [2, 47]
+    ] as LonLat[];
+    const closed = (r: LonLat[]) => [...r, r[0]];
+    expect(polygonToCells([closed(ring), closed(hole)], 6)).toEqual(polygonToCells([ring, hole], 6));
   });
 
   it('should treat a flat ring as a polygon without holes', () => {
