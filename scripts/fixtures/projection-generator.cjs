@@ -141,8 +141,15 @@ function generateProjectionTests(config) {
       fs.mkdirSync(outputDir, {recursive: true});
     }
 
-    // Write test data to file
-    fs.writeFileSync(TEST_DATA_PATH, JSON.stringify(testData, null, 2));
+    // Write test data to file. Replacer normalizes TypedArray outputs (e.g.
+    // gl-matrix vec3 when configured with Float64Array) to plain arrays —
+    // otherwise JSON.stringify serializes them as {"0":x,"1":y,...} objects
+    // and breaks the `toBeCloseToArray` matcher in the tests.
+    fs.writeFileSync(
+      TEST_DATA_PATH,
+      JSON.stringify(testData, (_k, v) =>
+        ArrayBuffer.isView(v) && !(v instanceof DataView) ? Array.from(v) : v, 2)
+    );
     console.log(`Test data written to: ${TEST_DATA_PATH}`);
   } catch (error) {
     console.error(`Failed to generate ${projectionName} test data:`, error);

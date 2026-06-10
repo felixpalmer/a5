@@ -109,9 +109,9 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/projections/fixtures/gnomonic.json"),
         (RS_ROOT, "tests/fixtures/gnomonic.json"),
     ],
-    "tests/projections/fixtures/polyhedral.json": [
-        (PY_ROOT, "tests/projections/fixtures/polyhedral.json"),
-        (RS_ROOT, "tests/fixtures/polyhedral.json"),
+    "tests/projections/fixtures/equal-area.json": [
+        (PY_ROOT, "tests/projections/fixtures/equal-area.json"),
+        (RS_ROOT, "tests/fixtures/equal-area.json"),
     ],
 }
 

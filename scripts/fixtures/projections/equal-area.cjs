@@ -48,14 +48,14 @@ function generateRandomFacePoint() {
   return [x, y];
 }
 
-const polyhedral = new EqualAreaProjection();
+const equalArea = new EqualAreaProjection();
 function generateRandomSphericalPoint() {
-  return polyhedral.inverse(generateRandomFacePoint(), TEST_FACE_TRIANGLE, TEST_SPHERICAL_TRIANGLE);
+  return equalArea.inverse(generateRandomFacePoint(), TEST_FACE_TRIANGLE, TEST_SPHERICAL_TRIANGLE);
 }
 
-// Custom configuration for polyhedral projection
+// Custom configuration for equal-area projection
 const config = {
-  projectionName: 'polyhedral',
+  projectionName: 'equal-area',
   ProjectionClass: EqualAreaProjection,
   generateRandomForwardInput: generateRandomSphericalPoint,
   generateRandomInverseInput: generateRandomFacePoint,
