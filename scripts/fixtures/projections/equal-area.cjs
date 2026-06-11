@@ -1,18 +1,11 @@
-const {EqualAreaProjection} = require('../../a5-test.cjs');
+const {EqualAreaProjection, CRS} = require('../../a5-test.cjs');
 const {generateProjectionTests} = require('../projection-generator.cjs');
-const {vec3} = require('gl-matrix');
 
-// Static test data that must be included
-const φ = (1 + Math.sqrt(5)) / 2;
-
-// Spherical triangle for testing
-const CENTER = [0, 0, 1];
-const VERTEX = [(φ - 1) / Math.cos(Math.PI / 5), φ - 1, 1];
-const EDGE_MIDPOINT = [0, φ - 1, 1];
-const TEST_SPHERICAL_TRIANGLE = [CENTER, VERTEX, EDGE_MIDPOINT];
-
-// Project to sphere
-TEST_SPHERICAL_TRIANGLE.forEach(p => vec3.normalize(p, p));
+// The projection's shape constants are bound to the dodecahedron's canonical
+// face triangle, so the test triangle must be (congruent to) it. Previously a
+// synthetic icosahedral triangle was used here, which only worked while the
+// projection computed its constants from the per-call triangle.
+const TEST_SPHERICAL_TRIANGLE = new CRS().getCanonicalTriangle().map(v => [v[0], v[1], v[2]]);
 
 // Different to shape used in app, but should not matter as barycentric coordinates are used
 const TEST_FACE_TRIANGLE = [

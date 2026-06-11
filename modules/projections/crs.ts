@@ -1,7 +1,7 @@
 import {vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import {distanceToEdge, distanceToVertex} from '../core/constants';
-import type {Cartesian, Radians, Spherical} from '../core/coordinate-systems';
+import type {Cartesian, Radians, Spherical, SphericalTriangle} from '../core/coordinate-systems';
 import {toCartesian} from '../core/coordinate-transforms';
 import {origins} from '../core/origin';
 
@@ -18,6 +18,23 @@ import {origins} from '../core/origin';
 export class CRS {
   private vertices: Cartesian[] = [];
   private invocations = 0;
+
+  /**
+   * A canonical spherical face triangle (face center, edge midpoint, vertex)
+   * of the dodecahedron, taken from origin 0's CRS vertices. All face
+   * triangles used by DodecahedronProjection are congruent and consistently
+   * wound with this one, so it serves as the fixed source of the
+   * EqualAreaProjection shape constants — independent of projection call order.
+   *
+   * The indices rely on the construction order above: vertices[0] is origin
+   * 0's face center, vertices[12] its first corner (after the 12 centers) and
+   * vertices[32] its first edge midpoint (after the 20 corners). The corner
+   * and midpoint are adjacent (π/5 apart), forming a genuine face triangle —
+   * the constants-agreement test verifies this against every face triangle.
+   */
+  getCanonicalTriangle(): SphericalTriangle {
+    return [this.vertices[0], this.vertices[32], this.vertices[12]] as SphericalTriangle;
+  }
 
   constructor() {
     this.addFaceCenters(); // 12 centers

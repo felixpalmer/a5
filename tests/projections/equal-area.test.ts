@@ -54,8 +54,9 @@ describe('EqualAreaProjection triangle constants', () => {
   // This enforces the invariant documented in equal-area.ts.
   it('agree across all face triangles, origins and reflections', async () => {
     const {DodecahedronProjection} = await import('../../modules/projections/dodecahedron');
+    const {CRS} = await import('../../modules/projections/crs');
     const dodecahedron = new DodecahedronProjection() as any;
-    const canonical = EqualAreaProjection.computeConstants(dodecahedron.getSphericalTriangle(0, 0, false));
+    const canonical = EqualAreaProjection.computeConstants(new CRS().getCanonicalTriangle());
 
     const RELATIVE_TOLERANCE = 1e-13;
     for (let originId = 0; originId < 12; originId++) {
