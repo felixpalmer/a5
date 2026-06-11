@@ -68,7 +68,7 @@ export {pointInSphericalPolygon, ringWindingSign, ringSegmentNormals} from './ge
 export {GnomonicProjection} from './projections/gnomonic';
 export {AuthalicProjection} from './projections/authalic';
 export {DodecahedronProjection} from './projections/dodecahedron';
-export {PolyhedralProjection} from './projections/polyhedral';
+export {EqualAreaProjection} from './projections/equal-area';
 export {CRS} from './projections/crs';
 
 // Export geometry classes for testing

@@ -136,7 +136,7 @@ These are the same checks that run in CI (.github/workflows/test.yml). Run these
 - **IMPORTANT**: Always use `yarn generate-fixtures` to regenerate fixtures after code changes. This builds the library first, then runs all fixture generation scripts.
 - **IMPORTANT**: If you modify `modules/test-index.ts` (which exports functions for testing), you MUST run `yarn build` before running any scripts that depend on it (like `scripts/analyze-subflavours.cjs`)
 - **IMPORTANT**: Python/Rust ports should just copy across the fixtures, not have their own generators, use `yarn sync-fixtures`
-- **IMPORTANT**: The ports should verify that the behavior is exactly the same, it is NOT acceptable to round values or accept approximate equality
+- **IMPORTANT**: The ports should verify that the behavior is exactly the same, it is NOT acceptable to round values or accept approximate equality. Precisely: integer outputs (cell IDs, resolutions, counts) must match bit-for-bit; floating-point outputs are compared at the tolerance the tests define (typically 1e-10) — cross-language ulp-identity is not achievable and not required
 
 ## Important
 - Keep changes minimal and focused on requested tasks

@@ -41,7 +41,7 @@ require('./fixtures/geometry/pentagon.cjs');
 // Projection generators
 require('./fixtures/projections/gnomonic.cjs');
 require('./fixtures/projections/authalic.cjs');
-require('./fixtures/projections/polyhedral.cjs');
+require('./fixtures/projections/equal-area.cjs');
 require('./fixtures/projections/dodecahedron.cjs');
 
 // Integration tests
