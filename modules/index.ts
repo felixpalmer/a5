@@ -13,7 +13,14 @@ export {cellToBoundary, cellToLonLat, lonLatToCell} from './core/cell';
 export {hexToU64, u64ToHex} from './core/hex';
 
 // Hierarchy
-export {cellToParent, cellToChildren, getResolution, getRes0Cells, MAX_RESOLUTION, WORLD_CELL} from './core/serialization';
+export {
+  cellToParent,
+  cellToChildren,
+  getResolution,
+  getRes0Cells,
+  MAX_RESOLUTION,
+  WORLD_CELL
+} from './core/serialization';
 export {getNumCells, getNumChildren, cellArea} from './core/cell-info';
 export {compact, uncompact} from './core/compact';
 
