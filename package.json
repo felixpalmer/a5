@@ -36,6 +36,7 @@
     "build": "tsup",
     "generate-fixtures": "yarn build && node scripts/generate-fixtures.cjs",
     "sync-fixtures": "python3 scripts/sync_fixtures.py",
+    "check-api-parity": "python3 scripts/check_api_parity.py --check",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,cjs,mjs,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,cjs,mjs,json}\""
   },
