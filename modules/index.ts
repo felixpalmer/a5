@@ -7,11 +7,20 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 
 // PUBLIC API
 // Indexing
-export {cellToBoundary, cellToLonLat, cellToSpherical, lonLatToCell} from './core/cell';
+// Spherical (theta/phi) is A5's internal coordinate system; cellToSpherical /
+// sphericalToCell are not part of the public API and stay module-internal.
+export {cellToBoundary, cellToLonLat, lonLatToCell} from './core/cell';
 export {hexToU64, u64ToHex} from './core/hex';
 
 // Hierarchy
-export {cellToParent, cellToChildren, getResolution, getRes0Cells, WORLD_CELL} from './core/serialization';
+export {
+  cellToParent,
+  cellToChildren,
+  getResolution,
+  getRes0Cells,
+  MAX_RESOLUTION,
+  WORLD_CELL
+} from './core/serialization';
 export {getNumCells, getNumChildren, cellArea} from './core/cell-info';
 export {compact, uncompact} from './core/compact';
 
@@ -24,5 +33,5 @@ export {lineStringToCells} from './traversal/line';
 export {polygonToCells} from './regions/polygon';
 
 // Types
-export type {Degrees, Radians, Spherical} from './core/coordinate-systems';
+export type {Degrees, Radians} from './core/coordinate-systems';
 export type {A5Cell} from './core/utils';
