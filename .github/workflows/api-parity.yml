@@ -1,0 +1,39 @@
+name: api-parity
+
+# Verify the TS/Python/Rust ports expose the same public API. The check reads each
+# port's public entrypoint; with --remote it fetches them from the published GitHub
+# repos (raw), so no sibling checkout is needed. See API_PARITY.md.
+
+on:
+  pull_request:
+  schedule:
+    # Weekly drift monitor across the three published repos (Mondays 06:00 UTC).
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # On a TS PR: check the PR's local index.ts against the published PY/RS repos.
+  parity-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check API parity (local TS vs PY/RS at the PR branch, else main)
+        run: python3 scripts/check_api_parity.py --check --remote --local TS --branch "$HEAD_REF"
+        env:
+          # Prefer a same-named branch on the sibling repos so a coordinated breaking
+          # change validates against the in-flight branches, not main.
+          HEAD_REF: ${{ github.head_ref }}
+
+  # Scheduled / manual: check all three published repos against each other.
+  # No divergence should exist on the default branches once a change is fully rolled out.
+  parity-monitor:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check API parity (all three from GitHub)
+        run: python3 scripts/check_api_parity.py --check --remote

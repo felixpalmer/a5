@@ -8,6 +8,7 @@ test/**/*-failed.png
 .nyc_output/
 .reify-cache/
 .pnp*
+__pycache__
 
 tsconfig.tsbuildinfo
 
