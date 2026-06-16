@@ -21,7 +21,8 @@ const INITIAL_VIEW_STATE = {
 
 type CountryEntry = {
   name: string;
-  ring: [number, number][];
+  /** MultiPolygon parts, each as GeoJSON-style rings [outer, ...holes] (unclosed) */
+  polygons: [number, number][][][];
 };
 
 /** Derive A5 resolution from map zoom level */
@@ -33,8 +34,8 @@ function cellBoundary(id: bigint): LonLat[] {
   return cellToBoundary(id, {closedRing: true, segments: 1}) as LonLat[];
 }
 
-/** Compute the centroid and appropriate zoom for a polygon ring */
-function ringView(ring: [number, number][]): {
+/** Compute the centroid and appropriate zoom for a multipolygon's outer rings */
+function countryView(polygons: [number, number][][][]): {
   longitude: number;
   latitude: number;
   zoom: number;
@@ -43,11 +44,13 @@ function ringView(ring: [number, number][]): {
     maxLon = -Infinity,
     minLat = Infinity,
     maxLat = -Infinity;
-  for (const [lon, lat] of ring) {
-    minLon = Math.min(minLon, lon);
-    maxLon = Math.max(maxLon, lon);
-    minLat = Math.min(minLat, lat);
-    maxLat = Math.max(maxLat, lat);
+  for (const rings of polygons) {
+    for (const [lon, lat] of rings[0]) {
+      minLon = Math.min(minLon, lon);
+      maxLon = Math.max(maxLon, lon);
+      minLat = Math.min(minLat, lat);
+      maxLat = Math.max(maxLat, lat);
+    }
   }
   const span = Math.max(maxLon - minLon, maxLat - minLat);
   const zoom = Math.max(1, Math.min(12, Math.log2(360 / span) - 0.5));
@@ -92,27 +95,25 @@ const App: React.FC = () => {
   const [showOutline, setShowOutline] = useState(true);
   const [countries, setCountries] = useState<CountryEntry[]>([]);
   const [selectedCountry, setSelectedCountry] = useState('');
+  const [countryPolygons, setCountryPolygons] = useState<[number, number][][][] | null>(null);
   const mapRef = useRef<any>(null);
 
   // Load countries
   useEffect(() => {
-    // Pre-stripped: each feature is a single Polygon (largest ring of the
-    // original MultiPolygon) with only the `admin` property retained.
+    // Pre-stripped: each feature is the full MultiPolygon (all parts and
+    // holes) with only the `admin` property retained.
     fetch('/data/ne_50m_countries_geom.geojson')
       .then(r => r.json())
       .then((data: any) => {
+        // Remove closing vertex if ring is closed
+        const stripClosing = (coords: [number, number][]): [number, number][] =>
+          coords[coords.length - 1][0] === coords[0][0] && coords[coords.length - 1][1] === coords[0][1]
+            ? coords.slice(0, -1)
+            : coords;
         const entries: CountryEntry[] = [];
         for (const f of data.features) {
-          const coords: [number, number][] = f.geometry.coordinates[0];
-          // Remove closing vertex if ring is closed
-          const ring =
-            coords[coords.length - 1][0] === coords[0][0] && coords[coords.length - 1][1] === coords[0][1]
-              ? coords.slice(0, -1)
-              : coords;
-          entries.push({
-            name: f.properties.admin,
-            ring: ring as [number, number][]
-          });
+          const polygons = (f.geometry.coordinates as [number, number][][][]).map(part => part.map(stripClosing));
+          entries.push({name: f.properties.admin, polygons});
         }
         entries.sort((a, b) => a.name.localeCompare(b.name));
         setCountries(entries);
@@ -141,6 +142,7 @@ const App: React.FC = () => {
     const point: LonLat = [info.coordinate[0], info.coordinate[1]] as LonLat;
     setWaypoints(prev => [...prev, point]);
     setSelectedCountry('');
+    setCountryPolygons(null);
     setFixedResolution(null);
   }, []);
 
@@ -148,10 +150,12 @@ const App: React.FC = () => {
     setWaypoints([]);
     setFixedResolution(null);
     setSelectedCountry('');
+    setCountryPolygons(null);
   }, []);
   const handleUndo = useCallback(() => {
     setWaypoints(prev => prev.slice(0, -1));
     setSelectedCountry('');
+    setCountryPolygons(null);
   }, []);
 
   const handleExport = useCallback(() => {
@@ -176,43 +180,73 @@ const App: React.FC = () => {
       if (!name) return;
       const country = countries.find(c => c.name === name);
       if (!country) return;
-      const view = ringView(country.ring);
+      const view = countryView(country.polygons);
       if (mapRef.current) {
         mapRef.current.jumpTo({
           center: [view.longitude, view.latitude],
           zoom: view.zoom
         });
       }
-      setWaypoints(country.ring.map(ll => ll as LonLat));
+      setWaypoints([]);
+      setCountryPolygons(country.polygons);
       setFixedResolution(null);
     },
     [countries]
   );
 
-  const isPolygon = waypoints.length >= 3;
+  // Polygons being displayed: the selected country's parts (with holes), or
+  // the single hand-drawn ring.
+  const activePolygons = useMemo((): LonLat[][][] | null => {
+    if (countryPolygons) return countryPolygons as LonLat[][][];
+    if (waypoints.length >= 3) return [[waypoints]];
+    return null;
+  }, [countryPolygons, waypoints]);
 
-  // Trace cells: line for 2 points, filled polygon for 3+
+  const isPolygon = activePolygons !== null;
+
+  // Trace cells: line for 2 points, filled polygon(s) otherwise
   // For polygons, store compacted output and derive display cells from toggle.
   const compactedCells = useMemo((): BigUint64Array | null => {
-    if (!isPolygon || outlineOnly) return null;
-    return polygonToCells(waypoints, resolution);
-  }, [waypoints, resolution, isPolygon, outlineOnly]);
+    if (!activePolygons || outlineOnly) return null;
+    const parts = activePolygons.map(rings => polygonToCells(rings, resolution));
+    if (parts.length === 1) return parts[0];
+    let total = 0;
+    for (const p of parts) total += p.length;
+    const merged = new BigUint64Array(total);
+    let offset = 0;
+    for (const p of parts) {
+      merged.set(p, offset);
+      offset += p.length;
+    }
+    return merged;
+  }, [activePolygons, resolution, outlineOnly]);
 
   const tracedCells = useMemo((): CellData[] => {
-    if (waypoints.length < 2) return [];
     if (!isPolygon) {
+      if (waypoints.length !== 2) return [];
       const cells = lineStringToCells(waypoints, resolution);
       return cells.map(id => ({id, boundary: cellBoundary(id)}));
     }
     if (outlineOnly) {
-      const closedRing = [...waypoints, waypoints[0]];
-      const cells = lineStringToCells(closedRing, resolution);
+      const seen = new Set<bigint>();
+      const cells: bigint[] = [];
+      for (const rings of activePolygons!) {
+        for (const ring of rings) {
+          const closedRing = [...ring, ring[0]];
+          for (const id of lineStringToCells(closedRing, resolution)) {
+            if (!seen.has(id)) {
+              seen.add(id);
+              cells.push(id);
+            }
+          }
+        }
+      }
       return cells.map(id => ({id, boundary: cellBoundary(id)}));
     }
     if (!compactedCells) return [];
     const cells = showCompacted ? compactedCells : uncompact(compactedCells, resolution);
     return Array.from(cells).map(id => ({id, boundary: cellBoundary(id)}));
-  }, [waypoints, resolution, isPolygon, outlineOnly, showCompacted, compactedCells]);
+  }, [waypoints, resolution, isPolygon, activePolygons, outlineOnly, showCompacted, compactedCells]);
 
   const uncompactedCount = useMemo(() => {
     if (!compactedCells) return 0;
@@ -231,16 +265,28 @@ const App: React.FC = () => {
     }));
   }, [waypoints]);
 
-  // Line segments between waypoints (closed ring for polygons)
+  // Line segments: all country rings, or the hand-drawn waypoints (closed for polygons)
   const lineData = useMemo((): LineData[] => {
     const lines: LineData[] = [];
+    if (countryPolygons) {
+      for (const rings of countryPolygons) {
+        for (const ring of rings) {
+          for (let i = 0; i < ring.length; i++) {
+            const a = ring[i];
+            const b = ring[(i + 1) % ring.length];
+            lines.push({from: [a[0], a[1]], to: [b[0], b[1]]});
+          }
+        }
+      }
+      return lines;
+    }
     for (let i = 0; i < waypoints.length - 1; i++) {
       lines.push({
         from: [waypoints[i][0], waypoints[i][1]],
         to: [waypoints[i + 1][0], waypoints[i + 1][1]]
       });
     }
-    if (isPolygon) {
+    if (waypoints.length >= 3) {
       const last = waypoints[waypoints.length - 1];
       lines.push({
         from: [last[0], last[1]],
@@ -248,7 +294,7 @@ const App: React.FC = () => {
       });
     }
     return lines;
-  }, [waypoints, isPolygon]);
+  }, [waypoints, countryPolygons]);
 
   const layers = useMemo(
     () => [
@@ -462,7 +508,7 @@ const App: React.FC = () => {
               <option value="">-- select --</option>
               {countries.map(c => (
                 <option key={c.name} value={c.name}>
-                  {c.name} ({c.ring.length} pts)
+                  {c.name} ({c.polygons.length} {c.polygons.length === 1 ? 'part' : 'parts'})
                 </option>
               ))}
             </select>
