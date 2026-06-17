@@ -19,6 +19,14 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v0.9.0] - June 17 2026
+
+- **BREAKING**: Remove cellToSpherical & Spherical type
+- chore: Align APIs (#106)
+- feat: Support holes in polygons (#104)
+- Feat: refactor to use EqualAreaProjection (#103)
+- feat: Faster polyhedral projection (#102)
+
 #### A5 [v0.8.0] - May 12 2026
 
 - fix(cell): Spiral unstable in polar regions (#98)
