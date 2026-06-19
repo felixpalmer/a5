@@ -15,7 +15,7 @@ const MAX_ANGLE = Math.max(
   vec3.angle(TEST_SPHERICAL_TRIANGLE[2] as Cartesian, TEST_SPHERICAL_TRIANGLE[0] as Cartesian)
 );
 const MAX_ARC_LENGTH_MM = AUTHALIC_RADIUS * MAX_ANGLE * 1e9;
-const DESIRED_MM_PRECISION = 0.01;
+const DESIRED_MM_PRECISION = 0.0024;
 
 describe('EqualAreaProjection forward', () => {
   const equalArea = new EqualAreaProjection(TEST_SPHERICAL_TRIANGLE as any);
@@ -48,29 +48,43 @@ describe('EqualAreaProjection forward', () => {
 });
 
 describe('EqualAreaProjection triangle constants', () => {
-  // The projection caches shape constants from one canonical triangle, which
-  // is only valid if every spherical triangle the dodecahedron can supply is
-  // congruent AND consistently wound (the sign of V is chirality-sensitive).
-  // This enforces the invariant documented in equal-area.ts.
+  // The projection caches constants from one canonical triangle and reuses them
+  // for every face. That is valid because all dodecahedron face triangles are
+  // congruent and consistently wound:
+  //   - volumeABC and areaABC are identical on every face (forward relies on this);
+  //   - A·B / A·C only ever take the two canonical values — they are equal for
+  //     "even" faces and swapped for the mirror-image "odd" faces, which
+  //     inverse() handles by swapping B↔C — so on even faces the cached
+  //     alphaTransform matrix matches exactly.
   it('agree across all face triangles, origins and reflections', async () => {
     const {DodecahedronProjection} = await import('../../modules/projections/dodecahedron');
     const {CRS} = await import('../../modules/projections/crs');
     const dodecahedron = new DodecahedronProjection() as any;
     const canonical = EqualAreaProjection.computeConstants(new CRS().getCanonicalTriangle());
 
-    const RELATIVE_TOLERANCE = 1e-13;
     for (let originId = 0; originId < 12; originId++) {
       for (let faceTriangleIndex = 0; faceTriangleIndex < 10; faceTriangleIndex++) {
         for (const reflected of [false, true]) {
           const triangle = dodecahedron.getSphericalTriangle(faceTriangleIndex, originId, reflected);
-          const constants = EqualAreaProjection.computeConstants(triangle);
-          for (const key of Object.keys(canonical) as (keyof typeof canonical)[]) {
-            const expected = canonical[key];
-            const actual = constants[key];
-            expect(
-              Math.abs(actual - expected),
-              `${key} mismatch at face ${faceTriangleIndex}, origin ${originId}, reflected ${reflected}`
-            ).toBeLessThan(Math.abs(expected) * RELATIVE_TOLERANCE);
+          const c = EqualAreaProjection.computeConstants(triangle);
+          const where = `face ${faceTriangleIndex}, origin ${originId}, reflected ${reflected}`;
+
+          // Invariant on every face.
+          expect(c.volumeABC, `volumeABC at ${where}`).toBeCloseTo(canonical.volumeABC, 12);
+          expect(c.areaABC, `areaABC at ${where}`).toBeCloseTo(canonical.areaABC, 12);
+
+          // A·B / A·C take the two canonical values; the orientation is whichever
+          // canonical value A·B is nearer to (the same test inverse() uses).
+          const even = Math.abs(c.AdotB - canonical.AdotB) < Math.abs(c.AdotB - canonical.AdotC);
+          if (even) {
+            expect(c.AdotB, `A·B at ${where}`).toBeCloseTo(canonical.AdotB, 12);
+            expect(c.AdotC, `A·C at ${where}`).toBeCloseTo(canonical.AdotC, 12);
+            // The cached coefficient matrix matches exactly on even faces.
+            expect([...c.alphaTransform]).toBeCloseToArray([...canonical.alphaTransform]);
+          } else {
+            // Mirror-image face: A·B and A·C swapped (inverse() swaps B↔C).
+            expect(c.AdotB, `A·B at ${where}`).toBeCloseTo(canonical.AdotC, 12);
+            expect(c.AdotC, `A·C at ${where}`).toBeCloseTo(canonical.AdotB, 12);
           }
         }
       }
