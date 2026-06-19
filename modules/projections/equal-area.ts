@@ -21,7 +21,6 @@ interface TriangleConstants {
   volumeABC: number; // A · (B × C) — signed triple product (volume of parallelpiped formed)
 }
 
-
 // Equal area projection originally described by:
 // Snyder92 (AN EQUAL-AREA MAP PROJECTION FOR POLYHEDRAL GLOBES)
 // Closed form equations due to Brenton R. S. Recht
