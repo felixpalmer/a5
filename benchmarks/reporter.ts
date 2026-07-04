@@ -6,9 +6,9 @@ import {writeFileSync} from 'node:fs';
 import type {File, Task} from 'vitest';
 import {BenchmarkReportsMap} from 'vitest/reporters';
 
-type Row = {name: string; mean: number; hz: number; rme: number; samples: number};
+type Row = {name: string; min: number; mean: number; hz: number; rme: number; samples: number};
 
-function formatMean(ms: number): string {
+function formatTime(ms: number): string {
   if (ms < 1e-3) return `${(ms * 1e6).toFixed(1)}ns`;
   if (ms < 1) return `${(ms * 1e3).toFixed(2)}µs`;
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
@@ -25,6 +25,7 @@ function collect(task: Task, path: string[], rows: Row[]): void {
     const segments = path.filter(segment => !task.name.startsWith(`${segment} `));
     rows.push({
       name: [...segments, task.name].join(' > '),
+      min: benchmark.min,
       mean: benchmark.mean,
       hz: benchmark.hz,
       rme: benchmark.rme,
@@ -42,12 +43,16 @@ function collect(task: Task, path: string[], rows: Row[]): void {
 
 /**
  * The default benchmark reporter, but with the final relative summary
- * ("x.xx times faster than ...") replaced by a flat table of absolute mean
- * times. Relative rankings vary run to run and say nothing in isolation;
- * absolute times are directly comparable when diffing two versions of the
- * code.
+ * ("x.xx times faster than ...") replaced by a flat table of absolute times.
+ * Relative rankings vary run to run and say nothing in isolation; absolute
+ * times are directly comparable when diffing two versions of the code.
+ *
+ * Reports both the minimum and mean sample time. `min` is the least
+ * environment-perturbed sample (no GC pause / scheduler preemption landing
+ * mid-measurement), so it is the most stable metric to diff between runs —
+ * the CI comparison keys off it.
  */
-export default class MeanTimeReporter extends BenchmarkReportsMap.default {
+export default class BenchTableReporter extends BenchmarkReportsMap.default {
   async reportBenchmarkSummary(files: File[]): Promise<void> {
     const rows: Row[] = [];
     const sorted = [...files].sort((a, b) => a.filepath.localeCompare(b.filepath));
@@ -61,16 +66,15 @@ export default class MeanTimeReporter extends BenchmarkReportsMap.default {
     const nameWidth = Math.max(9, ...rows.map(r => r.name.length));
     const lines: string[] = [];
     lines.push('');
-    lines.push(' BENCH  Mean times');
+    lines.push(' BENCH  Results');
     lines.push('');
     lines.push(
-      `  ${'benchmark'.padEnd(nameWidth)}  ${'mean'.padStart(10)}  ${'ops/s'.padStart(14)}  ${'rme'.padStart(8)}  ${'samples'.padStart(8)}`
+      `  ${'benchmark'.padEnd(nameWidth)}  ${'min'.padStart(10)}  ${'mean'.padStart(10)}  ${'rme'.padStart(8)}  ${'samples'.padStart(8)}`
     );
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
-      const hz = r.hz.toLocaleString('en-US', {maximumFractionDigits: 0});
       lines.push(
-        `  ${r.name.padEnd(nameWidth)}  ${formatMean(r.mean).padStart(10)}  ${hz.padStart(14)}  ${`±${r.rme.toFixed(2)}%`.padStart(8)}  ${String(r.samples).padStart(8)}`
+        `  ${r.name.padEnd(nameWidth)}  ${formatTime(r.min).padStart(10)}  ${formatTime(r.mean).padStart(10)}  ${`±${r.rme.toFixed(2)}%`.padStart(8)}  ${String(r.samples).padStart(8)}`
       );
     }
     lines.push('');
