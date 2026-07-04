@@ -1,6 +1,6 @@
 import {defineConfig} from 'vitest/config';
 import path from 'path';
-import MeanTimeReporter from './benchmarks/reporter';
+import BenchTableReporter from './benchmarks/reporter';
 
 export default defineConfig({
   test: {
@@ -9,7 +9,7 @@ export default defineConfig({
     setupFiles: ['./tests/utils/matchers.ts'],
     benchmark: {
       include: ['benchmarks/**/*.bench.ts'],
-      reporters: [new MeanTimeReporter()]
+      reporters: [new BenchTableReporter()]
     }
   },
   resolve: {

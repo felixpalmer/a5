@@ -7,13 +7,19 @@
 //
 // Usage: node scripts/compare-benchmarks.cjs <baseline.json> <current.json> [threshold%]
 //
+// Comparison keys off each benchmark's MINIMUM sample time, not its mean. The
+// minimum is the least environment-perturbed sample (no GC pause or scheduler
+// preemption landing mid-measurement), so it is far more stable between runs
+// on shared CI hardware. Means of GC-heavy benchmarks (e.g. gridDisk) swing
+// 15-40% run-to-run while their minimums agree within a few percent.
+//
 // Output is GitHub-flavored markdown for $GITHUB_STEP_SUMMARY: regressions
 // and gains beyond the threshold are surfaced in their own tables at the top,
 // with the full results in a collapsed <details> section below.
 
 const fs = require('fs');
 
-function formatMean(ms) {
+function formatTime(ms) {
   if (ms < 1e-3) return `${(ms * 1e6).toFixed(1)}ns`;
   if (ms < 1) return `${(ms * 1e3).toFixed(2)}µs`;
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
@@ -51,6 +57,9 @@ function main() {
     baselineByName.set(baseline[i].name, baseline[i]);
   }
 
+  // Compare on min sample time (falls back to mean for older result files)
+  const timeOf = bench => bench.min ?? bench.mean;
+
   // Full results in run order; regressions/gains collected for the top sections
   const rows = [];
   const regressions = [];
@@ -62,15 +71,15 @@ function main() {
     const base = baselineByName.get(bench.name);
     if (!base) {
       added++;
-      rows.push({name: bench.name, baseline: '—', current: formatMean(bench.mean), change: 'new'});
+      rows.push({name: bench.name, baseline: '—', current: formatTime(timeOf(bench)), change: 'new'});
       continue;
     }
     baselineByName.delete(bench.name);
-    const delta = (100 * (bench.mean - base.mean)) / base.mean;
+    const delta = (100 * (timeOf(bench) - timeOf(base))) / timeOf(base);
     const row = {
       name: bench.name,
-      baseline: formatMean(base.mean),
-      current: formatMean(bench.mean),
+      baseline: formatTime(timeOf(base)),
+      current: formatTime(timeOf(bench)),
       change: formatDelta(delta),
       delta
     };
@@ -84,7 +93,7 @@ function main() {
 
   const removed = [...baselineByName.values()];
   for (let i = 0; i < removed.length; i++) {
-    rows.push({name: removed[i].name, baseline: formatMean(removed[i].mean), current: '—', change: 'removed'});
+    rows.push({name: removed[i].name, baseline: formatTime(timeOf(removed[i])), current: '—', change: 'removed'});
   }
 
   // Worst regression / biggest gain first
@@ -93,6 +102,8 @@ function main() {
 
   const lines = [];
   lines.push('## Benchmark comparison');
+  lines.push('');
+  lines.push('_Times are the minimum sample per benchmark (most stable metric across runs)._');
   lines.push('');
 
   if (regressions.length > 0) {

@@ -111,7 +111,7 @@ yarn test
 
 These are the same checks that run in CI (.github/workflows/test.yml). Run these to verify your changes before the user reviews the code.
 
-On pull requests, CI also benchmarks the PR against its merge-base with main on the same runner (.github/workflows/bench.yml) and fails on a >15% mean-time regression. The PR's `/benchmarks` files drive both runs (only `/modules` is switched to the baseline commit), so benchmarks must be able to run against both versions of the library code. Reproduce locally with `BENCH_OUTPUT_FILE=<file> yarn bench` on each version, then `node scripts/compare-benchmarks.cjs <baseline.json> <current.json> 15`.
+On pull requests, CI also benchmarks the PR against its merge-base with main on the same runner (.github/workflows/bench.yml) and fails on a >15% regression. The comparison keys off each benchmark's **minimum** sample time, not its mean — the min is the least GC/scheduler-perturbed sample and is far more stable run-to-run (means of GC-heavy benches like gridDisk swing 15-40% between identical runs while their minimums agree within a few percent). The PR's `/benchmarks` files drive both runs (only `/modules` is switched to the baseline commit), so benchmarks must be able to run against both versions of the library code. Reproduce locally with `BENCH_OUTPUT_FILE=<file> yarn bench` on each version, then `node scripts/compare-benchmarks.cjs <baseline.json> <current.json> 15`.
 
 ## Debugging
 - **DO NOT** use `node -e "..."` for debugging scripts — write them as files instead
