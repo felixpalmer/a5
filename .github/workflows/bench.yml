@@ -1,0 +1,49 @@
+name: bench
+
+# Compare benchmark performance of the PR against its merge-base with main.
+# Both runs execute on the same runner minutes apart, so machine variance
+# largely cancels out. The PR's benchmark files drive both runs; only the
+# library code in /modules is switched to the baseline commit.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: volta-cli/action@5c175f92dea6f48441c436471e6479dbc192e194 # v4.2.1
+        with:
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Run benchmarks (PR)
+        env:
+          BENCH_TIME: '500'
+          BENCH_OUTPUT_FILE: bench-current.json
+        run: yarn bench
+
+      - name: Switch library code to baseline
+        run: |
+          BASE=$(git merge-base origin/main HEAD)
+          echo "Baseline commit: $BASE"
+          git checkout "$BASE" -- modules
+
+      - name: Run benchmarks (baseline)
+        env:
+          BENCH_TIME: '500'
+          BENCH_OUTPUT_FILE: bench-baseline.json
+        run: yarn bench
+
+      - name: Compare (fail on >15% regression)
+        shell: bash
+        run: node scripts/compare-benchmarks.cjs bench-baseline.json bench-current.json 15 | tee -a "$GITHUB_STEP_SUMMARY"

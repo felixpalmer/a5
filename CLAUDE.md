@@ -44,6 +44,8 @@ yarn generate-fixtures # Generate fixtures
 yarn test              # Run tests (with watch mode)
 yarn test --run        # Run tests once
 yarn test hex          # Run tests just for a given file, here `hex.text.ts`
+yarn bench             # Run performance benchmarks in /benchmarks (~45s, no output assertions)
+yarn bench hilbert     # Run benchmarks for a single file, here `hilbert.bench.ts`
 ```
 
 ## Development Guidelines
@@ -108,6 +110,8 @@ yarn test
 ```
 
 These are the same checks that run in CI (.github/workflows/test.yml). Run these to verify your changes before the user reviews the code.
+
+On pull requests, CI also benchmarks the PR against its merge-base with main on the same runner (.github/workflows/bench.yml) and fails on a >15% mean-time regression. The PR's `/benchmarks` files drive both runs (only `/modules` is switched to the baseline commit), so benchmarks must be able to run against both versions of the library code. Reproduce locally with `BENCH_OUTPUT_FILE=<file> yarn bench` on each version, then `node scripts/compare-benchmarks.cjs <baseline.json> <current.json> 15`.
 
 ## Debugging
 - **DO NOT** use `node -e "..."` for debugging scripts — write them as files instead
