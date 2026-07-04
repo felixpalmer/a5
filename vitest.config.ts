@@ -1,11 +1,16 @@
 import {defineConfig} from 'vitest/config';
 import path from 'path';
+import MeanTimeReporter from './benchmarks/reporter';
 
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['./tests/utils/matchers.ts']
+    setupFiles: ['./tests/utils/matchers.ts'],
+    benchmark: {
+      include: ['benchmarks/**/*.bench.ts'],
+      reporters: [new MeanTimeReporter()]
+    }
   },
   resolve: {
     alias: {
