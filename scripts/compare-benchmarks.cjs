@@ -7,8 +7,9 @@
 //
 // Usage: node scripts/compare-benchmarks.cjs <baseline.json> <current.json> [threshold%]
 //
-// Output is a GitHub-flavored markdown table so it can be appended to
-// $GITHUB_STEP_SUMMARY in CI.
+// Output is GitHub-flavored markdown for $GITHUB_STEP_SUMMARY: regressions
+// and gains beyond the threshold are surfaced in their own tables at the top,
+// with the full results in a collapsed <details> section below.
 
 const fs = require('fs');
 
@@ -17,6 +18,21 @@ function formatMean(ms) {
   if (ms < 1) return `${(ms * 1e3).toFixed(2)}µs`;
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
+}
+
+function formatDelta(delta) {
+  return `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}%`;
+}
+
+function renderTable(rows) {
+  const lines = [];
+  lines.push('| benchmark | baseline | current | change |');
+  lines.push('| --- | ---: | ---: | ---: |');
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    lines.push(`| ${r.name} | ${r.baseline} | ${r.current} | ${r.change} |`);
+  }
+  return lines;
 }
 
 function main() {
@@ -35,52 +51,78 @@ function main() {
     baselineByName.set(baseline[i].name, baseline[i]);
   }
 
+  // Full results in run order; regressions/gains collected for the top sections
+  const rows = [];
   const regressions = [];
-  const added = [];
-  const lines = [];
-  lines.push(`## Benchmark comparison (threshold ${threshold}%)`);
-  lines.push('');
-  lines.push('| benchmark | baseline | current | change |');
-  lines.push('| --- | ---: | ---: | ---: |');
+  const gains = [];
+  let added = 0;
 
   for (let i = 0; i < current.length; i++) {
     const bench = current[i];
     const base = baselineByName.get(bench.name);
     if (!base) {
-      added.push(bench.name);
-      lines.push(`| ${bench.name} | — | ${formatMean(bench.mean)} | new |`);
+      added++;
+      rows.push({name: bench.name, baseline: '—', current: formatMean(bench.mean), change: 'new'});
       continue;
     }
     baselineByName.delete(bench.name);
     const delta = (100 * (bench.mean - base.mean)) / base.mean;
-    const regressed = delta > threshold;
-    if (regressed) {
-      regressions.push({name: bench.name, delta});
+    const row = {
+      name: bench.name,
+      baseline: formatMean(base.mean),
+      current: formatMean(bench.mean),
+      change: formatDelta(delta),
+      delta
+    };
+    rows.push(row);
+    if (delta > threshold) {
+      regressions.push(row);
+    } else if (delta < -threshold) {
+      gains.push(row);
     }
-    const marker = regressed ? ' ❌' : delta < -threshold ? ' 🚀' : '';
-    lines.push(
-      `| ${bench.name} | ${formatMean(base.mean)} | ${formatMean(bench.mean)} | ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}%${marker} |`
-    );
   }
 
-  const removed = [...baselineByName.keys()];
+  const removed = [...baselineByName.values()];
   for (let i = 0; i < removed.length; i++) {
-    lines.push(`| ${removed[i]} | ${formatMean(baselineByName.get(removed[i]).mean)} | — | removed |`);
+    rows.push({name: removed[i].name, baseline: formatMean(removed[i].mean), current: '—', change: 'removed'});
   }
 
+  // Worst regression / biggest gain first
+  regressions.sort((a, b) => b.delta - a.delta);
+  gains.sort((a, b) => a.delta - b.delta);
+
+  const lines = [];
+  lines.push('## Benchmark comparison');
   lines.push('');
+
   if (regressions.length > 0) {
-    lines.push(`### ❌ ${regressions.length} benchmark(s) regressed more than ${threshold}%`);
-    for (let i = 0; i < regressions.length; i++) {
-      lines.push(`- ${regressions[i].name}: +${regressions[i].delta.toFixed(1)}%`);
-    }
+    lines.push(`### ❌ ${regressions.length} regression${regressions.length === 1 ? '' : 's'} above ${threshold}%`);
+    lines.push('');
+    lines.push(...renderTable(regressions.map(r => ({...r, change: `**${r.change}**`}))));
+    lines.push('');
   } else {
     lines.push(`### ✅ No regressions above ${threshold}%`);
-  }
-  if (added.length > 0 || removed.length > 0) {
     lines.push('');
-    lines.push(`_${added.length} benchmark(s) added, ${removed.length} removed (not compared)._`);
   }
+
+  if (gains.length > 0) {
+    lines.push(`### 🚀 ${gains.length} gain${gains.length === 1 ? '' : 's'} above ${threshold}%`);
+    lines.push('');
+    lines.push(...renderTable(gains.map(r => ({...r, change: `**${r.change}**`}))));
+    lines.push('');
+  }
+
+  if (added > 0 || removed.length > 0) {
+    lines.push(`_${added} benchmark(s) added, ${removed.length} removed (not compared)._`);
+    lines.push('');
+  }
+
+  lines.push('<details>');
+  lines.push(`<summary>All results (${rows.length} benchmarks)</summary>`);
+  lines.push('');
+  lines.push(...renderTable(rows));
+  lines.push('');
+  lines.push('</details>');
 
   console.log(lines.join('\n'));
   process.exit(regressions.length > 0 ? 1 : 0);
