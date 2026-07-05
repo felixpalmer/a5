@@ -14,9 +14,8 @@ import {pointInSphericalPolygon, ringSegmentNormals} from './spherical-polygon';
 const Z_AXIS = vec3.fromValues(0, 0, 1) as Cartesian;
 const X_AXIS = vec3.fromValues(1, 0, 0) as Cartesian;
 
-// Pre-allocated scratch vectors
+// Pre-allocated scratch vector
 const perp = vec3.create() as Cartesian; // unit vector perpendicular to the cap center
-const arcNormal = vec3.create() as Cartesian; // normal of the probe->ref arc plane
 
 /**
  * Point-in-polygon for a polygon with holes: inside the outer ring and
@@ -90,7 +89,6 @@ export function preparePolygon(ringVecsList: Cartesian[][]): PreparedPolygon {
   const capAngle = Math.acos(Math.min(1, Math.max(-1, cap.minDot)));
   const useFast = cap.minDot > -1 && capAngle < 1.37;
   const c = cap.center;
-  // unit vector perpendicular to the cap center
   vec3.cross(perp, c, Math.abs(c[2]) < 0.9 ? Z_AXIS : X_AXIS);
   const dLen = vec3.length(perp) || 1;
   const theta = capAngle + 0.2;
@@ -111,16 +109,24 @@ const CROSSING_EPS = 1e-14;
  * free). Returns undefined on any near-degenerate sign (probe or a vertex on
  * an arc plane) — the caller falls back to the winding test, which also keeps
  * on-edge tie-breaking identical to the previous implementation.
+ *
+ * The per-vertex loop deliberately uses scalar component math, not vec3: the
+ * shared vec3.dot/cross see both plain arrays and Float64Arrays across the
+ * codebase, so V8 keeps them polymorphic here (+17% on country-scale
+ * polygonToCells, measured with both Float64Array and plain-array scratch).
  */
 function crossingParity(p: Cartesian, prep: PreparedPolygon): boolean | undefined {
   const r = prep.ref;
-  vec3.cross(arcNormal, p, r);
+  // normal of the probe->ref arc plane
+  const abx = p[1] * r[2] - p[2] * r[1];
+  const aby = p[2] * r[0] - p[0] * r[2];
+  const abz = p[0] * r[1] - p[1] * r[0];
   let crossings = 0;
   for (let ri = 0; ri < prep.ringVecsList.length; ri++) {
     const verts = prep.ringVecsList[ri];
     const norms = prep.ringNormals[ri];
     const n = verts.length;
-    const sFirst = vec3.dot(arcNormal, verts[0]);
+    const sFirst = abx * verts[0][0] + aby * verts[0][1] + abz * verts[0][2];
     if (Math.abs(sFirst) < CROSSING_EPS) return undefined;
     let sPrev = sFirst;
     for (let i = 0; i < n; i++) {
@@ -128,15 +134,16 @@ function crossingParity(p: Cartesian, prep: PreparedPolygon): boolean | undefine
       if (i + 1 === n) {
         sNext = sFirst;
       } else {
-        sNext = vec3.dot(arcNormal, verts[i + 1]);
+        const v = verts[i + 1];
+        sNext = abx * v[0] + aby * v[1] + abz * v[2];
         if (Math.abs(sNext) < CROSSING_EPS) return undefined;
       }
       if (sPrev * sNext < 0) {
         // edge endpoints straddle the probe arc's plane: test whether the
         // probe arc straddles the edge's plane on the matching side
         const cd = norms[i];
-        const cbd = -vec3.dot(cd, r);
-        const dac = vec3.dot(cd, p);
+        const cbd = -(cd[0] * r[0] + cd[1] * r[1] + cd[2] * r[2]);
+        const dac = cd[0] * p[0] + cd[1] * p[1] + cd[2] * p[2];
         if (Math.abs(cbd) < CROSSING_EPS || Math.abs(dac) < CROSSING_EPS) return undefined;
         const acb = -sPrev;
         if (acb * cbd > 0 && acb * dac > 0) crossings++;
@@ -150,7 +157,7 @@ function crossingParity(p: Cartesian, prep: PreparedPolygon): boolean | undefine
 /** Full containment test of a point: cap prefilter, then crossing test with winding fallback. */
 export function pointInPreparedPolygon(p: Cartesian, prep: PreparedPolygon): boolean {
   const cap = prep.cap;
-  if (vec3.dot(p, cap.center) < cap.minDot) return false;
+  if (p[0] * cap.center[0] + p[1] * cap.center[1] + p[2] * cap.center[2] < cap.minDot) return false;
   if (prep.useFast) {
     const result = crossingParity(p, prep);
     if (result !== undefined) return result;
