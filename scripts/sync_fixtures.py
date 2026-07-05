@@ -68,6 +68,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/lattice/fixtures/triple.json"),
         (RS_ROOT, "tests/fixtures/lattice/triple.json"),
     ],
+    "tests/fixtures/lattice/lsystem.json": [
+        (PY_ROOT, "tests/lattice/fixtures/lsystem.json"),
+        (RS_ROOT, "tests/fixtures/lattice/lsystem.json"),
+    ],
 
     # Traversal fixtures
     "tests/fixtures/traversal/cap.json": [

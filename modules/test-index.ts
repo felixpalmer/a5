@@ -44,6 +44,15 @@ export {
 export {tripleParity, tripleInBounds, tripleToS, anchorToTriple, tripleToAnchor} from './lattice';
 export type {Anchor, Triple} from './lattice';
 
+// The non-self-intersecting L-system curve — the planned future canonical
+// curve (breaking change) — exported explicitly so it stays pinned by fixtures
+export {
+  sToCell as lsystemSToCell,
+  sToTriple as lsystemSToTriple,
+  tripleToSLattice as lsystemTripleToS
+} from './lattice/lsystem';
+export {IJToS as lsystemIJToS} from './lattice/curve';
+
 // Export neighbor functions for testing
 export {getCellNeighbors} from './traversal/quintant-neighbors';
 export {getGlobalCellNeighbors} from './traversal/global-neighbors';
