@@ -205,7 +205,8 @@ export function compatTripleToS(t: Triple, resolution: number, orientation: Orie
 export function compatIJToS(ij: IJ, resolution: number, orientation: Orientation = 'uv'): bigint {
   const N = 1n << BigInt(2 * resolution);
   const rec = COMPAT_ORIENT[orientation];
-  let i = ij[0], j = ij[1];
+  let i = ij[0],
+    j = ij[1];
   if (rec.flipIJ) {
     const tmp = i;
     i = j;
