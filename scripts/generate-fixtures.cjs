@@ -16,6 +16,7 @@ require('./fixtures/lattice/quaternary.cjs');
 require('./fixtures/lattice/triple.cjs');
 require('./fixtures/lattice/lsystem.cjs');
 require('./fixtures/lattice/compat.cjs');
+require('./fixtures/lattice/curve.cjs');
 
 // Traversal generators
 require('./fixtures/traversal/quintant-neighbors.cjs');

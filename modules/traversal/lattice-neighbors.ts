@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import type {Orientation, Triple} from '../lattice';
-import {sToAnchor, anchorToTriple, tripleToS, tripleParity, tripleInBounds} from '../lattice';
+import {sToTriple, tripleToS, tripleParity, tripleInBounds} from '../lattice';
 import type {Origin} from '../core/utils';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {segmentToQuintant} from '../core/origin';
@@ -31,8 +31,7 @@ function decodeSource(cellId: bigint): LatticeSource | null {
 
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const {quintant, orientation} = segmentToQuintant(segment, origin);
-  const anchor = sToAnchor(S, hilbertRes, orientation);
-  const triple = anchorToTriple(anchor);
+  const triple = sToTriple(S, hilbertRes, orientation);
 
   return {
     origin,
@@ -78,20 +77,20 @@ const SUPERSET_DELTAS: readonly Delta[] = (() => {
   return out;
 })();
 
-/** The 3 parity-valid single-axis moves matching `tripleSpaceFloodFill`'s edge connectivity. */
+/** The 3 parity-valid single-axis moves (strict triple-lattice edge connectivity). */
 // prettier-ignore
 const PARITY_EVEN_DELTAS: readonly Delta[] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
 // prettier-ignore
 const PARITY_ODD_DELTAS: readonly Delta[] = [[-1, 0, 0], [0, -1, 0], [0, 0, -1]];
 
 /**
- * Fast lattice-based neighbor finding. Skips `isNeighbor()` validation for
- * within-quintant candidates; falls back to `getGlobalCellNeighbors` below res 2.
+ * Fast lattice-based neighbor finding over triple-space deltas; falls back to
+ * `getGlobalCellNeighbors` below res 2.
  *
  * - `edgeOnly=false`: 26-cube ±1 superset (may include vertex-only touchers).
  *   For BFS that re-validates candidates downstream (e.g. line tracing).
- * - `edgeOnly=true`: 3 parity-valid moves matching `tripleSpaceFloodFill` —
- *   exact connectivity for shell-buffering the flood-fill firewall.
+ * - `edgeOnly=true`: 3 parity-valid moves — strict triple-lattice edge
+ *   connectivity.
  */
 export function getLatticeNeighbors(cellId: bigint, edgeOnly: boolean): bigint[] {
   const src = decodeSource(cellId);

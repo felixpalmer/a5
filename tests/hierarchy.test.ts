@@ -1,15 +1,15 @@
 import {describe, it, expect} from 'vitest';
 import {PentagonShape} from 'a5/geometry/pentagon';
 import type {Pentagon} from 'a5/geometry/pentagon';
-import {sToAnchor} from 'a5/lattice';
+import {sToCell} from 'a5/lattice';
 import type {Orientation} from 'a5/lattice';
 import {getPentagonVertices} from 'a5/core/tiling';
 import {vec2} from 'gl-matrix';
 
 function generateCells(resolution: number, orientation: Orientation): Pentagon[] {
   const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
-  const anchors = sequence.map(s => sToAnchor(s, resolution, orientation));
-  return anchors.map(anchor => getPentagonVertices(resolution, 0, anchor).getVertices());
+  const cells = sequence.map(s => sToCell(BigInt(s), resolution, orientation));
+  return cells.map(({triple, flavor}) => getPentagonVertices(resolution, 0, triple, flavor).getVertices());
 }
 
 function verifyHierarchy(resolution: number, orientation: Orientation): void {

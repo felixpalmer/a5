@@ -6,6 +6,7 @@
 export * from './index';
 
 export {origins, segmentToQuintant, quintantToSegment, haversine} from './core/origin';
+export {cellToSpherical} from './core/cell';
 export {serialize, deserialize, WORLD_CELL, FIRST_HILBERT_RESOLUTION} from './core/serialization';
 export {quaternions} from './core/dodecahedron-quaternions';
 export {
@@ -26,7 +27,7 @@ export {
 
 // Export tiling functions for testing
 export {getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPolar} from './core/tiling';
-export {isNeighbor} from './traversal/neighbors';
+export {NEIGHBOR_DELTAS} from './traversal/neighbors';
 
 // Export Hilbert functions for testing
 export {
@@ -42,8 +43,9 @@ export {
   quaternaryToFlips
 } from './lattice';
 export {tripleParity, tripleInBounds, tripleToS, anchorToTriple, tripleToAnchor} from './lattice';
+export {sToCell, sToTriple} from './lattice';
 export {compatSToCell, compatSToTriple, compatTripleToS, compatIJToS} from './lattice';
-export type {Anchor, Triple} from './lattice';
+export type {Anchor, Cell, Triple} from './lattice';
 
 // The non-self-intersecting L-system curve — the planned future canonical
 // curve (breaking change) — exported explicitly so it stays pinned by fixtures

@@ -2,113 +2,42 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type {Anchor, Flip} from '../lattice';
-import {getPentagonFlavor, PentagonFlavor} from '../core/tiling';
+// The neighbors of a cell, in triple space, are a fixed function of its
+// pentagon flavor: pentagons tile edge-to-edge, so the arrangement around a
+// pentagon is forced. Every cell has exactly 5 edge-sharing and 2 vertex-only
+// neighbors, at the triple deltas below. No validation is needed — each delta
+// IS a neighbor (bounds permitting).
+//
+// Derived geometrically (shared pentagon vertices) and verified exhaustively
+// over all interior cells at res 4-5, all orientations, zero conflicts. The
+// flavor-1/3 lists are the flavor-0/2 lists negated (they are the 180°-rotated
+// shapes).
 
-type ValidOffsetDelta = -2 | -1 | 0 | 1 | 2;
-type NeighborPattern = [ValidOffsetDelta, ValidOffsetDelta, Flip, Flip];
-// prettier-ignore
-const NEIGHBORS: Record<PentagonFlavor, NeighborPattern[]> = {
-  0: [
-    [0, -2, -1, 1], [0, -2, -1, -1],
-    [0, -1, 1, -1], [0, -1, -1, -1], [0, -1, 1, 1],
-    [1, -2, -1, -1],
-    [1, -1, -1, 1], [1, -1, 1, -1],
-    [1, 0, 1, -1],
-    [2, -1, 1, -1],
-    [2, -2, -1, -1]
-  ],
-  1: [
-    [-1, -1, -1, 1],
-    [0, -2, -1, -1],
-    [0, -1, -1, -1], [0, -1, 1, -1],
-    [0, 0, -1, 1], [0, 0, -1, -1],
-    [0, 1, 1, -1], [0, 1, 1, 1],
-    [1, -2, -1, -1],
-    [1, -1, 1, -1], [1, -1, -1, -1],
-    [1, 0, 1, -1]
-  ],
-  2: [
-    [-2, 2, -1, -1],
-    [-2, 1, 1, -1],
-    [-1, 0, 1, -1],
-    [-1, 1, 1, -1], [-1, 1, -1, 1],
-    [-1, 2, -1, -1],
-    [0, 1, -1, -1], [0, 1, 1, -1], [0, 1, 1, 1],
-    [0, 2, -1, -1], [0, 2, -1, 1]
-  ],
-  3: [
-    [-1, 0, 1, -1],
-    [-1, 1, 1, -1], [-1, 1, -1, -1],
-    [-1, 2, -1, -1],
-    [0, -1, 1, -1], [0, -1, 1, 1],
-    [0, 0, -1, -1], [0, 0, -1, 1],
-    [0, 1, -1, -1], [0, 1, 1, -1],
-    [0, 2, -1, -1],
-    [1, 1, -1, 1]
-  ],
-  4: [
-    [0, -1, 1, -1], [0, -1, 1, 1],
-    [0, 0, -1, -1], [0, 0, -1, 1],
-    [0, 1, -1, -1],
-    [1, 0, -1, -1], [1, 0, 1, -1],
-    [1, -1, 1, -1], [1, 1, -1, 1],
-    [2, -1, 1, -1], [2, 0, -1, -1]
-  ],
-  5: [
-    [-1, 1, -1, 1],
-    [0, -1, 1, -1],
-    [0, 0, -1, -1],
-    [0, 1, -1, -1], [0, 1, 1, -1], [0, 1, 1, 1],
-    [0, 2, -1, -1], [0, 2, -1, 1],
-    [1, -1, 1, -1],
-    [1, 0, -1, -1], [1, 0, 1, -1],
-    [1, 1, -1, -1]
-  ],
-  6: [
-    [-2, 0, -1, -1],
-    [-2, 1, 1, -1],
-    [-1, -1, -1, 1],
-    [-1, 0, -1, -1], [-1, 0, 1, -1],
-    [-1, 1, 1, -1],
-    [0, -1, -1, -1],
-    [0, 0, -1, -1], [0, 0, -1, 1],
-    [0, 1, 1, -1], [0, 1, 1, 1]
-  ],
-  7: [
-    [-1, -1, -1, -1],
-    [-1, 0, -1, -1], [-1, 0, 1, -1],
-    [-1, 1, 1, -1],
-    [0, -2, -1, -1], [0, -2, -1, 1],
-    [0, -1, -1, -1], [0, -1, 1, -1], [0, -1, 1, 1],
-    [0, 0, -1, -1],
-    [0, 1, 1, -1],
-    [1, -1, -1, 1]
-  ]
-};
+import type {Triple} from '../lattice';
 
-export function isNeighbor(origin: Anchor, candidate: Anchor): boolean {
-  const originFlavor = getPentagonFlavor(origin);
-  const candidateFlavor = getPentagonFlavor(candidate);
-  if (originFlavor === candidateFlavor) return false;
-  const neighbors = NEIGHBORS[originFlavor];
-  const relative = [
-    candidate.offset[0] - origin.offset[0],
-    candidate.offset[1] - origin.offset[1],
-    candidate.flips[0] * origin.flips[0],
-    candidate.flips[1] * origin.flips[1]
-  ] as NeighborPattern;
-
-  for (let i = 0; i < neighbors.length; i++) {
-    if (
-      relative[0] === neighbors[i][0] &&
-      relative[1] === neighbors[i][1] &&
-      relative[2] === neighbors[i][2] &&
-      relative[3] === neighbors[i][3]
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+interface NeighborDeltas {
+  edge: readonly Triple[];
+  vertex: readonly Triple[];
 }
+
+const D = (x: number, y: number, z: number): Triple => ({x, y, z});
+
+// prettier-ignore
+export const NEIGHBOR_DELTAS: readonly NeighborDeltas[] = [
+  { // flavor 0
+    edge: [D(0, 0, 1), D(0, 1, -1), D(0, 1, 0), D(1, -1, 0), D(1, 0, 0)],
+    vertex: [D(1, -1, 1), D(1, 1, -1)]
+  },
+  { // flavor 1 (= flavor 0 rotated 180°: deltas negated)
+    edge: [D(0, 0, -1), D(0, -1, 1), D(0, -1, 0), D(-1, 1, 0), D(-1, 0, 0)],
+    vertex: [D(-1, 1, -1), D(-1, -1, 1)]
+  },
+  { // flavor 2
+    edge: [D(-1, 1, 0), D(0, -1, 1), D(0, 0, 1), D(0, 1, 0), D(1, 0, 0)],
+    vertex: [D(-1, 1, 1), D(1, -1, 1)]
+  },
+  { // flavor 3 (= flavor 2 rotated 180°: deltas negated)
+    edge: [D(1, -1, 0), D(0, 1, -1), D(0, 0, -1), D(0, -1, 0), D(-1, 0, 0)],
+    vertex: [D(1, -1, -1), D(-1, 1, -1)]
+  }
+];
