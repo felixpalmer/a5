@@ -42,6 +42,7 @@ export {
   quaternaryToFlips
 } from './lattice';
 export {tripleParity, tripleInBounds, tripleToS, anchorToTriple, tripleToAnchor} from './lattice';
+export {compatSToCell, compatSToTriple, compatTripleToS, compatIJToS} from './lattice';
 export type {Anchor, Triple} from './lattice';
 
 // The non-self-intersecting L-system curve — the planned future canonical
