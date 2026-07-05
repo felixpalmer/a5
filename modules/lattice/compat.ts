@@ -32,7 +32,7 @@
 import type {Orientation} from './types';
 import type {Triple} from './triple';
 import type {IJ} from '../core/coordinate-systems';
-import {compileGrammar, POW2} from './lsystem-tables';
+import {compileGrammar, POW2} from './lsystem/tables';
 import type {Cell} from './lsystem';
 import {axiomLeafCell, axiomTargetToS, abToTriple, tripleToAB, sToCell, tripleToSLattice} from './lsystem';
 
