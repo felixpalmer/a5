@@ -31,8 +31,7 @@
 // vw->B) + whether the curve is reversed; A and C fill the quintant from corner
 // C0, B fills it corner-to-corner so it's translated onto the quintant. See ORIENT.
 
-import type {Orientation} from '../types';
-import type {Triple} from '../triple';
+import type {Orientation, Triple} from '../types';
 import type {AB} from './turtle';
 import {RULES, DRAWS} from './grammar';
 import type {CurveTables} from './tables';

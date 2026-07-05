@@ -10,13 +10,9 @@ require('./fixtures/core/constants.cjs');
 require('./fixtures/core/dodecahedron-quaternions.cjs');
 require('./fixtures/core/cell-to-lonlat.cjs');
 // Lattice generators
-require('./fixtures/lattice/hilbert.cjs');
-require('./fixtures/lattice/shift-digits.cjs');
-require('./fixtures/lattice/quaternary.cjs');
-require('./fixtures/lattice/triple.cjs');
-require('./fixtures/lattice/lsystem.cjs');
-require('./fixtures/lattice/compat.cjs');
 require('./fixtures/lattice/curve.cjs');
+require('./fixtures/lattice/compat.cjs');
+require('./fixtures/lattice/lsystem.cjs');
 
 // Traversal generators
 require('./fixtures/traversal/quintant-neighbors.cjs');

@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-// The canonical A5 curve is the ORIGINAL construction, now expressed on the
-// L-system machinery (compat.ts) — bit-identical cell IDs, proven in
-// tests/lattice/compat-equivalence.test.ts. The old engine below is no longer
-// used by the library and is retired in a follow-up; the non-self-intersecting
-// L-system curve (lsystem.ts / curve.ts) is pinned by fixtures and becomes
-// canonical in a later, breaking change.
+// The canonical A5 curve is currently the ORIGINAL construction (compat.ts):
+// the two-motif quaternary L-system with the shiftDigits recode on top, so
+// cell IDs remain bit-identical to previous releases. The non-self-intersecting
+// L-system curve (lsystem.ts / curve.ts) powers the machinery underneath and is
+// fully implemented and pinned by fixtures (tests/lattice/lsystem.test.ts);
+// making it canonical is a planned follow-up — a breaking change of all cell
+// IDs that swaps the exports below to lsystem.ts/curve.ts and regenerates the
+// fixtures.
 
 export type {Orientation} from './types';
 
@@ -25,13 +27,3 @@ export {tripleParity, tripleInBounds} from './triple';
 // Also exported under their own names, so the old-curve behavior stays pinned
 // explicitly (tests/lattice/compat.test.ts) across the future canonical swap.
 export {compatSToCell, compatSToTriple, compatTripleToS, compatIJToS} from './compat';
-
-// ---- The original engine (unused by the library; retired in a follow-up) ----
-export {YES, NO} from './types';
-export type {Quaternary, Flip, Anchor} from './types';
-export {IJToKJ, KJToIJ} from './basis';
-export {quaternaryToKJ, quaternaryToFlips, IJToQuaternary} from './quaternary';
-export {computeQ, offsetFlipsToAnchor} from './anchor';
-export {shiftDigits, PATTERN, PATTERN_FLIPPED, PATTERN_REVERSED, PATTERN_FLIPPED_REVERSED} from './shift-digits';
-export {sToAnchor, IJToFlips, anchorToS} from './hilbert';
-export {anchorToTriple, tripleToAnchor} from './triple';
