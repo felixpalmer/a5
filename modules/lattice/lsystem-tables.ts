@@ -77,11 +77,18 @@ export function compileGrammar(rules: Record<string, string>, draws: Record<stri
     flip: boolean;
   }
   function childTable(rule: string): Child[] {
-    let pos: AB = {a: 0, b: 0}, h = 0;
+    let pos: AB = {a: 0, b: 0},
+      h = 0;
     const children: Child[] = [];
     for (const ch of rule) {
-      if (ch === '+') { h = (h + 1) % 6; continue; }
-      if (ch === '-') { h = (h + 5) % 6; continue; }
+      if (ch === '+') {
+        h = (h + 1) % 6;
+        continue;
+      }
+      if (ch === '-') {
+        h = (h + 5) % 6;
+        continue;
+      }
       if (rules[ch.toUpperCase()] === undefined) continue;
       if (h !== 0 && h !== 3) throw new Error(`lsystem: non-180° turn (${60 * h}°) before a child in rule "${rule}"`);
       const flip = h === 3;
@@ -117,9 +124,16 @@ export function compileGrammar(rules: Record<string, string>, draws: Record<stri
     if (p.length < 3) return p;
     const cross = (o: AB, a: AB, b: AB) => (a.a - o.a) * (b.b - o.b) - (a.b - o.b) * (b.a - o.a);
     const lower: AB[] = [];
-    for (const q of p) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop(); lower.push(q); }
+    for (const q of p) {
+      while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop();
+      lower.push(q);
+    }
     const upper: AB[] = [];
-    for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop(); upper.push(q); }
+    for (let i = p.length - 1; i >= 0; i--) {
+      const q = p[i];
+      while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop();
+      upper.push(q);
+    }
     return lower.slice(0, -1).concat(upper.slice(0, -1));
   }
 
@@ -138,7 +152,8 @@ export function compileGrammar(rules: Record<string, string>, draws: Record<stri
       const sign = flip ? -1 : 1;
       const edges = new Float64Array(hull.length * 4);
       for (let i = 0; i < hull.length; i++) {
-        const c0 = hull[i], c1 = hull[(i + 1) % hull.length];
+        const c0 = hull[i],
+          c1 = hull[(i + 1) % hull.length];
         edges[i * 4] = 3 * sign * c0.a;
         edges[i * 4 + 1] = 3 * sign * c0.b;
         edges[i * 4 + 2] = sign * (c1.a - c0.a);
@@ -172,7 +187,8 @@ export function compileGrammar(rules: Record<string, string>, draws: Record<stri
         const area = (c[1].a - c[0].a) * (c[2].b - c[0].b) - (c[1].b - c[0].b) * (c[2].a - c[0].a);
         if (area < 0) c = [c[0], c[2], c[1]];
         for (let e = 0; e < 3; e++) {
-          const c0 = c[e], c1 = c[(e + 1) % 3];
+          const c0 = c[e],
+            c1 = c[(e + 1) % 3];
           const o = base * 48 + d * 12 + e * 4;
           leafTri[o] = 3 * c0.a;
           leafTri[o + 1] = 3 * c0.b;

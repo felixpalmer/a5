@@ -41,7 +41,10 @@ const swapCase = (c: string): string => (c >= 'a' && c <= 'z' ? c.toUpperCase() 
  * motifs are derived from the authored uppercase rules.
  */
 export const reverseMotif = (s: string): string =>
-  [...s].reverse().map(c => (c === '+' ? '-' : c === '-' ? '+' : swapCase(c))).join('');
+  [...s]
+    .reverse()
+    .map(c => (c === '+' ? '-' : c === '-' ? '+' : swapCase(c)))
+    .join('');
 
 /**
  * One expansion pass over `str`: replace each symbol using `table` (RULES or

@@ -54,8 +54,14 @@ console.log(`  lsystemSToCell: ${sToCellFixtures.length} cases (all round-trips 
 // Deterministic sample points, as fractions of the quintant triangle
 // (i >= 0, j >= 0, i + j <= 2^resolution)
 const pointFractions = [
-  [0.1, 0.2], [0.3, 0.15], [0.05, 0.6], [0.45, 0.45],
-  [0.7, 0.1], [0.33, 0.33], [0.011, 0.017], [0.6, 0.25]
+  [0.1, 0.2],
+  [0.3, 0.15],
+  [0.05, 0.6],
+  [0.45, 0.45],
+  [0.7, 0.1],
+  [0.33, 0.33],
+  [0.011, 0.017],
+  [0.6, 0.25]
 ];
 const ijToSFixtures = [];
 for (const resolution of resolutions) {

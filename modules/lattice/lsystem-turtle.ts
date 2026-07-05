@@ -25,20 +25,70 @@ export const rotTimes = (p: AB, n: number): AB => {
 // Step vector of each draw symbol at heading 0. Lowercase = same step, cell hosted
 // on the other side (see HOST_OFFSETS).
 const BASE: Record<string, AB> = {
-  E: {a: 4, b: 0}, e: {a: 4, b: 0},
-  S: {a: 4, b: -2}, s: {a: 4, b: -2},
-  U: {a: 0, b: 2}, u: {a: 0, b: 2},
-  D: {a: 0, b: -2}, d: {a: 0, b: -2},
-  T: {a: -4, b: 0}, t: {a: -4, b: 0}
+  E: {a: 4, b: 0},
+  e: {a: 4, b: 0},
+  S: {a: 4, b: -2},
+  s: {a: 4, b: -2},
+  U: {a: 0, b: 2},
+  u: {a: 0, b: 2},
+  D: {a: 0, b: -2},
+  d: {a: 0, b: -2},
+  T: {a: -4, b: 0},
+  t: {a: -4, b: 0}
 };
 export const DRAW = new Set(Object.keys(BASE));
 // The 3 corner offsets (heading 0, from the segment start) of the cell each symbol hosts.
 const HOST_OFFSETS: Record<string, [AB, AB, AB]> = {
-  E: [{a: 0, b: 0}, {a: 4, b: 0}, {a: 4, b: -4}], e: [{a: 0, b: 0}, {a: 4, b: 0}, {a: 0, b: 4}],
-  S: [{a: 0, b: 0}, {a: 4, b: 0}, {a: 4, b: -4}], s: [{a: 4, b: -2}, {a: 0, b: 2}, {a: 0, b: -2}],
-  U: [{a: 0, b: 2}, {a: 0, b: -2}, {a: 4, b: -2}], u: [{a: 0, b: 0}, {a: 0, b: 4}, {a: -4, b: 4}],
-  D: [{a: 0, b: 2}, {a: 0, b: -2}, {a: 4, b: -2}], d: [{a: 0, b: 0}, {a: 0, b: -4}, {a: -4, b: 0}],
-  T: [{a: 0, b: -4}, {a: -4, b: 0}, {a: -4, b: -4}], t: [{a: -4, b: 4}, {a: 0, b: 0}, {a: 0, b: 4}]
+  E: [
+    {a: 0, b: 0},
+    {a: 4, b: 0},
+    {a: 4, b: -4}
+  ],
+  e: [
+    {a: 0, b: 0},
+    {a: 4, b: 0},
+    {a: 0, b: 4}
+  ],
+  S: [
+    {a: 0, b: 0},
+    {a: 4, b: 0},
+    {a: 4, b: -4}
+  ],
+  s: [
+    {a: 4, b: -2},
+    {a: 0, b: 2},
+    {a: 0, b: -2}
+  ],
+  U: [
+    {a: 0, b: 2},
+    {a: 0, b: -2},
+    {a: 4, b: -2}
+  ],
+  u: [
+    {a: 0, b: 0},
+    {a: 0, b: 4},
+    {a: -4, b: 4}
+  ],
+  D: [
+    {a: 0, b: 2},
+    {a: 0, b: -2},
+    {a: 4, b: -2}
+  ],
+  d: [
+    {a: 0, b: 0},
+    {a: 0, b: -4},
+    {a: -4, b: 0}
+  ],
+  T: [
+    {a: 0, b: -4},
+    {a: -4, b: 0},
+    {a: -4, b: -4}
+  ],
+  t: [
+    {a: -4, b: 4},
+    {a: 0, b: 0},
+    {a: 0, b: 4}
+  ]
 };
 
 /** The 3 (a,b) corners of the cell hosted by `sym`, drawn from `from` at `heading`. */
@@ -63,10 +113,17 @@ export function walk(
   heading: number,
   onDraw?: (sym: string, from: AB, heading: number) => void
 ): {pos: AB; heading: number} {
-  let p = {...pos}, h = ((heading % 6) + 6) % 6;
+  let p = {...pos},
+    h = ((heading % 6) + 6) % 6;
   for (const ch of s) {
-    if (ch === '+') { h = (h + 1) % 6; continue; }
-    if (ch === '-') { h = (h + 5) % 6; continue; }
+    if (ch === '+') {
+      h = (h + 1) % 6;
+      continue;
+    }
+    if (ch === '-') {
+      h = (h + 5) % 6;
+      continue;
+    }
     if (!DRAW.has(ch)) continue;
     onDraw?.(ch, p, h);
     p = add(p, rotTimes(BASE[ch], h));

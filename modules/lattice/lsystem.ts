@@ -95,8 +95,10 @@ export function axiomLeafCell(
   const {childToken, childFlip, childOffA, childOffB, leafSum, leafFlavor} = t;
   const lo = Number(s & LO_MASK);
   const hi = Number(s >> LO_BITS);
-  let motif = axiom, flip = 0;
-  let posA = 0, posB = 0;
+  let motif = axiom,
+    flip = 0;
+  let posA = 0,
+    posB = 0;
   for (let L = R; L >= 2; L--) {
     const idx = L - 1;
     const d = idx < LO_DIGITS ? (lo >>> (idx << 1)) & 3 : Math.floor(hi / POW4[idx - LO_DIGITS]) % 4;
@@ -158,22 +160,38 @@ function insideScore(
 // Shared descent for both leaf modes. `exact` targets are corner sums of real
 // cells (leaf resolved by exact sum match); fractional targets resolve the leaf
 // by point-in-cell over the 4 level-1 triangles. Internal; also used by compat.ts.
-export function axiomTargetToS(t: CurveTables, ta: number, tb: number, R: number, axiom: number, exact: boolean): bigint {
+export function axiomTargetToS(
+  t: CurveTables,
+  ta: number,
+  tb: number,
+  R: number,
+  axiom: number,
+  exact: boolean
+): bigint {
   const {childToken, childFlip, childOffA, childOffB, leafSum, leafTri} = t;
-  let motif = axiom, flip = 0;
-  let posA = 0, posB = 0;
-  let sLo = 0, sHi = 0;
+  let motif = axiom,
+    flip = 0;
+  let posA = 0,
+    posB = 0;
+  let sLo = 0,
+    sHi = 0;
   for (let L = R; L >= 2; L--) {
     const scale = POW2[L - 2];
     const sign = flip ? -scale : scale;
-    let bestD = 0, bestScore = -Infinity;
+    let bestD = 0,
+      bestScore = -Infinity;
     for (let d = 0; d < 4; d++) {
       const ci = motif * 4 + d;
       const score = insideScore(
         t,
-        childToken[ci], flip ^ childFlip[ci], L - 1,
-        posA + childOffA[ci] * sign, posB + childOffB[ci] * sign,
-        ta, tb, bestScore
+        childToken[ci],
+        flip ^ childFlip[ci],
+        L - 1,
+        posA + childOffA[ci] * sign,
+        posB + childOffB[ci] * sign,
+        ta,
+        tb,
+        bestScore
       );
       if (score > bestScore) {
         bestScore = score;
@@ -194,10 +212,14 @@ export function axiomTargetToS(t: CurveTables, ta: number, tb: number, R: number
   const base = motif * 2 + flip;
   let d0 = 0;
   if (exact) {
-    const relA = ta - 3 * posA, relB = tb - 3 * posB;
+    const relA = ta - 3 * posA,
+      relB = tb - 3 * posB;
     d0 = -1;
     for (let d = 0; d < 4; d++) {
-      if (leafSum[base * 8 + d * 2] === relA && leafSum[base * 8 + d * 2 + 1] === relB) { d0 = d; break; }
+      if (leafSum[base * 8 + d * 2] === relA && leafSum[base * 8 + d * 2 + 1] === relB) {
+        d0 = d;
+        break;
+      }
     }
     if (d0 < 0) throw new Error(`lsystem inverse: no leaf match for corner sum (${ta},${tb})`);
   } else {
