@@ -50,6 +50,7 @@ yarn bench hilbert     # Run benchmarks for a single file, here `hilbert.bench.t
 
 ## Development Guidelines
 - Read CONTRIBUTING.md
+- **Reading files**: Use the Read tool to read source files — do NOT use `sed -n 'X,Yp' file`, `head`, or `tail` to read slices. Just read the whole file with Read.
 - **TypeScript**: Source files in `/modules`, compiled to `/dist`
 - **Tests**: Use Vitest, run specific tests with `yarn test <filename> --run`
 - **Imports**: Run `python3 analyze_imports.py modules --check-only` after changing imports
@@ -115,7 +116,8 @@ On pull requests, CI also benchmarks the PR against its merge-base with main on 
 
 ## Debugging
 - **DO NOT** use `node -e "..."` for debugging scripts — write them as files instead
-- Write debug scripts to `/debug-scripts/` (gitignored) using the Write tool, then execute with Bash
+- Write debug scripts to `/debug-scripts/` (gitignored) using the Write tool
+- **Run them via `bash debug.sh` — invoked EXACTLY as `bash debug.sh`, with NO arguments and NO pipes** (no `| sed`, `| tail`, `| head`, `| grep`). It is a single gitignored entry point at the repo root that invokes `npx tsx debug-scripts/<file>.ts`, so scripts can import straight from `modules/` and `dist/`. If you need to filter/limit output, put the `sed`/`tail`/`grep` (or a smaller print) INSIDE `debug.sh` or the debug script itself — never in the Bash invocation. Piping `bash debug.sh` into anything forces a fresh permission prompt; always run the bare command.
 - This avoids permission prompts and keeps scripts inspectable
 
 ## Git Usage
