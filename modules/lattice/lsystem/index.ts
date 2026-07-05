@@ -14,8 +14,8 @@
 //
 // The curve is a vertex-to-vertex turtle L-system on the triangular lattice: 7
 // self-referential motifs (A B C M P Q R), each a clean A5 unit (2 parallelograms
-// + 2 triangles). The symbolic grammar lives in lsystem-grammar.ts and is compiled
-// to flat tables in lsystem-tables.ts; this file evaluates it as an O(resolution)
+// + 2 triangles). The symbolic grammar lives in grammar.ts and is compiled
+// to flat tables in tables.ts; this file evaluates it as an O(resolution)
 // digit transducer:
 //   forward  s -> cell   : descend the quaternary digits, accumulating a turtle
 //            position + heading, then map (a,b) -> A5 triple via a fixed
@@ -23,7 +23,7 @@
 //   inverse  triple -> s : descend picking, at each level, the child whose convex
 //            footprint (triforce / parallelogram) contains the target cell.
 //
-// Every turn in every rule is 180° (see lsystem-tables.ts), so the descent
+// Every turn in every rule is 180° (see tables.ts), so the descent
 // tracks orientation as a single flip bit; for the A5 grammar that invariant
 // is also what keeps every parallelogram cell on-axis.
 //
@@ -31,12 +31,12 @@
 // vw->B) + whether the curve is reversed; A and C fill the quintant from corner
 // C0, B fills it corner-to-corner so it's translated onto the quintant. See ORIENT.
 
-import type {Orientation} from './types';
-import type {Triple} from './triple';
-import type {AB} from './lsystem-turtle';
-import {RULES, DRAWS} from './lsystem-grammar';
-import type {CurveTables} from './lsystem-tables';
-import {compileGrammar, POW2, POW4} from './lsystem-tables';
+import type {Orientation} from '../types';
+import type {Triple} from '../triple';
+import type {AB} from './turtle';
+import {RULES, DRAWS} from './grammar';
+import type {CurveTables} from './tables';
+import {compileGrammar, POW2, POW4} from './tables';
 
 /** The compiled A5 grammar. */
 const A5 = compileGrammar(RULES, DRAWS);

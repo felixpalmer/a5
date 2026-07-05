@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 // Compiles an L-system grammar into flat numeric tables, once at module init,
-// so the descents in lsystem.ts are pure scalar arithmetic: no string
+// so the descents in index.ts are pure scalar arithmetic: no string
 // expansion and no object allocation per call.
 //
 // Every grammar compiled here keeps every turn inside a rule at 180°
@@ -20,11 +20,11 @@
 // (motif index, flip bit). All hot-path lookups are flat typed-array reads
 // indexed by that state.
 
-import {reverseMotif, expandOnce} from './lsystem-grammar';
-import type {AB} from './lsystem-turtle';
-import {hostSum, hostCorners, walk, netOf} from './lsystem-turtle';
+import {reverseMotif, expandOnce} from './grammar';
+import type {AB} from './turtle';
+import {hostSum, hostCorners, walk, netOf} from './turtle';
 
-/** Flat numeric tables for one grammar, consumed by the descents in lsystem.ts. */
+/** Flat numeric tables for one grammar, consumed by the descents in index.ts. */
 export interface CurveTables {
   motifIdx: Record<string, number>;
   // children: entry ci = motif * 4 + digit

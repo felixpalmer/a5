@@ -6,7 +6,7 @@
 // v=(0,1/2)). Draw symbols {E e S s U u D d T t} are unit segments; `+`/`-` are 60°
 // turns. Each symbol also carries the 3 corners of the triangular cell it hosts.
 // Everything here is exact integer — √3 only enters when (a,b) is later mapped to
-// A5 triple coordinates (in lsystem.ts).
+// A5 triple coordinates (in index.ts).
 
 export interface AB {
   a: number;

@@ -5,7 +5,7 @@
 // The A5 curve's L-system grammar: the motif rules and the string operations that
 // expand them. This file is the source of truth for the curve's definition and is
 // purely symbolic — the turtle geometry that interprets the symbols lives in
-// lsystem-turtle.ts, and the compilation to descent tables in lsystem-tables.ts.
+// turtle.ts, and the compilation to descent tables in tables.ts.
 //
 // 7 self-referential motifs over the alphabet {A B C M P Q R} (+ their lowercase
 // reverses) + the draw terminals {E e S s U u D d T t} + the 60° turns +/-.

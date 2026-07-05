@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 // Public A5 space-filling curve: point -> s, using the L-system curve
-// (modules/lattice/lsystem.ts). The s <-> cell mappings live in lsystem.ts
+// (modules/lattice/lsystem/). The s <-> cell mappings live in lsystem/index.ts
 // (sToCell / sToTriple) and triple.ts (tripleToS).
 
 import type {IJ} from '../core/coordinate-systems';
