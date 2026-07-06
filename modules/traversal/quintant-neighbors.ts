@@ -35,19 +35,16 @@ export function findQuintantNeighborS(
   const deltas = NEIGHBOR_DELTAS[sourceFlavor];
   const neighbors: bigint[] = [];
 
-  const collect = (list: readonly Triple[]): void => {
-    for (let i = 0; i < list.length; i++) {
-      const d = list[i];
-      const neighborTriple: Triple = {x: sourceTriple.x + d.x, y: sourceTriple.y + d.y, z: sourceTriple.z + d.z};
-      if (!tripleInBounds(neighborTriple, maxRow)) continue;
-      const neighborS = tripleToS(neighborTriple, resolution, orientation);
-      if (neighborS !== null && neighborS >= 0n && neighborS < maxS && neighborS !== sourceS) {
-        neighbors.push(neighborS);
-      }
+  const list = edgeOnly ? deltas.edge : deltas.all;
+  for (let i = 0; i < list.length; i++) {
+    const d = list[i];
+    const neighborTriple: Triple = {x: sourceTriple.x + d.x, y: sourceTriple.y + d.y, z: sourceTriple.z + d.z};
+    if (!tripleInBounds(neighborTriple, maxRow)) continue;
+    const neighborS = tripleToS(neighborTriple, resolution, orientation);
+    if (neighborS !== null && neighborS >= 0n && neighborS < maxS && neighborS !== sourceS) {
+      neighbors.push(neighborS);
     }
-  };
-  collect(deltas.edge);
-  if (!edgeOnly) collect(deltas.vertex);
+  }
 
   return neighbors;
 }

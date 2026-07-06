@@ -16,8 +16,9 @@
 import type {Triple} from '../lattice';
 
 interface NeighborDeltas {
-  edge: readonly Triple[];
-  vertex: readonly Triple[];
+  edge: readonly Triple[];   // 5 edge-sharing neighbors
+  vertex: readonly Triple[]; // 2 vertex-only neighbors
+  all: readonly Triple[];    // edge ++ vertex, spelled out so this stays a pure data table (guarded by a test)
 }
 
 const D = (x: number, y: number, z: number): Triple => ({x, y, z});
@@ -25,19 +26,23 @@ const D = (x: number, y: number, z: number): Triple => ({x, y, z});
 // prettier-ignore
 export const NEIGHBOR_DELTAS: readonly NeighborDeltas[] = [
   { // flavor 0
-    edge: [D(0, 0, 1), D(0, 1, -1), D(0, 1, 0), D(1, -1, 0), D(1, 0, 0)],
-    vertex: [D(1, -1, 1), D(1, 1, -1)]
+    edge:   [D(0, 0, 1), D(0, 1, -1), D(0, 1, 0), D(1, -1, 0), D(1, 0, 0)],
+    vertex: [D(1, -1, 1), D(1, 1, -1)],
+    all:    [D(0, 0, 1), D(0, 1, -1), D(0, 1, 0), D(1, -1, 0), D(1, 0, 0), D(1, -1, 1), D(1, 1, -1)]
   },
   { // flavor 1 (= flavor 0 rotated 180°: deltas negated)
-    edge: [D(0, 0, -1), D(0, -1, 1), D(0, -1, 0), D(-1, 1, 0), D(-1, 0, 0)],
-    vertex: [D(-1, 1, -1), D(-1, -1, 1)]
+    edge:   [D(0, 0, -1), D(0, -1, 1), D(0, -1, 0), D(-1, 1, 0), D(-1, 0, 0)],
+    vertex: [D(-1, 1, -1), D(-1, -1, 1)],
+    all:    [D(0, 0, -1), D(0, -1, 1), D(0, -1, 0), D(-1, 1, 0), D(-1, 0, 0), D(-1, 1, -1), D(-1, -1, 1)]
   },
   { // flavor 2
-    edge: [D(-1, 1, 0), D(0, -1, 1), D(0, 0, 1), D(0, 1, 0), D(1, 0, 0)],
-    vertex: [D(-1, 1, 1), D(1, -1, 1)]
+    edge:   [D(-1, 1, 0), D(0, -1, 1), D(0, 0, 1), D(0, 1, 0), D(1, 0, 0)],
+    vertex: [D(-1, 1, 1), D(1, -1, 1)],
+    all:    [D(-1, 1, 0), D(0, -1, 1), D(0, 0, 1), D(0, 1, 0), D(1, 0, 0), D(-1, 1, 1), D(1, -1, 1)]
   },
   { // flavor 3 (= flavor 2 rotated 180°: deltas negated)
-    edge: [D(1, -1, 0), D(0, 1, -1), D(0, 0, -1), D(0, -1, 0), D(-1, 0, 0)],
-    vertex: [D(1, -1, -1), D(-1, 1, -1)]
+    edge:   [D(1, -1, 0), D(0, 1, -1), D(0, 0, -1), D(0, -1, 0), D(-1, 0, 0)],
+    vertex: [D(1, -1, -1), D(-1, 1, -1)],
+    all:    [D(1, -1, 0), D(0, 1, -1), D(0, 0, -1), D(0, -1, 0), D(-1, 0, 0), D(1, -1, -1), D(-1, 1, -1)]
   }
 ];
