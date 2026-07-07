@@ -16,9 +16,9 @@
 import type {Triple} from '../lattice';
 
 interface NeighborDeltas {
-  edge: readonly Triple[];   // 5 edge-sharing neighbors
+  edge: readonly Triple[]; // 5 edge-sharing neighbors
   vertex: readonly Triple[]; // 2 vertex-only neighbors
-  all: readonly Triple[];    // edge ++ vertex, spelled out so this stays a pure data table (guarded by a test)
+  all: readonly Triple[]; // edge ++ vertex, spelled out so this stays a pure data table (guarded by a test)
 }
 
 const D = (x: number, y: number, z: number): Triple => ({x, y, z});
