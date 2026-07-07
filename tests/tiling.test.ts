@@ -1,7 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPolar} from 'a5/core/tiling';
 import fixtures from './fixtures/tiling.json';
-import type {Anchor} from 'a5/lattice';
 import type {Polar} from 'a5/core/coordinate-systems';
 
 describe('tiling', () => {
@@ -9,9 +8,9 @@ describe('tiling', () => {
     it('should generate pentagon vertices with correct properties', () => {
       fixtures.getPentagonVertices.forEach((testCase, index) => {
         const {input, output} = testCase;
-        const {resolution, quintant, anchor} = input;
+        const {resolution, quintant, triple, flavor} = input;
 
-        const pentagon = getPentagonVertices(resolution, quintant, anchor as Anchor);
+        const pentagon = getPentagonVertices(resolution, quintant, triple, flavor);
         const vertices = pentagon.getVertices();
         const area = pentagon.getArea();
         const center = pentagon.getCenter();

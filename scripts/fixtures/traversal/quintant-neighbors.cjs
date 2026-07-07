@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {sToAnchor, anchorToTriple, tripleToAnchor, isNeighbor} = require('../../a5-test.cjs');
+const {sToCell, tripleToS, tripleInBounds, getPentagonVertices} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'quintant-neighbors.json');
@@ -12,32 +12,30 @@ const orientations = ['uv', 'vu', 'uw', 'wu', 'vw', 'wv'];
 console.log(`Generating neighbor fixtures at resolution ${resolution}...`);
 
 // Use deterministic cell selection (no random) for reproducible fixtures
-// Pick 20 evenly-spaced cells per orientation
 const cellsPerOrientation = 10;
 
-// Pre-build uv anchor cache: s -> triple -> uv anchor
-// Since triple coordinates are orientation-independent, for any orientation
-// we can get the triple, then use the uv anchor for isNeighbor validation.
-// This is because isNeighbor's NEIGHBORS patterns are defined in uv/raw space.
-const uvAnchors = new Map(); // triple key -> uv anchor
-const sToTriple = new Map(); // `${s},${orientation}` -> triple key
+// GEOMETRIC brute-force oracle, independent of the neighbor implementation:
+// two cells are neighbors iff their pentagons share at least one vertex
+// (>= 2 shared: edge neighbor, exactly 1: vertex neighbor). Candidates are
+// prefiltered to a ±2 triple window purely as an optimisation — pentagons
+// further apart cannot touch (cell diameter < 2 lattice units).
+function pentagonOf(cache, s, resolution, orientation) {
+  let pent = cache.get(s);
+  if (!pent) {
+    const {triple, flavor} = sToCell(BigInt(s), resolution, orientation);
+    pent = getPentagonVertices(resolution, 0, triple, flavor).getVertices();
+    cache.set(s, pent);
+  }
+  return pent;
+}
 
-for (const orientation of orientations) {
-  for (let s = 0; s < numCells; s++) {
-    const anchor = sToAnchor(BigInt(s), resolution, orientation);
-    const triple = anchorToTriple(anchor);
-    const tripleKey = `${triple.x},${triple.y},${triple.z}`;
-    sToTriple.set(`${s},${orientation}`, tripleKey);
-
-    // Build uv anchor for this triple if not already cached
-    if (!uvAnchors.has(tripleKey)) {
-      // Use tripleToAnchor to get the uv anchor from the triple.
-      const uvAnchorObj = tripleToAnchor(triple, resolution, 'uv');
-      if (uvAnchorObj) {
-        uvAnchors.set(tripleKey, uvAnchorObj);
-      }
+function sharesVertex(a, b, tol) {
+  for (const p of a) {
+    for (const q of b) {
+      if (Math.abs(p[0] - q[0]) < tol && Math.abs(p[1] - q[1]) < tol) return true;
     }
   }
+  return false;
 }
 
 const fixtures = [];
@@ -48,18 +46,34 @@ for (const orientation of orientations) {
     testCells.push(Math.floor((i * numCells) / cellsPerOrientation));
   }
 
+  const pentagonCache = new Map();
+  const tol = 1e-7 / 2 ** resolution;
+
   for (const s of testCells) {
-    const tripleKey = sToTriple.get(`${s},${orientation}`);
-    const uvAnchor = uvAnchors.get(tripleKey);
+    const {triple} = sToCell(BigInt(s), resolution, orientation);
+    const sourcePent = pentagonOf(pentagonCache, s, resolution, orientation);
     const neighbors = [];
 
-    // Brute force: check all cells using uv anchors for isNeighbor
-    for (let candidateS = 0; candidateS < numCells; candidateS++) {
-      if (candidateS === s) continue;
-      const candidateTriple = sToTriple.get(`${candidateS},${orientation}`);
-      const uvCandidate = uvAnchors.get(candidateTriple);
-      if (uvAnchor && uvCandidate && isNeighbor(uvAnchor, uvCandidate)) {
-        neighbors.push(candidateS);
+    // ±2 triple window around the source cell
+    for (let dx = -2; dx <= 2; dx++) {
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dz = -2; dz <= 2; dz++) {
+          if (dx === 0 && dy === 0 && dz === 0) continue;
+          const candidate = {x: triple.x + dx, y: triple.y + dy, z: triple.z + dz};
+          const sum = candidate.x + candidate.y + candidate.z;
+          if (sum !== 0 && sum !== 1) continue;
+          if (!tripleInBounds(candidate, Math.pow(2, resolution) - 1)) continue;
+          const candidateS = tripleToS(candidate, resolution, orientation);
+          if (candidateS === null || candidateS < 0n || candidateS >= BigInt(numCells)) continue;
+          // tripleToS maps out-of-quintant triples onto some in-quintant cell;
+          // verify the round trip identifies the same cell
+          const back = sToCell(candidateS, resolution, orientation).triple;
+          if (back.x !== candidate.x || back.y !== candidate.y || back.z !== candidate.z) continue;
+          const candPent = pentagonOf(pentagonCache, Number(candidateS), resolution, orientation);
+          if (sharesVertex(sourcePent, candPent, tol)) {
+            neighbors.push(Number(candidateS));
+          }
+        }
       }
     }
 

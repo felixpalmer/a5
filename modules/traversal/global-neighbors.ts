@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {sToAnchor, anchorToTriple, tripleToAnchor, tripleParity} from '../lattice';
+import {sToCell, tripleParity} from '../lattice';
 import type {Origin} from '../core/utils';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {segmentToQuintant, quintantToSegment, origins} from '../core/origin';
@@ -74,7 +74,7 @@ function getRes1Neighbors(origin: Origin, segment: number, edgeOnly: boolean): b
 /**
  * Get all neighbors of a cell across quintant and face boundaries.
  *
- * Within-quintant candidates are validated with `isNeighbor()` in uv space
+ * Within-quintant neighbors come from the fixed per-flavor triple deltas
  * (via `findQuintantNeighborS`). Cross-quintant, cross-face, apex, and
  * corner neighbors are emitted by the shared `forEachBoundaryNeighbor`
  * helper using fixed delta tables — see `lattice-boundary.ts`.
@@ -90,18 +90,14 @@ export function getGlobalCellNeighbors(cellId: bigint, options?: {edgeOnly?: boo
 
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const {quintant: sourceQuintant, orientation: sourceOrientation} = segmentToQuintant(segment, origin);
-  const anchor = sToAnchor(S, hilbertRes, sourceOrientation);
 
   // Triple coordinates are orientation-independent
-  const triple = anchorToTriple(anchor);
-
-  // Get uv anchor for isNeighbor validation (within-quintant)
-  const uvSourceAnchor = tripleToAnchor(triple, hilbertRes, 'uv');
+  const {triple, flavor} = sToCell(S, hilbertRes, sourceOrientation);
 
   const neighborSet = new Set<bigint>();
 
-  // --- Within-quintant: validated by isNeighbor() in uv space ---
-  for (const neighborS of findQuintantNeighborS(triple, uvSourceAnchor, S, hilbertRes, sourceOrientation, edgeOnly)) {
+  // --- Within-quintant: fixed per-flavor triple deltas ---
+  for (const neighborS of findQuintantNeighborS(triple, flavor, S, hilbertRes, sourceOrientation, edgeOnly)) {
     neighborSet.add(serialize({origin, segment, S: neighborS, resolution}));
   }
 

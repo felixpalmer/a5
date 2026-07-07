@@ -72,6 +72,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/lattice/fixtures/lsystem.json"),
         (RS_ROOT, "tests/fixtures/lattice/lsystem.json"),
     ],
+    "tests/fixtures/lattice/curve.json": [
+        (PY_ROOT, "tests/lattice/fixtures/curve.json"),
+        (RS_ROOT, "tests/fixtures/lattice/curve.json"),
+    ],
     "tests/fixtures/lattice/compat.json": [
         (PY_ROOT, "tests/lattice/fixtures/compat.json"),
         (RS_ROOT, "tests/fixtures/lattice/compat.json"),
