@@ -29,8 +29,7 @@
 // (45k comparisons vs the pre-L-system build, zero differences). The compat
 // fixtures (tests/fixtures/lattice/compat.json) pin this behavior.
 
-import type {Orientation} from './types';
-import type {Triple} from './triple';
+import type {Orientation, Triple} from './types';
 import type {IJ} from '../core/coordinate-systems';
 import {compileGrammar, POW2} from './lsystem/tables';
 import type {Cell} from './lsystem';

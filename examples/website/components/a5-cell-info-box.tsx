@@ -15,7 +15,7 @@ export interface A5CellInfoBoxProps {
 /**
  * Displays A5 cell information with color-coded binary representation showing:
  * - Blue: Origin/Segment bits (top 6 bits)
- * - Black: Hilbert curve position (S)
+ * - Black: Space-filling curve position (S)
  * - Pink: Resolution marker
  * - Gray: Trailing zeros
  *
@@ -37,15 +37,15 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
   // First 6 bits encode origin and segment
   const originSegmentBits = 6;
 
-  // Then follow bits to encode the position along the hilbert curve
-  const hilbertBits = 2 * Math.max(0, resolution - 1) + originSegmentBits;
+  // Then follow bits to encode the position along the space-filling curve
+  const curveBits = 2 * Math.max(0, resolution - 1) + originSegmentBits;
 
   // Then two bits to encode the resolution (not shown for resolution -1)
-  const resolutionBits = resolution >= 0 ? 2 + hilbertBits : hilbertBits;
+  const resolutionBits = resolution >= 0 ? 2 + curveBits : curveBits;
 
   const originSegmentSection = binaryCellId.substring(0, originSegmentBits);
-  const hilbertSection = binaryCellId.substring(originSegmentBits, hilbertBits);
-  const resolutionSection = binaryCellId.substring(hilbertBits, resolutionBits);
+  const curveSection = binaryCellId.substring(originSegmentBits, curveBits);
+  const resolutionSection = binaryCellId.substring(curveBits, resolutionBits);
   const zeroSection = binaryCellId.substring(resolutionBits);
 
   const [longitude, latitude] = location;
@@ -66,7 +66,7 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
       >
         <div>
           Cell ID (binary): <span style={{fontWeight: 'bold', color: '#0066FF'}}>{originSegmentSection}</span>
-          <span style={{fontWeight: 'bold', color: '#000000'}}>{hilbertSection}</span>
+          <span style={{fontWeight: 'bold', color: '#000000'}}>{curveSection}</span>
           <span style={{fontWeight: 'bold', color: '#FF0066'}}>{resolutionSection}</span>
           <span style={{fontWeight: 'bold', color: '#999999'}}>{zeroSection}</span>
         </div>

@@ -29,23 +29,10 @@ export {
 export {getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPolar} from './core/tiling';
 export {NEIGHBOR_DELTAS} from './traversal/neighbors';
 
-// Export Hilbert functions for testing
-export {
-  sToAnchor,
-  anchorToS,
-  IJToKJ,
-  IJToS,
-  computeQ,
-  offsetFlipsToAnchor,
-  shiftDigits,
-  IJToQuaternary,
-  quaternaryToKJ,
-  quaternaryToFlips
-} from './lattice';
-export {tripleParity, tripleInBounds, tripleToS, anchorToTriple, tripleToAnchor} from './lattice';
-export {sToCell, sToTriple} from './lattice';
+// Export curve / lattice functions for testing
+export {IJToS, sToCell, sToTriple, tripleParity, tripleInBounds, tripleToS} from './lattice';
 export {compatSToCell, compatSToTriple, compatTripleToS, compatIJToS} from './lattice';
-export type {Anchor, Cell, Triple} from './lattice';
+export type {Cell, Triple} from './lattice';
 
 // The non-self-intersecting L-system curve — the planned future canonical
 // curve (breaking change) — exported explicitly so it stays pinned by fixtures
