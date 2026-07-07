@@ -2,28 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-// The canonical A5 curve is currently the ORIGINAL construction (compat.ts):
-// the two-motif quaternary L-system with the shiftDigits recode on top, so
-// cell IDs remain bit-identical to previous releases. The non-self-intersecting
-// L-system curve (lsystem.ts / curve.ts) powers the machinery underneath and is
-// fully implemented and pinned by fixtures (tests/lattice/lsystem.test.ts);
-// making it canonical is a planned follow-up — a breaking change of all cell
-// IDs that swaps the exports below to lsystem.ts/curve.ts and regenerates the
-// fixtures.
+// The canonical A5 curve is the non-self-intersecting L-system curve
+// (lsystem/ + curve.ts): point -> s via IJToS, and the s <-> cell mappings via
+// sToCell / sToTriple / tripleToS. This is a breaking change from previous
+// releases — cell IDs differ from the original construction. The original curve
+// remains available bit-for-bit via the compat* exports below for migration.
 
 export type {Orientation} from './types';
 
-export {
-  compatSToCell as sToCell,
-  compatSToTriple as sToTriple,
-  compatTripleToS as tripleToS,
-  compatIJToS as IJToS
-} from './compat';
+export {IJToS} from './curve';
+export {sToCell, sToTriple} from './lsystem';
 export type {Cell} from './lsystem';
 
 export type {Triple} from './triple';
-export {tripleParity, tripleInBounds} from './triple';
+export {tripleParity, tripleInBounds, tripleToS} from './triple';
 
-// Also exported under their own names, so the old-curve behavior stays pinned
-// explicitly (tests/lattice/compat.test.ts) across the future canonical swap.
+// The ORIGINAL (pre-L-system) curve, bit-for-bit, for the migration path —
+// same cells, same pentagon flavors, old visiting order (tests/lattice/compat.test.ts).
 export {compatSToCell, compatSToTriple, compatTripleToS, compatIJToS} from './compat';
