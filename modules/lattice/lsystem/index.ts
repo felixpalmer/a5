@@ -35,10 +35,25 @@ import type {Orientation, Triple} from '../types';
 import type {AB} from './turtle';
 import {RULES, DRAWS} from './grammar';
 import type {CurveTables} from './tables';
-import {compileGrammar, POW2, POW4} from './tables';
+import {compileGrammar, POW2, POW4, BSP_EPS} from './tables';
 
 /** The compiled A5 grammar. */
 const A5 = compileGrammar(RULES, DRAWS);
+
+/**
+ * Branchless child pick: 3 separator dot products form a 3-bit pattern that
+ * indexes the per-state lookup table (no data-dependent branches). Used on the
+ * exact path, where the target is strictly interior at every level.
+ */
+function classify(t: CurveTables, state: number, relA: number, relB: number, scale: number): number {
+  const s = t.classSep;
+  const b = state * 9;
+  const thr = -BSP_EPS * scale;
+  const b0 = s[b] * relA + s[b + 1] * relB + s[b + 2] * scale >= thr ? 1 : 0;
+  const b1 = s[b + 3] * relA + s[b + 4] * relB + s[b + 5] * scale >= thr ? 1 : 0;
+  const b2 = s[b + 6] * relA + s[b + 7] * relB + s[b + 8] * scale >= thr ? 1 : 0;
+  return t.classLut[state * 8 + (b0 | (b1 << 1) | (b2 << 2))];
+}
 
 /** A cell as the descent identifies it: its triple + its pentagon flavor. */
 export interface Cell {
@@ -184,25 +199,34 @@ export function axiomTargetToS(
   for (let L = R; L >= 2; L--) {
     const scale = POW2[L - 2];
     const sign = flip ? -scale : scale;
-    let bestD = 0,
-      bestScore = -Infinity;
-    for (let d = 0; d < 4; d++) {
-      const ci = motif * 4 + d;
-      const score = insideScore(
-        t,
-        childToken[ci],
-        flip ^ childFlip[ci],
-        L - 1,
-        posA + childOffA[ci] * sign,
-        posB + childOffB[ci] * sign,
-        ta,
-        tb,
-        bestScore
-      );
-      if (score > bestScore) {
-        bestScore = score;
-        bestD = d;
-        if (score > 0) break; // strictly inside: the unique containing child
+    // Exact targets (real cell corner sums) are strictly interior at every level,
+    // so the branchless classifier is provably the containing child. Fractional
+    // targets can sit on a child boundary (different tie-break), so keep the exact
+    // argmax scan there — and compat's ijToS is pinned bit-for-bit anyway.
+    let bestD: number;
+    if (exact) {
+      bestD = classify(t, motif * 2 + flip, ta - 3 * posA, tb - 3 * posB, scale);
+    } else {
+      bestD = 0;
+      let bestScore = -Infinity;
+      for (let d = 0; d < 4; d++) {
+        const ci = motif * 4 + d;
+        const score = insideScore(
+          t,
+          childToken[ci],
+          flip ^ childFlip[ci],
+          L - 1,
+          posA + childOffA[ci] * sign,
+          posB + childOffB[ci] * sign,
+          ta,
+          tb,
+          bestScore
+        );
+        if (score > bestScore) {
+          bestScore = score;
+          bestD = d;
+          if (score > 0) break; // strictly inside: the unique containing child
+        }
       }
     }
     const ci = motif * 4 + bestD;

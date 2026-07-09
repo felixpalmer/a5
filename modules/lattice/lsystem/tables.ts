@@ -39,6 +39,83 @@ export interface CurveTables {
   leafSum: Float64Array;
   leafTri: Float64Array;
   leafFlavor: Uint8Array;
+  // Branchless child classifier per state k = motif*2+flip: 3 separating lines
+  // (classSep[k*9 ..] = [nx0,ny0,c0, nx1,ny1,c1, nx2,ny2,c2]) evaluated against
+  // the normalised target give a 3-bit pattern; classLut[k*8 + pat] is the child
+  // digit. Replaces the exact-path 4-hull scan with 3 dot products + a LUT read.
+  classSep: Float64Array;
+  classLut: Uint8Array;
+}
+
+type Bsp = {leaf: number} | {nx: number; ny: number; c: number; pos: Bsp; neg: Bsp};
+
+export const BSP_EPS = 1e-6;
+
+/** The 4 child footprint polygons for state (motif, pflip), normalised (scale-invariant). */
+function childPolys(t: CurveTables, motif: number, pflip: number): [number, number[][]][] {
+  const psign = pflip ? -1 : 1;
+  const out: [number, number[][]][] = [];
+  for (let d = 0; d < 4; d++) {
+    const ci = motif * 4 + d;
+    const tok = t.childToken[ci];
+    const cfl = t.childFlip[ci];
+    const oa = t.childOffA[ci];
+    const ob = t.childOffB[ci];
+    const edges = t.fpEdges[tok * 2 + (pflip ^ cfl)];
+    const verts: number[][] = [];
+    for (let e = 0; e < edges.length; e += 4) verts.push([3 * oa * psign + edges[e], 3 * ob * psign + edges[e + 1]]);
+    out.push([d, verts]);
+  }
+  return out;
+}
+
+/** Build a child-selection BSP; children tile convexly, so a polygon edge cleanly splits them. */
+function buildBsp(children: [number, number[][]][]): Bsp {
+  if (children.length === 1) return {leaf: children[0][0]};
+  for (const [, poly] of children) {
+    const n = poly.length;
+    for (let i = 0; i < n; i++) {
+      const [x1, y1] = poly[i];
+      const [x2, y2] = poly[(i + 1) % n];
+      const nx = y2 - y1,
+        ny = -(x2 - x1),
+        c = -(nx * x1 + ny * y1);
+      const pos: [number, number[][]][] = [];
+      const neg: [number, number[][]][] = [];
+      let ok = true;
+      for (const [d, cp] of children) {
+        let mn = Infinity,
+          mx = -Infinity;
+        for (const [x, y] of cp) {
+          const val = nx * x + ny * y + c;
+          if (val < mn) mn = val;
+          if (val > mx) mx = val;
+        }
+        if (mn >= -BSP_EPS) pos.push([d, cp]);
+        else if (mx <= BSP_EPS) neg.push([d, cp]);
+        else {
+          ok = false;
+          break;
+        }
+      }
+      if (ok && pos.length && neg.length) return {nx, ny, c, pos: buildBsp(pos), neg: buildBsp(neg)};
+    }
+  }
+  throw new Error('lsystem: no clean BSP split for child set');
+}
+
+function collectSeps(tree: Bsp, seps: [number, number, number][]): void {
+  if ('leaf' in tree) return;
+  const key: [number, number, number] = [tree.nx, tree.ny, tree.c];
+  if (!seps.some(s => s[0] === key[0] && s[1] === key[1] && s[2] === key[2])) seps.push(key);
+  collectSeps(tree.pos, seps);
+  collectSeps(tree.neg, seps);
+}
+
+function walkBsp(tree: Bsp, p: number, seps: [number, number, number][]): number {
+  if ('leaf' in tree) return tree.leaf;
+  const idx = seps.findIndex(s => s[0] === tree.nx && s[1] === tree.ny && s[2] === tree.c);
+  return walkBsp((p >> idx) & 1 ? tree.pos : tree.neg, p, seps);
 }
 
 // The pentagon FLAVOR (0-3) of the cell a draw symbol hosts: which of the four
@@ -200,7 +277,35 @@ export function compileGrammar(rules: Record<string, string>, draws: Record<stri
     }
   }
 
-  return {motifIdx, childToken, childFlip, childOffA, childOffB, fpEdges, leafSum, leafTri, leafFlavor};
+  const tables: CurveTables = {
+    motifIdx,
+    childToken,
+    childFlip,
+    childOffA,
+    childOffB,
+    fpEdges,
+    leafSum,
+    leafTri,
+    leafFlavor,
+    classSep: new Float64Array(motifCount * 2 * 9),
+    classLut: new Uint8Array(motifCount * 2 * 8)
+  };
+  // ---------- branchless child classifier (3 line tests + LUT per state) ----------
+  for (let m = 0; m < motifCount; m++) {
+    for (let f = 0; f < 2; f++) {
+      const k = m * 2 + f;
+      const tree = buildBsp(childPolys(tables, m, f));
+      const seps: [number, number, number][] = [];
+      collectSeps(tree, seps);
+      for (let i = 0; i < seps.length; i++) {
+        tables.classSep[k * 9 + i * 3] = seps[i][0];
+        tables.classSep[k * 9 + i * 3 + 1] = seps[i][1];
+        tables.classSep[k * 9 + i * 3 + 2] = seps[i][2];
+      }
+      for (let p = 0; p < 8; p++) tables.classLut[k * 8 + p] = walkBsp(tree, p, seps);
+    }
+  }
+  return tables;
 }
 
 // powers of 2 / 4 used by the descents (index by level / digit position)
