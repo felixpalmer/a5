@@ -178,9 +178,7 @@ function insideScore(
 // cells (leaf resolved by exact sum match); fractional targets resolve the leaf
 // by point-in-cell over the 4 level-1 triangles. Internal; also used by compat.ts.
 //
-// Returns [s, leafFlavor]. Callers that only need `s` take [0]; the flavor lets
-// compat resolve the pentagon flavor in this same descent (see a5TripleToFlavor)
-// instead of a second forward descent.
+// Returns [s, leafFlavor]. Callers that only need `s` take [0].
 export function axiomTargetToS(
   t: CurveTables,
   ta: number,
@@ -320,17 +318,6 @@ export function sToCell(s: bigint, resolution: number, orientation: Orientation 
  */
 export function sToTriple(s: bigint, resolution: number, orientation: Orientation = 'uv'): Triple {
   return sToCell(s, resolution, orientation).triple;
-}
-
-/**
- * The pentagon flavor of a cell given its triple, via a single A5 inverse
- * descent (reads the leaf flavor directly). Used by compat.ts, whose forward
- * (W/Z) descent cannot recover the flavor. One descent, versus the
- * `tripleToSLattice` + `sToCell` round-trip it replaces.
- */
-export function a5TripleToFlavor(triple: Triple, resolution: number): number {
-  const ab = tripleToAB(triple);
-  return axiomTargetToS(A5, ab.a, ab.b, resolution, ORIENT.uv.axiom, true)[1];
 }
 
 /**
