@@ -33,7 +33,7 @@ import type {Orientation, Triple} from './types';
 import type {IJ} from '../core/coordinate-systems';
 import {compileGrammar, POW2} from './lsystem/tables';
 import type {Cell} from './lsystem';
-import {axiomLeafCell, axiomTargetToS, abToTriple, tripleToAB, sToCell, tripleToSLattice} from './lsystem';
+import {axiomLeafCell, axiomTargetToS, abToTriple, tripleToAB, a5TripleToFlavor} from './lsystem';
 
 /** The compiled two-motif grammar of the original curve (W/Z gauge). */
 const ORIGINAL = compileGrammar({W: 'W+++Z---WZ', Z: 'Z+++W---ZW'}, {W: 'E', Z: '+e-'});
@@ -145,8 +145,11 @@ const COMPAT_ORIENT: Record<Orientation, CompatRecipe> = {
   wv: {reverse: false, invertJ: true, flipIJ: false}
 };
 
-/** Old-curve position `s` -> cell (triple + pentagon flavor). */
-export function compatSToCell(s: bigint, resolution: number, orientation: Orientation = 'uv'): Cell {
+/**
+ * Old-curve position `s` -> triple coordinate, via the ORIGINAL (W/Z) forward
+ * descent + shiftDigits recode. No flavor (that needs a second, A5, descent).
+ */
+export function compatSToTriple(s: bigint, resolution: number, orientation: Orientation = 'uv'): Triple {
   const N = 1n << BigInt(2 * resolution);
   const rec = COMPAT_ORIENT[orientation];
   const v = rec.reverse ? N - 1n - s : s;
@@ -161,21 +164,17 @@ export function compatSToCell(s: bigint, resolution: number, orientation: Orient
     const n1 = POW2[resolution] - 1;
     triple = {x: triple.y - n1, y: triple.x + n1, z: triple.z};
   }
+  return triple;
+}
+
+/** Old-curve position `s` -> cell (triple + pentagon flavor). */
+export function compatSToCell(s: bigint, resolution: number, orientation: Orientation = 'uv'): Cell {
+  const triple = compatSToTriple(s, resolution, orientation);
   // The X/Y walk hosts every cell via a diagonal (E/e) segment, so its leaf
   // state cannot distinguish all four pentagon flavors — that missing bit is
   // exactly why the original engine carried its fractal flips field. The
   // flavor is a per-cell geometric property, so read it off the A5 descent.
-  return {triple, flavor: cellFlavor(triple, resolution)};
-}
-
-/** The pentagon flavor of a cell — orientation-independent, via the A5 descent. */
-function cellFlavor(triple: Triple, resolution: number): number {
-  return sToCell(tripleToSLattice(triple, resolution, 'uv'), resolution, 'uv').flavor;
-}
-
-/** Old-curve position `s` -> triple coordinate. */
-export function compatSToTriple(s: bigint, resolution: number, orientation: Orientation = 'uv'): Triple {
-  return compatSToCell(s, resolution, orientation).triple;
+  return {triple, flavor: a5TripleToFlavor(triple, resolution)};
 }
 
 /** Triple -> old-curve position `s`, or null if the triple has invalid parity. */
@@ -193,7 +192,7 @@ export function compatTripleToS(t: Triple, resolution: number, orientation: Orie
     raw = {x: raw.z, y: raw.y, z: raw.x};
   }
   const ab = tripleToAB(raw);
-  const sGeo = axiomTargetToS(ORIGINAL, ab.a, ab.b, resolution, AXIOM_W, true);
+  const sGeo = axiomTargetToS(ORIGINAL, ab.a, ab.b, resolution, AXIOM_W, true)[0];
   const digits = digitsOf(sGeo, resolution);
   inverseShift(digits, rec.invertJ, rec.flipIJ);
   const v = packDigits(digits);
@@ -214,7 +213,7 @@ export function compatIJToS(ij: IJ, resolution: number, orientation: Orientation
   if (rec.invertJ) {
     j = POW2[resolution] - (i + j);
   }
-  const sGeo = axiomTargetToS(ORIGINAL, 12 * (i + j), -12 * j, resolution, AXIOM_W, false);
+  const sGeo = axiomTargetToS(ORIGINAL, 12 * (i + j), -12 * j, resolution, AXIOM_W, false)[0];
   const digits = digitsOf(sGeo, resolution);
   inverseShift(digits, rec.invertJ, rec.flipIJ);
   const v = packDigits(digits);
