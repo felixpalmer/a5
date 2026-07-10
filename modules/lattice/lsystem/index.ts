@@ -199,8 +199,9 @@ export function axiomTargetToS(
     const sign = flip ? -scale : scale;
     // Exact targets (real cell corner sums) are strictly interior at every level,
     // so the branchless classifier is provably the containing child. Fractional
-    // targets can sit on a child boundary (different tie-break), so keep the exact
-    // argmax scan there — and compat's ijToS is pinned bit-for-bit anyway.
+    // targets can sit on a child boundary, where the classifier's tie-break can
+    // differ from the argmax, so keep the exact argmax scan for that path
+    // (only sumPointToS uses it — compat locates points via the old sign tests).
     let bestD: number;
     if (exact) {
       bestD = classify(t, motif * 2 + flip, ta - 3 * posA, tb - 3 * posB, scale);
