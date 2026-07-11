@@ -7,8 +7,10 @@ import {PolygonLayer} from '@deck.gl/layers';
 import {Color} from '@deck.gl/core';
 import {cellToBoundary} from 'a5';
 
-// Loaded at runtime from the CDN, which also serves the WASM binary and worker
-const DUCKDB_BUNDLE = 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/+esm';
+// Loaded at runtime from the CDN, which also serves the WASM binary and worker.
+// 1.33.x runs DuckDB v1.5, required for the a5 extension's traversal functions
+// (a5_spherical_cap, a5_grid_disk) — the v1.4.x extension builds predate them
+const DUCKDB_BUNDLE = 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev57.0/+esm';
 
 type DuckDBConnection = {
   query: (sql: string) => Promise<any>;
@@ -41,6 +43,31 @@ const PRESETS: {label: string; query: string}[] = [
 FROM population
 GROUP BY 1
 HAVING SUM(population) > 1000000`
+  },
+  {
+    label: 'City buffers',
+    query: `WITH cities(name, lon, lat) AS (
+  VALUES ('London', -0.1276, 51.5074),
+         ('New York', -74.006, 40.7128),
+         ('Tokyo', 139.6917, 35.6895),
+         ('São Paulo', -46.6333, -23.5505),
+         ('Lagos', 3.3792, 6.5244),
+         ('Delhi', 77.209, 28.6139)
+)
+-- All cells within 50km of a city
+SELECT cell, population
+FROM population
+WHERE cell IN (
+  SELECT unnest(a5_uncompact(
+    a5_spherical_cap(a5_lonlat_to_cell(lon, lat, 9), 50000.0), 9))
+  FROM cities
+)`
+  },
+  {
+    label: 'Uninhabited',
+    query: `SELECT cell, population
+FROM population
+WHERE population < 100`
   }
 ];
 
