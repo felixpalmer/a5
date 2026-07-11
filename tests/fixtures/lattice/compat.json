@@ -1676,7 +1676,7 @@
       "j": 2,
       "resolution": 3,
       "orientation": "uv",
-      "s": 50
+      "s": 54
     },
     {
       "i": 0.8,
@@ -1732,7 +1732,7 @@
       "j": 2,
       "resolution": 3,
       "orientation": "vu",
-      "s": 13
+      "s": 9
     },
     {
       "i": 0.8,
@@ -2012,7 +2012,7 @@
       "j": 8,
       "resolution": 5,
       "orientation": "uv",
-      "s": 811
+      "s": 873
     },
     {
       "i": 3.2,
@@ -2068,7 +2068,7 @@
       "j": 8,
       "resolution": 5,
       "orientation": "vu",
-      "s": 212
+      "s": 150
     },
     {
       "i": 3.2,
@@ -2348,7 +2348,7 @@
       "j": 32,
       "resolution": 7,
       "orientation": "uv",
-      "s": 12985
+      "s": 13979
     },
     {
       "i": 12.8,
@@ -2404,7 +2404,7 @@
       "j": 32,
       "resolution": 7,
       "orientation": "vu",
-      "s": 3398
+      "s": 2404
     },
     {
       "i": 12.8,

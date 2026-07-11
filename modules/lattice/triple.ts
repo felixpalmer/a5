@@ -21,7 +21,9 @@ export function tripleInBounds(t: Triple, maxRow: number): boolean {
 }
 
 /**
- * Convert triple coordinates to an s-value (curve index).
+ * Convert triple coordinates to an s-value on the A5 (L-system) curve.
+ * The engine's `lattice.tripleToS` is currently the compat alias; this is the
+ * pure-curve form it swaps to at the canonical cutover.
  *
  * @returns s-value, or null if the triple has invalid parity
  */
