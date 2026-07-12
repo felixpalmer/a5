@@ -112,6 +112,10 @@ WHERE elevation > 2500`
   }
 ];
 
+// Above this, converting cells to boundaries and tessellating them can freeze
+// the page for a long time, so ask before rendering (the query itself is fast)
+const RENDER_WARNING_CELLS = 200_000;
+
 type CellRow = {cell: bigint; value: number};
 // `population` values are colored on a log scale, generic `value` columns linearly
 type ValueField = 'population' | 'value' | null;
@@ -146,6 +150,65 @@ function toNumber(value: unknown): number {
   if (typeof value === 'bigint') return Number(value);
   return Number(String(value));
 }
+
+// Minimal SQL syntax highlighting (GitHub-light palette). A hand-rolled
+// tokenizer keeps the example dependency-free.
+const SQL_KEYWORDS = new Set(
+  `select from where group order by having join using in as with values and or not
+   limit union all on case when then else end distinct create table between like is null`.split(/\s+/)
+);
+const SQL_TOKEN = /--[^\n]*|'(?:[^']|'')*'|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b/g;
+
+function highlightSQL(sql: string): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  SQL_TOKEN.lastIndex = 0;
+  while ((match = SQL_TOKEN.exec(sql))) {
+    if (match.index > last) out.push(sql.slice(last, match.index));
+    const token = match[0];
+    let color: string | undefined;
+    let fontStyle: string | undefined;
+    if (token.startsWith('--')) {
+      color = '#6e7781';
+      fontStyle = 'italic';
+    } else if (token.startsWith("'")) {
+      color = '#0a3069';
+    } else if (/^\d/.test(token)) {
+      color = '#0550ae';
+    } else if (SQL_KEYWORDS.has(token.toLowerCase())) {
+      color = '#cf222e';
+    } else if (token.toLowerCase().startsWith('a5_')) {
+      color = '#00875f';
+    } else if (/^(sum|avg|min|max|count|round|unnest|list|len)$/i.test(token)) {
+      color = '#8250df';
+    }
+    out.push(
+      color ? (
+        <span key={out.length} style={{color, fontStyle}}>
+          {token}
+        </span>
+      ) : (
+        token
+      )
+    );
+    last = match.index + token.length;
+  }
+  if (last < sql.length) out.push(sql.slice(last));
+  return out;
+}
+
+// Shared by the highlight layer and the textarea so they overlay exactly
+const EDITOR_FONT: React.CSSProperties = {
+  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  fontSize: '13px',
+  lineHeight: '1.5',
+  padding: '10px',
+  margin: 0,
+  border: 'none',
+  whiteSpace: 'pre',
+  boxSizing: 'border-box'
+};
 
 async function initDuckDB(): Promise<DuckDBConnection> {
   const duckdb = await import(/* webpackIgnore: true */ DUCKDB_BUNDLE);
@@ -186,43 +249,62 @@ const App: React.FC = () => {
   const [query, setQuery] = useState<string>(DEFAULT_QUERY);
   const [running, setRunning] = useState<boolean>(false);
   const [result, setResult] = useState<QueryResult | null>(null);
+  // Query result held back from rendering until the user confirms
+  const [pending, setPending] = useState<{table: any; elapsedMs: number} | null>(null);
+  const highlightRef = useRef<HTMLPreElement | null>(null);
 
-  const runQuery = useCallback(async (sql: string) => {
-    const connection = connectionRef.current;
-    if (!connection) return;
-    setRunning(true);
-    setError(null);
-    try {
-      const start = performance.now();
-      const table = await connection.query(sql);
-      const elapsedMs = performance.now() - start;
+  const displayTable = useCallback((table: any, elapsedMs: number) => {
+    const field: ValueField = table.schema.fields.some(f => f.name === 'population')
+      ? 'population'
+      : table.schema.fields.some(f => f.name === 'value')
+        ? 'value'
+        : null;
 
-      if (!table.schema.fields.some(f => f.name === 'cell')) {
-        throw new Error(`Query must return a 'cell' column`);
-      }
-      const field: ValueField = table.schema.fields.some(f => f.name === 'population')
-        ? 'population'
-        : table.schema.fields.some(f => f.name === 'value')
-          ? 'value'
-          : null;
-
-      const rows: CellRow[] = [];
-      let minValue = Infinity;
-      let maxValue = -Infinity;
-      for (const row of table) {
-        const value = field ? toNumber(row[field]) : 1;
-        if (value < minValue) minValue = value;
-        if (value > maxValue) maxValue = value;
-        rows.push({cell: BigInt(row.cell), value});
-      }
-      setResult({rows, minValue, maxValue, field, elapsedMs});
-      setStatus(`${rows.length.toLocaleString()} cells · ${Math.round(elapsedMs)}ms`);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setRunning(false);
+    const rows: CellRow[] = [];
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    for (const row of table) {
+      const value = field ? toNumber(row[field]) : 1;
+      if (value < minValue) minValue = value;
+      if (value > maxValue) maxValue = value;
+      rows.push({cell: BigInt(row.cell), value});
     }
+    setResult({rows, minValue, maxValue, field, elapsedMs});
+    setStatus(`${rows.length.toLocaleString()} cells · ${Math.round(elapsedMs)}ms`);
   }, []);
+
+  const runQuery = useCallback(
+    async (sql: string) => {
+      const connection = connectionRef.current;
+      if (!connection) return;
+      setRunning(true);
+      setError(null);
+      setPending(null);
+      try {
+        const start = performance.now();
+        const table = await connection.query(sql);
+        const elapsedMs = performance.now() - start;
+
+        if (!table.schema.fields.some(f => f.name === 'cell')) {
+          throw new Error(`Query must return a 'cell' column`);
+        }
+        if (table.numRows > RENDER_WARNING_CELLS) {
+          setPending({table, elapsedMs});
+          setStatus(
+            `Query returned ${table.numRows.toLocaleString()} cells in ${Math.round(elapsedMs)}ms — ` +
+              `rendering this many may freeze the page for a while`
+          );
+          return;
+        }
+        displayTable(table, elapsedMs);
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setRunning(false);
+      }
+    },
+    [displayTable]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -306,36 +388,64 @@ const App: React.FC = () => {
           top: '20px',
           left: '20px',
           zIndex: 1,
-          width: '380px',
+          width: '440px',
           maxWidth: 'calc(100% - 40px)',
-          background: 'rgba(20, 20, 30, 0.9)',
+          background: 'rgba(255, 255, 255, 0.96)',
           borderRadius: '8px',
           padding: '12px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-          color: '#eee',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+          color: '#222',
           fontFamily: 'sans-serif',
           fontSize: '13px'
         }}
       >
-        <textarea
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={onKeyDown}
-          spellCheck={false}
-          rows={6}
+        <div
           style={{
-            width: '100%',
-            boxSizing: 'border-box',
-            background: '#111',
-            color: '#8f8',
-            border: '1px solid #333',
-            borderRadius: '4px',
-            padding: '8px',
-            fontFamily: 'monospace',
-            fontSize: '12px',
-            resize: 'vertical'
+            position: 'relative',
+            height: '230px',
+            resize: 'vertical',
+            overflow: 'hidden',
+            minHeight: '100px',
+            background: '#f6f8fa',
+            border: '1px solid #d0d7de',
+            borderRadius: '4px'
           }}
-        />
+        >
+          <pre
+            ref={highlightRef}
+            aria-hidden
+            style={{...EDITOR_FONT, position: 'absolute', inset: 0, overflow: 'hidden', color: '#1f2328'}}
+          >
+            {highlightSQL(query)}
+            {'\n'}
+          </pre>
+          <textarea
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={onKeyDown}
+            onScroll={e => {
+              const pre = highlightRef.current;
+              if (pre) {
+                pre.scrollTop = e.currentTarget.scrollTop;
+                pre.scrollLeft = e.currentTarget.scrollLeft;
+              }
+            }}
+            spellCheck={false}
+            wrap="off"
+            style={{
+              ...EDITOR_FONT,
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              background: 'transparent',
+              color: 'transparent',
+              caretColor: '#1f2328',
+              resize: 'none',
+              outline: 'none'
+            }}
+          />
+        </div>
         <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px'}}>
           <button
             onClick={() => runQuery(query)}
@@ -361,9 +471,9 @@ const App: React.FC = () => {
               }}
               disabled={running || !connectionRef.current}
               style={{
-                background: '#333',
-                color: '#eee',
-                border: '1px solid #555',
+                background: 'white',
+                color: '#333',
+                border: '1px solid #d0d7de',
                 borderRadius: '4px',
                 padding: '6px 8px',
                 cursor: 'pointer'
@@ -373,7 +483,46 @@ const App: React.FC = () => {
             </button>
           ))}
         </div>
-        <div style={{marginTop: '8px', minHeight: '16px', color: error ? '#f66' : '#aaa'}}>{error ?? status}</div>
+        <div style={{marginTop: '8px', minHeight: '16px', color: error ? '#c00' : pending ? '#9a6700' : '#666'}}>
+          {error ?? status}
+        </div>
+        {pending && (
+          <div style={{display: 'flex', gap: '6px', marginTop: '8px'}}>
+            <button
+              onClick={() => {
+                displayTable(pending.table, pending.elapsedMs);
+                setPending(null);
+              }}
+              style={{
+                background: '#bf8700',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '6px 14px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              Render anyway
+            </button>
+            <button
+              onClick={() => {
+                setPending(null);
+                setStatus(`Rendering cancelled — add an aggregation (e.g. a5_cell_to_parent) to reduce the cell count`);
+              }}
+              style={{
+                background: 'white',
+                color: '#333',
+                border: '1px solid #d0d7de',
+                borderRadius: '4px',
+                padding: '6px 14px',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
