@@ -67,7 +67,7 @@ yarn bench hilbert     # Run benchmarks for a single file, here `hilbert.bench.t
 - Use `getResolution()` to check the resolution of cells in existing data files
 - Example resolution levels:
   - Road safety example: resolution 13 (~50k cells for UK dataset)
-  - World population example: resolution 9 base data (~700k cells globally), re-aggregated live with `a5_cell_to_parent`
+  - DuckDB Playground example (formerly World Population): resolution 9 base data (~700k population cells, ~1.1M elevation/temperature cells globally), re-aggregated live with `a5_cell_to_parent`
 - New npm packages installed into `website/` do NOT resolve until the user restarts the dev server (webpack caches node_modules). For browser-only libraries used by one example (e.g. DuckDB WASM), prefer a runtime CDN import: `await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/...')`
 - Adding/deleting example `.mdx` pages may not be picked up by a long-running dev server (stale watcher). If the "Compiled with problems" overlay references deleted files, hand-edit the generated `.docusaurus` artifacts (`registry.js`, `routes.js`, `routesChunkNames.json`, `globalData.json`, `docusaurus-plugin-content-docs/*/p/*.json`) — a server restart regenerates them from source, so these edits are safe and temporary
 
