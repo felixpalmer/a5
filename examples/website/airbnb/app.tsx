@@ -3,12 +3,12 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
-import {ScatterplotLayer, PolygonLayer, TextLayer} from '@deck.gl/layers';
+import {ScatterplotLayer, TextLayer} from '@deck.gl/layers';
 import {HeatmapLayer} from '@deck.gl/aggregation-layers';
 import {Color, Position} from '@deck.gl/core';
 import {colorContinuous} from '@deck.gl/carto';
-import {cellToBoundary, lonLatToCell} from 'a5';
-import {H3HexagonLayer} from '@deck.gl/geo-layers';
+import {lonLatToCell} from 'a5';
+import {A5Layer, H3HexagonLayer} from '@deck.gl/geo-layers';
 import {cellToBoundary as h3CellToBoundary, latLngToCell} from 'h3-js';
 
 const ATHENS_DATA = '/data/malta.json';
@@ -143,10 +143,10 @@ const MapView: React.FC<{
   // Create cell layer based on tiling system
   const cellLayer =
     tilingSystem === 'a5'
-      ? new PolygonLayer<A5CellWithCount>({
+      ? new A5Layer<A5CellWithCount>({
           id: 'airbnb-cells',
           data: aggregatedData.a5.cells,
-          getPolygon: d => cellToBoundary(d.id),
+          getPentagon: d => d.id,
           ...cellProps,
           ...commonProps
         })

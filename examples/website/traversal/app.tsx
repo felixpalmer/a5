@@ -3,8 +3,8 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as MapGL, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
-import {PolygonLayer} from '@deck.gl/layers';
-import {lonLatToCell, cellToBoundary, cellToLonLat} from 'a5/core/cell';
+import {A5Layer} from '@deck.gl/geo-layers';
+import {lonLatToCell, cellToLonLat} from 'a5/core/cell';
 import {getResolution} from 'a5/core/serialization';
 import {getGlobalCellNeighbors} from 'a5/traversal/global-neighbors';
 import {gridDisk, gridDiskVertex} from 'a5/traversal/grid-disk';
@@ -105,19 +105,13 @@ function resolutionColor(res: number, minRes: number, maxRes: number): [number, 
 
 type OverlayCell = {
   id: bigint;
-  boundary: LonLat[];
   ring: number;
 };
 
 type CompactCell = {
   id: bigint;
-  boundary: LonLat[];
   resolution: number;
 };
-
-function cellBoundary(id: bigint): LonLat[] {
-  return cellToBoundary(id, {closedRing: true, segments: 1}) as LonLat[];
-}
 
 /** Derive A5 resolution from map zoom level */
 function zoomToResolution(zoom: number): number {
@@ -195,7 +189,6 @@ const App: React.FC = () => {
           : gridDiskVertex(selectedId, k);
     return Array.from(cells).map(id => ({
       id,
-      boundary: cellBoundary(id),
       resolution: getResolution(id)
     }));
   }, [selectedId, mode, k, radiusM, edgeOnly, doUncompact]);
@@ -208,9 +201,9 @@ const App: React.FC = () => {
 
   const overlayData = useMemo((): OverlayCell[] => {
     const result: OverlayCell[] = [];
-    result.push({id: selectedId, boundary: cellBoundary(selectedId), ring: 0});
+    result.push({id: selectedId, ring: 0});
     for (const [id, ring] of ringData) {
-      result.push({id, boundary: cellBoundary(id), ring});
+      result.push({id, ring});
     }
     return result;
   }, [selectedId, ringData]);
@@ -228,10 +221,10 @@ const App: React.FC = () => {
 
   const layers = useMemo(
     () => [
-      new PolygonLayer<OverlayCell>({
+      new A5Layer<OverlayCell>({
         id: 'gridDisk-overlay',
         data: overlayData,
-        getPolygon: d => d.boundary,
+        getPentagon: d => d.id,
         getFillColor: d => (d.ring === 0 ? SELECTED_COLOR : ringColor(d.ring, maxRing)),
         getLineColor: [255, 255, 255, 120],
         getLineWidth: 1,
@@ -242,10 +235,10 @@ const App: React.FC = () => {
         beforeId: 'watername_ocean',
         parameters: {cullMode: 'back', depthCompare: 'always'}
       }),
-      new PolygonLayer<CompactCell>({
+      new A5Layer<CompactCell>({
         id: 'compact-overlay',
         data: compactData,
-        getPolygon: d => d.boundary,
+        getPentagon: d => d.id,
         getFillColor: d =>
           d.id === selectedId ? SELECTED_COLOR : resolutionColor(d.resolution, minCompactRes, maxCompactRes),
         getLineColor: [255, 255, 255, 150],

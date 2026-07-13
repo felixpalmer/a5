@@ -3,8 +3,7 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
-import {PolygonLayer} from '@deck.gl/layers';
-import {cellToBoundary} from 'a5';
+import {A5Layer} from '@deck.gl/geo-layers';
 import {Color} from '@deck.gl/core';
 import {HyparquetLoader} from '../shared/hyparquet-loader';
 
@@ -16,11 +15,11 @@ type A5CellWithCount = {a5: bigint; count: number};
 
 const App: React.FC = () => {
   // Create layer with custom Parquet loader
-  const cellLayer = new PolygonLayer<A5CellWithCount>({
+  const cellLayer = new A5Layer<A5CellWithCount>({
     data: RESTAURANTS_DATA,
     id: 'cell-polygon',
     loaders: [HyparquetLoader],
-    getPolygon: (d: A5CellWithCount) => cellToBoundary(d.a5),
+    getPentagon: (d: A5CellWithCount) => d.a5,
     getFillColor: (d: A5CellWithCount) => {
       const value = Math.min(d.count / MAX_COUNT, 1);
 

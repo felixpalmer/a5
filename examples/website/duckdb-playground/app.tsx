@@ -3,9 +3,9 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
-import {PolygonLayer} from '@deck.gl/layers';
+import {A5Layer} from '@deck.gl/geo-layers';
 import {Color} from '@deck.gl/core';
-import {cellToBoundary, cellToLonLat} from 'a5';
+import {cellToLonLat} from 'a5';
 import type {MapRef} from 'react-map-gl/maplibre';
 
 // Loaded at runtime from the CDN, which also serves the WASM binary and worker.
@@ -424,10 +424,10 @@ const App: React.FC = () => {
   const paletteName: PaletteName = palette === 'Auto' ? (result?.autoPalette ?? 'Magma') : palette;
   const ramp = PALETTES[paletteName];
 
-  const cellLayer = new PolygonLayer<CellRow>({
+  const cellLayer = new A5Layer<CellRow>({
     id: 'query-cells',
     data: result?.rows ?? [],
-    getPolygon: d => cellToBoundary(d.cell),
+    getPentagon: d => d.cell,
     getFillColor: d => (result ? valueToColor(d.value, result, ramp) : [0, 0, 0, 0]),
     stroked: false,
     pickable: true,
