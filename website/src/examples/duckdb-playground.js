@@ -25,7 +25,8 @@ class DuckDBPlaygroundDemo extends Component {
         <p>
           Data: <a href="https://data.humdata.org/dataset/kontur-population-dataset-3km">Kontur Population</a> (CC BY
           4.0), <a href="https://www.ncei.noaa.gov/products/etopo-global-relief-model">ETOPO 2022</a> (public domain),{' '}
-          <a href="https://worldclim.org/data/worldclim21.html">WorldClim 2.1</a>
+          <a href="https://worldclim.org/data/worldclim21.html">WorldClim 2.1</a>,{' '}
+          <a href="https://www.naturalearthdata.com/">Natural Earth</a> (public domain)
         </p>
       </div>
     );
