@@ -16,8 +16,8 @@ class DuckDBPlaygroundDemo extends Component {
       <div>
         <p>Query global datasets indexed with A5 cells, live in your browser.</p>
         <p>
-          Queries run using <a href="https://duckdb.org/docs/stable/clients/wasm/overview.html">DuckDB WASM</a> with
-          the <a href="https://duckdb.org/community_extensions/extensions/a5">A5 community extension</a>.
+          Queries run using <a href="https://duckdb.org/docs/stable/clients/wasm/overview.html">DuckDB WASM</a> with the{' '}
+          <a href="https://duckdb.org/community_extensions/extensions/a5">A5 community extension</a>.
         </p>
         <p>
           Data: <a href="https://www.ncei.noaa.gov/products/etopo-global-relief-model">ETOPO 2022</a> (public domain),{' '}
