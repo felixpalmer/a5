@@ -545,23 +545,6 @@ const App: React.FC = () => {
             }}
           />
         </div>
-        <div style={{display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', marginTop: '8px', color: '#666'}}>
-          Tables:
-          {Object.keys(DATASETS).map(table => (
-            <code
-              key={table}
-              style={{
-                background: '#f6f8fa',
-                border: '1px solid #d0d7de',
-                borderRadius: '4px',
-                padding: '1px 5px',
-                color: '#1f2328'
-              }}
-            >
-              {table}
-            </code>
-          ))}
-        </div>
         <div style={{display: 'flex', gap: '6px', marginTop: '8px'}}>
           <button
             onClick={() => runQuery(query)}
@@ -600,7 +583,8 @@ const App: React.FC = () => {
             ))}
           </select>
         </div>
-        <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px'}}>
+        <div style={{marginTop: '8px', color: '#666'}}>Sample queries:</div>
+        <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px'}}>
           {PRESETS.map(preset => (
             <button
               key={preset.label}
@@ -620,6 +604,33 @@ const App: React.FC = () => {
             >
               {preset.label}
             </button>
+          ))}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: '4px',
+            whiteSpace: 'nowrap',
+            marginTop: '8px',
+            color: '#666'
+          }}
+        >
+          Tables:
+          {Object.keys(DATASETS).map(table => (
+            <code
+              key={table}
+              style={{
+                background: '#f6f8fa',
+                border: '1px solid #d0d7de',
+                borderRadius: '4px',
+                padding: '1px 4px',
+                fontSize: '11px',
+                color: '#1f2328'
+              }}
+            >
+              {table}
+            </code>
           ))}
         </div>
         <div style={{marginTop: '8px', minHeight: '16px', color: error ? '#c00' : pending ? '#9a6700' : '#666'}}>

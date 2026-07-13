@@ -17,16 +17,13 @@ class DuckDBPlaygroundDemo extends Component {
         <p>Query global datasets indexed with A5 cells, live in your browser.</p>
         <p>
           Queries run using <a href="https://duckdb.org/docs/stable/clients/wasm/overview.html">DuckDB WASM</a> with
-          the <a href="https://duckdb.org/community_extensions/extensions/a5">A5 community extension</a>. Edit the SQL
-          to re-aggregate the cells to a different resolution, filter to the most densely populated areas, or select a
-          country by name. The <code>population</code>, <code>elevation</code> and <code>temperature</code> tables
-          share the same resolution-9 cells, so they can be joined directly on the cell ID.
+          the <a href="https://duckdb.org/community_extensions/extensions/a5">A5 community extension</a>.
         </p>
         <p>
-          Data: <a href="https://data.humdata.org/dataset/kontur-population-dataset-3km">Kontur Population</a> (CC BY
-          4.0), <a href="https://www.ncei.noaa.gov/products/etopo-global-relief-model">ETOPO 2022</a> (public domain),{' '}
-          <a href="https://worldclim.org/data/worldclim21.html">WorldClim 2.1</a>,{' '}
-          <a href="https://www.naturalearthdata.com/">Natural Earth</a> (public domain)
+          Data: <a href="https://www.ncei.noaa.gov/products/etopo-global-relief-model">ETOPO 2022</a> (public domain),{' '}
+          <a href="https://data.humdata.org/dataset/kontur-population-dataset-3km">Kontur Population</a> (CC BY 4.0),{' '}
+          <a href="https://www.naturalearthdata.com/">Natural Earth</a> (public domain),{' '}
+          <a href="https://worldclim.org/data/worldclim21.html">WorldClim 2.1</a>
         </p>
       </div>
     );
