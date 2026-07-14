@@ -3,8 +3,8 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl, ViewStateChangeEvent} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
-import {PolygonLayer, ScatterplotLayer, ArcLayer} from '@deck.gl/layers';
-import {cellToBoundary} from 'a5/core/cell';
+import {ScatterplotLayer, ArcLayer} from '@deck.gl/layers';
+import {A5Layer} from '@deck.gl/geo-layers';
 import {lineStringToCells} from 'a5/traversal/line';
 import {polygonToCells} from 'a5/regions/polygon';
 import {uncompact} from 'a5/core/compact';
@@ -28,10 +28,6 @@ type CountryEntry = {
 /** Derive A5 resolution from map zoom level */
 function zoomToResolution(zoom: number): number {
   return Math.max(0, Math.min(28, Math.round(zoom * 1.1)));
-}
-
-function cellBoundary(id: bigint): LonLat[] {
-  return cellToBoundary(id, {closedRing: true, segments: 1}) as LonLat[];
 }
 
 /** Compute the centroid and appropriate zoom for a multipolygon's outer rings */
@@ -66,11 +62,6 @@ interface DeckGLOverlayProps {
   interleaved?: boolean;
   onClick?: (info: any, event: any) => void;
 }
-
-type CellData = {
-  id: bigint;
-  boundary: LonLat[];
-};
 
 type WaypointData = {
   position: [number, number];
@@ -221,11 +212,10 @@ const App: React.FC = () => {
     return merged;
   }, [activePolygons, resolution, outlineOnly]);
 
-  const tracedCells = useMemo((): CellData[] => {
+  const tracedCells = useMemo((): bigint[] => {
     if (!isPolygon) {
       if (waypoints.length !== 2) return [];
-      const cells = lineStringToCells(waypoints, resolution);
-      return cells.map(id => ({id, boundary: cellBoundary(id)}));
+      return Array.from(lineStringToCells(waypoints, resolution));
     }
     if (outlineOnly) {
       const seen = new Set<bigint>();
@@ -241,11 +231,10 @@ const App: React.FC = () => {
           }
         }
       }
-      return cells.map(id => ({id, boundary: cellBoundary(id)}));
+      return cells;
     }
     if (!compactedCells) return [];
-    const cells = showCompacted ? compactedCells : uncompact(compactedCells, resolution);
-    return Array.from(cells).map(id => ({id, boundary: cellBoundary(id)}));
+    return Array.from(showCompacted ? compactedCells : uncompact(compactedCells, resolution));
   }, [waypoints, resolution, isPolygon, activePolygons, outlineOnly, showCompacted, compactedCells]);
 
   const uncompactedCount = useMemo(() => {
@@ -298,10 +287,10 @@ const App: React.FC = () => {
 
   const layers = useMemo(
     () => [
-      new PolygonLayer<CellData>({
+      new A5Layer<bigint>({
         id: 'traced-cells',
         data: tracedCells,
-        getPolygon: d => d.boundary,
+        getPentagon: d => d,
         getFillColor: [0, 200, 100, 120],
         getLineColor: [255, 255, 255, 180],
         getLineWidth: 1,

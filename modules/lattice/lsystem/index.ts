@@ -35,10 +35,25 @@ import type {Orientation, Triple} from '../types';
 import type {AB} from './turtle';
 import {RULES, DRAWS} from './grammar';
 import type {CurveTables} from './tables';
-import {compileGrammar, POW2, POW4} from './tables';
+import {compileGrammar, POW2, POW4, BSP_EPS} from './tables';
 
 /** The compiled A5 grammar. */
 const A5 = compileGrammar(RULES, DRAWS);
+
+/**
+ * Branchless child pick: 3 separator dot products form a 3-bit pattern that
+ * indexes the per-state lookup table (no data-dependent branches). Used on the
+ * exact path, where the target is strictly interior at every level.
+ */
+function classify(t: CurveTables, state: number, relA: number, relB: number, scale: number): number {
+  const s = t.classSep;
+  const b = state * 9;
+  const thr = -BSP_EPS * scale;
+  const b0 = s[b] * relA + s[b + 1] * relB + s[b + 2] * scale >= thr ? 1 : 0;
+  const b1 = s[b + 3] * relA + s[b + 4] * relB + s[b + 5] * scale >= thr ? 1 : 0;
+  const b2 = s[b + 6] * relA + s[b + 7] * relB + s[b + 8] * scale >= thr ? 1 : 0;
+  return t.classLut[state * 8 + (b0 | (b1 << 1) | (b2 << 2))];
+}
 
 /** A cell as the descent identifies it: its triple + its pentagon flavor. */
 export interface Cell {
@@ -143,10 +158,13 @@ function insideScore(
 ): number {
   const scale = POW2[lvl - 1];
   const edges = t.fpEdges[motif * 2 + flip];
+  // posA/posB are fixed across this hull; fold 3*pos into the target once.
+  const ra = ta - 3 * posA;
+  const rb = tb - 3 * posB;
   let minCross = Infinity;
   for (let e = 0; e < edges.length; e += 4) {
-    const dta = ta - (3 * posA + edges[e] * scale);
-    const dtb = tb - (3 * posB + edges[e + 1] * scale);
+    const dta = ra - edges[e] * scale;
+    const dtb = rb - edges[e + 1] * scale;
     const cross = edges[e + 2] * dtb - edges[e + 3] * dta;
     if (cross < minCross) {
       minCross = cross;
@@ -159,6 +177,8 @@ function insideScore(
 // Shared descent for both leaf modes. `exact` targets are corner sums of real
 // cells (leaf resolved by exact sum match); fractional targets resolve the leaf
 // by point-in-cell over the 4 level-1 triangles. Internal; also used by compat.ts.
+//
+// Returns [s, leafFlavor]. Callers that only need `s` take [0].
 export function axiomTargetToS(
   t: CurveTables,
   ta: number,
@@ -166,7 +186,7 @@ export function axiomTargetToS(
   R: number,
   axiom: number,
   exact: boolean
-): bigint {
+): [bigint, number] {
   const {childToken, childFlip, childOffA, childOffB, leafSum, leafTri} = t;
   let motif = axiom,
     flip = 0;
@@ -177,25 +197,35 @@ export function axiomTargetToS(
   for (let L = R; L >= 2; L--) {
     const scale = POW2[L - 2];
     const sign = flip ? -scale : scale;
-    let bestD = 0,
-      bestScore = -Infinity;
-    for (let d = 0; d < 4; d++) {
-      const ci = motif * 4 + d;
-      const score = insideScore(
-        t,
-        childToken[ci],
-        flip ^ childFlip[ci],
-        L - 1,
-        posA + childOffA[ci] * sign,
-        posB + childOffB[ci] * sign,
-        ta,
-        tb,
-        bestScore
-      );
-      if (score > bestScore) {
-        bestScore = score;
-        bestD = d;
-        if (score > 0) break; // strictly inside: the unique containing child
+    // Exact targets (real cell corner sums) are strictly interior at every level,
+    // so the branchless classifier is provably the containing child. Fractional
+    // targets can sit on a child boundary, where the classifier's tie-break can
+    // differ from the argmax, so keep the exact argmax scan for that path
+    // (only sumPointToS uses it — compat locates points via the old sign tests).
+    let bestD: number;
+    if (exact) {
+      bestD = classify(t, motif * 2 + flip, ta - 3 * posA, tb - 3 * posB, scale);
+    } else {
+      bestD = 0;
+      let bestScore = -Infinity;
+      for (let d = 0; d < 4; d++) {
+        const ci = motif * 4 + d;
+        const score = insideScore(
+          t,
+          childToken[ci],
+          flip ^ childFlip[ci],
+          L - 1,
+          posA + childOffA[ci] * sign,
+          posB + childOffB[ci] * sign,
+          ta,
+          tb,
+          bestScore
+        );
+        if (score > bestScore) {
+          bestScore = score;
+          bestD = d;
+          if (score > 0) break; // strictly inside: the unique containing child
+        }
       }
     }
     const ci = motif * 4 + bestD;
@@ -222,13 +252,15 @@ export function axiomTargetToS(
     }
     if (d0 < 0) throw new Error(`lsystem inverse: no leaf match for corner sum (${ta},${tb})`);
   } else {
+    const ra = ta - 3 * posA,
+      rb = tb - 3 * posB;
     let bestScore = -Infinity;
     for (let d = 0; d < 4; d++) {
       let minCross = Infinity;
       for (let e = 0; e < 3; e++) {
         const o = base * 48 + d * 12 + e * 4;
-        const dta = ta - (3 * posA + leafTri[o]);
-        const dtb = tb - (3 * posB + leafTri[o + 1]);
+        const dta = ra - leafTri[o];
+        const dtb = rb - leafTri[o + 1];
         const cross = leafTri[o + 2] * dtb - leafTri[o + 3] * dta;
         if (cross < minCross) minCross = cross;
       }
@@ -240,7 +272,8 @@ export function axiomTargetToS(
     }
   }
   sLo += d0;
-  return R > LO_DIGITS ? (BigInt(sHi) << LO_BITS) | BigInt(sLo) : BigInt(sLo);
+  const s = R > LO_DIGITS ? (BigInt(sHi) << LO_BITS) | BigInt(sLo) : BigInt(sLo);
+  return [s, t.leafFlavor[base * 4 + d0]];
 }
 
 // ---------- orientation = which triforce motif is the axiom ----------
@@ -297,7 +330,7 @@ export function tripleToSLattice(triple: Triple, resolution: number, orientation
   const rec = ORIENT[orientation];
   const ab = tripleToAB(triple);
   const tauSum = rec.isB ? 12 * POW2[resolution] : 0;
-  const sAxiom = axiomTargetToS(A5, ab.a - tauSum, ab.b + tauSum, resolution, rec.axiom, true);
+  const sAxiom = axiomTargetToS(A5, ab.a - tauSum, ab.b + tauSum, resolution, rec.axiom, true)[0];
   return rec.reverse ? N - 1n - sAxiom : sAxiom;
 }
 
@@ -311,6 +344,6 @@ export function sumPointToS(ta: number, tb: number, resolution: number, orientat
   const N = 1n << BigInt(2 * resolution);
   const rec = ORIENT[orientation];
   const tauSum = rec.isB ? 12 * POW2[resolution] : 0;
-  const sAxiom = axiomTargetToS(A5, ta - tauSum, tb + tauSum, resolution, rec.axiom, false);
+  const sAxiom = axiomTargetToS(A5, ta - tauSum, tb + tauSum, resolution, rec.axiom, false)[0];
   return rec.reverse ? N - 1n - sAxiom : sAxiom;
 }

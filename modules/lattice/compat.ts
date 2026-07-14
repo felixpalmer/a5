@@ -26,14 +26,17 @@
 // Everything here was validated bit-for-bit against the original engine:
 // 101k cells (triples, flavors, round-trips) + 84k interior encode points,
 // all orientations, and the full public API with compat wired in as the curve
-// (45k comparisons vs the pre-L-system build, zero differences). The compat
-// fixtures (tests/fixtures/lattice/compat.json) pin this behavior.
+// (45k comparisons vs the pre-L-system build, zero differences). The
+// fractional point-location (compatIJToS) and the flavor derivation are the
+// old engine's own logic ported verbatim, so they agree on boundary
+// tie-breaks too. The compat fixtures (tests/fixtures/lattice/compat.json)
+// pin this behavior.
 
 import type {Orientation, Triple} from './types';
 import type {IJ} from '../core/coordinate-systems';
 import {compileGrammar, POW2} from './lsystem/tables';
 import type {Cell} from './lsystem';
-import {axiomLeafCell, axiomTargetToS, abToTriple, tripleToAB, sToCell, tripleToSLattice} from './lsystem';
+import {axiomLeafCell, axiomTargetToS, abToTriple, tripleToAB} from './lsystem';
 
 /** The compiled two-motif grammar of the original curve (W/Z gauge). */
 const ORIGINAL = compileGrammar({W: 'W+++Z---WZ', Z: 'Z+++W---ZW'}, {W: 'E', Z: '+e-'});
@@ -86,14 +89,20 @@ function applyDigitFlips(flips: [number, number], d: number): void {
   else if (d === 3) flips[0] = -flips[0];
 }
 
-/** old s digits -> geometric (X/Y curve) digits, in place. LSB-first array. */
-function forwardShift(digits: number[], invertJ: boolean, flipIJ: boolean): void {
+/**
+ * old s digits -> geometric (X/Y curve) digits, in place. LSB-first array.
+ * Returns the final flips product over the shifted digits — the old engine's
+ * anchor `flips` state, from which the pentagon flavor follows in closed form
+ * (see compatFlavor).
+ */
+function forwardShift(digits: number[], invertJ: boolean, flipIJ: boolean): [number, number] {
   const pattern = flipIJ ? PATTERN_FLIPPED : PATTERN;
   const flips: [number, number] = [1, 1];
   for (let i = digits.length - 1; i >= 0; i--) {
     shiftDigits(digits, i, flips, invertJ, pattern);
     applyDigitFlips(flips, digits[i]);
   }
+  return flips;
 }
 
 /**
@@ -145,13 +154,33 @@ const COMPAT_ORIENT: Record<Orientation, CompatRecipe> = {
   wv: {reverse: false, invertJ: true, flipIJ: false}
 };
 
-/** Old-curve position `s` -> cell (triple + pentagon flavor). */
-export function compatSToCell(s: bigint, resolution: number, orientation: Orientation = 'uv'): Cell {
+/**
+ * Pentagon flavor from the old engine's anchor state: the flips product over
+ * the (shifted) digits and the leaf digit `q`. Ported from the old
+ * getPentagonVertices orientation logic: flavor bit 0 (180° rotation) fired
+ * iff `flips[1] === YES`; bit 1 (Y reflection) on the `(F, q)` predicate
+ * below. This is why the compat decode needs no second (A5) descent — the
+ * old engine's own fractal flips field carries the missing flavor bit.
+ */
+function compatFlavor(flips: [number, number], q: number): number {
+  const rotate = flips[1] === -1 ? 1 : 0;
+  const F = flips[0] + flips[1];
+  // Orient last two pentagons when both or neither flips are set,
+  // first & last pentagons when exactly one is.
+  const reflect = (F === 0 ? q === 0 || q === 3 : q === 2 || q === 3) ? 1 : 0;
+  return rotate | (reflect << 1);
+}
+
+/** Shared forward descent: old s digits -> (triple, anchor flips, leaf digit). */
+function compatDescend(
+  s: bigint,
+  resolution: number,
+  rec: CompatRecipe
+): {triple: Triple; flips: [number, number]; q: number} {
   const N = 1n << BigInt(2 * resolution);
-  const rec = COMPAT_ORIENT[orientation];
   const v = rec.reverse ? N - 1n - s : s;
   const digits = digitsOf(v, resolution);
-  forwardShift(digits, rec.invertJ, rec.flipIJ);
+  const flips = forwardShift(digits, rec.invertJ, rec.flipIJ);
   const raw = axiomLeafCell(ORIGINAL, packDigits(digits), resolution, AXIOM_W);
   let triple = abToTriple(raw.a, raw.b);
   if (rec.flipIJ) {
@@ -161,21 +190,27 @@ export function compatSToCell(s: bigint, resolution: number, orientation: Orient
     const n1 = POW2[resolution] - 1;
     triple = {x: triple.y - n1, y: triple.x + n1, z: triple.z};
   }
-  // The X/Y walk hosts every cell via a diagonal (E/e) segment, so its leaf
-  // state cannot distinguish all four pentagon flavors — that missing bit is
-  // exactly why the original engine carried its fractal flips field. The
-  // flavor is a per-cell geometric property, so read it off the A5 descent.
-  return {triple, flavor: cellFlavor(triple, resolution)};
+  return {triple, flips, q: digits.length > 0 ? digits[0] : 0};
 }
 
-/** The pentagon flavor of a cell — orientation-independent, via the A5 descent. */
-function cellFlavor(triple: Triple, resolution: number): number {
-  return sToCell(tripleToSLattice(triple, resolution, 'uv'), resolution, 'uv').flavor;
-}
-
-/** Old-curve position `s` -> triple coordinate. */
+/**
+ * Old-curve position `s` -> triple coordinate, via the ORIGINAL (W/Z) forward
+ * descent + shiftDigits recode.
+ */
 export function compatSToTriple(s: bigint, resolution: number, orientation: Orientation = 'uv'): Triple {
-  return compatSToCell(s, resolution, orientation).triple;
+  return compatDescend(s, resolution, COMPAT_ORIENT[orientation]).triple;
+}
+
+/** Old-curve position `s` -> cell (triple + pentagon flavor). */
+export function compatSToCell(s: bigint, resolution: number, orientation: Orientation = 'uv'): Cell {
+  const rec = COMPAT_ORIENT[orientation];
+  const {triple, flips, q} = compatDescend(s, resolution, rec);
+  // As in the old engine's sToAnchor: invertJ flips the first component
+  // (flipIJ leaves the flips untouched).
+  if (rec.invertJ) {
+    flips[0] = -flips[0];
+  }
+  return {triple, flavor: compatFlavor(flips, q)};
 }
 
 /** Triple -> old-curve position `s`, or null if the triple has invalid parity. */
@@ -193,12 +228,54 @@ export function compatTripleToS(t: Triple, resolution: number, orientation: Orie
     raw = {x: raw.z, y: raw.y, z: raw.x};
   }
   const ab = tripleToAB(raw);
-  const sGeo = axiomTargetToS(ORIGINAL, ab.a, ab.b, resolution, AXIOM_W, true);
+  const sGeo = axiomTargetToS(ORIGINAL, ab.a, ab.b, resolution, AXIOM_W, true)[0];
   const digits = digitsOf(sGeo, resolution);
   inverseShift(digits, rec.invertJ, rec.flipIJ);
   const v = packDigits(digits);
   return rec.reverse ? N - 1n - v : v;
 }
+
+// ---------- fractional point-location (ported verbatim from the original engine) ----------
+// The old engine located a fractional point with a few sign tests per level
+// (IJToQuaternary) — far cheaper than the L-system's per-level hull scan
+// (~10-15x less work), and bit-identical by construction including its boundary
+// tie-breaks. The resulting digit stream is the geometric (X/Y curve) digit
+// stream, so the same inverseShift recode applies on top.
+
+/**
+ * Which of the 4 children contains the scaled offset, under the current flips
+ * (the old engine's IJToQuaternary, verbatim).
+ */
+function ijToQuaternary(u: number, v: number, flips: [number, number]): number {
+  // Boundaries to compare against
+  const a = flips[0] === -1 ? -(u + v) : u + v;
+  const b = flips[1] === -1 ? -u : u;
+  const c = flips[0] === -1 ? -v : v;
+
+  if (flips[0] + flips[1] === 0) {
+    // Only one flip
+    if (c < 1) return 0;
+    if (b > 1) return 3;
+    return a > 1 ? 2 : 1;
+  }
+  // No flips or both
+  if (a < 1) return 0;
+  if (b > 1) return 3;
+  return c > 1 ? 2 : 1;
+}
+
+/**
+ * Child anchor offsets in IJ units, indexed by [flip combination][digit]
+ * (= the old engine's KJToIJ(quaternaryToKJ(digit, flips))).
+ * Flip index = (flips[0] === YES) + 2 * (flips[1] === YES).
+ */
+// prettier-ignore
+const CHILD_OFFSET_IJ: [number, number][][] = [
+  [[0, 0], [1, 0], [0, 1], [1, 1]],     // (NO, NO):   p = k, q = j
+  [[0, 0], [1, -1], [0, -1], [1, -2]],  // (YES, NO):  p = -j, q = -k
+  [[0, 0], [-1, 1], [0, 1], [-1, 2]],   // (NO, YES):  p = j, q = k
+  [[0, 0], [-1, 0], [0, -1], [-1, -1]]  // (YES, YES): p = -k, q = -j
+];
 
 /** Fractional IJ point -> old-curve position `s` of the containing cell. */
 export function compatIJToS(ij: IJ, resolution: number, orientation: Orientation = 'uv'): bigint {
@@ -214,8 +291,24 @@ export function compatIJToS(ij: IJ, resolution: number, orientation: Orientation
   if (rec.invertJ) {
     j = POW2[resolution] - (i + j);
   }
-  const sGeo = axiomTargetToS(ORIGINAL, 12 * (i + j), -12 * j, resolution, AXIOM_W, false);
-  const digits = digitsOf(sGeo, resolution);
+
+  // Geometric digits by direct point-location, most significant first.
+  const digits: number[] = new Array(resolution);
+  const flips: [number, number] = [1, 1];
+  let pivotI = 0;
+  let pivotJ = 0;
+  for (let lvl = resolution - 1; lvl >= 0; lvl--) {
+    const scale = 1 / POW2[lvl];
+    const digit = ijToQuaternary((i - pivotI) * scale, (j - pivotJ) * scale, flips);
+    digits[lvl] = digit;
+
+    const fi = (flips[0] === -1 ? 1 : 0) + (flips[1] === -1 ? 2 : 0);
+    const offset = CHILD_OFFSET_IJ[fi][digit];
+    pivotI += offset[0] * POW2[lvl];
+    pivotJ += offset[1] * POW2[lvl];
+    applyDigitFlips(flips, digit);
+  }
+
   inverseShift(digits, rec.invertJ, rec.flipIJ);
   const v = packDigits(digits);
   return rec.reverse ? N - 1n - v : v;

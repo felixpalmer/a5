@@ -53,6 +53,9 @@ const config = {
           alias: {
             'website-examples': resolve('../examples/website'),
             a5: resolve('../modules/'),
+            // deck.gl's A5Layer imports the published package name; point it
+            // at the local source so the site always demos this checkout
+            'a5-js': resolve('../modules/'),
             'a5-internal': resolve('../modules/internal/'),
             react: resolve('node_modules/react'),
             'react-dom': resolve('node_modules/react-dom')
