@@ -1,9 +1,9 @@
-import React, {useState, useMemo, useCallback} from 'react';
+import React, {useState, useCallback} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map} from 'react-map-gl/maplibre';
-import {PolygonLayer} from '@deck.gl/layers';
-import {cellToBoundary, cellToChildren, cellToLonLat, getResolution, u64ToHex} from 'a5';
+import {A5Layer} from '@deck.gl/geo-layers';
+import {cellToChildren, cellToLonLat, getResolution, u64ToHex} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 
@@ -53,20 +53,10 @@ const App: React.FC<WireframeDemoOptions> = ({cellIds, showControls = true}: Wir
   if (cellIds === undefined) {
     cellIds = cellToChildren(0n, resolution);
   }
-  const polygons = useMemo(() => {
-    return cellIds.map((cellId: bigint) => {
-      const boundary = cellToBoundary(cellId);
-      return {
-        polygon: [boundary],
-        cellId: u64ToHex(cellId)
-      };
-    });
-  }, [cellIds, resolution]);
-
-  const polygonLayer = new PolygonLayer({
+  const polygonLayer = new A5Layer<bigint>({
     id: 'a5-cells',
-    data: polygons,
-    getPolygon: d => d.polygon,
+    data: cellIds,
+    getPentagon: d => d,
     getFillColor: [...A5_GREEN, 100],
     getLineColor: [...A5_GREEN, 255],
     getLineWidth: 2,
@@ -84,7 +74,7 @@ const App: React.FC<WireframeDemoOptions> = ({cellIds, showControls = true}: Wir
         viewState={viewState}
         onViewStateChange={onViewStateChange}
         controller={true}
-        getTooltip={({object}) => object && `Cell ID: ${object.cellId}`}
+        getTooltip={({object}) => object && `Cell ID: ${u64ToHex(object)}`}
       >
         <Map mapStyle={MAP_STYLE} />
       </DeckGL>
@@ -118,7 +108,7 @@ const App: React.FC<WireframeDemoOptions> = ({cellIds, showControls = true}: Wir
               style={{width: '100%', marginTop: '5px'}}
             />
           </div>
-          <div style={{fontSize: '12px', color: '#666'}}>Cells shown: {polygons.length}</div>
+          <div style={{fontSize: '12px', color: '#666'}}>Cells shown: {cellIds.length}</div>
           <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>Hover over cells to see their IDs</div>
         </div>
       )}

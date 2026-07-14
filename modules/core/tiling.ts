@@ -5,16 +5,12 @@
 import {mat2, vec2, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import {Pentagon, PentagonShape} from '../geometry/pentagon';
-import {BASIS, PENTAGON, TRIANGLE, v, w} from './pentagon';
+import {BASIS, PENTAGON, TRIANGLE, v} from './pentagon';
 import {TWO_PI_OVER_5} from './constants';
-import type {Anchor} from '../lattice';
-import {NO, YES} from '../lattice';
+import type {Triple} from '../lattice';
 import {Polar} from './coordinate-systems';
 
 const TRIANGLE_MODE = false;
-
-const shiftRight = vec2.clone(w);
-const shiftLeft = vec2.negate(vec2.create(), w);
 
 /**
  * Define transforms for each pentagon in the primitive unit
@@ -27,44 +23,51 @@ const QUINTANT_ROTATIONS = [0, 1, 2, 3, 4].map(quintant => {
 });
 
 const translation = vec2.create();
+const refIJ = vec2.create();
+
+// Center of the base PENTAGON under each flavor's orientation ops. The vertex
+// mean is linear, so an oriented pentagon's center is the transformed base
+// center — no need to construct the five vertices when only the center is
+// wanted (see getPentagonCenter).
+const FLAVOR_CENTERS = [0, 1, 2, 3].map(flavor => {
+  const p = PENTAGON.clone();
+  if (flavor & 1) p.rotate180();
+  if (flavor & 2) p.reflectY();
+  return p.getCenter();
+});
 
 /**
- * Get pentagon vertices
+ * Get pentagon vertices for a cell.
+ *
+ * A cell's pentagon is one of exactly FOUR orientations of the base PENTAGON
+ * (the Cairo-like metatile): flavor bit 0 is a 180° rotation, bit 1 a Y
+ * reflection. The oriented pentagon sits at the triple-derived lattice point
+ * ref = (x+y, -x) in IJ, shifted by one j unit for the rotated flavors.
+ * The flavor is a 1:1 function of the cell's L-system jigsaw piece and is
+ * produced by the descent (sToCell); the placement was derived and verified
+ * exhaustively against the pentagon geometry.
+ *
  * @param resolution The resolution level
  * @param quintant The quintant index (0-4)
- * @param anchor The anchor information
+ * @param triple The cell's triple coordinates
+ * @param flavor The cell's pentagon flavor (0-3)
  * @returns A pentagon shape with transformed vertices
  */
-export function getPentagonVertices(resolution: number, quintant: number, anchor: Anchor): PentagonShape {
-  const pentagon = (TRIANGLE_MODE ? TRIANGLE : PENTAGON).clone();
+export function getPentagonVertices(
+  resolution: number,
+  quintant: number,
+  triple: Triple,
+  flavor: number,
+  triangleMode: boolean = TRIANGLE_MODE
+): PentagonShape {
+  const pentagon = (triangleMode ? TRIANGLE : PENTAGON).clone();
 
-  vec2.transformMat2(translation, anchor.offset, BASIS);
+  if (flavor & 1) pentagon.rotate180();
+  if (flavor & 2) pentagon.reflectY();
 
-  // Apply transformations based on anchor properties
-  if (anchor.flips[0] === NO && anchor.flips[1] === YES) {
-    // F == 0!
-    pentagon.rotate180();
-  }
-
-  const {q} = anchor;
-  const F = anchor.flips[0] + anchor.flips[1];
-  if (
-    // Orient last two pentagons when both or neither flips are YES
-    ((F === -2 || F === 2) && q > 1) ||
-    // Orient first & last pentagons when only one of flips is YES
-    (F === 0 && (q === 0 || q === 3))
-  ) {
-    pentagon.reflectY();
-  }
-  if (anchor.flips[0] === YES && anchor.flips[1] === YES) {
-    pentagon.rotate180();
-  } else if (anchor.flips[0] === YES) {
-    pentagon.translate(shiftLeft);
-  } else if (anchor.flips[1] === YES) {
-    pentagon.translate(shiftRight);
-  }
-
-  // Position within quintant
+  // Position within quintant: ref(triple), plus (0, 1) for the rotated flavors
+  vec2.set(refIJ, triple.x + triple.y, -triple.x + (flavor & 1));
+  vec2.transformMat2(translation, refIJ, BASIS);
   pentagon.translate(translation);
   pentagon.scale(1 / 2 ** resolution);
   pentagon.transform(QUINTANT_ROTATIONS[quintant]);
@@ -72,29 +75,17 @@ export function getPentagonVertices(resolution: number, quintant: number, anchor
   return pentagon;
 }
 
-export type PentagonFlavor = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-export function getPentagonFlavor(anchor: Anchor): PentagonFlavor {
-  let f = 0;
-  if (anchor.flips[1] === YES) {
-    f += 2;
-  }
-
-  const {q} = anchor;
-  const F = anchor.flips[0] + anchor.flips[1];
-  if (
-    // Orient last two pentagons when both or neither flips are YES
-    ((F === -2 || F === 2) && q > 1) ||
-    // Orient first & last pentagons when only one of flips is YES
-    (F === 0 && (q === 0 || q === 3))
-  ) {
-    f += 1;
-  }
-
-  if (F === -2 || F === 2) {
-    f += 4;
-  }
-
-  return f as PentagonFlavor;
+/**
+ * The center of a cell's pentagon, without constructing the pentagon —
+ * O(1) via the precomputed flavor centers. Equivalent to
+ * `getPentagonVertices(...).getCenter()` (up to float associativity).
+ */
+export function getPentagonCenter(resolution: number, quintant: number, triple: Triple, flavor: number): vec2 {
+  const c = FLAVOR_CENTERS[flavor];
+  vec2.set(refIJ, triple.x + triple.y, -triple.x + (flavor & 1));
+  vec2.transformMat2(translation, refIJ, BASIS);
+  const out = vec2.fromValues((c[0] + translation[0]) / 2 ** resolution, (c[1] + translation[1]) / 2 ** resolution);
+  return vec2.transformMat2(out, out, QUINTANT_ROTATIONS[quintant]);
 }
 
 // TODO: memoize these two functions?

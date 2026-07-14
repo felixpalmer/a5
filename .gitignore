@@ -36,3 +36,5 @@ package-lock.json
 .yarnrc.yml
 data/
 debug-scripts/
+
+debug.sh

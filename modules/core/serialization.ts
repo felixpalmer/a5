@@ -326,8 +326,11 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
  *
  * @returns Array of 12 cell indices
  */
+// The 12 resolution-0 cells (dodecahedron faces) are a constant — compute once.
+let RES0_CELLS: bigint[] | undefined;
 export function getRes0Cells(): bigint[] {
-  return cellToChildren(WORLD_CELL, 0);
+  if (RES0_CELLS === undefined) RES0_CELLS = cellToChildren(WORLD_CELL, 0);
+  return [...RES0_CELLS];
 }
 
 /**

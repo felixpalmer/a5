@@ -52,21 +52,17 @@ FIXTURE_MAP = {
     ],
 
     # Lattice fixtures
-    "tests/fixtures/lattice/hilbert.json": [
-        (PY_ROOT, "tests/lattice/fixtures/hilbert.json"),
-        (RS_ROOT, "tests/fixtures/lattice/hilbert.json"),
+    "tests/fixtures/lattice/curve.json": [
+        (PY_ROOT, "tests/lattice/fixtures/curve.json"),
+        (RS_ROOT, "tests/fixtures/lattice/curve.json"),
     ],
-    "tests/fixtures/lattice/quaternary.json": [
-        (PY_ROOT, "tests/lattice/fixtures/quaternary.json"),
-        (RS_ROOT, "tests/fixtures/lattice/quaternary.json"),
+    "tests/fixtures/lattice/compat.json": [
+        (PY_ROOT, "tests/lattice/fixtures/compat.json"),
+        (RS_ROOT, "tests/fixtures/lattice/compat.json"),
     ],
-    "tests/fixtures/lattice/shift-digits.json": [
-        (PY_ROOT, "tests/lattice/fixtures/shift-digits.json"),
-        (RS_ROOT, "tests/fixtures/lattice/shift-digits.json"),
-    ],
-    "tests/fixtures/lattice/triple.json": [
-        (PY_ROOT, "tests/lattice/fixtures/triple.json"),
-        (RS_ROOT, "tests/fixtures/lattice/triple.json"),
+    "tests/fixtures/lattice/lsystem.json": [
+        (PY_ROOT, "tests/lattice/fixtures/lsystem.json"),
+        (RS_ROOT, "tests/fixtures/lattice/lsystem.json"),
     ],
 
     # Traversal fixtures

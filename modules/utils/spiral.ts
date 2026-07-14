@@ -9,11 +9,11 @@ import type {Cartesian, Spherical} from '../core/coordinate-systems';
 import {toCartesian} from '../core/coordinate-transforms';
 
 /**
- * Number of perturbed sample points the spiral can produce. Tuned via
- * debug-scripts/tune-spiral.ts so that on a corpus of ~3500 spherical
- * points × 8 resolutions, the spiral hits a strictly-containing cell
- * within these many iterations for all but a handful of points right at
- * the polar singularity at very high resolutions.
+ * Number of perturbed sample points the spiral can produce. Tuned on a
+ * corpus of ~3500 spherical points × 8 resolutions, such that the spiral
+ * hits a strictly-containing cell within these many iterations for all
+ * but a handful of points right at the polar singularity at very high
+ * resolutions.
  */
 export const SPIRAL_SAMPLE_COUNT = 24;
 

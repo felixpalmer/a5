@@ -6,6 +6,7 @@
 export * from './index';
 
 export {origins, segmentToQuintant, quintantToSegment, haversine} from './core/origin';
+export {cellToSpherical} from './core/cell';
 export {serialize, deserialize, WORLD_CELL, FIRST_HILBERT_RESOLUTION} from './core/serialization';
 export {quaternions} from './core/dodecahedron-quaternions';
 export {
@@ -26,23 +27,21 @@ export {
 
 // Export tiling functions for testing
 export {getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPolar} from './core/tiling';
-export {isNeighbor} from './traversal/neighbors';
+export {NEIGHBOR_DELTAS} from './traversal/neighbors';
 
-// Export Hilbert functions for testing
+// Export curve / lattice functions for testing
+export {IJToS, sToCell, sToTriple, tripleParity, tripleInBounds, tripleToS} from './lattice';
+export {compatSToCell, compatSToTriple, compatTripleToS, compatIJToS} from './lattice';
+export type {Cell, Triple} from './lattice';
+
+// The non-self-intersecting L-system curve — the planned future canonical
+// curve (breaking change) — exported explicitly so it stays pinned by fixtures
 export {
-  sToAnchor,
-  anchorToS,
-  IJToKJ,
-  IJToS,
-  computeQ,
-  offsetFlipsToAnchor,
-  shiftDigits,
-  IJToQuaternary,
-  quaternaryToKJ,
-  quaternaryToFlips
-} from './lattice';
-export {tripleParity, tripleInBounds, tripleToS, anchorToTriple, tripleToAnchor} from './lattice';
-export type {Anchor, Triple} from './lattice';
+  sToCell as lsystemSToCell,
+  sToTriple as lsystemSToTriple,
+  tripleToSLattice as lsystemTripleToS
+} from './lattice/lsystem';
+export {IJToS as lsystemIJToS} from './lattice/curve';
 
 // Export neighbor functions for testing
 export {getCellNeighbors} from './traversal/quintant-neighbors';

@@ -50,6 +50,7 @@ yarn bench hilbert     # Run benchmarks for a single file, here `hilbert.bench.t
 
 ## Development Guidelines
 - Read CONTRIBUTING.md
+- **Reading files**: Use the Read tool to read source files — do NOT use `sed -n 'X,Yp' file`, `head`, or `tail` to read slices. Just read the whole file with Read.
 - **TypeScript**: Source files in `/modules`, compiled to `/dist`
 - **Tests**: Use Vitest, run specific tests with `yarn test <filename> --run`
 - **Imports**: Run `python3 analyze_imports.py modules --check-only` after changing imports
@@ -60,11 +61,16 @@ yarn bench hilbert     # Run benchmarks for a single file, here `hilbert.bench.t
 - **Hot loops**: Prefer indexed `for` loops over `.map()` / `.forEach()` / `.filter()` in performance-sensitive paths (cell-fill, line tracing, dense-sample loops, fixture generators). Two reasons: (1) the closure form is measurably slower in V8 for large inputs (10–15% on country-scale polygons in the polygonToCells PR), and (2) `for (let i = 0; i < n; i++)` ports 1:1 to `for i in range(n)` / `for i in 0..n`, while `.map(fn)` does not.
 
 ## Website Examples
+- Render A5 cells with `A5Layer` from `@deck.gl/geo-layers` (`getPentagon: d => d.cell`, accepts bigint or hex string) instead of hand-rolling `cellToBoundary` + `PolygonLayer`. The layer imports `a5-js` internally, which `website/docusaurus.config.js` aliases to the local `/modules` source (same as the `a5` alias)
 - Website example data files go in `/website/static/data/` (NOT in `/examples/website/*/public/data/`)
+- `/website/static/data/` is covered by a broad `data/` gitignore rule — `git add -f` new data files or they will be invisible in `git status`
 - When regenerating data for examples, compare with deployed version at https://a5geo.org/examples/* to verify resolution
 - Use `getResolution()` to check the resolution of cells in existing data files
 - Example resolution levels:
   - Road safety example: resolution 13 (~50k cells for UK dataset)
+  - DuckDB Playground example (formerly World Population): resolution 9 base data (~700k population cells, ~1.1M elevation/temperature cells globally), re-aggregated live with `a5_cell_to_parent`
+- New npm packages installed into `website/` do NOT resolve until the user restarts the dev server (webpack caches node_modules). For browser-only libraries used by one example (e.g. DuckDB WASM), prefer a runtime CDN import: `await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/...')`
+- Adding/deleting example `.mdx` pages may not be picked up by a long-running dev server (stale watcher). If the "Compiled with problems" overlay references deleted files, hand-edit the generated `.docusaurus` artifacts (`registry.js`, `routes.js`, `routesChunkNames.json`, `globalData.json`, `docusaurus-plugin-content-docs/*/p/*.json`) — a server restart regenerates them from source, so these edits are safe and temporary
 
 ## Using Chrome DevTools MCP for Testing
 
@@ -115,7 +121,8 @@ On pull requests, CI also benchmarks the PR against its merge-base with main on 
 
 ## Debugging
 - **DO NOT** use `node -e "..."` for debugging scripts — write them as files instead
-- Write debug scripts to `/debug-scripts/` (gitignored) using the Write tool, then execute with Bash
+- Write debug scripts to `/debug-scripts/` (gitignored) using the Write tool
+- **Run them via `bash debug.sh` — invoked EXACTLY as `bash debug.sh`, with NO arguments and NO pipes** (no `| sed`, `| tail`, `| head`, `| grep`). It is a single gitignored entry point at the repo root that invokes `npx tsx debug-scripts/<file>.ts`, so scripts can import straight from `modules/` and `dist/`. If you need to filter/limit output, put the `sed`/`tail`/`grep` (or a smaller print) INSIDE `debug.sh` or the debug script itself — never in the Bash invocation. Piping `bash debug.sh` into anything forces a fresh permission prompt; always run the bare command.
 - This avoids permission prompts and keeps scripts inspectable
 
 ## Git Usage

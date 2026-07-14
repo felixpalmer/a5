@@ -12,29 +12,30 @@ const tilingData = {
   getQuintantPolar: []
 };
 
-// Test getPentagonVertices with various combinations
+// Test getPentagonVertices across the four pentagon flavors, several triples,
+// quintants and resolutions
 const testCases = [
-  {resolution: 0, quintant: 0, anchor: {offset: [0, 0], flips: [-1, -1], q: 0}},
-  {resolution: 0, quintant: 1, anchor: {offset: [0, 0], flips: [-1, -1], q: 1}},
-  {resolution: 0, quintant: 2, anchor: {offset: [0, 0], flips: [-1, -1], q: 2}},
-  {resolution: 0, quintant: 3, anchor: {offset: [0, 0], flips: [-1, -1], q: 3}},
-  {resolution: 0, quintant: 4, anchor: {offset: [0, 0], flips: [-1, -1], q: 0}},
+  {resolution: 1, quintant: 0, triple: {x: 0, y: 0, z: 0}, flavor: 0},
+  {resolution: 1, quintant: 1, triple: {x: 0, y: 0, z: 0}, flavor: 1},
+  {resolution: 1, quintant: 2, triple: {x: 0, y: 1, z: 0}, flavor: 2},
+  {resolution: 1, quintant: 3, triple: {x: 0, y: 1, z: -1}, flavor: 3},
+  {resolution: 1, quintant: 4, triple: {x: -1, y: 1, z: 0}, flavor: 0},
 
-  {resolution: 1, quintant: 0, anchor: {offset: [0.5, 0.5], flips: [-1, 1], q: 0}},
-  {resolution: 1, quintant: 2, anchor: {offset: [-0.5, 0.5], flips: [1, -1], q: 1}},
-  {resolution: 1, quintant: 4, anchor: {offset: [0.25, -0.25], flips: [1, 1], q: 2}},
+  {resolution: 2, quintant: 0, triple: {x: -1, y: 2, z: 0}, flavor: 1},
+  {resolution: 2, quintant: 2, triple: {x: 0, y: 2, z: -1}, flavor: 2},
+  {resolution: 2, quintant: 4, triple: {x: -2, y: 3, z: -1}, flavor: 3},
 
-  {resolution: 2, quintant: 1, anchor: {offset: [0.125, 0.125], flips: [-1, -1], q: 3}},
-  {resolution: 2, quintant: 3, anchor: {offset: [-0.125, -0.125], flips: [1, 1], q: 0}}
+  {resolution: 3, quintant: 1, triple: {x: -3, y: 5, z: -2}, flavor: 0},
+  {resolution: 3, quintant: 3, triple: {x: 0, y: 4, z: -3}, flavor: 1}
 ];
 
-testCases.forEach(({resolution, quintant, anchor}) => {
+testCases.forEach(({resolution, quintant, triple, flavor}) => {
   try {
-    const pentagon = getPentagonVertices(resolution, quintant, anchor);
+    const pentagon = getPentagonVertices(resolution, quintant, triple, flavor);
     const vertices = pentagon.getVertices();
 
     tilingData.getPentagonVertices.push({
-      input: {resolution, quintant, anchor},
+      input: {resolution, quintant, triple, flavor},
       output: {
         vertices: vertices.map(v => [v[0], v[1]]),
         area: pentagon.getArea(),
@@ -43,7 +44,7 @@ testCases.forEach(({resolution, quintant, anchor}) => {
     });
   } catch (error) {
     console.warn(
-      `Error with getPentagonVertices(${resolution}, ${quintant}, ${JSON.stringify(anchor)}):`,
+      `Error with getPentagonVertices(${resolution}, ${quintant}, ${JSON.stringify(triple)}, ${flavor}):`,
       error.message
     );
   }

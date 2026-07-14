@@ -1,9 +1,10 @@
 import {describe, it, expect} from 'vitest';
+import type {IJ} from 'a5/core/coordinate-systems';
 import type {Orientation, Triple} from 'a5/lattice';
-import {sToAnchor, anchorToTriple, tripleToAnchor, tripleToS, tripleParity, tripleInBounds} from 'a5/lattice';
-import fixtures from '../fixtures/lattice/triple.json';
+import {sToCell, sToTriple, tripleToS, tripleParity, tripleInBounds, IJToS} from 'a5/lattice';
+import fixtures from '../fixtures/lattice/curve.json';
 
-type AnchorToTripleFixture = {
+type SToCellFixture = {
   s: number;
   resolution: number;
   orientation: Orientation;
@@ -11,6 +12,15 @@ type AnchorToTripleFixture = {
   y: number;
   z: number;
   parity: number;
+  flavor: number;
+};
+
+type IJToSFixture = {
+  i: number;
+  j: number;
+  resolution: number;
+  orientation: Orientation;
+  s: number;
 };
 
 type TripleInBoundsFixture = {
@@ -21,21 +31,30 @@ type TripleInBoundsFixture = {
   expected: boolean;
 };
 
-describe('anchorToTriple', () => {
-  it('produces correct triple coordinates', () => {
-    for (const f of fixtures.anchorToTriple as AnchorToTripleFixture[]) {
-      const anchor = sToAnchor(BigInt(f.s), f.resolution, f.orientation);
-      const triple = anchorToTriple(anchor);
+describe('sToCell', () => {
+  it('produces correct triple coordinates and pentagon flavor', () => {
+    for (const f of fixtures.sToCell as SToCellFixture[]) {
+      const {triple, flavor} = sToCell(BigInt(f.s), f.resolution, f.orientation);
       expect(triple.x, `x for s=${f.s} res=${f.resolution} ori=${f.orientation}`).toBe(f.x);
       expect(triple.y, `y for s=${f.s} res=${f.resolution} ori=${f.orientation}`).toBe(f.y);
       expect(triple.z, `z for s=${f.s} res=${f.resolution} ori=${f.orientation}`).toBe(f.z);
+      expect(flavor, `flavor for s=${f.s} res=${f.resolution} ori=${f.orientation}`).toBe(f.flavor);
+    }
+  });
+});
+
+describe('sToTriple', () => {
+  it('matches the triple part of sToCell', () => {
+    for (const f of fixtures.sToCell as SToCellFixture[]) {
+      const triple = sToTriple(BigInt(f.s), f.resolution, f.orientation);
+      expect(triple).toEqual({x: f.x, y: f.y, z: f.z});
     }
   });
 });
 
 describe('tripleParity', () => {
   it('returns correct parity', () => {
-    for (const f of fixtures.anchorToTriple as AnchorToTripleFixture[]) {
+    for (const f of fixtures.sToCell as SToCellFixture[]) {
       const triple: Triple = {x: f.x, y: f.y, z: f.z};
       expect(tripleParity(triple), `parity for (${f.x},${f.y},${f.z})`).toBe(f.parity);
     }
@@ -44,7 +63,7 @@ describe('tripleParity', () => {
 
 describe('tripleToS', () => {
   it('round-trips back to the original s-value', () => {
-    for (const f of fixtures.anchorToTriple as AnchorToTripleFixture[]) {
+    for (const f of fixtures.sToCell as SToCellFixture[]) {
       const triple: Triple = {x: f.x, y: f.y, z: f.z};
       const s = tripleToS(triple, f.resolution, f.orientation);
       expect(Number(s), `s for (${f.x},${f.y},${f.z}) res=${f.resolution} ori=${f.orientation}`).toBe(f.s);
@@ -52,17 +71,11 @@ describe('tripleToS', () => {
   });
 });
 
-describe('tripleToAnchor', () => {
-  it('produces an anchor matching sToAnchor', () => {
-    for (const f of fixtures.anchorToTriple as AnchorToTripleFixture[]) {
-      const triple: Triple = {x: f.x, y: f.y, z: f.z};
-      const expected = sToAnchor(BigInt(f.s), f.resolution, f.orientation);
-      const actual = tripleToAnchor(triple, f.resolution, f.orientation);
-      expect(actual, `anchor for (${f.x},${f.y},${f.z}) res=${f.resolution} ori=${f.orientation}`).not.toBeNull();
-      expect(actual!.offset[0]).toBe(expected.offset[0]);
-      expect(actual!.offset[1]).toBe(expected.offset[1]);
-      expect(actual!.flips[0]).toBe(expected.flips[0]);
-      expect(actual!.flips[1]).toBe(expected.flips[1]);
+describe('IJToS', () => {
+  it('locates the containing cell of a fractional IJ point', () => {
+    for (const f of fixtures.IJToS as IJToSFixture[]) {
+      const s = IJToS([f.i, f.j] as IJ, f.resolution, f.orientation);
+      expect(Number(s), `s for (${f.i},${f.j}) res=${f.resolution} ori=${f.orientation}`).toBe(f.s);
     }
   });
 });

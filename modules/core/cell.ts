@@ -11,9 +11,9 @@ import {findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmen
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {A5Cell, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
-import {getFaceVertices, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
+import {getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
 import {PI_OVER_5} from './constants';
-import {IJToS, sToAnchor} from '../lattice';
+import {IJToS, sToCell} from '../lattice';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL} from './serialization';
 import {getGlobalCellNeighbors} from '../traversal/global-neighbors';
 import {Spiral, SPIRAL_SAMPLE_COUNT} from '../utils/spiral';
@@ -123,7 +123,7 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
 
 // Spiral perturbation radius at hilbertResolution=1 (in radians of tangent
 // offset). For higher resolutions we scale by 1/2^hilbertResolution. Tuned
-// via debug-scripts/tune-spiral.ts.
+// empirically (see SPIRAL_SAMPLE_COUNT in utils/spiral.ts).
 const SPIRAL_SCALE_RAD = (70 * Math.PI) / 180;
 
 // Reusable output buffer for spiral.sample() — written once per iteration,
@@ -182,12 +182,21 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
   }
 
   const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const anchor = sToAnchor(S, hilbertResolution, orientation);
-  return getPentagonVertices(hilbertResolution, quintant, anchor);
+  const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
+  return getPentagonVertices(hilbertResolution, quintant, triple, flavor);
 }
 
 export function cellToSpherical(cell: bigint): Spherical {
   const {S, segment, origin, resolution} = deserialize(cell);
+  if (resolution >= FIRST_HILBERT_RESOLUTION) {
+    // Fast path: the pentagon center is O(1) from (triple, flavor) — no need
+    // to construct the pentagon itself.
+    const {quintant, orientation} = segmentToQuintant(segment, origin);
+    const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
+    const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
+    const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor);
+    return dodecahedron.inverse(center as Face, origin.id);
+  }
   const pentagon = _getPentagon({S, segment, origin, resolution});
   return dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);
 }

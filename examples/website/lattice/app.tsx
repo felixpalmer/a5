@@ -6,24 +6,29 @@ import {DataFilterExtension} from '@deck.gl/extensions';
 import {colorContinuous} from '@deck.gl/carto';
 import {vec2} from 'gl-matrix';
 
-import type {Anchor, Orientation} from 'a5/lattice';
+import type {Orientation} from 'a5/lattice';
 import type {Triple} from 'a5/lattice';
-import {sToAnchor, anchorToTriple} from 'a5/lattice';
+import {sToCell} from 'a5/lattice';
 import {Pentagon, PentagonShape} from 'a5/geometry/pentagon';
 import {getPentagonVertices} from 'a5/core/tiling';
 import {getCellNeighbors} from 'a5/traversal/quintant-neighbors';
 import {BASIS} from 'a5/core/pentagon';
 
 export type Cell = {
-  origin: vec2;
-  anchor: Anchor;
+  origin: vec2; // the pentagon's lattice reference point, in face coords
+  refIJ: vec2; // the same point in IJ lattice coords
+  flavor: number;
   vertices: vec2[];
   center: vec2;
   index: number;
   tripleCoords: Triple;
+  crossCheckFailed?: boolean;
 };
 
 function crossCheck(cells: Cell[], cells2: Cell[]) {
+  for (const cell of cells) {
+    cell.crossCheckFailed = false;
+  }
   for (let i = 0; i < cells2.length; i++) {
     const child = cells2[i];
     const parent = cells[Math.floor(i / 4)];
@@ -36,7 +41,6 @@ function crossCheck(cells: Cell[], cells2: Cell[]) {
       }
     }
     if (!contained) {
-      // @ts-ignore
       parent.crossCheckFailed = true;
     }
   }
@@ -55,6 +59,7 @@ const App: React.FC = () => {
   });
   const [orientation, setOrientation] = useState<Orientation>('uv');
   const [colorByParent, setColorByParent] = useState(true);
+  const [triangleMode, setTriangleMode] = useState(true);
   const [maxFilterValue, setMaxFilterValue] = useState(100);
   const [hoveredCellIndex, setHoveredCellIndex] = useState<number | null>(null);
   const [showTripleCoords, setShowTripleCoords] = useState(false);
@@ -63,14 +68,19 @@ const App: React.FC = () => {
   // Memoize the cell generation function
   const generateCells = useCallback(
     (resolution: number) => {
-      const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
       const scale = Math.pow(2, -resolution);
 
-      let anchors = sequence.map(s => sToAnchor(s, resolution, orientation));
+      // sToCell is the A5 L-system curve (see modules/lattice/lsystem.ts),
+      // so s = 0..N-1 already gives the L-system visiting order for the selected
+      // orientation — no extra reordering needed.
+      const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
+      const latticeCells = sequence.map(s => sToCell(BigInt(s), resolution, orientation));
 
-      return anchors.map((anchor, i) => {
-        const origin = vec2.transformMat2(vec2.create(), anchor.offset, BASIS);
-        const vertices = getPentagonVertices(resolution, 0, anchor)
+      return latticeCells.map(({triple, flavor}, i) => {
+        // the pentagon's lattice reference point (see core/tiling.ts)
+        const refIJ = vec2.fromValues(triple.x + triple.y, -triple.x + (flavor & 1));
+        const origin = vec2.transformMat2(vec2.create(), refIJ, BASIS);
+        const vertices = getPentagonVertices(resolution, 0, triple, flavor, triangleMode)
           .getVertices()
           .map(v => [...v]);
         // Calculate center as average of vertices
@@ -78,15 +88,16 @@ const App: React.FC = () => {
         vec2.scale(center, center, 1 / vertices.length);
         return {
           origin: vec2.scale(vec2.create(), origin, scale),
-          anchor,
+          refIJ,
+          flavor,
           vertices,
           center,
           index: i,
-          tripleCoords: anchorToTriple(anchor)
+          tripleCoords: triple
         };
       });
     },
-    [orientation]
+    [orientation, triangleMode]
   );
 
   const generatePaths = useCallback((cells: Cell[]) => {
@@ -177,6 +188,8 @@ const App: React.FC = () => {
     setOrientation: (o: Orientation) => void;
     colorByParent: boolean;
     setColorByParent: (colorByParent: boolean) => void;
+    triangleMode: boolean;
+    setTriangleMode: (use: boolean) => void;
     showTripleCoords: boolean;
     setShowTripleCoords: (show: boolean) => void;
     gridDiskK: number;
@@ -190,6 +203,8 @@ const App: React.FC = () => {
     setOrientation,
     colorByParent,
     setColorByParent,
+    triangleMode,
+    setTriangleMode,
     showTripleCoords,
     setShowTripleCoords,
     gridDiskK,
@@ -230,6 +245,13 @@ const App: React.FC = () => {
           <label>
             <input type="checkbox" checked={colorByParent} onChange={e => setColorByParent(e.target.checked)} /> Color
             by Parent
+          </label>
+        </div>
+
+        <div style={{marginBottom: '10px'}}>
+          <label title="Draw cells as triangles (1:1 with lattice cells) instead of the A5 pentagons">
+            <input type="checkbox" checked={triangleMode} onChange={e => setTriangleMode(e.target.checked)} /> Triangle
+            cells
           </label>
         </div>
 
@@ -465,7 +487,7 @@ const App: React.FC = () => {
             const {x, y, z} = d.tripleCoords;
             return `${x},${y},${z}`;
           }
-          const [i, j] = d.anchor.offset;
+          const [i, j] = d.refIJ;
           return `[${i},${j}]`;
         },
         getSize: 12,
@@ -537,6 +559,11 @@ const App: React.FC = () => {
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
         layers={createLayers(filterRange, paths.length, cells, paths, softBuffer, showTripleCoords, highlightedCells)}
+        getTooltip={({object}: any) => {
+          if (!object || object.index === undefined) return null;
+          const t = object.tripleCoords;
+          return `cell ${object.index}  triple (${t.x},${t.y},${t.z})`;
+        }}
       />
       <Controls
         resolution={resolution}
@@ -547,6 +574,8 @@ const App: React.FC = () => {
         setOrientation={setOrientation}
         colorByParent={colorByParent}
         setColorByParent={setColorByParent}
+        triangleMode={triangleMode}
+        setTriangleMode={setTriangleMode}
         showTripleCoords={showTripleCoords}
         setShowTripleCoords={setShowTripleCoords}
         gridDiskK={gridDiskK}

@@ -7,7 +7,9 @@ import {lonLatToCell, sphericalToCell, cellToSpherical} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical} from '../core/coordinate-transforms';
 import {cellToParent, cellToChildren, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION} from '../core/serialization';
 import {compact} from '../core/compact';
-import {pointInSphericalPolygon, ringWindingSign, ringSegmentNormals} from '../geometry/spherical-polygon';
+import {ringWindingSign} from '../geometry/spherical-polygon';
+import type {PreparedPolygon} from '../geometry/prepared-polygon';
+import {preparePolygon, pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {estimateCellRadius} from '../traversal/cap';
 import {sampleGreatCircleArc} from '../utils/great-circle';
 import {getLatticeNeighbors} from '../traversal/lattice-neighbors';
@@ -19,18 +21,6 @@ import {tripleSpaceFloodFill} from '../traversal/lattice-flood-fill';
  * Used by `filterBoundaryCells` to short-circuit PIP via segment-side dot products.
  */
 type SegmentMap = Map<bigint, number[]>;
-
-/**
- * Point-in-polygon for a polygon with holes: inside the outer ring and
- * outside every hole ring.
- */
-function pointInPolygonRings(point: Cartesian, ringVecsList: Cartesian[][]): boolean {
-  if (!pointInSphericalPolygon(point, ringVecsList[0])) return false;
-  for (let r = 1; r < ringVecsList.length; r++) {
-    if (pointInSphericalPolygon(point, ringVecsList[r])) return false;
-  }
-  return true;
-}
 
 /**
  * Dense-sample boundary cells along every closed ring (outer + holes) at
@@ -100,14 +90,14 @@ function filterBoundaryCells(
   segmentMap: SegmentMap,
   segNormals: Cartesian[],
   segSigns: number[],
-  ringVecsList: Cartesian[][]
+  prep: PreparedPolygon
 ): bigint[] {
   const out: bigint[] = [];
   for (const cell of boundaryCells) {
     const cv = toCartesian(cellToSpherical(cell));
     const segments = segmentMap.get(cell);
     if (!segments) {
-      if (pointInPolygonRings(cv, ringVecsList)) out.push(cell);
+      if (pointInPreparedPolygon(cv, prep)) out.push(cell);
       continue;
     }
     let allInside = true;
@@ -124,7 +114,7 @@ function filterBoundaryCells(
       else allInside = false;
     }
     if (ambiguous || (anyInside && !allInside)) {
-      if (pointInPolygonRings(cv, ringVecsList)) out.push(cell);
+      if (pointInPreparedPolygon(cv, prep)) out.push(cell);
     } else if (allInside) {
       out.push(cell);
     }
@@ -280,6 +270,8 @@ export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: numbe
     ringVecsList[r] = ringVecs;
   }
 
+  const prep = preparePolygon(ringVecsList);
+
   const {boundaryCells, boundarySet, segmentMap} = denseSampleBoundary(rings, ringVecsList, resolution);
 
   // Flattened per-segment normals and interior-side signs, indexed like the
@@ -289,14 +281,14 @@ export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: numbe
   const segSigns: number[] = [];
   for (let r = 0; r < rings.length; r++) {
     const sign = (r === 0 ? 1 : -1) * ringWindingSign(ringVecsList[r]);
-    const normals = ringSegmentNormals(ringVecsList[r]);
+    const normals = prep.ringNormals[r];
     for (let i = 0; i < normals.length; i++) {
       segNormals.push(normals[i]);
       segSigns.push(sign);
     }
   }
 
-  const filteredBoundary = filterBoundaryCells(boundaryCells, segmentMap, segNormals, segSigns, ringVecsList);
+  const filteredBoundary = filterBoundaryCells(boundaryCells, segmentMap, segNormals, segSigns, prep);
 
   // Dense sampling can leave gaps; the shell catches them, classifying each cell.
   const shellCells = expandShell(boundaryCells, boundarySet);
@@ -305,7 +297,7 @@ export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: numbe
   const interiorSeeds: bigint[] = [];
   const visited = new Set(boundarySet);
   for (const cell of shellCells) {
-    if (pointInPolygonRings(toCartesian(cellToSpherical(cell)), ringVecsList)) {
+    if (pointInPreparedPolygon(toCartesian(cellToSpherical(cell)), prep)) {
       interiorSeeds.push(cell);
     } else {
       visited.add(cell); // exterior shell (and hole interiors) join the firewall
