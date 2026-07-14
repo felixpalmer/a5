@@ -3,9 +3,8 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl, ViewStateChangeEvent} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
-import {PolygonLayer} from '@deck.gl/layers';
-import {lonLatToCell, cellToBoundary} from 'a5';
-import {_getPentagon} from 'a5';
+import {A5Layer} from '@deck.gl/geo-layers';
+import {lonLatToCell} from 'a5';
 
 const INITIAL_VIEW_STATE = {longitude: 10, latitude: 50, zoom: 4};
 
@@ -42,10 +41,10 @@ const App: React.FC = () => {
   // Convert Set to Array for the layer
   const cellsArray = Array.from(cellsSet);
 
-  const polygonLayer = new PolygonLayer({
+  const polygonLayer = new A5Layer({
     id: 'polygons',
     data: cellsArray,
-    getPolygon: d => cellToBoundary(d),
+    getPentagon: d => d,
     getFillColor: d => [0, 170, 85, 150],
     getLineColor: [255, 255, 255],
     lineWidthUnits: 'pixels',

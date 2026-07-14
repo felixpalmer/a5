@@ -61,6 +61,7 @@ yarn bench hilbert     # Run benchmarks for a single file, here `hilbert.bench.t
 - **Hot loops**: Prefer indexed `for` loops over `.map()` / `.forEach()` / `.filter()` in performance-sensitive paths (cell-fill, line tracing, dense-sample loops, fixture generators). Two reasons: (1) the closure form is measurably slower in V8 for large inputs (10–15% on country-scale polygons in the polygonToCells PR), and (2) `for (let i = 0; i < n; i++)` ports 1:1 to `for i in range(n)` / `for i in 0..n`, while `.map(fn)` does not.
 
 ## Website Examples
+- Render A5 cells with `A5Layer` from `@deck.gl/geo-layers` (`getPentagon: d => d.cell`, accepts bigint or hex string) instead of hand-rolling `cellToBoundary` + `PolygonLayer`. The layer imports `a5-js` internally, which `website/docusaurus.config.js` aliases to the local `/modules` source (same as the `a5` alias)
 - Website example data files go in `/website/static/data/` (NOT in `/examples/website/*/public/data/`)
 - `/website/static/data/` is covered by a broad `data/` gitignore rule — `git add -f` new data files or they will be invisible in `git status`
 - When regenerating data for examples, compare with deployed version at https://a5geo.org/examples/* to verify resolution

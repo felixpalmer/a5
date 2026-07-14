@@ -2,8 +2,9 @@ import React, {useState, useCallback, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map} from 'react-map-gl/maplibre';
-import {ScatterplotLayer, PolygonLayer} from '@deck.gl/layers';
-import {lonLatToCell, cellToBoundary, cellToChildren, cellToParent} from 'a5';
+import {ScatterplotLayer} from '@deck.gl/layers';
+import {A5Layer} from '@deck.gl/geo-layers';
+import {lonLatToCell, cellToChildren, cellToParent} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 import A5CellInfoBox from '../components/a5-cell-info-box';
@@ -49,18 +50,10 @@ const App: React.FC<{showCellId?: boolean; height?: string}> = ({showCellId = tr
     return {cellId, children: [cellId, ...children, ...(parent ? [parent] : [])]};
   }, [resolution, cellLocation, showChildren, showParent]);
 
-  // Convert cell boundaries to great circle arcs
-  const polygons = useMemo(() => {
-    return data.children.map((cell: bigint) => {
-      const boundary = cellToBoundary(cell, {segments: 'auto'});
-      return {polygon: [boundary], cellId: cell};
-    });
-  }, [data.children]);
-
-  const polygonLayer = new PolygonLayer({
+  const polygonLayer = new A5Layer({
     id: 'cell-boundaries-line',
-    data: polygons,
-    getPolygon: d => d.polygon,
+    data: data.children,
+    getPentagon: d => d,
     stroked: true,
     filled: false,
     getLineColor: (_, info) => (info.index < 1 ? A5GREEN : [160, 160, 160, 255]),

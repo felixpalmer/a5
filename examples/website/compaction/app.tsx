@@ -3,8 +3,8 @@ import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
-import {PolygonLayer} from '@deck.gl/layers';
-import {cellToBoundary, uncompact} from 'a5';
+import {A5Layer} from '@deck.gl/geo-layers';
+import {uncompact} from 'a5';
 import {parquetRead} from 'hyparquet';
 
 // Generated using examples/cli/compact with:
@@ -57,10 +57,10 @@ const App: React.FC = () => {
     loadData();
   }, []);
 
-  const compactedLayer = new PolygonLayer({
+  const compactedLayer = new A5Layer({
     id: 'compacted-polygons',
     data: compactedCells,
-    getPolygon: d => cellToBoundary(d),
+    getPentagon: d => d,
     getFillColor: [255, 170, 0, 100],
     getLineColor: [255, 255, 255],
     lineWidthUnits: 'pixels',
@@ -72,10 +72,10 @@ const App: React.FC = () => {
     beforeId: 'watername_ocean'
   });
 
-  const uncompactedLayer = new PolygonLayer({
+  const uncompactedLayer = new A5Layer({
     id: 'uncompacted-polygons',
     data: uncompactedCells,
-    getPolygon: d => cellToBoundary(d),
+    getPentagon: d => d,
     getFillColor: [0, 170, 85, 100],
     getLineColor: [255, 255, 255],
     lineWidthUnits: 'pixels',
