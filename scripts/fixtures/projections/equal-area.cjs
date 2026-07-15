@@ -32,7 +32,23 @@ const SPECIFIC_FACE_POINTS = [
 
   // Difficult points near 1,0
   ...range.map(n => [1 - n, 0]),
-  ...range.map(n => [1 - n, n])
+  ...range.map(n => [1 - n, n]),
+
+  // Points hugging arc BC (the hypotenuse x + y = 1, i.e. rho = 1 - b0 -> 1).
+  // This is the only region where D-normalization in the inverse matters: the
+  // result P approaches D on arc BC, so it inherits D's unit-length error. These
+  // exercise the round-trip there at decreasing distance from the arc and across
+  // its span (midpoint and either side).
+  [0.4995, 0.4995], // rho = 0.999, arc midpoint
+  [0.49995, 0.49995], // rho = 0.9999
+  [0.499995, 0.499995], // rho = 0.99999
+  [0.4999995, 0.4999995], // rho = 0.999999
+  [0.49999995, 0.49999995], // rho = 0.9999999
+  [0.6, 0.3995], // rho = 0.9995, toward C
+  [0.3995, 0.6], // rho = 0.9995, toward B
+  [0.75, 0.2497], // rho = 0.9997, nearer C
+  [0.2497, 0.75], // rho = 0.9997, nearer B
+  [0.85, 0.1499] // rho = 0.9999, near C
 ];
 
 function generateRandomFacePoint() {

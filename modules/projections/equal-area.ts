@@ -1,78 +1,48 @@
-// IVEA (Icosahedral Vertex Equal Area) projection implementation
-// Adaptation of icoVertexGreatCircle.ec from DGGAL project
-// BSD 3-Clause License
-//
-// Copyright (c) 2014-2025, Ecere Corporation
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// 1. Redistributions of source code must retain the above copyright notice, this
-//    list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright notice,
-//    this list of conditions and the following disclaimer in the documentation
-//    and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the copyright holder nor the names of its
-//    contributors may be used to endorse or promote products derived from
-//    this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// BSD 3-Clause License
 // Copyright (c) 2024, A5 Project Contributors
 // All rights reserved.
-import {vec3, glMatrix} from 'gl-matrix';
+import {vec2, vec3, mat2d, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type {Cartesian, Face, Barycentric, FaceTriangle, SphericalTriangle} from '../core/coordinate-systems';
 import {faceToBarycentric, barycentricToFace} from '../core/coordinate-transforms';
 import {sphericalTriangleArea} from '../geometry/spherical-polygon';
-import {vectorDifference, quadrupleProduct, slerp} from '../utils/vector';
 
 // Module-scoped scratch buffers — forward/inverse are on the lonLatToCell hot
 // path, so we avoid vec3.create() per call.
-const _Z = vec3.create() as Cartesian;
-const _p = vec3.create() as Cartesian;
-const _P = vec3.create() as Cartesian;
+const _BxC = vec3.create() as Cartesian;
+const _P = vec3.create() as Cartesian; // Point along BC chord
+const _csAlpha = vec2.create(); // [cos(alpha), sin(alpha)] — input to alphaTransform
+const _weightBC = vec2.create(); // alphaTransform * _csAlpha
 
-// NOTE: A · B and C · A are deliberately NOT cached — even/odd face triangles
-// swap the roles of the B and C vertices, so those dot products differ by
-// ~0.056 between triangles and must be computed per call.
 interface TriangleConstants {
-  V: number; // A · (B × C) — signed triple product
-  c12: number; // B · C
-  s12: number; // |B × C|
-  kQ: number; // 2 / acos(c12)
+  AdotB: number; // A · B — the canonical ("even") B-C orientation
+  AdotC: number; // A · C — the mirror ("odd") orientation, with B and C swapped
+  alphaTransform: mat2d; // Affine transform for alpha direction vector to p
   areaABC: number; // spherical triangle area
+  volumeABC: number; // A · (B × C) — signed triple product (volume of parallelpiped formed)
 }
 
+// Equal area projection originally described by:
+// Snyder92 (AN EQUAL-AREA MAP PROJECTION FOR POLYHEDRAL GLOBES)
+// Closed form equations due to Brenton R. S. Recht
+//
+// The projection maps a point V within a spherical triangle ABC onto a planar
+// point F (within a planar triangle), in an equal-area-preserving manner.
+//
+// The first point of the triangle (A) is known as the radiating vertex and the
+// choice of this vertex subtly modifies how the projection behaves. All three
+// choices will yield an equal area projection, but the cusps will vary.
+//
+// The transformation is done via an intermediate point P, which is obtained by
+// intersecting the two great circles formed by A&V and B&C (hence why A is special)
+//
+// The equal-area transformation is then done by computing the ratio of areas between
+// triangles ABP & ABC
+//
+// The inverse follows the reverse procedure of obtaining P from the face triangle
+// by inverting the equal-area transformation, before slerping between A&P to obtain V
 export class EqualAreaProjection {
-  // Shape-only invariants of the spherical triangle. A5 only ever projects the
-  // congruent face-triangles of a single dodecahedron, so these depend only on
-  // the triangle's shape, not its position — they are computed once from the
-  // canonical triangle (see CRS.getCanonicalTriangle) and reused for every
-  // projection. Deriving them from a fixed triangle (rather than lazily from
-  // whichever triangle is projected first) keeps results independent of call
-  // order: congruent triangles agree only to ~1 ulp, so a lazy cache would
-  // make outputs depend on process history.
-  //
-  // NOTE: `V` is a *signed* triple product, so this caching is only valid while
-  // every triangle shares the same winding (chirality). DodecahedronProjection
-  // guarantees this by ordering vertices consistently across normal and
-  // reflected faces; reflecting a triangle without re-ordering its vertices
-  // would flip the sign of `V` and silently corrupt the inverse projection.
-  // This invariant is enforced by the constants-agreement test in
-  // tests/projections/equal-area.test.ts.
+  // By assuming that the geometry of the spherical triangle used is constant (up to
+  // rotations on a sphere), a number of constants can be precomputed and reused
   private constants: TriangleConstants;
 
   constructor(canonicalTriangle: SphericalTriangle) {
@@ -81,43 +51,50 @@ export class EqualAreaProjection {
 
   static computeConstants(sphericalTriangle: SphericalTriangle): TriangleConstants {
     const [A, B, C] = sphericalTriangle;
-    const c1 = vec3.create() as Cartesian;
-    vec3.cross(c1, B, C);
-    const c12 = vec3.dot(B, C);
-    return {
-      V: vec3.dot(A, c1),
-      c12,
-      s12: vec3.length(c1),
-      kQ: 2 / Math.acos(c12),
-      areaABC: sphericalTriangleArea(A, B, C)
-    };
+    const BxC = vec3.create() as Cartesian;
+    vec3.cross(BxC, B, C);
+    const AdotB = vec3.dot(A, B);
+    const AdotC = vec3.dot(A, C);
+    const BdotC = vec3.dot(B, C);
+
+    const V = vec3.dot(A, BxC);
+    const P = AdotC + BdotC;
+    const Q = AdotB + 1;
+    const R = AdotB * BdotC - AdotC;
+    const F = P * P - Q * Q;
+    const G = 2 * Q * R;
+    const alphaTransform = mat2d.fromValues(V * V - F, -G, -2 * V * P, 2 * V * Q, V * V + F, G);
+
+    return {volumeABC: V, areaABC: sphericalTriangleArea(A, B, C), AdotB, AdotC, alphaTransform};
   }
 
   /**
    * Forward projection: converts a spherical point to face coordinates
-   * @param v - The spherical point to project
+   * @param V - The spherical point to project
    * @param sphericalTriangle - The spherical triangle vertices
    * @param faceTriangle - The face triangle vertices
    * @returns The face coordinates
    */
-  forward(v: Cartesian, sphericalTriangle: SphericalTriangle, faceTriangle: FaceTriangle): Face {
+  forward(V: Cartesian, sphericalTriangle: SphericalTriangle, faceTriangle: FaceTriangle): Face {
     const [A, B, C] = sphericalTriangle;
+    const {areaABC, volumeABC} = this.constants;
 
-    // When v is close to A, the quadruple product is unstable.
-    // As we just need the intersection of two great circles we can use difference
-    // between A and v, as it lies in the same plane of the great circle containing A & v
-    vec3.subtract(_Z, v, A);
-    vec3.normalize(_Z, _Z);
-    const p = quadrupleProduct(_p, A, _Z, B, C);
-    vec3.normalize(p, p);
+    // Compute point P, where great circles through A&V and B&C intersect
+    vec3.cross(_BxC, B, C);
+    const volumeVBC = vec3.dot(V, _BxC);
+    vec3.scale(_P, V, volumeABC);
+    vec3.scaleAndAdd(_P, _P, A, -volumeVBC);
+    const D = vec3.length(_P);
+    const ooD = D > 0 ? 1 / D : 1;
+    vec3.scale(_P, _P, ooD);
 
-    const h = vectorDifference(A, v) / vectorDifference(A, p);
-    const scaledArea = h / this.constants.areaABC;
-    const b = [
-      1 - h,
-      scaledArea * sphericalTriangleArea(A, p, C),
-      scaledArea * sphericalTriangleArea(A, B, p)
-    ] as Barycentric;
+    // Obtain rho & alpha by ratio of areas
+    const areaABp = Math.max(0, sphericalTriangleArea(A, B, _P));
+    const alpha = areaABp / areaABC;
+    const rho = (D / volumeABC) * Math.sqrt((1 + vec3.dot(A, _P)) / (1 + vec3.dot(A, V)));
+
+    // Construct barycentric triangle and map to face
+    const b = [1 - rho, rho * (1 - alpha), rho * alpha] as Barycentric;
     return barycentricToFace(b, faceTriangle);
   }
 
@@ -129,6 +106,7 @@ export class EqualAreaProjection {
    * @returns The spherical coordinates
    */
   inverse(facePoint: Face, faceTriangle: FaceTriangle, sphericalTriangle: SphericalTriangle): Cartesian {
+    // Map from face to barycentric
     const [A, B, C] = sphericalTriangle;
     const b = faceToBarycentric(facePoint, faceTriangle);
 
@@ -137,42 +115,37 @@ export class EqualAreaProjection {
     if (b[1] > threshold) return B;
     if (b[2] > threshold) return C;
 
-    const {V, c12, s12, kQ, areaABC} = this.constants;
+    // Normalize odd (mirror-image) triangles to the canonical even orientation
+    // by swapping B↔C and the matching weight b1↔b2, so alphaTransform is correct
+    const {AdotB, AdotC, alphaTransform, areaABC} = this.constants;
+    const faceAdotB = vec3.dot(A, B);
+    const odd = Math.abs(faceAdotB - AdotB) > Math.abs(faceAdotB - AdotC);
+    const _B = odd ? C : B;
+    const _C = odd ? B : C;
+    const b2 = odd ? b[1] : b[2];
 
-    const h = 1 - b[0];
-    const R = b[2] / h;
-    const alpha = R * areaABC;
-    const S = Math.sin(alpha);
-    const halfC = Math.sin(alpha / 2);
-    const CC = 2 * halfC * halfC; // Half angle formula
+    // Obtain rho & alpha
+    const rho = 1 - b[0];
+    const alpha = (b2 / rho) * areaABC;
 
-    // Per-triangle: A·B and C·A swap between even/odd face triangles (see
-    // TriangleConstants note), so they cannot come from the cached constants.
-    const c01 = vec3.dot(A, B);
-    const c20 = vec3.dot(C, A);
+    // Inverse to obtain point P (see forward)
+    _csAlpha[0] = Math.cos(alpha);
+    _csAlpha[1] = Math.sin(alpha);
+    vec2.transformMat2d(_weightBC, _csAlpha, alphaTransform);
+    vec3.scale(_P, _B, _weightBC[0]);
+    vec3.scaleAndAdd(_P, _P, _C, _weightBC[1]);
+    vec3.normalize(_P, _P);
 
-    const f = S * V + CC * (c01 * c12 - c20);
-    const g = CC * s12 * (1 + c01);
-    const q = kQ * Math.atan2(g, f);
-    const P = slerp(_P, B, C, q);
-    const K = vectorDifference(A, P);
-    const t = this.safeAcos(h * K) / this.safeAcos(K);
-    // `out` is returned to the caller, which immediately reads it via
-    // toSpherical — so it must be a fresh allocation, not a scratch buffer.
-    const out = slerp(vec3.create() as Cartesian, A, P, t);
+    // Compute weights for A & P
+    const s = vec3.dot(A, _P);
+    const t = 1 + rho * rho * (s - 1);
+    const weightP = rho * Math.sqrt((1 + t) / (1 + s));
+    const weightA = t - s * weightP;
+
+    // `out` is returned to the caller, so it must be a fresh allocation
+    const out = vec3.create() as Cartesian;
+    vec3.scale(out, A, weightA);
+    vec3.scaleAndAdd(out, out, _P, weightP);
     return out;
-  }
-
-  /**
-   * Computes acos(1 - 2 * x * x) without loss of precision for small x
-   * @param x
-   * @returns acos(1 - x)
-   */
-  private safeAcos(x: number): number {
-    if (x < 1e-3) {
-      return 2 * x + (x * x * x) / 3;
-    } else {
-      return Math.acos(1 - 2 * x * x);
-    }
   }
 }
