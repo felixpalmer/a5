@@ -344,9 +344,7 @@ const App: React.FC = () => {
   const [result, setResult] = useState<QueryResult | null>(null);
   const [palette, setPalette] = useState<PaletteChoice>('Auto');
   // Start collapsed on small screens so the map isn't buried under the panel
-  const [panelOpen, setPanelOpen] = useState<boolean>(
-    () => typeof window === 'undefined' || window.innerWidth >= 640
-  );
+  const [panelOpen, setPanelOpen] = useState<boolean>(() => typeof window === 'undefined' || window.innerWidth >= 640);
   // Query result held back from rendering until the user confirms
   const [pending, setPending] = useState<{table: any; elapsedMs: number; sql: string} | null>(null);
   const highlightRef = useRef<HTMLPreElement | null>(null);
