@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec3, glMatrix, quat} from 'gl-matrix';
+import {vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type {Cartesian, Radians} from '../core/coordinate-systems';
 import {slerp, tripleProduct} from '../utils/vector';
@@ -25,10 +25,12 @@ export type SphericalPolygon = Cartesian[];
  * `new SphericalTriangleShape([…])` on the lonLatToCell / cellToLonLat hot path.
  */
 export function sphericalTriangleArea(v1: Cartesian, v2: Cartesian, v3: Cartesian): Radians {
-  return (2 * Math.atan2(
-    tripleProduct(v1, v2, v3),
-    1 + vec3.dot(v1, v2) + vec3.dot(v2, v3) + vec3.dot(v3, v1)
-  )) as Radians;
+  const norm =
+    1 +
+    (v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]) +
+    (v2[0] * v3[0] + v2[1] * v3[1] + v2[2] * v3[2]) +
+    (v3[0] * v1[0] + v3[1] * v1[1] + v3[2] * v1[2]);
+  return (2 * Math.atan2(tripleProduct(v1, v2, v3), norm)) as Radians;
 }
 
 /**

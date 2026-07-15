@@ -6,18 +6,17 @@ import {vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type {Cartesian} from '../core/coordinate-systems';
 
-const crossCD = vec3.create();
-
 /**
- * Computes the triple product of four vectors
- * @param A - The first vector
- * @param B - The second vector
- * @param C - The third vector
- * @returns The scalar result
+ * Computes the scalar triple product A · (B × C).
+ * Written out fully (same operation order as vec3.cross followed by vec3.dot,
+ * so results are bit-identical) to avoid a scratch-vector store on hot paths.
  */
 export function tripleProduct(A: Cartesian, B: Cartesian, C: Cartesian): number {
-  vec3.cross(crossCD, B, C);
-  return vec3.dot(A, crossCD);
+  return (
+    A[0] * (B[1] * C[2] - B[2] * C[1]) +
+    A[1] * (B[2] * C[0] - B[0] * C[2]) +
+    A[2] * (B[0] * C[1] - B[1] * C[0])
+  );
 }
 
 /**

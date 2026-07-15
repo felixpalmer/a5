@@ -5,9 +5,7 @@
 import {glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type {Cartesian} from '../core/coordinate-systems';
-import {SphericalPolygonShape, sphericalTriangleArea} from './spherical-polygon';
-
-export {sphericalTriangleArea};
+import {SphericalPolygonShape} from './spherical-polygon';
 
 export class SphericalTriangleShape extends SphericalPolygonShape {
   constructor(vertices: Cartesian[]) {
