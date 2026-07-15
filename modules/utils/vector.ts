@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec3} from 'gl-matrix';
+import {vec3, glMatrix} from 'gl-matrix';
+glMatrix.setMatrixArrayType(Float64Array as any);
 import type {Cartesian} from '../core/coordinate-systems';
 
 const crossCD = vec3.create();
