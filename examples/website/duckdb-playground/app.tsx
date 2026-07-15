@@ -343,6 +343,8 @@ const App: React.FC = () => {
   const [running, setRunning] = useState<boolean>(false);
   const [result, setResult] = useState<QueryResult | null>(null);
   const [palette, setPalette] = useState<PaletteChoice>('Auto');
+  // Start collapsed on small screens so the map isn't buried under the panel
+  const [panelOpen, setPanelOpen] = useState<boolean>(() => typeof window === 'undefined' || window.innerWidth >= 640);
   // Query result held back from rendering until the user confirms
   const [pending, setPending] = useState<{table: any; elapsedMs: number; sql: string} | null>(null);
   const highlightRef = useRef<HTMLPreElement | null>(null);
@@ -481,6 +483,30 @@ const App: React.FC = () => {
           }
         />
       </Maplibre>
+      {!panelOpen && (
+        <button
+          onClick={() => setPanelOpen(true)}
+          title="Show SQL panel"
+          style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            zIndex: 1,
+            background: 'rgba(255, 255, 255, 0.96)',
+            color: '#333',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '8px 14px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+            cursor: 'pointer',
+            fontFamily: 'sans-serif',
+            fontSize: '13px',
+            fontWeight: 'bold'
+          }}
+        >
+          SQL ▾
+        </button>
+      )}
       <div
         style={{
           position: 'absolute',
@@ -495,7 +521,8 @@ const App: React.FC = () => {
           boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
           color: '#222',
           fontFamily: 'sans-serif',
-          fontSize: '13px'
+          fontSize: '13px',
+          display: panelOpen ? 'block' : 'none'
         }}
       >
         <div
@@ -582,6 +609,21 @@ const App: React.FC = () => {
               </option>
             ))}
           </select>
+          <button
+            onClick={() => setPanelOpen(false)}
+            title="Hide SQL panel to reveal the map"
+            style={{
+              background: 'white',
+              color: '#333',
+              border: '1px solid #d0d7de',
+              borderRadius: '4px',
+              padding: '6px 10px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Hide panel
+          </button>
         </div>
         <div style={{marginTop: '8px', color: '#666'}}>Sample queries:</div>
         <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px'}}>
@@ -611,7 +653,7 @@ const App: React.FC = () => {
             display: 'flex',
             alignItems: 'baseline',
             gap: '4px',
-            whiteSpace: 'nowrap',
+            flexWrap: 'wrap',
             marginTop: '8px',
             color: '#666'
           }}
