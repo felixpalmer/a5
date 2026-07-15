@@ -12,11 +12,7 @@ import type {Cartesian} from '../core/coordinate-systems';
  * so results are bit-identical) to avoid a scratch-vector store on hot paths.
  */
 export function tripleProduct(A: Cartesian, B: Cartesian, C: Cartesian): number {
-  return (
-    A[0] * (B[1] * C[2] - B[2] * C[1]) +
-    A[1] * (B[2] * C[0] - B[0] * C[2]) +
-    A[2] * (B[0] * C[1] - B[1] * C[0])
-  );
+  return A[0] * (B[1] * C[2] - B[2] * C[1]) + A[1] * (B[2] * C[0] - B[0] * C[2]) + A[2] * (B[0] * C[1] - B[1] * C[0]);
 }
 
 /**
