@@ -8,11 +8,6 @@ import type {Cartesian, Radians} from '../core/coordinate-systems';
 import {slerp, tripleProduct} from '../utils/vector';
 
 const _windingCentroid = vec3.create() as Cartesian;
-
-// Pre-allocated vectors for midpoints. midA is the midpoint opposite the vertex A
-const midA = vec3.create() as Cartesian;
-const midB = vec3.create() as Cartesian;
-const midC = vec3.create() as Cartesian;
 const center = vec3.create() as Cartesian;
 
 // Use Cartesian system for all calculations for greater accuracy
@@ -20,29 +15,20 @@ const center = vec3.create() as Cartesian;
 export type SphericalPolygon = Cartesian[];
 
 /**
- * Area of the spherical triangle (v1, v2, v3) on the unit sphere, in radians.
+ * Signed area (spherical excess) of the spherical triangle (v1, v2, v3) on the
+ * unit sphere, in radians.
  *
- * Uses the midpoint triple-product method, well-conditioned for the tiny
- * triangles produced by deep-resolution sub-tris. Free-function form avoids
- * the class/array allocations of `new SphericalTriangleShape([…])` on the
- * lonLatToCell / cellToLonLat hot path.
+ * Uses the Van Oosterom–Strackee formula
+ * atan2 keeps full precision for tiny triangles (numerator → area/2) and
+ * does not fold areas above π back into [-π, π].
+ * Free-function form avoids the class/array allocations of
+ * `new SphericalTriangleShape([…])` on the lonLatToCell / cellToLonLat hot path.
  */
 export function sphericalTriangleArea(v1: Cartesian, v2: Cartesian, v3: Cartesian): Radians {
-  vec3.lerp(midA, v2, v3, 0.5);
-  vec3.normalize(midA, midA);
-  vec3.lerp(midB, v3, v1, 0.5);
-  vec3.normalize(midB, midB);
-  vec3.lerp(midC, v1, v2, 0.5);
-  vec3.normalize(midC, midC);
-
-  const S = tripleProduct(midA, midB, midC);
-  const clamped = Math.max(-1.0, Math.min(1.0, S));
-
-  // sin(x) ≈ x for small x — keep precision on tiny triangles.
-  if (Math.abs(clamped) < 1e-8) {
-    return (2 * clamped) as Radians;
-  }
-  return (Math.asin(clamped) * 2) as Radians;
+  return (2 * Math.atan2(
+    tripleProduct(v1, v2, v3),
+    1 + vec3.dot(v1, v2) + vec3.dot(v2, v3) + vec3.dot(v3, v1)
+  )) as Radians;
 }
 
 /**
