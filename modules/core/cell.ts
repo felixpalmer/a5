@@ -85,61 +85,63 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   const quintant = getQuintantPolar(polar);
   const {segment, orientation} = quintantToSegment(quintant, origin);
 
-  // Res-30 ids cannot encode quintants > 41 (serialize degrades them to the
-  // res-29 parent), and the legacy search's answer there is path-dependent.
-  // TODO(res30): pick canonical semantics; until then keep legacy behavior.
-  const degraded =
-    resolution === MAX_RESOLUTION && 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5) > 41;
-
-  if (!degraded) {
-    vec2.copy(_scaledPoint, dodecPoint);
-    if (quintant !== 0) {
-      mat2.fromRotation(rotation, -2 * PI_OVER_5 * quintant);
-      vec2.transformMat2(_scaledPoint, _scaledPoint, rotation);
-    }
-    const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-    const scale = 2 ** hilbertResolution;
-    const px = _scaledPoint[0] * scale;
-    const py = _scaledPoint[1] * scale;
-    const ij = FaceToIJ([px, py] as Face);
-
-    let triple = roundToTriple(ij, hilbertResolution);
-    let flavor = tripleFlavor(triple);
-    let found = cellContainsScaled(px, py, triple.x, triple.y, flavor);
-    if (!found) {
-      const deltas = NEIGHBOR_DELTAS[flavor].all;
-      const maxRow = scale - 1;
-      for (let i = 0; i < deltas.length; i++) {
-        const d = deltas[i];
-        const neighbor = {x: triple.x + d.x, y: triple.y + d.y, z: triple.z + d.z};
-        if (!tripleInBounds(neighbor, maxRow)) continue;
-        const neighborFlavor = tripleFlavor(neighbor);
-        if (cellContainsScaled(px, py, neighbor.x, neighbor.y, neighborFlavor)) {
-          triple = neighbor;
-          flavor = neighborFlavor;
-          found = true;
-          break;
-        }
-      }
-    }
-    if (found) {
-      const S = tripleToS(triple, hilbertResolution, orientation);
-      if (S !== null) {
-        const cellId = serialize({S, segment, origin, resolution});
-        // Cache the pentagon for the dense-sample fast accept above — built
-        // directly from (triple, flavor), no curve decode needed.
-        _lastResult = {
-          cellId,
-          pentagon: getPentagonVertices(hilbertResolution, quintant, triple, flavor),
-          originId: origin.id,
-          resolution
-        };
-        return cellId;
-      }
-    }
-    // No strict container among the candidates: the point is on a pentagon
-    // boundary or belongs to a neighboring quintant/face — search robustly.
+  // Res-30 ids can only encode quintants 0-41 (by design: 64 bits cannot fit
+  // res 30 globally, so A5 covers the populous region). In the unsupported
+  // quintants, answer at the finest representable resolution instead — the
+  // res-29 cell CONTAINING the point. (Previously the cap lived only in
+  // serialize, which swapped in the res-29 parent of a res-30 search result —
+  // a cell that fails to contain the query point ~44% of the time there.)
+  if (resolution === MAX_RESOLUTION && 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5) > 41) {
+    resolution = MAX_RESOLUTION - 1;
   }
+
+  vec2.copy(_scaledPoint, dodecPoint);
+  if (quintant !== 0) {
+    mat2.fromRotation(rotation, -2 * PI_OVER_5 * quintant);
+    vec2.transformMat2(_scaledPoint, _scaledPoint, rotation);
+  }
+  const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
+  const scale = 2 ** hilbertResolution;
+  const px = _scaledPoint[0] * scale;
+  const py = _scaledPoint[1] * scale;
+  const ij = FaceToIJ([px, py] as Face);
+
+  let triple = roundToTriple(ij, hilbertResolution);
+  let flavor = tripleFlavor(triple);
+  let found = cellContainsScaled(px, py, triple.x, triple.y, flavor);
+  if (!found) {
+    const deltas = NEIGHBOR_DELTAS[flavor].all;
+    const maxRow = scale - 1;
+    for (let i = 0; i < deltas.length; i++) {
+      const d = deltas[i];
+      const neighbor = {x: triple.x + d.x, y: triple.y + d.y, z: triple.z + d.z};
+      if (!tripleInBounds(neighbor, maxRow)) continue;
+      const neighborFlavor = tripleFlavor(neighbor);
+      if (cellContainsScaled(px, py, neighbor.x, neighbor.y, neighborFlavor)) {
+        triple = neighbor;
+        flavor = neighborFlavor;
+        found = true;
+        break;
+      }
+    }
+  }
+  if (found) {
+    const S = tripleToS(triple, hilbertResolution, orientation);
+    if (S !== null) {
+      const cellId = serialize({S, segment, origin, resolution});
+      // Cache the pentagon for the dense-sample fast accept above — built
+      // directly from (triple, flavor), no curve decode needed.
+      _lastResult = {
+        cellId,
+        pentagon: getPentagonVertices(hilbertResolution, quintant, triple, flavor),
+        originId: origin.id,
+        resolution
+      };
+      return cellId;
+    }
+  }
+  // No strict container among the candidates: the point is on a pentagon
+  // boundary or belongs to a neighboring quintant/face — search robustly.
   return _sphericalToCellSearch(spherical, resolution);
 }
 
