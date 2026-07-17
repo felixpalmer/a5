@@ -10,12 +10,12 @@
 
 export type {Orientation} from './types';
 
-export {IJToS} from './curve';
+export {IJToS, roundToTriple} from './curve';
 export {sToCell, sToTriple} from './lsystem';
 export type {Cell} from './lsystem';
 
 export type {Triple} from './triple';
-export {tripleParity, tripleInBounds, tripleToS} from './triple';
+export {tripleParity, tripleInBounds, tripleFlavor, tripleToS} from './triple';
 
 // The ORIGINAL (pre-L-system) curve, bit-for-bit, for the migration path —
 // same cells, same pentagon flavors, old visiting order (tests/lattice/compat.test.ts).

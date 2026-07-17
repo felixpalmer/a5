@@ -11,11 +11,12 @@ import {findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmen
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {A5Cell, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
-import {getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
+import {cellContainsScaled, getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
 import {PI_OVER_5} from './constants';
-import {IJToS, sToCell} from '../lattice';
-import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL} from './serialization';
+import {IJToS, roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
+import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from './serialization';
 import {getGlobalCellNeighbors} from '../traversal/global-neighbors';
+import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
 import {Spiral, SPIRAL_SAMPLE_COUNT} from '../utils/spiral';
 
 // Reuse these objects to avoid allocation
@@ -51,6 +52,9 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
  * inverse/forward round-trip in dense-sample loops where the input already
  * comes from the authalic Cartesian space (e.g. polygon-fill boundary slerp).
  */
+// Scratch for the fast path's scaled quintant-frame point
+const _scaledPoint = vec2.create();
+
 export function sphericalToCell(spherical: Spherical, resolution: number): bigint {
   // Resolution -1 represents WORLD_CELL, which covers the entire world
   if (resolution === -1) {
@@ -62,13 +66,87 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
     return serialize(_sphericalToEstimate(spherical, resolution));
   }
 
-  // Try the cached pentagon first — skips the full estimate pipeline when
-  // consecutive calls land in the same cell (common in dense-sample loops).
+  // Try the cached pentagon first — skips the full lookup when consecutive
+  // calls land in the same cell (common in dense-sample loops).
   if (_lastResult && _lastResult.resolution === resolution) {
     const projected = dodecahedron.forward(spherical, _lastResult.originId);
     if (_lastResult.pentagon.containsPoint(projected as Face) > 0) return _lastResult.cellId;
   }
 
+  // Fast path: locate the containing pentagon directly. Round to the leaf
+  // triangle, get the closed-form flavor, and test the pentagon geometrically
+  // in the scaled quintant frame; the triangular and pentagonal lattices are
+  // not congruent, but the containing pentagon is always the triangle's cell
+  // or one of its fixed neighbor deltas (verified exhaustively), so at most
+  // one 7-candidate walk resolves it — then a single curve encode.
+  const origin = findNearestOrigin(spherical);
+  const dodecPoint = dodecahedron.forward(spherical, origin.id);
+  const polar = toPolar(dodecPoint);
+  const quintant = getQuintantPolar(polar);
+  const {segment, orientation} = quintantToSegment(quintant, origin);
+
+  // Res-30 ids cannot encode quintants > 41 (serialize degrades them to the
+  // res-29 parent), and the legacy search's answer there is path-dependent.
+  // TODO(res30): pick canonical semantics; until then keep legacy behavior.
+  const degraded =
+    resolution === MAX_RESOLUTION && 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5) > 41;
+
+  if (!degraded) {
+    vec2.copy(_scaledPoint, dodecPoint);
+    if (quintant !== 0) {
+      mat2.fromRotation(rotation, -2 * PI_OVER_5 * quintant);
+      vec2.transformMat2(_scaledPoint, _scaledPoint, rotation);
+    }
+    const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
+    const scale = 2 ** hilbertResolution;
+    const px = _scaledPoint[0] * scale;
+    const py = _scaledPoint[1] * scale;
+    const ij = FaceToIJ([px, py] as Face);
+
+    let triple = roundToTriple(ij, hilbertResolution);
+    let flavor = tripleFlavor(triple);
+    let found = cellContainsScaled(px, py, triple.x, triple.y, flavor);
+    if (!found) {
+      const deltas = NEIGHBOR_DELTAS[flavor].all;
+      const maxRow = scale - 1;
+      for (let i = 0; i < deltas.length; i++) {
+        const d = deltas[i];
+        const neighbor = {x: triple.x + d.x, y: triple.y + d.y, z: triple.z + d.z};
+        if (!tripleInBounds(neighbor, maxRow)) continue;
+        const neighborFlavor = tripleFlavor(neighbor);
+        if (cellContainsScaled(px, py, neighbor.x, neighbor.y, neighborFlavor)) {
+          triple = neighbor;
+          flavor = neighborFlavor;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (found) {
+      const S = tripleToS(triple, hilbertResolution, orientation);
+      if (S !== null) {
+        const cellId = serialize({S, segment, origin, resolution});
+        // Cache the pentagon for the dense-sample fast accept above — built
+        // directly from (triple, flavor), no curve decode needed.
+        _lastResult = {
+          cellId,
+          pentagon: getPentagonVertices(hilbertResolution, quintant, triple, flavor),
+          originId: origin.id,
+          resolution
+        };
+        return cellId;
+      }
+    }
+    // No strict container among the candidates: the point is on a pentagon
+    // boundary or belongs to a neighboring quintant/face — search robustly.
+  }
+  return _sphericalToCellSearch(spherical, resolution);
+}
+
+// Legacy search: estimate + verification + spiral + neighbor/closest fallback.
+// Reached only from the fast path's fallthrough (boundary points,
+// cross-quintant points, the degraded res-30 zone) — rare, but fully robust.
+function _sphericalToCellSearch(spherical: Spherical, resolution: number): bigint {
   // Try the original point's projection-based estimate. Common case for
   // non-boundary points.
   const firstEstimate = _sphericalToEstimate(spherical, resolution);
