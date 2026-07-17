@@ -133,61 +133,16 @@ export function axiomLeafCell(
   };
 }
 
-// ---------- inverse: descend by which child's convex footprint contains the target ----------
-// `ta`/`tb` is the target in the corner-sum frame (= 3x the (a,b) point frame):
-// a cell's corner sum for the exact triple path, or 3x a fractional point for
-// direct point location. For each footprint edge we cross the UNIT edge direction
-// with (target - corner); > 0 for every edge means the target is inside.
-//
-// Early exits (exact for both target kinds): the children tile the parent, so a
-// strictly-inside child (min cross > 0) is unique and ends the scan; and an edge
-// cross that is both <= 0 and <= the best score so far can neither be strictly
-// inside nor win the argmax fallback, so the edge loop aborts. Targets on a
-// boundary (fractional points only) fall through to the argmax, matching the
-// exhaustive scan.
-function insideScore(
-  t: CurveTables,
-  motif: number,
-  flip: number,
-  lvl: number,
-  posA: number,
-  posB: number,
-  ta: number,
-  tb: number,
-  best: number
-): number {
-  const scale = POW2[lvl - 1];
-  const edges = t.fpEdges[motif * 2 + flip];
-  // posA/posB are fixed across this hull; fold 3*pos into the target once.
-  const ra = ta - 3 * posA;
-  const rb = tb - 3 * posB;
-  let minCross = Infinity;
-  for (let e = 0; e < edges.length; e += 4) {
-    const dta = ra - edges[e] * scale;
-    const dtb = rb - edges[e + 1] * scale;
-    const cross = edges[e + 2] * dtb - edges[e + 3] * dta;
-    if (cross < minCross) {
-      minCross = cross;
-      if (minCross <= 0 && minCross <= best) return minCross;
-    }
-  }
-  return minCross;
-}
-
-// Shared descent for both leaf modes. `exact` targets are corner sums of real
-// cells (leaf resolved by exact sum match); fractional targets resolve the leaf
-// by point-in-cell over the 4 level-1 triangles. Internal; also used by compat.ts.
+// ---------- inverse: descend by the branchless child classifier ----------
+// Shared descent: the target is the corner sum of a real cell, which is
+// strictly interior at every level, so the branchless classifier is provably
+// the containing child (and the leaf resolves by exact sum match). Fractional
+// point location no longer descends at all — IJToS rounds to a triple first
+// (see curve.ts roundToTriple). Internal; also used by compat.ts.
 //
 // Returns [s, leafFlavor]. Callers that only need `s` take [0].
-export function axiomTargetToS(
-  t: CurveTables,
-  ta: number,
-  tb: number,
-  R: number,
-  axiom: number,
-  exact: boolean
-): [bigint, number] {
-  const {childToken, childFlip, childOffA, childOffB, leafSum, leafTri} = t;
+export function axiomTargetToS(t: CurveTables, ta: number, tb: number, R: number, axiom: number): [bigint, number] {
+  const {childToken, childFlip, childOffA, childOffB, leafSum} = t;
   let motif = axiom,
     flip = 0;
   let posA = 0,
@@ -197,37 +152,7 @@ export function axiomTargetToS(
   for (let L = R; L >= 2; L--) {
     const scale = POW2[L - 2];
     const sign = flip ? -scale : scale;
-    // Exact targets (real cell corner sums) are strictly interior at every level,
-    // so the branchless classifier is provably the containing child. Fractional
-    // targets can sit on a child boundary, where the classifier's tie-break can
-    // differ from the argmax, so keep the exact argmax scan for that path
-    // (only sumPointToS uses it — compat locates points via the old sign tests).
-    let bestD: number;
-    if (exact) {
-      bestD = classify(t, motif * 2 + flip, ta - 3 * posA, tb - 3 * posB, scale);
-    } else {
-      bestD = 0;
-      let bestScore = -Infinity;
-      for (let d = 0; d < 4; d++) {
-        const ci = motif * 4 + d;
-        const score = insideScore(
-          t,
-          childToken[ci],
-          flip ^ childFlip[ci],
-          L - 1,
-          posA + childOffA[ci] * sign,
-          posB + childOffB[ci] * sign,
-          ta,
-          tb,
-          bestScore
-        );
-        if (score > bestScore) {
-          bestScore = score;
-          bestD = d;
-          if (score > 0) break; // strictly inside: the unique containing child
-        }
-      }
-    }
+    const bestD = classify(t, motif * 2 + flip, ta - 3 * posA, tb - 3 * posB, scale);
     const ci = motif * 4 + bestD;
     posA += childOffA[ci] * sign;
     posB += childOffB[ci] * sign;
@@ -237,40 +162,18 @@ export function axiomTargetToS(
     if (idx < LO_DIGITS) sLo += bestD * POW4[idx];
     else sHi += bestD * POW4[idx - LO_DIGITS];
   }
-  // level 1: pick the leaf cell, by exact corner-sum match or point-in-cell
+  // level 1: pick the leaf cell by exact corner-sum match
   const base = motif * 2 + flip;
-  let d0 = 0;
-  if (exact) {
-    const relA = ta - 3 * posA,
-      relB = tb - 3 * posB;
-    d0 = -1;
-    for (let d = 0; d < 4; d++) {
-      if (leafSum[base * 8 + d * 2] === relA && leafSum[base * 8 + d * 2 + 1] === relB) {
-        d0 = d;
-        break;
-      }
-    }
-    if (d0 < 0) throw new Error(`lsystem inverse: no leaf match for corner sum (${ta},${tb})`);
-  } else {
-    const ra = ta - 3 * posA,
-      rb = tb - 3 * posB;
-    let bestScore = -Infinity;
-    for (let d = 0; d < 4; d++) {
-      let minCross = Infinity;
-      for (let e = 0; e < 3; e++) {
-        const o = base * 48 + d * 12 + e * 4;
-        const dta = ra - leafTri[o];
-        const dtb = rb - leafTri[o + 1];
-        const cross = leafTri[o + 2] * dtb - leafTri[o + 3] * dta;
-        if (cross < minCross) minCross = cross;
-      }
-      if (minCross > bestScore) {
-        bestScore = minCross;
-        d0 = d;
-        if (minCross > 0) break;
-      }
+  const relA = ta - 3 * posA,
+    relB = tb - 3 * posB;
+  let d0 = -1;
+  for (let d = 0; d < 4; d++) {
+    if (leafSum[base * 8 + d * 2] === relA && leafSum[base * 8 + d * 2 + 1] === relB) {
+      d0 = d;
+      break;
     }
   }
+  if (d0 < 0) throw new Error(`lsystem inverse: no leaf match for corner sum (${ta},${tb})`);
   sLo += d0;
   const s = R > LO_DIGITS ? (BigInt(sHi) << LO_BITS) | BigInt(sLo) : BigInt(sLo);
   return [s, t.leafFlavor[base * 4 + d0]];
@@ -330,20 +233,6 @@ export function tripleToSLattice(triple: Triple, resolution: number, orientation
   const rec = ORIENT[orientation];
   const ab = tripleToAB(triple);
   const tauSum = rec.isB ? 12 * POW2[resolution] : 0;
-  const sAxiom = axiomTargetToS(A5, ab.a - tauSum, ab.b + tauSum, resolution, rec.axiom, true)[0];
-  return rec.reverse ? N - 1n - sAxiom : sAxiom;
-}
-
-/**
- * Fractional point -> the curve position `s` of the containing cell, by direct
- * descent. The target is given in the corner-sum frame (= 3x the L-system (a,b)
- * point frame); callers map their coordinate system into it (for the IJ plane
- * the exact affine map is target = (12*(i+j), -12*j), see curve.ts).
- */
-export function sumPointToS(ta: number, tb: number, resolution: number, orientation: Orientation = 'uv'): bigint {
-  const N = 1n << BigInt(2 * resolution);
-  const rec = ORIENT[orientation];
-  const tauSum = rec.isB ? 12 * POW2[resolution] : 0;
-  const sAxiom = axiomTargetToS(A5, ta - tauSum, tb + tauSum, resolution, rec.axiom, false)[0];
+  const sAxiom = axiomTargetToS(A5, ab.a - tauSum, ab.b + tauSum, resolution, rec.axiom)[0];
   return rec.reverse ? N - 1n - sAxiom : sAxiom;
 }

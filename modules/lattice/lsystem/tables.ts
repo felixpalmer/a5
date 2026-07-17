@@ -34,10 +34,8 @@ export interface CurveTables {
   childOffB: Float64Array;
   // footprint hulls per (motif, flip): edge list [3*c0.a, 3*c0.b, d.a, d.b]*E
   fpEdges: Float64Array[];
-  // leaf tables per (motif, flip): 4 host cells as corner sums, point-in-cell
-  // triangle edges, and pentagon flavors
+  // leaf tables per (motif, flip): 4 host cells as corner sums and pentagon flavors
   leafSum: Float64Array;
-  leafTri: Float64Array;
   leafFlavor: Uint8Array;
   // Branchless child classifier per state k = motif*2+flip: 3 separating lines
   // (classSep[k*9 ..] = [nx0,ny0,c0, nx1,ny1,c1, nx2,ny2,c2]) evaluated against
@@ -242,11 +240,8 @@ export function compileGrammar(rules: Record<string, string>, draws: Record<stri
 
   // ---------- leaf tables: per (motif, flip = heading 0|3) the 4 level-1 host cells ----------
   //  - corner sums relative to the descent position: sum = 3*pos + leafSum[..]
-  //  - triangle edges [3*c0.a, 3*c0.b, d.a, d.b]*3 for point-in-cell tests,
-  //    winding-normalized to CCW so "inside" is cross > 0 on every edge
   //  - the cell's pentagon flavor
   const leafSum = new Float64Array(motifCount * 2 * 8);
-  const leafTri = new Float64Array(motifCount * 2 * 48);
   const leafFlavor = new Uint8Array(motifCount * 2 * 4);
   for (const m of allMotifs) {
     const drawStr = toDraws(m, 1);
@@ -260,18 +255,6 @@ export function compileGrammar(rules: Record<string, string>, draws: Record<stri
         const upper = sym.toUpperCase();
         if (FLAVOR_BASE[upper] === undefined) throw new Error(`lsystem: no pentagon flavor for draw symbol ${sym}`);
         leafFlavor[base * 4 + d] = FLAVOR_BASE[upper] ^ (sym === upper ? 0 : 1) ^ (hh & 1);
-        let c = hostCorners(sym, from, hh);
-        const area = (c[1].a - c[0].a) * (c[2].b - c[0].b) - (c[1].b - c[0].b) * (c[2].a - c[0].a);
-        if (area < 0) c = [c[0], c[2], c[1]];
-        for (let e = 0; e < 3; e++) {
-          const c0 = c[e],
-            c1 = c[(e + 1) % 3];
-          const o = base * 48 + d * 12 + e * 4;
-          leafTri[o] = 3 * c0.a;
-          leafTri[o + 1] = 3 * c0.b;
-          leafTri[o + 2] = c1.a - c0.a;
-          leafTri[o + 3] = c1.b - c0.b;
-        }
         d++;
       });
     }
@@ -285,7 +268,6 @@ export function compileGrammar(rules: Record<string, string>, draws: Record<stri
     childOffB,
     fpEdges,
     leafSum,
-    leafTri,
     leafFlavor,
     classSep: new Float64Array(motifCount * 2 * 9),
     classLut: new Uint8Array(motifCount * 2 * 8)
