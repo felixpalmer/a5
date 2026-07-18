@@ -115,6 +115,17 @@ export function segmentToQuintant(segment: number, origin: Origin): {quintant: n
 }
 
 /**
+ * The `count` origins nearest to a point, by haversine distance, nearest first.
+ * Used by the boundary resolution in sphericalToCell: a point on (or within
+ * float noise of) a face seam or dodecahedron vertex may belong to a cell of
+ * the 2nd- or 3rd-nearest face.
+ */
+export function findNearestOrigins(point: Spherical, count: number): Origin[] {
+  const sorted = [...origins].sort((a, b) => haversine(point, a.axis) - haversine(point, b.axis));
+  return sorted.slice(0, count);
+}
+
+/**
  * Find the nearest origin to a point on the sphere
  * Uses haversine formula to calculate great-circle distance
  */
@@ -134,25 +145,6 @@ export function findNearestOrigin(point: Spherical): Origin {
 
 export function isNearestOrigin(point: Spherical, origin: Origin): boolean {
   return haversine(point, origin.axis) > 0.49999999;
-}
-
-/**
- * Same as `findNearestOrigin` but takes a Cartesian unit vector. The
- * argmin of `1 − a·b` matches the argmin of haversine, so this returns
- * the same origin without any spherical-trig conversions.
- */
-export function findNearestOriginCartesian(c: Cartesian): Origin {
-  let minDistance = Infinity;
-  let nearest = origins[0];
-  for (const origin of origins) {
-    const ax = origin.axisCartesian;
-    const distance = 1 - (c[0] * ax[0] + c[1] * ax[1] + c[2] * ax[2]);
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearest = origin;
-    }
-  }
-  return nearest;
 }
 
 /**

@@ -7,17 +7,16 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type {Cartesian, Face, LonLat, Spherical} from './coordinate-systems';
 import {FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes} from './coordinate-transforms';
-import {findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmentToQuintant} from './origin';
+import {clockwiseFan, clockwiseStep, findNearestOrigin, findNearestOrigins, quintantToSegment, segmentToQuintant} from './origin';
 import {DodecahedronProjection} from '../projections/dodecahedron';
-import {A5Cell, OriginId} from './utils';
+import {A5Cell, Origin, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
-import {cellContainsScaled, getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
+import {cellMarginScaled, getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
 import {PI_OVER_5} from './constants';
-import {IJToS, roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
+import {roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
+import type {Triple} from '../lattice';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from './serialization';
-import {getGlobalCellNeighbors} from '../traversal/global-neighbors';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
-import {Spiral, SPIRAL_SAMPLE_COUNT} from '../utils/spiral';
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -35,15 +34,10 @@ let _lastResult: {
   resolution: number;
 } | null = null;
 
-/** Update the single-entry cache with a successful (cell, cellId) pair. */
-function cacheResult(cell: A5Cell, cellId: bigint, resolution: number): bigint {
-  _lastResult = {cellId, pentagon: _getPentagon(cell), originId: cell.origin.id, resolution};
-  return cellId;
-}
-
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   return sphericalToCell(fromLonLat(lonLat), resolution);
 }
+
 
 /**
  * Like `lonLatToCell`, but accepts a point already in A5's internal spherical
@@ -62,8 +56,13 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   }
 
   if (resolution < FIRST_HILBERT_RESOLUTION) {
-    // For low resolutions there is no Hilbert curve, so we can just return as the result is exact
-    return serialize(_sphericalToEstimate(spherical, resolution));
+    // For low resolutions there is no Hilbert curve: the cell is determined by
+    // the face (and quintant) alone, so the lookup is exact.
+    const origin = findNearestOrigin(spherical);
+    const dodecPoint = dodecahedron.forward(spherical, origin.id);
+    const quintant = getQuintantPolar(toPolar(dodecPoint));
+    const {segment} = quintantToSegment(quintant, origin);
+    return serialize({S: 0n, segment, origin, resolution});
   }
 
   // Try the cached pentagon first — skips the full lookup when consecutive
@@ -81,9 +80,42 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   // one 7-candidate walk resolves it — then a single curve encode.
   const origin = findNearestOrigin(spherical);
   const dodecPoint = dodecahedron.forward(spherical, origin.id);
-  const polar = toPolar(dodecPoint);
-  const quintant = getQuintantPolar(polar);
-  const {segment, orientation} = quintantToSegment(quintant, origin);
+  const quintant = getQuintantPolar(toPolar(dodecPoint));
+  const best = _lookupInQuintant(dodecPoint, origin, quintant, resolution);
+  if (best !== null && best.margin > 0) return _acceptCandidate(best);
+  // No strictly-containing pentagon in the assigned frame: the point sits on a
+  // cell boundary or within float noise of a quintant/face seam.
+  return _sphericalToCellBoundary(spherical, resolution, origin, quintant, best);
+}
+
+// The best cell for `dodecPoint` (face frame of `origin`) within one quintant:
+// round to the leaf triangle, closed-form flavor, geometric margin, and — when
+// the triangle's cell doesn't strictly contain the point — the best of its
+// fixed neighbor deltas. margin > 0 ⇔ the unique strictly-containing pentagon.
+interface CellCandidate {
+  margin: number;
+  cellId: bigint;
+  triple: Triple;
+  flavor: number;
+  quintant: number;
+  hilbertResolution: number;
+  originId: OriginId;
+  resolution: number;
+}
+
+function _lookupInQuintant(
+  dodecPoint: Face,
+  origin: Origin,
+  quintant: number,
+  resolution: number
+): CellCandidate | null {
+  // Inlined quintantToSegment (see origin.ts)
+  const layout = origin.orientation;
+  const step = layout === clockwiseFan || layout === clockwiseStep ? -1 : 1;
+  const delta = (quintant - origin.firstQuintant + 5) % 5;
+  const faceRelativeQuintant = (step * delta + 5) % 5;
+  const orientation = layout[faceRelativeQuintant];
+  const segment = (origin.firstQuintant + faceRelativeQuintant) % 5;
 
   // Res-30 ids can only encode quintants 0-41 (by design: 64 bits cannot fit
   // res 30 globally, so A5 covers the populous region). In the unsupported
@@ -106,149 +138,97 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   const py = _scaledPoint[1] * scale;
   const ij = FaceToIJ([px, py] as Face);
 
-  let triple = roundToTriple(ij, hilbertResolution);
-  let flavor = tripleFlavor(triple);
-  let found = cellContainsScaled(px, py, triple.x, triple.y, flavor);
-  if (!found) {
+  const base = roundToTriple(ij, hilbertResolution);
+  let triple = base;
+  let flavor = tripleFlavor(base);
+  let margin = cellMarginScaled(px, py, base.x, base.y, flavor);
+  if (margin <= 0) {
+    // All deltas are relative to the ROUNDED triple (the containing pentagon
+    // is always among its fixed neighbors), not to intermediate best cells.
     const deltas = NEIGHBOR_DELTAS[flavor].all;
     const maxRow = scale - 1;
     for (let i = 0; i < deltas.length; i++) {
       const d = deltas[i];
-      const neighbor = {x: triple.x + d.x, y: triple.y + d.y, z: triple.z + d.z};
+      const neighbor = {x: base.x + d.x, y: base.y + d.y, z: base.z + d.z};
       if (!tripleInBounds(neighbor, maxRow)) continue;
       const neighborFlavor = tripleFlavor(neighbor);
-      if (cellContainsScaled(px, py, neighbor.x, neighbor.y, neighborFlavor)) {
+      const neighborMargin = cellMarginScaled(px, py, neighbor.x, neighbor.y, neighborFlavor);
+      if (neighborMargin > margin) {
         triple = neighbor;
         flavor = neighborFlavor;
-        found = true;
-        break;
+        margin = neighborMargin;
+        if (margin > 0) break;
       }
     }
   }
-  if (found) {
-    const S = tripleToS(triple, hilbertResolution, orientation);
-    if (S !== null) {
-      const cellId = serialize({S, segment, origin, resolution});
-      // Cache the pentagon for the dense-sample fast accept above — built
-      // directly from (triple, flavor), no curve decode needed.
-      _lastResult = {
-        cellId,
-        pentagon: getPentagonVertices(hilbertResolution, quintant, triple, flavor),
-        originId: origin.id,
-        resolution
-      };
-      return cellId;
+  const S = tripleToS(triple, hilbertResolution, orientation);
+  if (S === null) return null;
+  const cellId = serialize({S, segment, origin, resolution});
+  return {margin, cellId, triple, flavor, quintant, hilbertResolution, originId: origin.id, resolution};
+}
+
+/** Cache the winning pentagon for the dense-sample fast accept and return its id. */
+function _acceptCandidate(c: CellCandidate): bigint {
+  _lastResult = {
+    cellId: c.cellId,
+    pentagon: getPentagonVertices(c.hilbertResolution, c.quintant, c.triple, c.flavor),
+    originId: c.originId,
+    resolution: c.resolution
+  };
+  return c.cellId;
+}
+
+// Tie margin tolerance: containment margins are cross products of unit-scale
+// pentagon edges against coordinates of magnitude up to 2^hilbertResolution,
+// so their float noise is ~2^(hilbertResolution - 52); 2^-44 gives a wide
+// safety factor while staying geometrically negligible (cells are unit-size
+// in the scaled frame).
+const TIE_EPS = 2 ** -44;
+
+/**
+ * Boundary resolution: the point has no strictly-containing pentagon in its
+ * assigned frame — it lies on a cell edge, or within float noise of a quintant
+ * or face seam (where the containing cell belongs to a neighboring frame).
+ * Deterministically rerun the same lookup in every frame that could own the
+ * point — all 5 quintants of the 3 nearest faces (a dodecahedron vertex joins
+ * 3 faces; a face center joins 5 quintants). A strictly-containing pentagon is
+ * unique, so the first strict hit wins; if none exists the point is exactly on
+ * a boundary shared by the near-best candidates, and the tie-break is the cell
+ * that comes FIRST ALONG THE CURVE — the lowest cell id (origin/segment occupy
+ * the top id bits in curve order, so numeric order is curve order globally).
+ */
+function _sphericalToCellBoundary(
+  spherical: Spherical,
+  resolution: number,
+  firstOrigin: Origin,
+  firstQuintant: number,
+  first: CellCandidate | null
+): bigint {
+  const candidates: CellCandidate[] = first !== null ? [first] : [];
+  for (const origin of findNearestOrigins(spherical, 3)) {
+    const dodecPoint = dodecahedron.forward(spherical, origin.id);
+    // Try this origin's assigned quintant first, then its gamma-adjacent
+    // neighbors: seam points resolve in the adjacent frame, so this order
+    // finds the strict container in 1-2 lookups instead of scanning all 5.
+    const q0 = getQuintantPolar(toPolar(dodecPoint));
+    for (const dq of [0, 1, 4, 2, 3]) {
+      const quintant = (q0 + dq) % 5;
+      if (origin.id === firstOrigin.id && quintant === firstQuintant) continue;
+      const c = _lookupInQuintant(dodecPoint, origin, quintant, resolution);
+      if (c === null) continue;
+      if (c.margin > 0) return _acceptCandidate(c);
+      candidates.push(c);
     }
   }
-  // No strict container among the candidates: the point is on a pentagon
-  // boundary or belongs to a neighboring quintant/face — search robustly.
-  return _sphericalToCellSearch(spherical, resolution);
-}
-
-// Legacy search: estimate + verification + spiral + neighbor/closest fallback.
-// Reached only from the fast path's fallthrough (boundary points,
-// cross-quintant points, the degraded res-30 zone) — rare, but fully robust.
-function _sphericalToCellSearch(spherical: Spherical, resolution: number): bigint {
-  // Try the original point's projection-based estimate. Common case for
-  // non-boundary points.
-  const firstEstimate = _sphericalToEstimate(spherical, resolution);
-  const firstKey = serialize(firstEstimate);
-  const firstDistance = a5cellContainsPoint(firstEstimate, spherical);
-  if (firstDistance > 0) return cacheResult(firstEstimate, firstKey, resolution);
-
-  // Spiral search: perturb the point in the tangent plane to find nearby
-  // estimate cells (see modules/utils/spiral.ts).
-  const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-  const scale = SPIRAL_SCALE_RAD / Math.pow(2, hilbertResolution);
-  const estimateSet = new Set<bigint>([firstKey]);
-  const cells: {cellId: bigint; distance: number}[] = [{cellId: firstKey, distance: firstDistance}];
-
-  const spiral = new Spiral(spherical, scale);
-  for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
-    const estimate = _cartesianToEstimate(spiral.sample(_spiralOut, i), resolution);
-    const estimateKey = serialize(estimate);
-    if (estimateSet.has(estimateKey)) continue;
-    estimateSet.add(estimateKey);
-    const distance = a5cellContainsPoint(estimate, spherical);
-    if (distance > 0) return cacheResult(estimate, estimateKey, resolution);
-    cells.push({cellId: estimateKey, distance});
+  let best = -Infinity;
+  for (const c of candidates) if (c.margin > best) best = c.margin;
+  const eps = TIE_EPS * 2 ** (1 + resolution - FIRST_HILBERT_RESOLUTION);
+  let winner: CellCandidate | null = null;
+  for (const c of candidates) {
+    if (c.margin >= best - eps && (winner === null || c.cellId < winner.cellId)) winner = c;
   }
-
-  // Spiral exhausted without finding a strict container. This is reachable
-  // for points right at the polar singularity at very high resolutions,
-  // where re-projecting any tangent sample snaps back to a small set of
-  // cells while the geometrically-containing cell is offset by one
-  // adjacency step. Fall back to direct neighbours of the closest spiral
-  // candidate, which always finds it.
-  cells.sort((a, b) => b.distance - a.distance);
-  const K = Math.min(3, cells.length);
-  for (let k = 0; k < K; k++) {
-    const neighbors = getGlobalCellNeighbors(cells[k].cellId);
-    for (let n = 0; n < neighbors.length; n++) {
-      const neighborKey = neighbors[n];
-      if (estimateSet.has(neighborKey)) continue;
-      estimateSet.add(neighborKey);
-      const neighborCell = deserialize(neighborKey);
-      const distance = a5cellContainsPoint(neighborCell, spherical);
-      if (distance > 0) return cacheResult(neighborCell, neighborKey, resolution);
-      cells.push({cellId: neighborKey, distance});
-    }
-  }
-
-  // True fallback: closest cell wins, even if technically just outside.
-  cells.sort((a, b) => b.distance - a.distance);
-  const fallbackKey = cells[0].cellId;
-  return cacheResult(deserialize(fallbackKey), fallbackKey, resolution);
-}
-
-// Spiral perturbation radius at hilbertResolution=1 (in radians of tangent
-// offset). For higher resolutions we scale by 1/2^hilbertResolution. Tuned
-// empirically (see SPIRAL_SAMPLE_COUNT in utils/spiral.ts).
-const SPIRAL_SCALE_RAD = (70 * Math.PI) / 180;
-
-// Reusable output buffer for spiral.sample() — written once per iteration,
-// consumed immediately by _cartesianToEstimate. Single-threaded JS makes
-// this safe; ports use stack allocation or per-call locals.
-const _spiralOut = vec3.create() as unknown as Cartesian;
-
-// The IJToS function uses the triangular lattice which only approximates the pentagon lattice
-// Thus these functions only return a cell nearby, and we need to search the neighborhood to find the correct cell
-// TODO: Implement a more accurate function
-
-function _sphericalToEstimate(spherical: Spherical, resolution: number): A5Cell {
-  const origin = {...findNearestOrigin(spherical)};
-  const dodecPoint = dodecahedron.forward(spherical, origin.id);
-  return _faceToEstimate(dodecPoint, origin, resolution);
-}
-
-function _cartesianToEstimate(cartesian: Cartesian, resolution: number): A5Cell {
-  const origin = {...findNearestOriginCartesian(cartesian)};
-  const dodecPoint = dodecahedron.forwardCartesian(cartesian, origin.id);
-  return _faceToEstimate(dodecPoint, origin, resolution);
-}
-
-function _faceToEstimate(dodecPoint: Face, origin: A5Cell['origin'], resolution: number): A5Cell {
-  const polar = toPolar(dodecPoint);
-  const quintant = getQuintantPolar(polar);
-  const {segment, orientation} = quintantToSegment(quintant, origin);
-  if (resolution < FIRST_HILBERT_RESOLUTION) {
-    // For low resolutions there is no Hilbert curve
-    return {S: 0n, segment, origin, resolution};
-  }
-
-  // Rotate into right fifth
-  if (quintant !== 0) {
-    const extraAngle = 2 * PI_OVER_5 * quintant;
-    mat2.fromRotation(rotation, -extraAngle);
-    vec2.transformMat2(dodecPoint, dodecPoint, rotation);
-  }
-
-  const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-  vec2.scale(dodecPoint, dodecPoint, 2 ** hilbertResolution);
-
-  const ij = FaceToIJ(dodecPoint);
-  let S = IJToS(ij, hilbertResolution, orientation);
-  return {S, segment, origin, resolution};
+  if (winner === null) throw new Error('sphericalToCell: no candidate cell found');
+  return _acceptCandidate(winner);
 }
 
 // TODO move into tiling.ts

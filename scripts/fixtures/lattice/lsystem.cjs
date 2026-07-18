@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {lsystemSToCell, lsystemTripleToS, lsystemIJToS, tripleParity} = require('../../a5-test.cjs');
+const {lsystemSToCell, lsystemTripleToS, roundToTriple, tripleParity} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/lattice');
 const outputPath = path.join(outputDir, 'lsystem.json');
@@ -50,7 +50,7 @@ for (const resolution of resolutions) {
 }
 console.log(`  lsystemSToCell: ${sToCellFixtures.length} cases (all round-trips verified)`);
 
-// --- IJToS: fractional IJ point -> s of the containing cell ---
+// --- pointToS: fractional IJ point -> s of the containing cell (roundToTriple + encode) ---
 // Deterministic sample points, as fractions of the quintant triangle
 // (i >= 0, j >= 0, i + j <= 2^resolution)
 const pointFractions = [
@@ -71,9 +71,9 @@ for (const resolution of resolutions) {
     for (const [fi, fj] of pointFractions) {
       const i = fi * n;
       const j = fj * n;
-      const s = lsystemIJToS([i, j], resolution, orientation);
+      const s = lsystemTripleToS(roundToTriple([i, j], resolution), resolution, orientation);
       if (s < 0n || s >= BigInt(numCells)) {
-        console.error(`  ERROR: lsystemIJToS(${i},${j}) out of range for res=${resolution}, ori=${orientation}: ${s}`);
+        console.error(`  ERROR: pointToS(${i},${j}) out of range for res=${resolution}, ori=${orientation}: ${s}`);
         process.exit(1);
       }
       // Cross-check: the containing cell's centroid must map back to the same s
@@ -82,10 +82,10 @@ for (const resolution of resolutions) {
       const parity = tripleParity(triple);
       const ci = triple.x + triple.y + (parity === 0 ? 1 / 3 : -1 / 3);
       const cj = -triple.x + (parity === 0 ? 1 / 3 : 2 / 3);
-      const sCentroid = lsystemIJToS([ci, cj], resolution, orientation);
+      const sCentroid = lsystemTripleToS(roundToTriple([ci, cj], resolution), resolution, orientation);
       if (sCentroid !== s) {
         console.error(
-          `  ERROR: lsystemIJToS centroid cross-check failed for (${i},${j}) res=${resolution}, ori=${orientation}: ${s} vs ${sCentroid}`
+          `  ERROR: pointToS centroid cross-check failed for (${i},${j}) res=${resolution}, ori=${orientation}: ${s} vs ${sCentroid}`
         );
         process.exit(1);
       }
@@ -93,8 +93,8 @@ for (const resolution of resolutions) {
     }
   }
 }
-console.log(`  lsystemIJToS: ${ijToSFixtures.length} cases (all centroid cross-checks verified)`);
+console.log(`  pointToS: ${ijToSFixtures.length} cases (all centroid cross-checks verified)`);
 
 fs.mkdirSync(outputDir, {recursive: true});
-fs.writeFileSync(outputPath, JSON.stringify({sToCell: sToCellFixtures, IJToS: ijToSFixtures}, null, 2));
+fs.writeFileSync(outputPath, JSON.stringify({sToCell: sToCellFixtures, pointToS: ijToSFixtures}, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

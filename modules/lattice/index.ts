@@ -3,14 +3,14 @@
 // Copyright (c) A5 contributors
 
 // The canonical A5 curve is the non-self-intersecting L-system curve
-// (lsystem/ + curve.ts): point -> s via IJToS, and the s <-> cell mappings via
+// (lsystem/ + curve.ts): point location via roundToTriple, s <-> cell mappings via
 // sToCell / sToTriple / tripleToS. This is a breaking change from previous
 // releases — cell IDs differ from the original construction. The original curve
 // remains available bit-for-bit via the compat* exports below for migration.
 
 export type {Orientation} from './types';
 
-export {IJToS, roundToTriple} from './curve';
+export {roundToTriple} from './curve';
 export {sToCell, sToTriple} from './lsystem';
 export type {Cell} from './lsystem';
 

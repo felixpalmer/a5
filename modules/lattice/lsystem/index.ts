@@ -137,7 +137,7 @@ export function axiomLeafCell(
 // Shared descent: the target is the corner sum of a real cell, which is
 // strictly interior at every level, so the branchless classifier is provably
 // the containing child (and the leaf resolves by exact sum match). Fractional
-// point location no longer descends at all — IJToS rounds to a triple first
+// point location no longer descends at all — sphericalToCell rounds to a triple
 // (see curve.ts roundToTriple). Internal; also used by compat.ts.
 //
 // Returns [s, leafFlavor]. Callers that only need `s` take [0].

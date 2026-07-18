@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import type {IJ} from 'a5/core/coordinate-systems';
 import type {Orientation, Triple} from 'a5/lattice';
-import {sToCell, sToTriple, tripleToS, tripleParity, tripleInBounds, tripleFlavor, IJToS} from 'a5/lattice';
+import {roundToTriple, sToCell, sToTriple, tripleToS, tripleParity, tripleInBounds, tripleFlavor} from 'a5/lattice';
 import fixtures from '../fixtures/lattice/curve.json';
 
 type SToCellFixture = {
@@ -15,7 +15,7 @@ type SToCellFixture = {
   flavor: number;
 };
 
-type IJToSFixture = {
+type PointToSFixture = {
   i: number;
   j: number;
   resolution: number;
@@ -71,10 +71,10 @@ describe('tripleToS', () => {
   });
 });
 
-describe('IJToS', () => {
+describe('pointToS (roundToTriple + tripleToS)', () => {
   it('locates the containing cell of a fractional IJ point', () => {
-    for (const f of fixtures.IJToS as IJToSFixture[]) {
-      const s = IJToS([f.i, f.j] as IJ, f.resolution, f.orientation);
+    for (const f of fixtures.pointToS as PointToSFixture[]) {
+      const s = tripleToS(roundToTriple([f.i, f.j] as IJ, f.resolution), f.resolution, f.orientation);
       expect(Number(s), `s for (${f.i},${f.j}) res=${f.resolution} ori=${f.orientation}`).toBe(f.s);
     }
   });

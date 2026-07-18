@@ -52,30 +52,33 @@ const FLAVOR_PENTAGONS = [0, 1, 2, 3].map(flavor => {
 });
 
 /**
- * Strict containment of a point in the pentagon of (triple, flavor), tested in
- * the SCALED quintant-0 frame (face coords rotated into quintant 0 and scaled
+ * Signed containment margin of a point in the pentagon of (triple, flavor)
+ * (> 0 ⇔ strictly inside; the most-violated-edge cross product otherwise),
+ * tested in the SCALED quintant-0 frame (face coords rotated into quintant 0 and scaled
  * by 2^resolution — the frame `_faceToEstimate` works in). In this frame the
  * cell's pentagon is the flavor-oriented base pentagon translated by
  * BASIS·(x+y, -x+(flavor&1)), so the test needs no curve decode, no
  * re-projection, and — pentagons being unit-size here — stays well-conditioned
  * at every resolution.
  */
-export function cellContainsScaled(px: number, py: number, x: number, y: number, flavor: number): boolean {
+export function cellMarginScaled(px: number, py: number, x: number, y: number, flavor: number): number {
   const rx = x + y;
   const ry = -x + (flavor & 1);
   const tx = BASIS[0] * rx + BASIS[2] * ry;
   const ty = BASIS[1] * rx + BASIS[3] * ry;
   const pent = FLAVOR_PENTAGONS[flavor];
+  let margin = Infinity;
   for (let i = 0; i < 5; i++) {
     const j = i === 4 ? 0 : i + 1;
     const v1x = pent[i * 2] + tx;
     const v1y = pent[i * 2 + 1] + ty;
     const v2x = pent[j * 2] + tx;
     const v2y = pent[j * 2 + 1] + ty;
-    // (v1 - v2) × (p - v1) < 0 ⇒ strictly outside this edge
-    if ((v1x - v2x) * (py - v1y) - (v1y - v2y) * (px - v1x) < 0) return false;
+    // (v1 - v2) × (p - v1): < 0 ⇒ strictly outside this edge
+    const cross = (v1x - v2x) * (py - v1y) - (v1y - v2y) * (px - v1x);
+    if (cross < margin) margin = cross;
   }
-  return true;
+  return margin;
 }
 
 /**
