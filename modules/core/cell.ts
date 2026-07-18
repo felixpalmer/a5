@@ -7,7 +7,14 @@ glMatrix.setMatrixArrayType(Float64Array as any);
 
 import type {Cartesian, Face, LonLat, Spherical} from './coordinate-systems';
 import {FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes} from './coordinate-transforms';
-import {clockwiseFan, clockwiseStep, findNearestOrigin, findNearestOrigins, quintantToSegment, segmentToQuintant} from './origin';
+import {
+  findNearestOrigin,
+  findNearestOrigins,
+  QUINTANT_TO_ORIENTATION,
+  QUINTANT_TO_SEGMENT,
+  SEGMENT_TO_ORIENTATION,
+  SEGMENT_TO_QUINTANT
+} from './origin';
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {A5Cell, Origin, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
@@ -61,7 +68,7 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
     const origin = findNearestOrigin(spherical);
     const dodecPoint = dodecahedron.forward(spherical, origin.id);
     const quintant = getQuintantPolar(toPolar(dodecPoint));
-    const {segment} = quintantToSegment(quintant, origin);
+    const segment = QUINTANT_TO_SEGMENT[origin.id * 5 + quintant];
     return serialize({S: 0n, segment, origin, resolution});
   }
 
@@ -109,13 +116,9 @@ function _lookupInQuintant(
   quintant: number,
   resolution: number
 ): CellCandidate | null {
-  // Inlined quintantToSegment (see origin.ts)
-  const layout = origin.orientation;
-  const step = layout === clockwiseFan || layout === clockwiseStep ? -1 : 1;
-  const delta = (quintant - origin.firstQuintant + 5) % 5;
-  const faceRelativeQuintant = (step * delta + 5) % 5;
-  const orientation = layout[faceRelativeQuintant];
-  const segment = (origin.firstQuintant + faceRelativeQuintant) % 5;
+  const globalQuintant = origin.id * 5 + quintant;
+  const segment = QUINTANT_TO_SEGMENT[globalQuintant];
+  const orientation = QUINTANT_TO_ORIENTATION[globalQuintant];
 
   // Res-30 ids can only encode quintants 0-41 (by design: 64 bits cannot fit
   // res 30 globally, so A5 covers the populous region). In the unsupported
@@ -233,7 +236,9 @@ function _sphericalToCellBoundary(
 
 // TODO move into tiling.ts
 export function _getPentagon({S, segment, origin, resolution}: A5Cell): PentagonShape {
-  const {quintant, orientation} = segmentToQuintant(segment, origin);
+  const globalQuintant = origin.id * 5 + segment;
+  const quintant = SEGMENT_TO_QUINTANT[globalQuintant];
+  const orientation = SEGMENT_TO_ORIENTATION[globalQuintant];
   if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
     const out = getQuintantVertices(quintant);
     return out;
@@ -251,7 +256,9 @@ export function cellToSpherical(cell: bigint): Spherical {
   if (resolution >= FIRST_HILBERT_RESOLUTION) {
     // Fast path: the pentagon center is O(1) from (triple, flavor) — no need
     // to construct the pentagon itself.
-    const {quintant, orientation} = segmentToQuintant(segment, origin);
+    const globalQuintant = origin.id * 5 + segment;
+    const quintant = SEGMENT_TO_QUINTANT[globalQuintant];
+    const orientation = SEGMENT_TO_ORIENTATION[globalQuintant];
     const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
     const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
     const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor);
