@@ -18,7 +18,14 @@ import {
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {A5Cell, Origin, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
-import {cellMarginScaled, getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
+import {
+  cellMarginScaled,
+  getFaceVertices,
+  getPentagonCenter,
+  getPentagonVertices,
+  getQuintantPolar,
+  getQuintantVertices
+} from './tiling';
 import {PI_OVER_5} from './constants';
 import {roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
 import type {Triple} from '../lattice';
@@ -44,7 +51,6 @@ let _lastResult: {
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   return sphericalToCell(fromLonLat(lonLat), resolution);
 }
-
 
 /**
  * Like `lonLatToCell`, but accepts a point already in A5's internal spherical
