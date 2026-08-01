@@ -1,18 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 
-const {getNumCells, getNumChildren, cellArea} = require('../../a5-test.cjs');
+const {getNumCells, getNumChildren, cellArea, cellEdgeLengthAvg} = require('../../a5-test.cjs');
 
 // Generate data for resolutions 0 to 30
-const cellInfoData = {numCells: [], numChildren: [], cellArea: []};
+const cellInfoData = {numCells: [], numChildren: [], cellArea: [], cellEdgeLengthAvg: []};
 
 for (let resolution = 0; resolution <= 30; resolution++) {
   const count = getNumCells(resolution);
   const countBigInt = getNumCells(BigInt(resolution));
   const areaM2 = cellArea(resolution);
+  const lengthM = cellEdgeLengthAvg(resolution);
 
   cellInfoData.numCells.push({resolution, count, countBigInt: countBigInt.toString()});
   cellInfoData.cellArea.push({resolution, areaM2});
+  cellInfoData.cellEdgeLengthAvg.push({resolution, lengthM});
 }
 
 // Generate numChildren pairs

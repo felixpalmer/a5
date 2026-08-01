@@ -21,7 +21,7 @@ export {
   MAX_RESOLUTION,
   WORLD_CELL
 } from './core/serialization';
-export {getNumCells, getNumChildren, cellArea} from './core/cell-info';
+export {getNumCells, getNumChildren, cellArea, cellEdgeLengthAvg} from './core/cell-info';
 export {compact, uncompact} from './core/compact';
 
 // Traversal
