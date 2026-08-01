@@ -43,8 +43,7 @@ describe('cellEdgeLengthAvg', () => {
     const geodesic = (a: number[], b: number[]) => {
       const [lat1, lat2] = [a[1] * DEG, b[1] * DEG];
       const h =
-        Math.sin((lat2 - lat1) / 2) ** 2 +
-        Math.cos(lat1) * Math.cos(lat2) * Math.sin(((b[0] - a[0]) * DEG) / 2) ** 2;
+        Math.sin((lat2 - lat1) / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(((b[0] - a[0]) * DEG) / 2) ** 2;
       return 2 * AUTHALIC_RADIUS_EARTH * Math.asin(Math.sqrt(h));
     };
 
