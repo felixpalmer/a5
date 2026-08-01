@@ -53,3 +53,30 @@ import { cellArea } from 'a5-js';
 
 console.log(cellArea(20)); // ~30 m²
 ```
+
+### cellEdgeLengthAvg
+
+Returns the average edge length of a cell at a given resolution in meters. Individual
+edge lengths vary from the average by roughly ±10%, depending on the cell's
+shape and its position on the globe.
+
+```ts
+function cellEdgeLengthAvg(resolution: number): number;
+```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
+
+#### Return value
+
+- **(number)** Average edge length of a cell in meters
+
+#### Example
+
+```ts
+import { cellEdgeLengthAvg } from 'a5-js';
+
+console.log(cellEdgeLengthAvg(2)); // ~1,190,000 m
+console.log(cellEdgeLengthAvg(10)); // ~4,680 m
+```

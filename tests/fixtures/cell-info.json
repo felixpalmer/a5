@@ -613,5 +613,131 @@
       "resolution": 30,
       "areaM2": 0.000029494093786455682
     }
+  ],
+  "cellEdgeLengthAvg": [
+    {
+      "resolution": 0,
+      "lengthM": 4649142.322893622
+    },
+    {
+      "resolution": 1,
+      "lengthM": 4320430.199988446
+    },
+    {
+      "resolution": 2,
+      "lengthM": 1190173.8477765447
+    },
+    {
+      "resolution": 3,
+      "lengthM": 597565.2378780079
+    },
+    {
+      "resolution": 4,
+      "lengthM": 299147.07687867095
+    },
+    {
+      "resolution": 5,
+      "lengthM": 149609.98423330215
+    },
+    {
+      "resolution": 6,
+      "lengthM": 74814.10356514277
+    },
+    {
+      "resolution": 7,
+      "lengthM": 37407.05178257138
+    },
+    {
+      "resolution": 8,
+      "lengthM": 18703.52589128569
+    },
+    {
+      "resolution": 9,
+      "lengthM": 9351.762945642846
+    },
+    {
+      "resolution": 10,
+      "lengthM": 4675.881472821423
+    },
+    {
+      "resolution": 11,
+      "lengthM": 2337.9407364107115
+    },
+    {
+      "resolution": 12,
+      "lengthM": 1168.9703682053557
+    },
+    {
+      "resolution": 13,
+      "lengthM": 584.4851841026779
+    },
+    {
+      "resolution": 14,
+      "lengthM": 292.24259205133893
+    },
+    {
+      "resolution": 15,
+      "lengthM": 146.12129602566947
+    },
+    {
+      "resolution": 16,
+      "lengthM": 73.06064801283473
+    },
+    {
+      "resolution": 17,
+      "lengthM": 36.530324006417366
+    },
+    {
+      "resolution": 18,
+      "lengthM": 18.265162003208683
+    },
+    {
+      "resolution": 19,
+      "lengthM": 9.132581001604342
+    },
+    {
+      "resolution": 20,
+      "lengthM": 4.566290500802171
+    },
+    {
+      "resolution": 21,
+      "lengthM": 2.2831452504010854
+    },
+    {
+      "resolution": 22,
+      "lengthM": 1.1415726252005427
+    },
+    {
+      "resolution": 23,
+      "lengthM": 0.5707863126002714
+    },
+    {
+      "resolution": 24,
+      "lengthM": 0.2853931563001357
+    },
+    {
+      "resolution": 25,
+      "lengthM": 0.14269657815006784
+    },
+    {
+      "resolution": 26,
+      "lengthM": 0.07134828907503392
+    },
+    {
+      "resolution": 27,
+      "lengthM": 0.03567414453751696
+    },
+    {
+      "resolution": 28,
+      "lengthM": 0.01783707226875848
+    },
+    {
+      "resolution": 29,
+      "lengthM": 0.00891853613437924
+    },
+    {
+      "resolution": 30,
+      "lengthM": 0.00445926806718962
+    }
   ]
 }
