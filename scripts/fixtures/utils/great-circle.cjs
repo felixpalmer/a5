@@ -50,11 +50,41 @@ const fixtures = cases.map(c => {
   };
 });
 
+// Near-degenerate distance cases (Kahan, "How Futile are Mindless Assessments
+// of Roundoff…", §12 "Mangled Angles"). Expected values are ANALYTIC — computed
+// from the construction of the vectors, never via greatCircleDistance — so they
+// prove the implementation keeps full precision where acos(a·b) loses half the
+// digits carried (near-antipodal) or all of them (separations below ~1e-8 rad).
+const AUTHALIC_RADIUS_EARTH = 6371007.2; // m, mirrors core/constants
+const distanceCases = [];
+for (const theta of [1e-3, 1e-6, 1e-9, 1e-12]) {
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+  // Angle between [1,0,0] and the ROUNDED [c,s,0] is atan2(s, c) exactly.
+  distanceCases.push({
+    name: `tiny_separation_${theta}`,
+    aVec: [1, 0, 0],
+    bVec: [c, s, 0],
+    distance: Math.atan2(s, c) * AUTHALIC_RADIUS_EARTH
+  });
+  distanceCases.push({
+    name: `near_antipodal_${theta}`,
+    aVec: [1, 0, 0],
+    bVec: [-c, s, 0],
+    distance: (Math.PI - Math.atan2(s, c)) * AUTHALIC_RADIUS_EARTH
+  });
+}
+distanceCases.push(
+  {name: 'identical', aVec: [1, 0, 0], bVec: [1, 0, 0], distance: 0},
+  {name: 'antipodal', aVec: [1, 0, 0], bVec: [-1, 0, 0], distance: Math.PI * AUTHALIC_RADIUS_EARTH},
+  {name: 'quarter_turn', aVec: [0, 0, 1], bVec: [0, 1, 0], distance: (Math.PI / 2) * AUTHALIC_RADIUS_EARTH}
+);
+
 console.log('Generating utils/great-circle fixtures...');
 for (const f of fixtures) {
   console.log(`  ${f.name}: dist=${(f.distance / 1000).toFixed(1)}km samples=${f.sampleCount}`);
 }
 
 fs.mkdirSync(outputDir, {recursive: true});
-fs.writeFileSync(outputPath, JSON.stringify({sampleGreatCircleArc: fixtures}, null, 2));
+fs.writeFileSync(outputPath, JSON.stringify({sampleGreatCircleArc: fixtures, distances: distanceCases}, null, 2));
 console.log(`  Wrote fixtures to ${outputPath}`);

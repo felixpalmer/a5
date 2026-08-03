@@ -74,8 +74,10 @@ export function barycentricToFace(b: Barycentric, [p1, p2, p3]: FaceTriangle): F
 
 export function toSpherical(xyz: Cartesian): Spherical {
   const theta = Math.atan2(xyz[1], xyz[0]);
-  const r = Math.sqrt(xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]);
-  const phi = Math.acos(xyz[2] / r);
+  // atan2 keeps full precision near the poles, where acos(z/r) loses half of
+  // the digits carried (its derivative blows up as z/r → ±1)
+  const rxy = Math.sqrt(xyz[0] * xyz[0] + xyz[1] * xyz[1]);
+  const phi = Math.atan2(rxy, xyz[2]);
   return [theta, phi] as Spherical;
 }
 

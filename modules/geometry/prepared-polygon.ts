@@ -10,6 +10,7 @@ import {vec3, glMatrix} from 'gl-matrix';
 glMatrix.setMatrixArrayType(Float64Array as any);
 import type {Cartesian} from '../core/coordinate-systems';
 import {pointInSphericalPolygon, ringSegmentNormals} from './spherical-polygon';
+import {vectorAngle} from '../utils/vector';
 
 const Z_AXIS = vec3.fromValues(0, 0, 1) as Cartesian;
 const X_AXIS = vec3.fromValues(1, 0, 0) as Cartesian;
@@ -39,6 +40,8 @@ function pointInPolygonRings(point: Cartesian, ringVecsList: Cartesian[][]): boo
  */
 interface BoundingCap {
   center: Cartesian;
+  /** Cap half-angle in radians; kept alongside minDot so no lossy acos(minDot) round-trip is needed */
+  angle: number;
   minDot: number;
 }
 function boundingCap(ringVecsList: Cartesian[][]): BoundingCap {
@@ -47,23 +50,23 @@ function boundingCap(ringVecsList: Cartesian[][]): BoundingCap {
     vec3.add(center, center, v);
   }
   const len = vec3.length(center);
-  if (len < 1e-12) return {center: vec3.clone(Z_AXIS) as Cartesian, minDot: -1};
+  if (len < 1e-12) return {center: vec3.clone(Z_AXIS) as Cartesian, angle: Math.PI, minDot: -1};
   vec3.scale(center, center, 1 / len);
 
+  // vectorAngle (2·atan2 form) keeps full precision for tiny polygons, where
+  // acos(dot) would lose half the digits carried on near-parallel vectors
   let maxAngle = 0;
   let maxEdge = 0;
   for (const ringVecs of ringVecsList) {
     for (let i = 0; i < ringVecs.length; i++) {
       const v = ringVecs[i];
       const w = ringVecs[(i + 1) % ringVecs.length];
-      const dotCV = vec3.dot(center, v);
-      maxAngle = Math.max(maxAngle, Math.acos(Math.min(1, Math.max(-1, dotCV))));
-      const dotVW = vec3.dot(v, w);
-      maxEdge = Math.max(maxEdge, Math.acos(Math.min(1, Math.max(-1, dotVW))));
+      maxAngle = Math.max(maxAngle, vectorAngle(center, v));
+      maxEdge = Math.max(maxEdge, vectorAngle(v, w));
     }
   }
   const capAngle = Math.min(Math.PI, maxAngle + maxEdge / 2);
-  return {center, minDot: Math.cos(capAngle)};
+  return {center, angle: capAngle, minDot: Math.cos(capAngle)};
 }
 
 /**
@@ -86,7 +89,7 @@ export interface PreparedPolygon {
 export function preparePolygon(ringVecsList: Cartesian[][]): PreparedPolygon {
   const cap = boundingCap(ringVecsList);
   const ringNormals = ringVecsList.map(ringSegmentNormals);
-  const capAngle = Math.acos(Math.min(1, Math.max(-1, cap.minDot)));
+  const capAngle = cap.angle;
   const useFast = cap.minDot > -1 && capAngle < 1.37;
   const c = cap.center;
   vec3.cross(perp, c, Math.abs(c[2]) < 0.9 ? Z_AXIS : X_AXIS);

@@ -5,14 +5,16 @@
 import {vec3} from 'gl-matrix';
 import type {Cartesian} from '../core/coordinate-systems';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
-import {precomputeSlerp, slerp} from './vector';
+import {precomputeSlerp, slerp, vectorAngle} from './vector';
 
 /**
  * Great-circle distance in meters between two unit vectors on the authalic sphere.
+ * Uses 2·atan2(‖a−b‖, ‖a+b‖) rather than acos(a·b): the latter returns 0 for
+ * any points closer than ~1e-8 rad (~6 cm) and loses half its digits near the
+ * antipode, while this form is accurate over the whole range.
  */
 export function greatCircleDistance(a: Cartesian, b: Cartesian): number {
-  const dot = Math.max(-1, Math.min(1, vec3.dot(a, b)));
-  return Math.acos(dot) * AUTHALIC_RADIUS_EARTH;
+  return vectorAngle(a, b) * AUTHALIC_RADIUS_EARTH;
 }
 
 /**
