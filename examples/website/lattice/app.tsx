@@ -25,6 +25,13 @@ export type Cell = {
   crossCheckFailed?: boolean;
 };
 
+export type DualCell = {
+  vertices: number[][]; // cell centers surrounding the lattice vertex, in angular order
+  center: number[]; // the original lattice vertex, now the dual cell center
+  sides: number;
+  index: number;
+};
+
 function crossCheck(cells: Cell[], cells2: Cell[]) {
   for (const cell of cells) {
     cell.crossCheckFailed = false;
@@ -55,7 +62,8 @@ const App: React.FC = () => {
     labels: false,
     anchors: false,
     children: false,
-    centerLines: false
+    centerLines: false,
+    dual: false
   });
   const [orientation, setOrientation] = useState<Orientation>('uv');
   const [colorByParent, setColorByParent] = useState(true);
@@ -134,6 +142,49 @@ const App: React.FC = () => {
     return new Set(Array.from(visited).map(Number));
   }, [hoveredCellIndex, gridDiskK, resolution, orientation]);
 
+  // Dual lattice: each unique lattice vertex becomes a dual cell whose vertices are
+  // the centers of the cells meeting at that vertex. For the pentagonal (Cairo-like)
+  // tiling this yields a snub square tiling of triangles and quadrilaterals.
+  const dualCells = useMemo(() => {
+    const QUANTUM = 1e-7; // vertex dedup tolerance, far below lattice spacing at max resolution
+    const groups = new Map<string, {vertex: number[]; centers: {center: number[]; index: number}[]}>();
+    for (const cell of cells) {
+      const seen = new Set<string>();
+      for (const v of cell.vertices) {
+        const key = `${Math.round(v[0] / QUANTUM)},${Math.round(v[1] / QUANTUM)}`;
+        if (seen.has(key)) continue; // triangle-mode pentagons repeat vertices
+        seen.add(key);
+        let group = groups.get(key);
+        if (!group) {
+          group = {vertex: [v[0], v[1]], centers: []};
+          groups.set(key, group);
+        }
+        group.centers.push({center: [cell.center[0], cell.center[1]], index: cell.index});
+      }
+    }
+    const result: DualCell[] = [];
+    for (const {vertex, centers} of groups.values()) {
+      if (centers.length < 3) continue;
+      const sorted = centers
+        .map(c => ({...c, angle: Math.atan2(c.center[1] - vertex[1], c.center[0] - vertex[0])}))
+        .sort((a, b) => a.angle - b.angle);
+      // Skip boundary vertices: an interior vertex is enclosed by its cell centers,
+      // so no angular gap between consecutive centers can reach π
+      let maxGap = sorted[0].angle + 2 * Math.PI - sorted[sorted.length - 1].angle;
+      for (let i = 1; i < sorted.length; i++) {
+        maxGap = Math.max(maxGap, sorted[i].angle - sorted[i - 1].angle);
+      }
+      if (maxGap >= Math.PI) continue;
+      result.push({
+        vertices: sorted.map(c => c.center),
+        center: vertex,
+        sides: sorted.length,
+        index: Math.min(...sorted.map(c => c.index))
+      });
+    }
+    return result;
+  }, [cells]);
+
   // Update geometry when resolution changes
   useEffect(() => {
     const newCells = generateCells(resolution);
@@ -174,6 +225,7 @@ const App: React.FC = () => {
       anchors: boolean;
       children: boolean;
       centerLines: boolean;
+      dual: boolean;
     };
     setLayerVisibility: (vis: {
       triangles: boolean;
@@ -183,6 +235,7 @@ const App: React.FC = () => {
       anchors: boolean;
       children: boolean;
       centerLines: boolean;
+      dual: boolean;
     }) => void;
     orientation: Orientation;
     setOrientation: (o: Orientation) => void;
@@ -355,6 +408,14 @@ const App: React.FC = () => {
             />{' '}
             Show Center Lines
           </label>
+          <label title="Vertices become cell centers and cell centers become vertices (snub square tiling)">
+            <input
+              type="checkbox"
+              checked={layerVisibility.dual}
+              onChange={e => setLayerVisibility({...layerVisibility, dual: e.target.checked})}
+            />{' '}
+            Show Dual Lattice
+          </label>
         </div>
       </div>
     );
@@ -464,6 +525,19 @@ const App: React.FC = () => {
             setHoveredCellIndex(null);
           }
         }
+      }),
+
+      new PolygonLayer<DualCell>({
+        id: 'dual',
+        data: dualCells,
+        getPolygon: d => d.vertices,
+        getFillColor: d =>
+          d.sides === 3 ? [70, 170, 180, 200] : d.sides === 4 ? [235, 150, 60, 200] : [150, 150, 150, 200],
+        getLineColor: [255, 255, 255, 255],
+        filled: true,
+        visible: layerVisibility.dual,
+        ...lineProps,
+        ...filterProps
       }),
 
       new PathLayer({
