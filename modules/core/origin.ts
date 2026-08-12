@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {quat, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as quat from '../math/quat';
+import type {Quat} from '../math/types';
 import type {Cartesian, Radians, Spherical} from './coordinate-systems';
 import {toCartesian} from './coordinate-transforms';
 import {interhedralAngle, PI_OVER_5, TWO_PI_OVER_5} from './constants';
@@ -59,11 +59,11 @@ function generateOrigins(): void {
 }
 
 let originId: OriginId = 0;
-function addOrigin(axis: Spherical, angle: Radians, quaternion: quat) {
+function addOrigin(axis: Spherical, angle: Radians, quaternion: Quat) {
   if (originId > 11) {
     throw new Error(`Too many origins: ${originId}`);
   }
-  const inverseQuat = quat.create() as quat;
+  const inverseQuat = quat.create() as Quat;
   quat.conjugate(inverseQuat, quaternion); // quaternion is a unit quaternion, so conjugate is the inverse
   const origin: Origin = {
     id: originId,

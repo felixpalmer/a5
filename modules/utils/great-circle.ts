@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec3} from 'gl-matrix';
+import * as vec3 from '../math/vec3';
 import type {Cartesian} from '../core/coordinate-systems';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
 import {precomputeSlerp, slerp, vectorAngle} from './vector';

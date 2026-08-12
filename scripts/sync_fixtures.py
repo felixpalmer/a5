@@ -102,6 +102,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/utils/fixtures/great-circle.json"),
         (RS_ROOT, "tests/fixtures/utils/great-circle.json"),
     ],
+    "tests/fixtures/utils/spiral.json": [
+        (PY_ROOT, "tests/utils/fixtures/spiral.json"),
+        (RS_ROOT, "tests/fixtures/utils/spiral.json"),
+    ],
 
     # Region fixtures
     # NOTE: not yet synced to PY_ROOT — the Python port still uses the old

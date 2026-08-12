@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type {vec2, vec3} from 'gl-matrix';
+import type {Vec2, Vec3} from '../math/types';
 
 export type Degrees = number & {__brand: 'Degrees'};
 export type Radians = number & {__brand: 'Radians'};
@@ -12,7 +12,7 @@ export type Radians = number & {__brand: 'Radians'};
 /**
  * 2D cartesian coordinate system with origin at the center of a dodecahedron face
  */
-export type Face = vec2 & {__brand: 'Face'};
+export type Face = Vec2 & {__brand: 'Face'};
 /**
  * 2D polar coordinate system with origin at the center of a dodecahedron face
  */
@@ -20,17 +20,17 @@ export type Polar = [rho: number, gamma: Radians] & {__brand: 'Polar'};
 /**
  * 2D planar coordinate system defined by the eigenvectors of the lattice tiling
  */
-export type IJ = vec2 & {__brand: 'IJ'};
+export type IJ = Vec2 & {__brand: 'IJ'};
 /**
  * 2D planar coordinate system formed by the transformation K -> I + J
  */
-export type KJ = vec2 & {__brand: 'KJ'};
+export type KJ = Vec2 & {__brand: 'KJ'};
 
 // 3D (with radius fixed)
 /**
  * 3D cartersian system centered on unit sphere/dodecahedron
  */
-export type Cartesian = vec3 & {__brand: 'Cartesian'};
+export type Cartesian = Vec3 & {__brand: 'Cartesian'};
 /**
  * 3D spherical coordinate system centered on unit sphere/dodecahedron
  */

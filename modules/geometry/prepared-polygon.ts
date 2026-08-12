@@ -6,8 +6,7 @@
 // tests: bounding-cap prefilter, then a trig-free crossing-number test with
 // the winding-number test as a robust fallback.
 
-import {vec3, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as vec3 from '../math/vec3';
 import type {Cartesian} from '../core/coordinate-systems';
 import {pointInSphericalPolygon, ringSegmentNormals} from './spherical-polygon';
 import {vectorAngle} from '../utils/vector';
