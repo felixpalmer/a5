@@ -159,5 +159,24 @@ export function transformQuat(out: Vec3, a: Vec3, q: Quat): Vec3 {
   return out;
 }
 
+/**
+ * Angle in radians between two UNIT vectors, as 2·atan2(‖a−b‖, ‖a+b‖).
+ *
+ * A numerically stable replacement for gl-matrix's acos(a·b): that form loses
+ * half its digits when the vectors are nearly (anti)parallel and returns 0 for
+ * separations below ~1e-8 rad, whereas this one keeps full precision over the
+ * whole range [0, π] — the subtraction a−b is exact for nearby vectors and
+ * atan2 has no sensitive endpoints. Inputs are assumed to be unit length.
+ */
+export function angle(a: Vec3, b: Vec3): number {
+  const dx = a[0] - b[0],
+    dy = a[1] - b[1],
+    dz = a[2] - b[2];
+  const sx = a[0] + b[0],
+    sy = a[1] + b[1],
+    sz = a[2] + b[2];
+  return 2 * Math.atan2(Math.sqrt(dx * dx + dy * dy + dz * dz), Math.sqrt(sx * sx + sy * sy + sz * sz));
+}
+
 /** Alias for {@link subtract}. */
 export const sub = subtract;

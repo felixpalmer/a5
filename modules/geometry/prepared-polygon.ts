@@ -9,7 +9,6 @@
 import * as vec3 from '../math/vec3';
 import type {Cartesian} from '../core/coordinate-systems';
 import {pointInSphericalPolygon, ringSegmentNormals} from './spherical-polygon';
-import {vectorAngle} from '../utils/vector';
 
 const Z_AXIS = vec3.fromValues(0, 0, 1) as Cartesian;
 const X_AXIS = vec3.fromValues(1, 0, 0) as Cartesian;
@@ -52,16 +51,14 @@ function boundingCap(ringVecsList: Cartesian[][]): BoundingCap {
   if (len < 1e-12) return {center: vec3.clone(Z_AXIS) as Cartesian, angle: Math.PI, minDot: -1};
   vec3.scale(center, center, 1 / len);
 
-  // vectorAngle (2·atan2 form) keeps full precision for tiny polygons, where
-  // acos(dot) would lose half the digits carried on near-parallel vectors
   let maxAngle = 0;
   let maxEdge = 0;
   for (const ringVecs of ringVecsList) {
     for (let i = 0; i < ringVecs.length; i++) {
       const v = ringVecs[i];
       const w = ringVecs[(i + 1) % ringVecs.length];
-      maxAngle = Math.max(maxAngle, vectorAngle(center, v));
-      maxEdge = Math.max(maxEdge, vectorAngle(v, w));
+      maxAngle = Math.max(maxAngle, vec3.angle(center, v));
+      maxEdge = Math.max(maxEdge, vec3.angle(v, w));
     }
   }
   const capAngle = Math.min(Math.PI, maxAngle + maxEdge / 2);

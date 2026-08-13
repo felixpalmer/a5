@@ -15,27 +15,8 @@ export function tripleProduct(A: Cartesian, B: Cartesian, C: Cartesian): number 
 }
 
 /**
- * Angle between two UNIT vectors, computed as 2·atan2(‖a−b‖, ‖a+b‖).
- *
- * Unlike acos(a·b), which loses half the significant digits carried when the
- * vectors are nearly parallel (and all of them below ~1e-8 rad), this formula
- * keeps full working precision over the whole range [0, π]: the subtraction
- * a−b is exact for nearby vectors, and atan2 has no sensitive endpoints
- * (Kahan, "How Futile are Mindless Assessments of Roundoff…", §12).
- */
-export function vectorAngle(A: Cartesian, B: Cartesian): number {
-  const dx = A[0] - B[0],
-    dy = A[1] - B[1],
-    dz = A[2] - B[2];
-  const sx = A[0] + B[0],
-    sy = A[1] + B[1],
-    sz = A[2] + B[2];
-  return 2 * Math.atan2(Math.sqrt(dx * dx + dy * dy + dz * dz), Math.sqrt(sx * sx + sy * sy + sz * sz));
-}
-
-/**
  * Cached `gamma` and `sin(gamma)` for a fixed (A, B) pair, so loops that
- * slerp many times along the same arc don't re-run `vectorAngle` and `Math.sin`.
+ * slerp many times along the same arc don't re-run `vec3.angle` and `Math.sin`.
  * Build with `precomputeSlerp(A, B)` and pass to `slerp` as the optional `ctx`.
  */
 export interface SlerpContext {
@@ -44,7 +25,7 @@ export interface SlerpContext {
 }
 
 export function precomputeSlerp(A: Cartesian, B: Cartesian): SlerpContext {
-  const gamma = vectorAngle(A, B);
+  const gamma = vec3.angle(A, B);
   return {gamma, sinGamma: Math.sin(gamma)};
 }
 
@@ -59,7 +40,7 @@ export function precomputeSlerp(A: Cartesian, B: Cartesian): SlerpContext {
  * @returns The interpolated vector (same as out)
  */
 export function slerp(out: Cartesian, A: Cartesian, B: Cartesian, t: number, ctx?: SlerpContext): Cartesian {
-  const gamma = ctx ? ctx.gamma : vectorAngle(A, B);
+  const gamma = ctx ? ctx.gamma : vec3.angle(A, B);
   if (gamma < 1e-12) {
     return vec3.lerp(out, A, B, t) as Cartesian;
   }
