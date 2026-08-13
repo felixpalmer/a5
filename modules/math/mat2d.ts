@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-// Minimal double-precision mat2d helper, ported verbatim from gl-matrix v3.4.3
-// (MIT). A mat2d is a 2x3 affine transform stored as [a, b, c, d, tx, ty].
+// Double-precision mat2d helper (2x3 affine = [a, b, c, d, tx, ty]), ported
+// from gl-matrix v3.4.3 (© 2015-2021 Brandon Jones, Colin MacKenzie IV; MIT).
+// Every array is a Float64Array (no Float32Array path).
 
 import type {Mat2d} from './types';
 

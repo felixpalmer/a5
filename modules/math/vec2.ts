@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-// Minimal double-precision vec2 helpers, ported verbatim from gl-matrix v3.4.3
-// (MIT). Only the operations A5 uses are included; `create` always returns a
-// Float64Array so intermediate math stays at double precision.
+// Double-precision vec2 helpers, ported from gl-matrix v3.4.3
+// (© 2015-2021 Brandon Jones, Colin MacKenzie IV; MIT). Only the operations A5
+// uses are included; every array is a Float64Array (no Float32Array path).
 
 import type {Vec2, Mat2, Mat2d} from './types';
 

@@ -3,7 +3,6 @@
 // Copyright (c) A5 contributors
 
 import * as vec2 from '../math/vec2';
-import * as mat2 from '../math/mat2';
 import type {Mat2} from '../math/types';
 import {distanceToEdge, PI_OVER_10, PI_OVER_5} from './constants';
 import {PentagonShape} from '../geometry/pentagon';
@@ -57,10 +56,15 @@ const w: Face = [L * Math.cos(W), L * Math.sin(W)] as Face;
 const TRIANGLE = new PentagonShape([u, v, w] as any);
 
 /**
- * Basis vectors used to layout primitive unit
+ * Basis vectors used to layout primitive unit, as a column-major 2x2:
+ * columns are v and w, i.e. [v.x, v.y, w.x, w.y].
  */
-const BASIS: Mat2 = mat2.fromValues(v[0], v[1], w[0], w[1]);
-// Non-null: BASIS is a fixed, provably-invertible lattice basis
-const BASIS_INVERSE: Mat2 = mat2.invert(mat2.create(), BASIS)!;
+const BASIS: Mat2 = [v[0], v[1], w[0], w[1]];
+// Inverse of the fixed, provably-invertible lattice basis, computed once.
+// Inlined 2x2 inverse (rather than a general matrix invert) — for column-major
+// [a, b, c, d] the inverse is (1/det)·[d, -b, -c, a] with det = a·d - c·b.
+// Op order matches gl-matrix's mat2.invert so BASIS_INVERSE is bit-identical.
+const _basisDet = 1 / (v[0] * w[1] - w[0] * v[1]);
+const BASIS_INVERSE: Mat2 = [w[1] * _basisDet, -v[1] * _basisDet, -w[0] * _basisDet, v[0] * _basisDet];
 
 export {A, B, C, D, E, a, b, c, d, e, PENTAGON, u, v, w, V, TRIANGLE, BASIS, BASIS_INVERSE};

@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-// Minimal double-precision vec3 helpers, ported verbatim from gl-matrix v3.4.3
-// (MIT). Only the operations A5 uses are included, and `create` always returns
-// a Float64Array so intermediate math stays at double precision regardless of
-// any host's global gl-matrix configuration.
+// Double-precision vec3 helpers, ported from gl-matrix v3.4.3
+// (© 2015-2021 Brandon Jones, Colin MacKenzie IV; MIT). Only the operations A5
+// uses are included; every array is a Float64Array (no Float32Array path).
 
 import type {Vec3, Quat} from './types';
 
