@@ -1,5 +1,4 @@
 import * as vec3 from '../../modules/math/vec3';
-import {vectorAngle} from '../../modules/utils/vector';
 import {describe, it, expect} from 'vitest';
 import {EqualAreaProjection} from '../../modules/projections/equal-area';
 import TEST_DATA from './fixtures/equal-area.json';
@@ -10,9 +9,9 @@ const {TEST_SPHERICAL_TRIANGLE, TEST_FACE_TRIANGLE} = TEST_DATA.static;
 
 const AUTHALIC_RADIUS = 6371.0072; // km
 const MAX_ANGLE = Math.max(
-  vectorAngle(TEST_SPHERICAL_TRIANGLE[0] as Cartesian, TEST_SPHERICAL_TRIANGLE[1] as Cartesian),
-  vectorAngle(TEST_SPHERICAL_TRIANGLE[1] as Cartesian, TEST_SPHERICAL_TRIANGLE[2] as Cartesian),
-  vectorAngle(TEST_SPHERICAL_TRIANGLE[2] as Cartesian, TEST_SPHERICAL_TRIANGLE[0] as Cartesian)
+  vec3.angle(TEST_SPHERICAL_TRIANGLE[0] as Cartesian, TEST_SPHERICAL_TRIANGLE[1] as Cartesian),
+  vec3.angle(TEST_SPHERICAL_TRIANGLE[1] as Cartesian, TEST_SPHERICAL_TRIANGLE[2] as Cartesian),
+  vec3.angle(TEST_SPHERICAL_TRIANGLE[2] as Cartesian, TEST_SPHERICAL_TRIANGLE[0] as Cartesian)
 );
 const MAX_ARC_LENGTH_MM = AUTHALIC_RADIUS * MAX_ANGLE * 1e9;
 const DESIRED_MM_PRECISION = 0.0024;
