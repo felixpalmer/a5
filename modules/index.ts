@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-
 // PUBLIC API
 // Indexing
 // Spherical (theta/phi) is A5's internal coordinate system; cellToSpherical /
