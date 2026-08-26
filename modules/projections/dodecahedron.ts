@@ -27,6 +27,8 @@ export class DodecahedronProjection {
   private gnomonic: GnomonicProjection;
 
   constructor() {
+    // The canonical triangle is corner-first (ISEA order, see CRS) to match the
+    // face triangles built in `_getFaceTriangle`.
     this.equalArea = new EqualAreaProjection(crs.getCanonicalTriangle());
     this.gnomonic = new GnomonicProjection();
   }
@@ -144,25 +146,31 @@ export class DodecahedronProjection {
     // Sign of gamma determines which triangle we want to use, and thus vertex order
     const even = faceTriangleIndex % 2 === 0;
 
-    // Note: center & midpoint compared to DGGAL implementation are swapped
-    // as we are using a dodecahedron, rather than a icosahedron.
-    return even ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
+    // ISEA: the radiating vertex (first) is the dodecahedron corner, not the
+    // centre. This is a cyclic rotation of the DSEA order [centre, mid, corner]
+    // to [corner, centre, mid], preserving winding (see constructor).
+    return even ? [vCorner1, vCenter, vEdgeMidpoint] : [vCorner2, vEdgeMidpoint, vCenter];
   }
 
   private _getReflectedFaceTriangle(faceTriangleIndex: FaceTriangleIndex, squashed: boolean = false): FaceTriangle {
-    // First obtain ordinary unreflected triangle
-    let [A, B, C] = this._getFaceTriangle(faceTriangleIndex).map(face => vec2.clone(face)) as FaceTriangle;
+    // First obtain ordinary unreflected triangle: [corner (A), centre, midpoint]
+    // (even) or [corner (A), midpoint, centre] (odd).
+    const [A, B, C] = this._getFaceTriangle(faceTriangleIndex).map(face => vec2.clone(face)) as FaceTriangle;
 
-    // Reflect dodecahedron center (A) across edge (BC)
     const even = faceTriangleIndex % 2 === 0;
-    vec2.negate(A, A);
-    const midpoint = even ? B : C;
+    const centre = even ? B : C;
+    const midpoint = even ? C : B;
 
-    // Squashing is important. A squashed triangle when unprojected will yield the correct spherical triangle.
-    vec2.scaleAndAdd(A, A, midpoint, squashed ? 1 + 1 / Math.cos(interhedralAngle) : 2);
+    // ISEA: the corner (radiating vertex A) and the edge midpoint are shared with
+    // the neighbouring face across the dodecahedron edge, so only the centre
+    // moves. Reflect the centre across that edge (it sits at the origin, with the
+    // midpoint the foot of the perpendicular) and keep the corner fixed.
+    // Squashing yields the correct spherical triangle when unprojected.
+    vec2.negate(centre, centre);
+    vec2.scaleAndAdd(centre, centre, midpoint, squashed ? 1 + 1 / Math.cos(interhedralAngle) : 2);
 
-    // Swap midpoint and corner to maintain correct vertex order
-    return [A, C, B] as FaceTriangle;
+    // Restore winding (swap centre and midpoint back into their slots)
+    return even ? ([A, midpoint, centre] as FaceTriangle) : ([A, centre, midpoint] as FaceTriangle);
   }
 
   /**
