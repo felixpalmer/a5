@@ -98,9 +98,8 @@ FIXTURE_MAP = {
     ],
 
     # Region fixtures
-    # NOTE: not yet synced to PY_ROOT — the Python port still uses the old
-    # single-ring polygon_to_cells; add the PY entry when porting hole support.
     "tests/fixtures/regions/polygon.json": [
+        (PY_ROOT, "tests/regions/fixtures/polygon.json"),
         (RS_ROOT, "tests/fixtures/regions/polygon.json"),
     ],
 
