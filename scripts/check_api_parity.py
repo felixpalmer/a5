@@ -72,10 +72,28 @@ def parse_rust(text):
 
 # Per-port configuration: where to read the public entrypoint from, and how to parse it.
 # `repo`/`path` build the GitHub raw URL; `local` is the sibling-checkout path.
+# `root` is the sibling-checkout repo root; `srcdir`/`glob` locate the source tree
+# scanned for option objects (see OPTION_SOURCES / collect_options).
 PORTS = {
-    "TS": {"repo": "a5", "path": "modules/index.ts", "local": TS_ROOT / "modules" / "index.ts", "parser": parse_typescript},
-    "PY": {"repo": "a5-py", "path": "a5/__init__.py", "local": TS_ROOT.parent / "a5-py" / "a5" / "__init__.py", "parser": parse_python},
-    "RS": {"repo": "a5-rs", "path": "src/lib.rs", "local": TS_ROOT.parent / "a5-rs" / "src" / "lib.rs", "parser": parse_rust},
+    "TS": {"repo": "a5", "path": "modules/index.ts", "local": TS_ROOT / "modules" / "index.ts", "parser": parse_typescript,
+           "root": TS_ROOT, "srcdir": "modules", "glob": "*.ts"},
+    "PY": {"repo": "a5-py", "path": "a5/__init__.py", "local": TS_ROOT.parent / "a5-py" / "a5" / "__init__.py", "parser": parse_python,
+           "root": TS_ROOT.parent / "a5-py", "srcdir": "a5", "glob": "*.py"},
+    "RS": {"repo": "a5-rs", "path": "src/lib.rs", "local": TS_ROOT.parent / "a5-rs" / "src" / "lib.rs", "parser": parse_rust,
+           "root": TS_ROOT.parent / "a5-rs", "srcdir": "src", "glob": "*.rs"},
+}
+
+# Source files that declare public option objects (`<Func>Options`), per port.
+# Optional parameters in A5 are bundled into one options object per function
+# (e.g. cellToBoundary, polygonToCells), so comparing these objects' field sets
+# catches an option added to one port but not the others — something the plain
+# export-name check cannot see. In --remote mode only these listed files are
+# fetched; in local mode the whole source tree is globbed and any option object
+# found outside this list is reported so the manifest can be kept complete.
+OPTION_SOURCES = {
+    "TS": ["modules/core/cell.ts", "modules/regions/polygon.ts"],
+    "PY": ["a5/core/cell.py", "a5/regions/polygon.py"],
+    "RS": ["src/core/cell.rs", "src/regions/polygon.rs"],
 }
 
 # Symbols deliberately allowed to differ, keyed by canonical name -> reason.
