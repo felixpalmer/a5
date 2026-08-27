@@ -41,10 +41,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,cjs,mjs,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,cjs,mjs,json}\""
   },
-  "dependencies": {
-    "gl-matrix": "^3.4.3"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "gl-matrix": "^3.4.3",
     "h3-js": "^4.4.0",
     "node-fetch": "^3.3.1",
     "prettier": "^3.3.3",
