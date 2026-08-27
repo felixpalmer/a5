@@ -6,7 +6,7 @@ import type {Orientation, Triple} from '../lattice';
 import {tripleToS, tripleInBounds} from '../lattice';
 import type {Origin} from '../core/utils';
 import {serialize} from '../core/serialization';
-import {quintantToSegment, origins} from '../core/origin';
+import {origins, QUINTANT_TO_ORIENTATION, QUINTANT_TO_SEGMENT} from '../core/origin';
 import {FACE_ADJACENCY} from '../core/face-adjacency';
 
 /** Neighbor delta: [dx, dy, dz, isEdgeSharing] */
@@ -113,7 +113,9 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
   // Left edge (z=0): neighbor in previous quintant at swapped [0, y, x]
   if (triple.z === 0) {
     const targetQuintant = (sourceQuintant - 1 + 5) % 5;
-    const {segment, orientation} = quintantToSegment(targetQuintant, origin);
+    const globalQuintant = origin.id * 5 + targetQuintant;
+    const segment = QUINTANT_TO_SEGMENT[globalQuintant];
+    const orientation = QUINTANT_TO_ORIENTATION[globalQuintant];
     pushDeltas(
       out,
       {x: 0, y: triple.y, z: triple.x},
@@ -129,7 +131,9 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
   // Right edge (x=0): neighbor in next quintant at swapped [z, y, 0]
   if (triple.x === 0) {
     const targetQuintant = (sourceQuintant + 1) % 5;
-    const {segment, orientation} = quintantToSegment(targetQuintant, origin);
+    const globalQuintant = origin.id * 5 + targetQuintant;
+    const segment = QUINTANT_TO_SEGMENT[globalQuintant];
+    const orientation = QUINTANT_TO_ORIENTATION[globalQuintant];
     pushDeltas(
       out,
       {x: triple.z, y: triple.y, z: 0},
@@ -146,7 +150,9 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
   if (triple.y === maxRow) {
     const [adjFaceId, adjQuintant] = FACE_ADJACENCY[origin.id][sourceQuintant];
     const adjOrigin = origins[adjFaceId];
-    const {segment, orientation} = quintantToSegment(adjQuintant, adjOrigin);
+    const globalQuintant = adjOrigin.id * 5 + adjQuintant;
+    const segment = QUINTANT_TO_SEGMENT[globalQuintant];
+    const orientation = QUINTANT_TO_ORIENTATION[globalQuintant];
     pushDeltas(
       out,
       {x: triple.z, y: maxRow, z: triple.x},
@@ -165,7 +171,9 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
       if (q === sourceQuintant) continue;
       const distance = Math.min((q - sourceQuintant + 5) % 5, (sourceQuintant - q + 5) % 5);
       if (edgeOnly && distance !== 1) continue;
-      const {segment, orientation} = quintantToSegment(q, origin);
+      const globalQuintant = origin.id * 5 + q;
+      const segment = QUINTANT_TO_SEGMENT[globalQuintant];
+      const orientation = QUINTANT_TO_ORIENTATION[globalQuintant];
       pushTriple(out, triple, orientation, origin, segment, ctx);
     }
   }
@@ -178,17 +186,18 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
     const prevQuintant = (sourceQuintant - 1 + 5) % 5;
     const [prevAdjFaceId, prevAdjQuintant] = FACE_ADJACENCY[origin.id][prevQuintant];
     const prevAdjOrigin = origins[prevAdjFaceId];
-    const {segment: prevAdjSegment, orientation: prevAdjOrientation} = quintantToSegment(
-      prevAdjQuintant,
-      prevAdjOrigin
-    );
+    const prevAdjGlobalQuintant = prevAdjOrigin.id * 5 + prevAdjQuintant;
+    const prevAdjSegment = QUINTANT_TO_SEGMENT[prevAdjGlobalQuintant];
+    const prevAdjOrientation = QUINTANT_TO_ORIENTATION[prevAdjGlobalQuintant];
     pushTriple(out, triple, prevAdjOrientation, prevAdjOrigin, prevAdjSegment, ctx);
 
     // Vertex neighbor 2: adjacent quintant on the primary cross-face
     const [crossFaceId, crossQuintant] = FACE_ADJACENCY[origin.id][sourceQuintant];
     const crossOrigin = origins[crossFaceId];
     const nextCrossQuintant = (crossQuintant + 1) % 5;
-    const {segment: crossSegment, orientation: crossOrientation} = quintantToSegment(nextCrossQuintant, crossOrigin);
+    const crossGlobalQuintant = crossOrigin.id * 5 + nextCrossQuintant;
+    const crossSegment = QUINTANT_TO_SEGMENT[crossGlobalQuintant];
+    const crossOrientation = QUINTANT_TO_ORIENTATION[crossGlobalQuintant];
     pushTriple(out, triple, crossOrientation, crossOrigin, crossSegment, ctx);
   }
 

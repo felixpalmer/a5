@@ -228,7 +228,7 @@ export function compatTripleToS(t: Triple, resolution: number, orientation: Orie
     raw = {x: raw.z, y: raw.y, z: raw.x};
   }
   const ab = tripleToAB(raw);
-  const sGeo = axiomTargetToS(ORIGINAL, ab.a, ab.b, resolution, AXIOM_W, true)[0];
+  const sGeo = axiomTargetToS(ORIGINAL, ab.a, ab.b, resolution, AXIOM_W)[0];
   const digits = digitsOf(sGeo, resolution);
   inverseShift(digits, rec.invertJ, rec.flipIJ);
   const v = packDigits(digits);

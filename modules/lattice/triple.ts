@@ -12,6 +12,18 @@ export function tripleParity(t: Triple): number {
   return t.x + t.y + t.z;
 }
 
+// The pentagon flavor is a CLOSED FORM of the triple: it depends only on the
+// parity and y mod 2 (the Cairo-like tiling repeats its four orientations with
+// period 2). Verified exhaustively against the descent's flavor over all cells
+// (see tests/lattice/curve.test.ts); the descent's leaf flavor agrees because
+// both describe the same fixed tiling.
+const FLAVOR_LUT = [0, 2, 3, 1]; // index = parity << 1 | (y & 1)
+
+/** The pentagon flavor (0-3) of a triple's cell — orientation-independent. */
+export function tripleFlavor(t: Triple): number {
+  return FLAVOR_LUT[((t.x + t.y + t.z) << 1) | (t.y & 1)];
+}
+
 /** Check if a triple is within valid quintant bounds. */
 export function tripleInBounds(t: Triple, maxRow: number): boolean {
   const sum = t.x + t.y + t.z;

@@ -44,7 +44,7 @@ export class DodecahedronProjection {
   /**
    * Same as `forward` but takes a Cartesian unit vector — skips the
    * `toCartesian` round-trip when the caller already has the Cartesian
-   * form (e.g. in the spiral-search path inside `sphericalToCell`).
+   * form.
    */
   forwardCartesian(unprojected: Cartesian, originId: OriginId): Face {
     const origin = origins[originId];

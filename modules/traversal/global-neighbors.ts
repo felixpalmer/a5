@@ -5,7 +5,7 @@
 import {sToCell, tripleParity} from '../lattice';
 import type {Origin} from '../core/utils';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
-import {segmentToQuintant, quintantToSegment, origins} from '../core/origin';
+import {origins, QUINTANT_TO_SEGMENT, SEGMENT_TO_ORIENTATION, SEGMENT_TO_QUINTANT} from '../core/origin';
 import {FACE_ADJACENCY} from '../core/face-adjacency';
 import {compareBigint} from '../utils/bigint';
 import {findQuintantNeighborS} from './quintant-neighbors';
@@ -13,7 +13,7 @@ import {getBoundaryNeighbors} from './lattice-boundary';
 
 /** Serialize a res 1 cell from origin and quintant. */
 function serializeRes1(origin: Origin, quintant: number): bigint {
-  const {segment} = quintantToSegment(quintant, origin);
+  const segment = QUINTANT_TO_SEGMENT[origin.id * 5 + quintant];
   return serialize({origin, segment, S: 0n, resolution: 1});
 }
 
@@ -33,7 +33,7 @@ function getRes0Neighbors(origin: Origin): bigint[] {
  * Get neighbors of a resolution 1 cell (quintant).
  */
 function getRes1Neighbors(origin: Origin, segment: number, edgeOnly: boolean): bigint[] {
-  const {quintant} = segmentToQuintant(segment, origin);
+  const quintant = SEGMENT_TO_QUINTANT[origin.id * 5 + segment];
   const neighborSet = new Set<bigint>();
 
   // Left and right quintant on the same face (A, B)
@@ -89,7 +89,9 @@ export function getGlobalCellNeighbors(cellId: bigint, options?: {edgeOnly?: boo
   if (resolution === 1) return getRes1Neighbors(origin, segment, edgeOnly);
 
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const {quintant: sourceQuintant, orientation: sourceOrientation} = segmentToQuintant(segment, origin);
+  const globalQuintant = origin.id * 5 + segment;
+  const sourceQuintant = SEGMENT_TO_QUINTANT[globalQuintant];
+  const sourceOrientation = SEGMENT_TO_ORIENTATION[globalQuintant];
 
   // Triple coordinates are orientation-independent
   const {triple, flavor} = sToCell(S, hilbertRes, sourceOrientation);
