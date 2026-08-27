@@ -81,6 +81,7 @@ const App: React.FC = () => {
   const [resOffset, setResOffset] = useState(0);
   const [fixedResolution, setFixedResolution] = useState<number | null>(null);
   const [showCompacted, setShowCompacted] = useState(false);
+  const [overlapping, setOverlapping] = useState(false);
   const [outlineOnly, setOutlineOnly] = useState(false);
   const [showControlPoints, setShowControlPoints] = useState(true);
   const [showOutline, setShowOutline] = useState(true);
@@ -199,7 +200,8 @@ const App: React.FC = () => {
   // For polygons, store compacted output and derive display cells from toggle.
   const compactedCells = useMemo((): BigUint64Array | null => {
     if (!activePolygons || outlineOnly) return null;
-    const parts = activePolygons.map(rings => polygonToCells(rings, resolution));
+    const containment = overlapping ? 'overlapping' : 'center';
+    const parts = activePolygons.map(rings => polygonToCells(rings, resolution, {containment}));
     if (parts.length === 1) return parts[0];
     let total = 0;
     for (const p of parts) total += p.length;
@@ -210,7 +212,7 @@ const App: React.FC = () => {
       offset += p.length;
     }
     return merged;
-  }, [activePolygons, resolution, outlineOnly]);
+  }, [activePolygons, resolution, outlineOnly, overlapping]);
 
   const tracedCells = useMemo((): bigint[] => {
     if (!isPolygon) {
@@ -420,6 +422,19 @@ const App: React.FC = () => {
                 style={{marginRight: 4}}
               />
               Show compacted
+            </label>
+          </div>
+        )}
+        {isPolygon && !outlineOnly && (
+          <div style={{marginBottom: 4}}>
+            <label title="Include every cell overlapping the polygon, not just those whose center is inside">
+              <input
+                type="checkbox"
+                checked={overlapping}
+                onChange={e => setOverlapping(e.target.checked)}
+                style={{marginRight: 4}}
+              />
+              Overlapping containment
             </label>
           </div>
         )}
