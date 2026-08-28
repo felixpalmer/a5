@@ -19,11 +19,18 @@ export class CRS {
   private invocations = 0;
 
   /**
-   * A canonical spherical face triangle (face center, edge midpoint, vertex)
-   * of the dodecahedron, taken from origin 0's CRS vertices. All face
+   * A canonical spherical face triangle (vertex/corner, face center, edge
+   * midpoint) of the dodecahedron, taken from origin 0's CRS vertices. All face
    * triangles used by DodecahedronProjection are congruent and consistently
    * wound with this one, so it serves as the fixed source of the
    * EqualAreaProjection shape constants — independent of projection call order.
+   *
+   * The order is radiating-vertex-first: A5 uses ISEA, radiating the equal-area
+   * projection from the dodecahedron corner (the dual icosahedron's face centre)
+   * rather than the face centre. The corner leads, then the centre, then the edge
+   * midpoint — a cyclic (winding-preserving) ordering of [centre, midpoint,
+   * corner]; the winding must be preserved because the closed-form
+   * EqualAreaProjection bakes in the signed triple product.
    *
    * The indices rely on the construction order above: vertices[0] is origin
    * 0's face center, vertices[12] its first corner (after the 12 centers) and
@@ -32,7 +39,7 @@ export class CRS {
    * the constants-agreement test verifies this against every face triangle.
    */
   getCanonicalTriangle(): SphericalTriangle {
-    return [this.vertices[0], this.vertices[32], this.vertices[12]] as SphericalTriangle;
+    return [this.vertices[12], this.vertices[0], this.vertices[32]] as SphericalTriangle;
   }
 
   constructor() {
