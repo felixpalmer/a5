@@ -19,7 +19,6 @@ import {
   BASIS, // Basis matrix
   BASIS_INVERSE // Inverse basis matrix
 } from 'a5/core/pentagon';
-import {vec2, mat2} from 'gl-matrix';
 
 describe('pentagon.ts', () => {
   describe('pentagon angles', () => {
@@ -123,9 +122,10 @@ describe('pentagon.ts', () => {
         expect(value).toBe(expectedInverse[i]);
       });
 
-      // Verify BASIS * BASIS_INVERSE = Identity
-      const product = mat2.create();
-      mat2.multiply(product, BASIS, BASIS_INVERSE);
+      // Verify BASIS * BASIS_INVERSE = Identity (inline column-major 2x2 multiply)
+      const [a0, a1, a2, a3] = Array.from(BASIS);
+      const [b0, b1, b2, b3] = Array.from(BASIS_INVERSE);
+      const product = [a0 * b0 + a2 * b1, a1 * b0 + a3 * b1, a0 * b2 + a2 * b3, a1 * b2 + a3 * b3];
       expect(product).toBeCloseToArray([1, 0, 0, 1], 10);
     });
   });

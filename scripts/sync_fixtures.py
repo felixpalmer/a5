@@ -50,6 +50,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/core/fixtures/tiling.json"),
         (RS_ROOT, "tests/fixtures/tiling.json"),
     ],
+    "tests/fixtures/serialization.json": [
+        (PY_ROOT, "tests/core/fixtures/serialization.json"),
+        (RS_ROOT, "tests/fixtures/serialization.json"),
+    ],
 
     # Lattice fixtures
     "tests/fixtures/lattice/curve.json": [
@@ -82,6 +86,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/traversal/fixtures/quintant-neighbors.json"),
         (RS_ROOT, "tests/fixtures/traversal/quintant-neighbors.json"),
     ],
+    "tests/fixtures/traversal/line.json": [
+        (PY_ROOT, "tests/traversal/fixtures/line.json"),
+        (RS_ROOT, "tests/fixtures/traversal/line.json"),
+    ],
 
     # Geometry fixtures
     "tests/geometry/fixtures/pentagon.json": [
@@ -97,10 +105,19 @@ FIXTURE_MAP = {
         (RS_ROOT, "tests/fixtures/spherical-triangle.json"),
     ],
 
+    # Utils fixtures
+    "tests/fixtures/utils/great-circle.json": [
+        (PY_ROOT, "tests/utils/fixtures/great-circle.json"),
+        (RS_ROOT, "tests/fixtures/utils/great-circle.json"),
+    ],
+    "tests/fixtures/utils/spiral.json": [
+        (PY_ROOT, "tests/utils/fixtures/spiral.json"),
+        (RS_ROOT, "tests/fixtures/utils/spiral.json"),
+    ],
+
     # Region fixtures
-    # NOTE: not yet synced to PY_ROOT — the Python port still uses the old
-    # single-ring polygon_to_cells; add the PY entry when porting hole support.
     "tests/fixtures/regions/polygon.json": [
+        (PY_ROOT, "tests/regions/fixtures/polygon.json"),
         (RS_ROOT, "tests/fixtures/regions/polygon.json"),
     ],
 

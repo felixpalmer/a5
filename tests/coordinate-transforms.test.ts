@@ -168,6 +168,19 @@ describe('coordinate conversions', () => {
 
     expect(spherical).toBeCloseToArray(original);
   });
+
+  it('keeps full precision for phi near the poles (Kahan §12)', () => {
+    // acos(z/r) returns 0 for any phi below ~1e-8 and loses half the digits
+    // carried near both poles; the atan2 form must round-trip these at full
+    // relative precision.
+    const phis = [1e-12, 1e-9, 1e-6, 1e-3, Math.PI - 1e-3, Math.PI - 1e-6, Math.PI - 1e-9];
+    for (const phi of phis) {
+      const cartesian = toCartesian([0.5, phi] as Spherical);
+      const [, phiOut] = toSpherical(cartesian);
+      const distFromPole = Math.min(phi, Math.PI - phi);
+      expect(Math.abs(phiOut - phi)).toBeLessThanOrEqual(1e-12 * Math.max(distFromPole, 1e-3));
+    }
+  });
 });
 
 describe('LonLat to/from spherical', () => {

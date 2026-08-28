@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {mat2, vec2, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as mat2 from '../math/mat2';
+import * as vec2 from '../math/vec2';
+import type {Vec2} from '../math/types';
 import {Pentagon, PentagonShape} from '../geometry/pentagon';
 import {BASIS, PENTAGON, TRIANGLE, v} from './pentagon';
 import {TWO_PI_OVER_5} from './constants';
@@ -80,7 +81,7 @@ export function getPentagonVertices(
  * O(1) via the precomputed flavor centers. Equivalent to
  * `getPentagonVertices(...).getCenter()` (up to float associativity).
  */
-export function getPentagonCenter(resolution: number, quintant: number, triple: Triple, flavor: number): vec2 {
+export function getPentagonCenter(resolution: number, quintant: number, triple: Triple, flavor: number): Vec2 {
   const c = FLAVOR_CENTERS[flavor];
   vec2.set(refIJ, triple.x + triple.y, -triple.x + (flavor & 1));
   vec2.transformMat2(translation, refIJ, BASIS);
@@ -96,7 +97,7 @@ export function getQuintantVertices(quintant: number): PentagonShape {
 }
 
 export function getFaceVertices(): PentagonShape {
-  const vertices: vec2[] = [];
+  const vertices: Vec2[] = [];
   for (const rotation of QUINTANT_ROTATIONS) {
     vertices.push(vec2.transformMat2(vec2.create(), v, rotation));
   }

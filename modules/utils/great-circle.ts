@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec3} from 'gl-matrix';
+import * as vec3 from '../math/vec3';
 import type {Cartesian} from '../core/coordinate-systems';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
 import {precomputeSlerp, slerp} from './vector';
@@ -11,8 +11,7 @@ import {precomputeSlerp, slerp} from './vector';
  * Great-circle distance in meters between two unit vectors on the authalic sphere.
  */
 export function greatCircleDistance(a: Cartesian, b: Cartesian): number {
-  const dot = Math.max(-1, Math.min(1, vec3.dot(a, b)));
-  return Math.acos(dot) * AUTHALIC_RADIUS_EARTH;
+  return vec3.angle(a, b) * AUTHALIC_RADIUS_EARTH;
 }
 
 /**

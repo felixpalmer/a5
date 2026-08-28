@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {mat2, vec2, vec3, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as mat2 from '../math/mat2';
+import * as vec2 from '../math/vec2';
+import * as vec3 from '../math/vec3';
 
 import type {Cartesian, Face, LonLat, Spherical} from './coordinate-systems';
 import {FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes} from './coordinate-transforms';
