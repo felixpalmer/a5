@@ -84,11 +84,11 @@ git push origin 1.2-release
 publishing (no local `npm publish`).
 
 ```bash
-# Update version in package.json (e.g. 1.0.0-alpha.1 or 0.10.1)
+# Update version in package.json (e.g. 1.0.0-beta.1 or 0.10.1)
 # Add a "#### A5 [v<version>] - <date>" entry to CHANGELOG.md
 git add package.json CHANGELOG.md
 git commit -m "x.y.z release"
 
-./publish.sh beta   # prerelease (-alpha.N / -beta.N), from main
+./publish.sh beta   # prerelease (-beta.N), from main
 ./publish.sh prod   # stable X.Y.Z, from a *-release branch
 ```
