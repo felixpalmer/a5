@@ -19,6 +19,10 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v0.10.1] - September 15 2026
+
+- chore: cleanup CRS debug loggin (#129)
+
 #### A5 [v0.10.0] - August 28 2026
 
 - feat: Bring gl-matrix function into library (#123)
