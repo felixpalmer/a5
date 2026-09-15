@@ -50,16 +50,16 @@ yarn sync-fixtures --check    # exit 1 if any fixtures are out of sync (useful i
 
 ## Publish (for maintainers)
 
+`./publish.sh` tags `v<version>` and pushes; CI builds, tests, and publishes to npm via trusted
+publishing (no local `npm publish`). Prereleases run from `main`, stable from the `*-release`
+branch.
+
 ```bash
-Update version in package.json
-yarn build
-yarn test --run
-
-Update CHANGELOG
-git add CHANGELOG.md package.json
+# Update version in package.json (e.g. 1.0.0-alpha.1 or 0.10.1)
+# Add a "#### A5 [v<version>] - <date>" entry to CHANGELOG.md
+git add package.json CHANGELOG.md
 git commit -m "x.y.z release"
-npm publish
 
-git tag vx.y.z
-git push && git push --tags
+./publish.sh beta   # prerelease (-alpha.N / -beta.N), from main
+./publish.sh prod   # stable X.Y.Z, from a *-release branch
 ```
