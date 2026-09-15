@@ -50,9 +50,38 @@ yarn sync-fixtures --check    # exit 1 if any fixtures are out of sync (useful i
 
 ## Publish (for maintainers)
 
+### Git strategy
+
+Prereleases run from `main`, stable from the `*-release` branches.
+Each minor version gets a branch, e.g. `1.2-release` which is cut from `main`:
+
+```bash
+git checkout main
+git pull
+git checkout -b 1.2-release
+```
+
+PRs are merged to `main` and then cherry-picked to the latest release branch (in principle to older releases also, but this is rare).
+
+```bash
+git checkout 1.2-release
+git cherry-pick 1234abcd
+```
+
+### Website update
+
+Any changes pushed to the newest (based on npm) release branch updates the website
+
+```bash
+git checkout 1.2-release
+git push origin 1.2-release
+```
+
+
+### Publishing to npm
+
 `./publish.sh` tags `v<version>` and pushes; CI builds, tests, and publishes to npm via trusted
-publishing (no local `npm publish`). Prereleases run from `main`, stable from the `*-release`
-branch.
+publishing (no local `npm publish`).
 
 ```bash
 # Update version in package.json (e.g. 1.0.0-alpha.1 or 0.10.1)

@@ -2,7 +2,7 @@ name: website
 
 # Production site (a5geo.org) deploys ONLY from the latest published release branch.
 # We compare the pushed branch against `npm show a5-js@latest`, so prereleases
-# (published under the 'next' dist-tag) never take over the production site.
+# (published under the 'beta' dist-tag) never take over the production site.
 on:
   push:
     branches:
