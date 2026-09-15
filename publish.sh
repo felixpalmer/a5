@@ -2,7 +2,7 @@
 # Tag the current package version (vX.Y.Z) and push it, triggering
 # .github/workflows/publish.yml to build + publish a5-js to npm via trusted publishing.
 #
-#   ./publish.sh beta   # prerelease (1.0.0-alpha.N / -beta.N) — typically from main
+#   ./publish.sh beta   # prerelease (1.0.0-beta.N) — typically from main
 #   ./publish.sh prod   # stable release (X.Y.Z) — only from a *-release branch
 #
 # Run AFTER bumping "version" in package.json, updating CHANGELOG.md, and committing.
@@ -22,17 +22,14 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 
 # Cross-check: mode must match the version string, both ways.
 case "$VERSION" in
-  *-alpha.*|*-beta.*)
+  *-*)
     if [ "$MODE" = "prod" ]; then
       echo "error: version ${VERSION} is a prerelease but mode is 'prod' — use 'beta'" >&2
       exit 1
     fi ;;
-  *-*)
-    echo "error: unsupported prerelease format '${VERSION}' (expected -alpha.N or -beta.N)" >&2
-    exit 1 ;;
   *)
     if [ "$MODE" = "beta" ]; then
-      echo "error: version ${VERSION} is stable but mode is 'beta' — bump to -alpha.N/-beta.N or use 'prod'" >&2
+      echo "error: version ${VERSION} is stable but mode is 'beta' — bump to a prerelease or use 'prod'" >&2
       exit 1
     fi ;;
 esac

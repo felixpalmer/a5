@@ -10,7 +10,7 @@ name: publish
 #   3. commit, then `./publish.sh beta` (prerelease, from main) or
 #      `./publish.sh prod` (stable, from a *-release branch) — tags v<version>
 #      and pushes, which triggers this workflow.
-# dist-tag is derived from the version: -alpha.N→alpha, -beta.N→beta, else latest.
+# dist-tag: prerelease (version has a '-') → beta, stable → latest.
 
 on:
   push:
@@ -59,11 +59,11 @@ jobs:
       - name: Publish to npm
         run: |
           VERSION="$(node -p "require('./package.json').version")"
+          # npm's `latest` is a manual pointer, so route prereleases to `beta`;
+          # only stable X.Y.Z becomes `latest`. (PyPI/crates need no equivalent.)
           case "$VERSION" in
-            *-alpha.*) TAG=alpha ;;
-            *-beta.*)  TAG=beta ;;
-            *-*)       TAG=next ;;   # any other prerelease → 'next', never 'latest'
-            *)         TAG=latest ;;
+            *-*) TAG=beta ;;
+            *)   TAG=latest ;;
           esac
           echo "Publishing a5-js@$VERSION with dist-tag '$TAG'"
           npm publish --provenance --access public --tag "$TAG"
