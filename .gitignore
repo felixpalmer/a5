@@ -34,6 +34,10 @@ package-lock.json
 
 .yarn/
 .yarnrc.yml
+# ...but the website MUST commit its .yarnrc.yml: it sets `nodeLinker: node-modules`.
+# Without it CI (yarn 4) defaults to the PnP linker, which webpack/Docusaurus can't
+# resolve, breaking the website build. (.yarn/ cache stays ignored.)
+!website/.yarnrc.yml
 data/
 debug-scripts/
 
