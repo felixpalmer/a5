@@ -36,17 +36,20 @@ The TypeScript, Python, and Rust libraries are maintained directly by the A5 pro
 ### DuckDB
 📖 [Quickstart](../quickstart/duckdb.md) • 📦 [Extension](https://query.farm/duckdb_extension_a5.html) • 🔗 [Source](https://github.com/Query-farm/a5)
 
+### GeoParquet
+ 🔗 [Website](https://geoparquet.io/) • 📖 [Docs](https://geoparquet.io/guide/partition/#by-a5-cells) • 🔗 [Source](https://github.com/geoparquet/geoparquet-io)
+
 ### PostgreSQL
 📖 [Quickstart](../quickstart/postgresql.md) • 📦 [Extension](https://github.com/decision-labs/a5pg) • 🔗 [Source](https://github.com/decision-labs/a5pg)
+
+### QGIS
+📖 [Guide](https://vgridtools.gishub.vn/) • 📦 [Plugin](https://plugins.qgis.org/plugins/vgridtools/) • 🔗 [Source](https://github.com/opengeoshub/vgridtools)
 
 ### raster2dggs
 📖 [Quickstart](https://github.com/manaakiwhenua/raster2dggs?tab=readme-ov-file#installation) • 📦 [Package](https://pypi.org/project/raster2dggs/) • 🔗 [Source](https://github.com/manaakiwhenua/raster2dggs)
 
-### GeoParquet
- 🔗 [Website](https://geoparquet.io/) • 📖 [Docs](https://geoparquet.io/guide/partition/#by-a5-cells) • 🔗 [Source](https://github.com/geoparquet/geoparquet-io)
-
-### QGIS
-📖 [Guide](https://vgridtools.gishub.vn/) • 📦 [Plugin](https://plugins.qgis.org/plugins/vgridtools/) • 🔗 [Source](https://github.com/opengeoshub/vgridtools)
+### Streamlit
+📖 [Demo](https://a5-vs-h3-app-demo.streamlit.app/) • 📦 [Package](https://pypi.org/project/streamlit-hexviz/) • 🔗 [Source](https://github.com/Robert-Ziegltrum/streamlit-hexviz)
 
 ## Products
 

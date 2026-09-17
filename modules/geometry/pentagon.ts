@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec2, mat2, mat2d, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as vec2 from '../math/vec2';
+import * as mat2 from '../math/mat2';
+import * as mat2d from '../math/mat2d';
+import type {Vec2, Mat2, Mat2d} from '../math/types';
 import type {Face} from '../core/coordinate-systems';
 
 export type Pentagon = [Face, Face, Face, Face, Face];
@@ -12,7 +14,7 @@ export type Pentagon = [Face, Face, Face, Face, Face];
  * 2D segment-vs-segment intersection test.
  * Returns true iff the closed segments p1→p2 and p3→p4 share at least one point.
  */
-function segments2dIntersect(p1: vec2, p2: vec2, p3: vec2, p4: vec2): boolean {
+function segments2dIntersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2): boolean {
   const d1x = p2[0] - p1[0],
     d1y = p2[1] - p1[1];
   const d2x = p4[0] - p3[0],
@@ -90,21 +92,21 @@ export class PentagonShape {
     return this;
   }
 
-  translate(translation: vec2): PentagonShape {
+  translate(translation: Vec2): PentagonShape {
     for (const vertex of this.vertices) {
       vec2.add(vertex, vertex, translation);
     }
     return this;
   }
 
-  transform(transform: mat2): PentagonShape {
+  transform(transform: Mat2): PentagonShape {
     for (const vertex of this.vertices) {
       vec2.transformMat2(vertex, vertex, transform);
     }
     return this;
   }
 
-  transform2d(transform: mat2d): PentagonShape {
+  transform2d(transform: Mat2d): PentagonShape {
     for (const vertex of this.vertices) {
       vec2.transformMat2d(vertex, vertex, transform);
     }
@@ -128,7 +130,7 @@ export class PentagonShape {
    * @param point The point to test
    * @returns 1 if point is inside, otherwise a negative value proportional to the distance from the point to the edge
    */
-  containsPoint(point: vec2): number {
+  containsPoint(point: Vec2): number {
     // TODO later we can likely remove this, but for now it's useful for debugging
     if (!this.isWindingCorrect()) {
       throw new Error('Pentagon is not counter-clockwise');

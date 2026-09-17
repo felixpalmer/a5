@@ -227,18 +227,41 @@ function floodInterior(
 }
 
 /**
- * Find all cells within a polygon using center-point containment: a cell is
- * included iff its center lies inside the polygon. The result is compacted —
- * use `uncompact` to expand to the input resolution.
+ * How a cell is judged to belong to the polygon.
+ * - `'center'`: a cell is included iff its center lies inside the polygon.
+ * - `'overlapping'`: additionally include every cell that overlaps the polygon
+ *   boundary, giving gap-free coverage (a superset of `'center'`).
+ */
+export type PolygonContainment = 'center' | 'overlapping';
+
+type PolygonToCellsOptions = {
+  /**
+   * Which cells to include relative to the polygon.
+   * @default 'center'
+   */
+  containment?: PolygonContainment;
+};
+
+/**
+ * Find all cells within a polygon. The result is compacted — use `uncompact`
+ * to expand to the input resolution.
  *
  * @param polygon - Either a single ring of [longitude, latitude] vertices, or
  *   GeoJSON-style rings `[outer, ...holes]` where cells inside a hole are
  *   excluded. Rings may be open or closed (GeoJSON-style, first vertex
  *   repeated at the end) — closure is automatic either way. Holes with fewer
  *   than 3 distinct vertices are ignored.
- * @returns Sorted, compacted BigUint64Array of cell IDs whose centers lie inside the polygon
+ * @param resolution - Target resolution (0..30)
+ * @param options - `containment` selects `'center'` (default, cell center
+ *   inside the polygon) or `'overlapping'` (any cell touching the polygon, for
+ *   gap-free coverage).
+ * @returns Sorted, compacted BigUint64Array of cell IDs
  */
-export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number): BigUint64Array {
+export function polygonToCells(
+  polygon: LonLat[] | LonLat[][],
+  resolution: number,
+  {containment = 'center'}: PolygonToCellsOptions = {}
+): BigUint64Array {
   // Normalize: a flat ring is shorthand for a polygon with no holes.
   const isNested = polygon.length > 0 && typeof (polygon[0] as LonLat | LonLat[])[0] !== 'number';
   const inputRings = (isNested ? polygon : [polygon]) as LonLat[][];
@@ -274,25 +297,33 @@ export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: numbe
 
   const {boundaryCells, boundarySet, segmentMap} = denseSampleBoundary(rings, ringVecsList, resolution);
 
-  // Flattened per-segment normals and interior-side signs, indexed like the
-  // segment map. The polygon interior lies on the *outside* of a hole ring,
-  // so hole segments get the opposite sign.
-  const segNormals: Cartesian[] = [];
-  const segSigns: number[] = [];
-  for (let r = 0; r < rings.length; r++) {
-    const sign = (r === 0 ? 1 : -1) * ringWindingSign(ringVecsList[r]);
-    const normals = prep.ringNormals[r];
-    for (let i = 0; i < normals.length; i++) {
-      segNormals.push(normals[i]);
-      segSigns.push(sign);
+  // The boundary contribution to the output. In 'overlapping' mode every
+  // densely-sampled boundary cell contains a point on the polygon boundary, so
+  // it overlaps the polygon — keep them all, unfiltered. In 'center' mode we
+  // filter down to those whose center lies inside.
+  let boundaryOut: bigint[];
+  if (containment === 'overlapping') {
+    boundaryOut = boundaryCells;
+  } else {
+    // Flattened per-segment normals and interior-side signs, indexed like the
+    // segment map. The polygon interior lies on the *outside* of a hole ring,
+    // so hole segments get the opposite sign.
+    const segNormals: Cartesian[] = [];
+    const segSigns: number[] = [];
+    for (let r = 0; r < rings.length; r++) {
+      const sign = (r === 0 ? 1 : -1) * ringWindingSign(ringVecsList[r]);
+      const normals = prep.ringNormals[r];
+      for (let i = 0; i < normals.length; i++) {
+        segNormals.push(normals[i]);
+        segSigns.push(sign);
+      }
     }
+    boundaryOut = filterBoundaryCells(boundaryCells, segmentMap, segNormals, segSigns, prep);
   }
-
-  const filteredBoundary = filterBoundaryCells(boundaryCells, segmentMap, segNormals, segSigns, prep);
 
   // Dense sampling can leave gaps; the shell catches them, classifying each cell.
   const shellCells = expandShell(boundaryCells, boundarySet);
-  if (shellCells.length === 0) return compact(filteredBoundary);
+  if (shellCells.length === 0) return compact(boundaryOut);
 
   const interiorSeeds: bigint[] = [];
   const visited = new Set(boundarySet);
@@ -303,9 +334,9 @@ export function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: numbe
       visited.add(cell); // exterior shell (and hole interiors) join the firewall
     }
   }
-  if (interiorSeeds.length === 0) return compact(filteredBoundary);
+  if (interiorSeeds.length === 0) return compact(boundaryOut);
 
   const interiorCells = floodInterior(interiorSeeds, visited, boundarySet.size, resolution);
 
-  return compact([...filteredBoundary, ...interiorCells]);
+  return compact([...boundaryOut, ...interiorCells]);
 }

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec2, mat2, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as vec2 from '../math/vec2';
+import * as mat2 from '../math/mat2';
 import {fromLonLat} from '../core/coordinate-transforms';
 import type {LonLat, Face} from '../core/coordinate-systems';
 import {findNearestOrigin} from '../core/origin';

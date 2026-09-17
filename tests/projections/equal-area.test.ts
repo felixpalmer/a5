@@ -1,5 +1,4 @@
-import {glMatrix, vec3} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as vec3 from '../../modules/math/vec3';
 import {describe, it, expect} from 'vitest';
 import {EqualAreaProjection} from '../../modules/projections/equal-area';
 import TEST_DATA from './fixtures/equal-area.json';

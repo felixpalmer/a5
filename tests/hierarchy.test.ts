@@ -4,7 +4,6 @@ import type {Pentagon} from 'a5/geometry/pentagon';
 import {sToCell} from 'a5/lattice';
 import type {Orientation} from 'a5/lattice';
 import {getPentagonVertices} from 'a5/core/tiling';
-import {vec2} from 'gl-matrix';
 
 function generateCells(resolution: number, orientation: Orientation): Pentagon[] {
   const sequence = Array.from({length: Math.pow(4, resolution)}, (_, i) => i);
@@ -17,7 +16,7 @@ function verifyHierarchy(resolution: number, orientation: Orientation): void {
   const level2Cells = generateCells(resolution + 1, orientation);
 
   let failedPentagon: PentagonShape | null = null;
-  let failedChild: vec2[] | null = null;
+  let failedChild: Pentagon | null = null;
   for (let i = 0; i < level2Cells.length; i++) {
     const child = level2Cells[i];
     const parent = level1Cells[Math.floor(i / 4)];

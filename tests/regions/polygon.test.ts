@@ -30,6 +30,40 @@ describe('polygonToCells', () => {
     });
   }
 
+  const overlappingCases = (fixtures as any).overlapping as PolygonFixture[];
+  for (const f of overlappingCases) {
+    it(`should fill correct overlapping cells for ${f.name}`, () => {
+      const result = polygonToCells(f.polygon as LonLat[][], f.resolution, {containment: 'overlapping'});
+      const expanded = uncompact(result, f.resolution);
+      const sorted = [...expanded].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+      const resultHex = sorted.map(c => u64ToHex(c));
+      expect(resultHex).toEqual(f.cells);
+    });
+  }
+
+  it('overlapping containment is a superset of center containment', () => {
+    const ring = [
+      [-5, 54],
+      [15, 54],
+      [15, 44],
+      [-5, 44]
+    ] as LonLat[];
+    const center = new Set(uncompact(polygonToCells(ring, 6), 6));
+    const overlapping = new Set(uncompact(polygonToCells(ring, 6, {containment: 'overlapping'}), 6));
+    for (const cell of center) expect(overlapping.has(cell)).toBe(true);
+    expect(overlapping.size).toBeGreaterThan(center.size);
+  });
+
+  it('defaults to center containment', () => {
+    const ring = [
+      [-5, 54],
+      [15, 54],
+      [15, 44],
+      [-5, 44]
+    ] as LonLat[];
+    expect(polygonToCells(ring, 6)).toEqual(polygonToCells(ring, 6, {containment: 'center'}));
+  });
+
   it('should return empty for less than 3 vertices', () => {
     expect(polygonToCells([] as LonLat[], 5).length).toBe(0);
     expect(

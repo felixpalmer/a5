@@ -3,7 +3,9 @@
 // Copyright (c) A5 contributors
 
 import {describe, test, expect} from 'vitest';
-import {quat, vec3} from 'gl-matrix';
+import * as quat from '../modules/math/quat';
+import * as vec3 from '../modules/math/vec3';
+import type {Vec3} from '../modules/math/types';
 import {quaternions} from 'a5/core/dodecahedron-quaternions';
 import quaternionsFixture from './fixtures/dodecahedron-quaternions.json';
 
@@ -88,7 +90,7 @@ describe('dodecahedron-quaternions.ts', () => {
 
     test('quaternions produce distinct face centers', () => {
       const northPole = vec3.fromValues(0, 0, 1);
-      const facecenters: vec3[] = [];
+      const facecenters: Vec3[] = [];
 
       quaternions.forEach(q => {
         const rotated = vec3.create();
@@ -166,7 +168,7 @@ describe('dodecahedron-quaternions.ts', () => {
     test('face centers have correct distribution', () => {
       // Generate all face centers by rotating north pole
       const northPole = vec3.fromValues(0, 0, 1);
-      const facecenters: vec3[] = [];
+      const facecenters: Vec3[] = [];
 
       quaternions.forEach(q => {
         const rotated = vec3.create();
@@ -193,7 +195,7 @@ describe('dodecahedron-quaternions.ts', () => {
 
     test('face centers form regular pentagonal arrangements', () => {
       const northPole = vec3.fromValues(0, 0, 1);
-      const facecenters: vec3[] = [];
+      const facecenters: Vec3[] = [];
 
       quaternions.forEach(q => {
         const rotated = vec3.create();

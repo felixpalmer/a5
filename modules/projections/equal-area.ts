@@ -1,7 +1,9 @@
 // Copyright (c) 2024, A5 Project Contributors
 // All rights reserved.
-import {vec2, vec3, mat2d, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as vec2 from '../math/vec2';
+import * as vec3 from '../math/vec3';
+import * as mat2d from '../math/mat2d';
+import type {Mat2d} from '../math/types';
 import type {Cartesian, Face, Barycentric, FaceTriangle, SphericalTriangle} from '../core/coordinate-systems';
 import {faceToBarycentric, barycentricToFace} from '../core/coordinate-transforms';
 import {sphericalTriangleArea} from '../geometry/spherical-polygon';
@@ -16,7 +18,7 @@ const _weightBC = vec2.create(); // alphaTransform * _csAlpha
 interface TriangleConstants {
   AdotB: number; // A · B — the canonical ("even") B-C orientation
   AdotC: number; // A · C — the mirror ("odd") orientation, with B and C swapped
-  alphaTransform: mat2d; // Affine transform for alpha direction vector to p
+  alphaTransform: Mat2d; // Affine transform for alpha direction vector to p
   areaABC: number; // spherical triangle area
   volumeABC: number; // A · (B × C) — signed triple product (volume of parallelpiped formed)
 }

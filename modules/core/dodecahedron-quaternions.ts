@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {quat, vec2, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import type {Quat, Vec2} from '../math/types';
 
 const SQRT5 = Math.sqrt(5);
 const INV_SQRT5 = Math.sqrt(0.2);
@@ -63,16 +62,16 @@ const faceCenters = [
   [-E, G], // [-cos72, sin72]
 
   [0, 0]
-] as vec2[];
+] as Vec2[];
 
 // Obtain by cross product with the z-axis
-const axes = faceCenters.map(([x, y]) => [-y, x]) as vec2[];
+const axes = faceCenters.map(([x, y]) => [-y, x]) as Vec2[];
 
 // Quaternions are obtained from axis of rotation & angle of rotation
 const quaternions = axes.map((axis, i) => {
   if (i === 0) return [0, 0, 0, 1];
   if (i === 11) return [0, -1, 0, 0]; // TODO better to use 1, 0, 0, 0?
   return [...axis, 0, i < 6 ? cosAlpha : sinAlpha];
-}) as quat[];
+}) as Quat[];
 
 export {quaternions};

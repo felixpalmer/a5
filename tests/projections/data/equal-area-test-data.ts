@@ -1,5 +1,5 @@
 import type { Cartesian, Face, FaceTriangle, SphericalTriangle } from 'a5/core/coordinate-systems';
-import { vec3 } from 'gl-matrix';
+import * as vec3 from '../../../modules/math/vec3';
 const TEST_POINTS: Face[] = [
   [0, 0],  // vertex A
   [1, 0],  // vertex B

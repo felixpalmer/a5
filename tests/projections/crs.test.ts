@@ -1,4 +1,4 @@
-import {vec3} from 'gl-matrix';
+import * as vec3 from '../../modules/math/vec3';
 import {describe, it, expect} from 'vitest';
 import {CRS} from 'a5/projections/crs';
 import type {Cartesian} from 'a5/core/coordinate-systems';

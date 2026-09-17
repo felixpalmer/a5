@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {glMatrix, quat} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import type {Quat} from '../math/types';
 import type {Cartesian, Radians, Spherical} from './coordinate-systems';
 import type {Orientation} from '../lattice';
 
@@ -12,8 +11,8 @@ export type Origin = {
   id: OriginId;
   axis: Spherical;
   axisCartesian: Cartesian; // precomputed unit vector form of `axis`
-  quat: quat;
-  inverseQuat: quat;
+  quat: Quat;
+  inverseQuat: Quat;
   angle: Radians;
   orientation: Orientation[];
   firstQuintant: number;

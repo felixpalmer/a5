@@ -113,6 +113,12 @@ FIXTURE_MAP = {
         (RS_ROOT, "tests/fixtures/spherical-triangle.json"),
     ],
 
+    # Utils fixtures
+    "tests/fixtures/utils/great-circle.json": [
+        (PY_ROOT, "tests/utils/fixtures/great-circle.json"),
+        (RS_ROOT, "tests/fixtures/utils/great-circle.json"),
+    ],
+
     # Region fixtures
     "tests/fixtures/regions/polygon.json": [
         (PY_ROOT, "tests/regions/fixtures/polygon.json"),

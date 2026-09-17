@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec2, vec3, quat, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as vec2 from '../math/vec2';
+import * as vec3 from '../math/vec3';
+import * as quat from '../math/quat';
 import {toCartesian, toSpherical, toFace, toPolar} from '../core/coordinate-transforms';
 import type {Radians, Spherical, Cartesian, Polar, Face} from '../core/coordinate-systems';
 import {GnomonicProjection} from './gnomonic';

@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {SphericalTriangleShape} from 'a5/geometry/spherical-triangle';
 import type {Cartesian} from 'a5/core/coordinate-systems';
-import {vec3} from 'gl-matrix';
+import * as vec3 from '../../modules/math/vec3';
 import fixtures from './fixtures/spherical-triangle.json';
 
 describe('spherical-triangle.ts', () => {

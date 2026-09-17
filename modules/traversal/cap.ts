@@ -53,9 +53,10 @@ export function estimateCellRadius(resolution: number): number {
  * to make hierarchical subdivision worthwhile.
  */
 export function pickCoarseResolution(radius: number, targetRes: number): number {
-  // Spherical cap area in m²
-  const capAreaM2 =
-    2 * Math.PI * AUTHALIC_RADIUS_EARTH * AUTHALIC_RADIUS_EARTH * (1 - Math.cos(radius / AUTHALIC_RADIUS_EARTH));
+  // Spherical cap area in m²: 2πR²(1 − cos(r/R)) computed as 4πR²·sin²(r/2R),
+  // which keeps full precision for small radii where 1 − cos cancels
+  const halfAngleSin = Math.sin(radius / (2 * AUTHALIC_RADIUS_EARTH));
+  const capAreaM2 = 4 * Math.PI * AUTHALIC_RADIUS_EARTH * AUTHALIC_RADIUS_EARTH * halfAngleSin * halfAngleSin;
 
   for (let res = FIRST_HILBERT_RESOLUTION; res <= targetRes; res++) {
     const cArea = cellArea(res);

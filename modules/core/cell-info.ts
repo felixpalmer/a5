@@ -48,3 +48,25 @@ export function cellArea(resolution: number): number {
   if (resolution < 0) return AUTHALIC_AREA_EARTH;
   return AUTHALIC_AREA_EARTH / getNumCells(resolution);
 }
+
+// Mean cell edge length divided by sqrt(cellArea), measured exhaustively from the
+// cell boundaries. Resolution 0 cells (dodecahedron faces) and resolution 1 cells
+// (triangular quintants) have their own geometry; from resolution 2 the pentagonal
+// tiling refines self-similarly and the ratio converges to ~0.8211, so a constant
+// serves all higher resolutions.
+const EDGE_LENGTH_RATIOS = [0.7131, 1.4818, 0.8164, 0.8198, 0.8208, 0.821];
+const EDGE_LENGTH_RATIO = 0.8211;
+
+/**
+ * Returns the average edge length of a cell at a given resolution in meters.
+ * Individual edge lengths vary from the average by roughly ±10%, depending
+ * on the cell's shape and its position on the globe.
+ *
+ * @param resolution The resolution level
+ * @returns Average edge length of a cell in meters
+ */
+export function cellEdgeLengthAvg(resolution: number): number {
+  if (resolution < 0) resolution = 0;
+  const ratio = EDGE_LENGTH_RATIOS[resolution] ?? EDGE_LENGTH_RATIO;
+  return ratio * Math.sqrt(cellArea(resolution));
+}

@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec3, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as vec3 from '../math/vec3';
 import type {Cartesian} from '../core/coordinate-systems';
 
 /**

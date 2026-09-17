@@ -19,6 +19,7 @@ const outputPath = path.join(outputDir, 'polygon.json');
 
 const DEG_TO_RAD = Math.PI / 180;
 const AUTHALIC_RADIUS = 6371007.2;
+const MAX_RESOLUTION_LEVEL = 30;
 
 /** Convert lon/lat (degrees) to unit 3D vector */
 function toVec3(ll) {
@@ -113,14 +114,14 @@ function cellInPolygonBruteForce(cellId, rings) {
 }
 
 /**
- * Brute-force polygonToCells using a spherical cap to limit candidate cells.
- * The cap is centered on the outer-ring centroid with radius = max vertex distance * 1.5.
- * `rings` is GeoJSON-style: [outer, ...holes].
+ * Candidate cells for a brute-force scan: every cell in a spherical cap
+ * centered on the outer-ring centroid, sized to enclose the polygon plus a
+ * two-cell buffer (so cells whose centers are outside but edges intersect are
+ * still considered). `rings` is GeoJSON-style: [outer, ...holes].
  */
-function bruteForcePolygonToCells(rings, resolution) {
+function getCandidateCells(rings, resolution, logLabel) {
   const ring = rings[0];
 
-  // Compute centroid and max distance for the spherical cap
   const centroidLl = ring.reduce((acc, ll) => [acc[0] + ll[0], acc[1] + ll[1]], [0, 0]);
   centroidLl[0] /= ring.length;
   centroidLl[1] /= ring.length;
@@ -135,23 +136,102 @@ function bruteForcePolygonToCells(rings, resolution) {
     const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
     maxDist = Math.max(maxDist, angle * AUTHALIC_RADIUS);
   }
-  // Cap must extend beyond polygon by at least one cell radius to catch
-  // cells whose centers are far but edges still intersect the polygon
   const cellRadius = estimateCellRadius(resolution);
   const capRadius = Math.max(maxDist * 1.5, maxDist + cellRadius * 2);
 
   const candidateCells = uncompact(sphericalCap(centroidCell, capRadius), resolution);
-  console.log(
-    `    ${candidateCells.length} candidate cells (cap r=${(capRadius / 1000).toFixed(0)}km at res ${resolution})`
-  );
+  if (logLabel) {
+    console.log(
+      `    ${candidateCells.length} candidate cells (cap r=${(capRadius / 1000).toFixed(0)}km at res ${resolution})`
+    );
+  }
+  return candidateCells;
+}
 
+/**
+ * Brute-force polygonToCells (center containment) using a spherical cap to
+ * limit candidate cells. `rings` is GeoJSON-style: [outer, ...holes].
+ */
+function bruteForcePolygonToCells(rings, resolution) {
+  const candidateCells = getCandidateCells(rings, resolution, true);
   const result = [];
   for (const cellId of candidateCells) {
     if (cellInPolygonBruteForce(cellId, rings)) {
       result.push(cellId);
     }
   }
+  return result.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}
 
+/**
+ * Test whether a cell's region overlaps (shares area with) the polygon region.
+ * Two simple spherical polygons overlap iff a vertex of one lies inside the
+ * other or their boundaries cross. The polygon region is the outer ring minus
+ * its holes, so a cell overlaps it when it overlaps the outer ring and is not
+ * entirely swallowed by a single hole.
+ */
+function ringsOverlap(cellRing, cellVecs, polyRing) {
+  const polyVecs = polyRing.map(toVec3);
+  // Any cell vertex inside the polygon ring, or vice versa.
+  for (const v of cellRing) {
+    if (pointInPolygonSpherical(v, polyRing)) return true;
+  }
+  for (const v of polyRing) {
+    if (pointInPolygonSpherical(v, cellRing)) return true;
+  }
+  // Any boundary crossing.
+  for (let i = 0; i < cellVecs.length; i++) {
+    const a = cellVecs[i];
+    const b = cellVecs[(i + 1) % cellVecs.length];
+    for (let j = 0; j < polyVecs.length; j++) {
+      const c = polyVecs[j];
+      const d = polyVecs[(j + 1) % polyVecs.length];
+      if (segmentsIntersect(a, b, c, d)) return true;
+    }
+  }
+  return false;
+}
+
+/** True if every cell vertex is inside `holeRing` and no cell edge crosses it. */
+function cellInsideHole(cellRing, cellVecs, holeRing) {
+  for (const v of cellRing) {
+    if (!pointInPolygonSpherical(v, holeRing)) return false;
+  }
+  const holeVecs = holeRing.map(toVec3);
+  for (let i = 0; i < cellVecs.length; i++) {
+    const a = cellVecs[i];
+    const b = cellVecs[(i + 1) % cellVecs.length];
+    for (let j = 0; j < holeVecs.length; j++) {
+      const c = holeVecs[j];
+      const d = holeVecs[(j + 1) % holeVecs.length];
+      if (segmentsIntersect(a, b, c, d)) return false;
+    }
+  }
+  return true;
+}
+
+function cellOverlapsPolygon(cellId, rings) {
+  const cellRing = cellToBoundary(cellId, {closedRing: false});
+  const cellVecs = cellRing.map(toVec3);
+  if (!ringsOverlap(cellRing, cellVecs, rings[0])) return false;
+  for (let r = 1; r < rings.length; r++) {
+    if (cellInsideHole(cellRing, cellVecs, rings[r])) return false;
+  }
+  return true;
+}
+
+/**
+ * Brute-force full-coverage oracle: every candidate cell whose region overlaps
+ * the polygon region. Used to validate `containment: 'overlapping'`.
+ */
+function bruteForceOverlappingCells(rings, resolution) {
+  const candidateCells = getCandidateCells(rings, resolution, false);
+  const result = [];
+  for (const cellId of candidateCells) {
+    if (cellOverlapsPolygon(cellId, rings)) {
+      result.push(cellId);
+    }
+  }
   return result.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
@@ -242,6 +322,56 @@ for (const tc of polygonCases) {
     polygon: rings,
     resolution: tc.resolution,
     cells: expected.map(c => u64ToHex(c))
+  });
+}
+
+// --- Overlapping-containment fixtures ---
+// Same polygons, but with `containment: 'overlapping'` (full coverage). The
+// stored cells are the algorithm output (the ports must match it bit-for-bit);
+// we additionally validate against the geometric overlap oracle and warn if
+// the algorithm misses any overlapping cell or emits a non-overlapping one.
+console.log('\nOverlapping fixtures:');
+const overlappingFixtures = [];
+for (const tc of polygonCases) {
+  // 'overlapping' surfaces the raw densely-sampled boundary cells, unfiltered.
+  // At res 30 which exact cell a boundary sample lands in is a last-ULP
+  // decision that isn't reproducible across languages, so skip it here — the
+  // res-30 code path is still covered by the center-containment fixtures.
+  if (tc.resolution >= MAX_RESOLUTION_LEVEL) {
+    console.log(`  ${tc.name} (res ${tc.resolution})... skipped (res 30 not portable in overlapping mode)`);
+    continue;
+  }
+  console.log(`  ${tc.name} (res ${tc.resolution})...`);
+  const rings = [tc.ring, ...(tc.holes || [])];
+
+  const centerCompact = polygonToCells(rings, tc.resolution);
+  const overlapCompact = polygonToCells(rings, tc.resolution, {containment: 'overlapping'});
+  const overlap = uncompact(overlapCompact, tc.resolution);
+  const overlapSorted = [...overlap].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+
+  // Invariant: overlapping is a superset of center containment.
+  const overlapSet = new Set(overlapSorted.map(c => c.toString()));
+  const centerCells = uncompact(centerCompact, tc.resolution);
+  const centerMissing = [...centerCells].filter(c => !overlapSet.has(c.toString()));
+  if (centerMissing.length > 0) {
+    console.log(`    WARNING: overlapping is not a superset of center! missing=${centerMissing.length}`);
+  }
+
+  // Compare against the geometric overlap oracle.
+  const oracle = bruteForceOverlappingCells(rings, tc.resolution);
+  const oracleSet = new Set(oracle.map(c => c.toString()));
+  const missed = oracle.filter(c => !overlapSet.has(c.toString()));
+  const extra = overlapSorted.filter(c => !oracleSet.has(c.toString()));
+  if (missed.length > 0 || extra.length > 0) {
+    console.log(`    NOTE: vs overlap oracle — missed=${missed.length}, extra=${extra.length}`);
+  }
+  console.log(`    center: ${centerCells.length}, overlapping: ${overlapSorted.length}, oracle: ${oracle.length}`);
+
+  overlappingFixtures.push({
+    name: tc.name,
+    polygon: rings,
+    resolution: tc.resolution,
+    cells: overlapSorted.map(c => u64ToHex(c))
   });
 }
 
@@ -339,6 +469,7 @@ if (fs.existsSync(geojsonPath)) {
 
 const fixtures = {
   polygon: polygonFixtures,
+  overlapping: overlappingFixtures,
   country: countryFixtures
 };
 

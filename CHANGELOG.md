@@ -19,6 +19,19 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v0.10.0] - August 28 2026
+
+- feat: Bring gl-matrix function into library (#123)
+- Feat: polygonToCells overlapping containment (#127)
+- feat: Add cellEdgeLengthAvg function (#121)
+- feat: More efficient equal area projection (#108)
+- feat: improve l-system performance (#117)
+- chore: remove old hilbert machinery (#115)
+- feat: Perform swap for engine to use l-system (#114)
+- feat: Back-compatible implementation of existing curve using lsystem (#113)
+- chore: Add l-system machinery (disabled) (#112)
+- feat: Faster polygonToCells PIP (#111)
+
 #### A5 [v0.9.0] - June 17 2026
 
 - **BREAKING**: Remove cellToSpherical & Spherical type

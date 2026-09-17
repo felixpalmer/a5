@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {vec3, quat} from 'gl-matrix';
+import * as vec3 from '../modules/math/vec3';
 import {
   origins,
   findNearestOrigin,
@@ -60,7 +60,7 @@ describe('origin properties', () => {
       expect(length).toBeCloseTo(1);
 
       // Check quaternion is normalized
-      const qLength = quat.length(origin.quat);
+      const qLength = Math.hypot(...origin.quat);
       expect(qLength).toBeCloseTo(1);
     }
   });

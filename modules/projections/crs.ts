@@ -1,5 +1,4 @@
-import {vec3, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
+import * as vec3 from '../math/vec3';
 import {distanceToEdge, distanceToVertex} from '../core/constants';
 import type {Cartesian, Radians, Spherical, SphericalTriangle} from '../core/coordinate-systems';
 import {toCartesian} from '../core/coordinate-transforms';
@@ -17,7 +16,6 @@ import {origins} from '../core/origin';
  */
 export class CRS {
   private vertices: Cartesian[] = [];
-  private invocations = 0;
 
   /**
    * A canonical spherical face triangle (face center, edge midpoint, vertex)
@@ -47,10 +45,6 @@ export class CRS {
   }
 
   getVertex(point: Cartesian): Cartesian {
-    this.invocations++;
-    if (this.invocations === 10000) {
-      console.warn('Too many CRS invocations, results should be cached');
-    }
     for (const vertex of this.vertices) {
       if (vec3.distance(point, vertex) < 1e-5) {
         return vertex;
