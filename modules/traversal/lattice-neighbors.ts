@@ -6,7 +6,7 @@ import type {Orientation, Triple} from '../lattice';
 import {sToTriple, tripleToS, tripleParity, tripleInBounds} from '../lattice';
 import type {Origin} from '../core/utils';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
-import {segmentToQuintant} from '../core/origin';
+import {SEGMENT_TO_ORIENTATION, SEGMENT_TO_QUINTANT} from '../core/origin';
 import {getGlobalCellNeighbors} from './global-neighbors';
 import {type BoundaryContext, getBoundaryNeighbors} from './lattice-boundary';
 
@@ -30,7 +30,9 @@ function decodeSource(cellId: bigint): LatticeSource | null {
   if (resolution < FIRST_HILBERT_RESOLUTION) return null;
 
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const {quintant, orientation} = segmentToQuintant(segment, origin);
+  const globalQuintant = origin.id * 5 + segment;
+  const quintant = SEGMENT_TO_QUINTANT[globalQuintant];
+  const orientation = SEGMENT_TO_ORIENTATION[globalQuintant];
   const triple = sToTriple(S, hilbertRes, orientation);
 
   return {
