@@ -8,30 +8,38 @@ import {Line, OrbitControls} from '@react-three/drei';
 import {BufferAttribute, BufferGeometry, DoubleSide} from 'three';
 import {toFace, toPolar} from 'a5/core/coordinate-transforms';
 import type {Cartesian, Face, Polar, Radians} from 'a5/core/coordinate-systems';
+import type {RayWeight} from './jacobian';
 import {
+  beyondFaceMesh,
   cartesianToPolar,
+  domainBoundary,
+  domainCorners,
   faceBoundary,
   faceCorners,
   faceMesh,
-  FACE_CIRCUMRADIUS,
+  DOMAIN_CIRCUMRADIUS,
   GRID_RAYS,
   GRID_RINGS,
   gridRay,
-  gridRing,
-  isCuspRay,
-  isOnFace,
+  gridRingArcs,
+  isInDomain,
   patchOutline,
   polarToCartesian,
+  rayWeight,
   SPHERE_RADIUS
 } from './jacobian';
 
 export const COLORS = {
   face: '#00aa55',
+  beyond: '#8866dd',
   grid: 'rgba(255, 255, 255, 0.2)',
+  gridFaint: 'rgba(255, 255, 255, 0.08)',
   cusp: 'rgba(255, 255, 255, 0.5)',
   gridOverRaster: 'rgba(255, 255, 255, 0.4)',
+  gridFaintOverRaster: 'rgba(255, 255, 255, 0.16)',
   cuspOverRaster: 'rgba(255, 255, 255, 0.8)',
   outline: '#ffffff',
+  domainOutline: 'rgba(255, 255, 255, 0.45)',
   patch: '#ffb400',
   radial: '#ff7043',
   azimuthal: '#42a5f5'
@@ -42,11 +50,14 @@ export const PATCH_SIZE = 0.09;
 
 const TAU = 2 * Math.PI;
 
+const points = (corners: Face[], flipY: boolean) =>
+  corners.map(corner => `${corner[0]},${flipY ? -corner[1] : corner[1]}`).join(' ');
+
 // ---------------------------------------------------------------------------
 // Face view: the flat dodecahedron face, drawn in its own polar coordinates
 // ---------------------------------------------------------------------------
 
-const VIEW_EXTENT = 1.12 * FACE_CIRCUMRADIUS;
+const VIEW_EXTENT = 1.06 * DOMAIN_CIRCUMRADIUS;
 
 export function FaceView({
   polar,
@@ -59,24 +70,33 @@ export function FaceView({
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const frameRef = useRef<SVGGElement>(null);
-  const clipId = `face-clip-${useId()}`;
+  const clipId = `domain-clip-${useId()}`;
 
-  const corners = useMemo(faceCorners, []);
-  const outline = useMemo(() => corners.map(corner => `${corner[0]},${corner[1]}`).join(' '), [corners]);
+  const outline = useMemo(() => points(faceCorners(), false), []);
+  const domainOutline = useMemo(() => points(domainCorners(), false), []);
   // The raster is drawn outside the flipped frame, where y already points down
-  const outlineScreen = useMemo(() => corners.map(corner => `${corner[0]},${-corner[1]}`).join(' '), [corners]);
+  const domainOutlineScreen = useMemo(() => points(domainCorners(), true), []);
+
+  // Rings out to the face circumradius close on themselves; beyond it each
+  // survives only as five arcs, one inside each reflected point
+  const rings = useMemo(() => GRID_RINGS.flatMap(rho => gridRingArcs(rho).map(arc => toPath(arc, false))), []);
   const rays = useMemo(
     () =>
       Array.from({length: GRID_RAYS}, (_, index) => {
         const gamma = ((TAU * index) / GRID_RAYS) as Radians;
         const ray = gridRay(gamma, 1);
-        return {cusp: isCuspRay(index), end: toFace(ray[ray.length - 1])};
+        return {weight: rayWeight(index), end: toFace(ray[ray.length - 1])};
       }),
     []
   );
 
-  const patch = useMemo(() => toPath(patchOutline(polar, PATCH_SIZE)), [polar]);
+  const patch = useMemo(() => toPath(patchOutline(polar, PATCH_SIZE), true), [polar]);
   const marker = toFace(polar);
+
+  const gridStroke = raster ? COLORS.gridOverRaster : COLORS.grid;
+  const rayStroke: Record<RayWeight, string> = raster
+    ? {cusp: COLORS.cuspOverRaster, bisector: COLORS.gridOverRaster, minor: COLORS.gridFaintOverRaster}
+    : {cusp: COLORS.cusp, bisector: COLORS.grid, minor: COLORS.gridFaint};
 
   const handlePointer = (event: React.PointerEvent<SVGSVGElement>) => {
     const matrix = frameRef.current?.getScreenCTM();
@@ -89,7 +109,7 @@ export function FaceView({
     point.y = event.clientY;
     const {x, y} = point.matrixTransform(matrix.inverse());
     const hovered = toPolar([x, y] as Face);
-    if (isOnFace(hovered)) onHover(hovered);
+    if (isInDomain(hovered)) onHover(hovered);
   };
 
   return (
@@ -103,15 +123,15 @@ export function FaceView({
         <>
           <defs>
             <clipPath id={clipId}>
-              <polygon points={outlineScreen} />
+              <polygon points={domainOutlineScreen} />
             </clipPath>
           </defs>
           <image
             href={raster}
-            x={-FACE_CIRCUMRADIUS}
-            y={-FACE_CIRCUMRADIUS}
-            width={2 * FACE_CIRCUMRADIUS}
-            height={2 * FACE_CIRCUMRADIUS}
+            x={-DOMAIN_CIRCUMRADIUS}
+            y={-DOMAIN_CIRCUMRADIUS}
+            width={2 * DOMAIN_CIRCUMRADIUS}
+            height={2 * DOMAIN_CIRCUMRADIUS}
             clipPath={`url(#${clipId})`}
             preserveAspectRatio="none"
           />
@@ -120,30 +140,42 @@ export function FaceView({
 
       {/* SVG y points down, the face coordinate system points up */}
       <g ref={frameRef} transform="scale(1, -1)">
-        {!raster && <polygon points={outline} fill={COLORS.face} fillOpacity={0.12} />}
+        {!raster && (
+          <>
+            <polygon points={domainOutline} fill={COLORS.beyond} fillOpacity={0.12} />
+            <polygon points={outline} fill={COLORS.face} fillOpacity={0.14} />
+          </>
+        )}
 
-        {/* Rings stop at the apothem and rays at the boundary, so nothing needs clipping */}
-        {GRID_RINGS.map(rho => (
-          <circle
-            key={rho}
-            r={rho}
+        {rings.map((path, index) => (
+          <path
+            key={`ring-${index}`}
+            d={path}
             fill="none"
-            stroke={COLORS.grid}
+            stroke={gridStroke}
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
           />
         ))}
-        {rays.map(({cusp, end}, index) => (
+        {rays.map(({weight, end}, index) => (
           <line
-            key={index}
+            key={`ray-${index}`}
             x2={end[0]}
             y2={end[1]}
-            stroke={raster ? (cusp ? COLORS.cuspOverRaster : COLORS.gridOverRaster) : cusp ? COLORS.cusp : COLORS.grid}
+            stroke={rayStroke[weight]}
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
           />
         ))}
 
+        <polygon
+          points={domainOutline}
+          fill="none"
+          stroke={COLORS.domainOutline}
+          strokeWidth={1.5}
+          strokeDasharray="6 4"
+          vectorEffect="non-scaling-stroke"
+        />
         <polygon
           points={outline}
           fill="none"
@@ -166,17 +198,17 @@ export function FaceView({
   );
 }
 
-function toPath(ring: Polar[]): string {
+function toPath(ring: Polar[], close: boolean): string {
   let path = '';
   for (let i = 0; i < ring.length; i++) {
     const [x, y] = toFace(ring[i]);
     path += `${i === 0 ? 'M' : 'L'}${x.toFixed(5)},${y.toFixed(5)} `;
   }
-  return `${path}Z`;
+  return close ? `${path}Z` : path.trim();
 }
 
 // ---------------------------------------------------------------------------
-// Sphere view: the same face and the same grid, projected
+// Sphere view: the same domain and the same grid, projected
 // ---------------------------------------------------------------------------
 
 /** Lift a ring of face points onto the sphere, `clearance` above its surface */
@@ -190,29 +222,42 @@ function lift(ring: Polar[], clearance: number): [number, number, number][] {
   return out;
 }
 
-function ProjectedFace() {
+function ProjectedRegion({
+  build,
+  color,
+  opacity
+}: {
+  build: () => {positions: Float32Array; indices: Uint32Array};
+  color: string;
+  opacity: number;
+}) {
   const geometry = useMemo(() => {
-    const {positions, indices} = faceMesh();
+    const {positions, indices} = build();
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(positions, 3));
     geometry.setIndex(new BufferAttribute(indices, 1));
     return geometry;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // faceMesh samples the unit sphere, so it is scaled here like everything else
+  // The meshes sample the unit sphere, so they are scaled here like everything else
   return (
     <mesh geometry={geometry} scale={SPHERE_RADIUS}>
-      <meshBasicMaterial color={COLORS.face} transparent opacity={0.25} side={DoubleSide} depthWrite={false} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} side={DoubleSide} depthWrite={false} />
     </mesh>
   );
 }
 
-function ProjectedGrid() {
-  const rings = useMemo(() => GRID_RINGS.map(rho => lift(gridRing(rho), 1.001)), []);
+const RAY_OPACITY: Record<RayWeight, number> = {cusp: 0.55, bisector: 0.25, minor: 0.1};
+
+// Fixed for the life of the scene, and now some hundred separate lines, so it is
+// kept out of the hover re-render
+const ProjectedGrid = React.memo(function ProjectedGrid() {
+  const rings = useMemo(() => GRID_RINGS.flatMap(rho => gridRingArcs(rho).map(arc => lift(arc, 1.001))), []);
   const rays = useMemo(
     () =>
       Array.from({length: GRID_RAYS}, (_, index) => ({
-        cusp: isCuspRay(index),
+        weight: rayWeight(index),
         points: lift(gridRay(((TAU * index) / GRID_RAYS) as Radians), 1.001)
       })),
     []
@@ -223,22 +268,23 @@ function ProjectedGrid() {
       {rings.map((points, index) => (
         <Line key={`ring-${index}`} points={points} color="#ffffff" transparent opacity={0.25} lineWidth={1} />
       ))}
-      {rays.map(({cusp, points}, index) => (
+      {rays.map(({weight, points}, index) => (
         <Line
           key={`ray-${index}`}
           points={points}
           color="#ffffff"
           transparent
-          opacity={cusp ? 0.55 : 0.25}
+          opacity={RAY_OPACITY[weight]}
           lineWidth={1}
         />
       ))}
     </>
   );
-}
+});
 
 function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}) {
   const boundary = useMemo(() => lift(faceBoundary(), 1.002), []);
+  const outerBoundary = useMemo(() => lift(domainBoundary(), 1.002), []);
   const patch = useMemo(() => lift(patchOutline(polar, PATCH_SIZE), 1.003), [polar]);
   const marker = useMemo(() => lift([polar], 1.004)[0], [polar]);
 
@@ -247,7 +293,7 @@ function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}
     const {x, y, z} = event.point;
     const length = Math.hypot(x, y, z);
     const hovered = cartesianToPolar([x / length, y / length, z / length] as Cartesian);
-    if (isOnFace(hovered)) onHover(hovered);
+    if (isInDomain(hovered)) onHover(hovered);
   };
 
   return (
@@ -261,8 +307,10 @@ function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}
         <meshPhysicalMaterial color="#1b2330" roughness={0.65} metalness={0.1} />
       </mesh>
 
-      <ProjectedFace />
+      <ProjectedRegion build={faceMesh} color={COLORS.face} opacity={0.25} />
+      <ProjectedRegion build={beyondFaceMesh} color={COLORS.beyond} opacity={0.22} />
       <ProjectedGrid />
+      <Line points={outerBoundary} color={COLORS.domainOutline} lineWidth={1.5} dashed dashSize={0.03} gapSize={0.02} />
       <Line points={boundary} color={COLORS.outline} lineWidth={2} />
       <Line points={patch} color={COLORS.patch} lineWidth={2.5} />
       <mesh position={marker}>
@@ -283,7 +331,7 @@ function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}
 export function SphereView({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}) {
   return (
     <Canvas
-      camera={{position: [0, -1.15 * SPHERE_RADIUS, 2.6 * SPHERE_RADIUS], fov: 32, near: 0.01, far: 100}}
+      camera={{position: [0, -1.3 * SPHERE_RADIUS, 2.9 * SPHERE_RADIUS], fov: 36, near: 0.01, far: 100}}
       style={{width: '100%', height: '100%'}}
     >
       <Suspense fallback={null}>

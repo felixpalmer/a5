@@ -7,9 +7,42 @@ import type {Polar} from 'a5/core/coordinate-systems';
 import {COLORS} from './components';
 import {CHANNEL_INFO} from './deformation';
 import {decompose, polarToSpherical, SPHERE_RADIUS} from './jacobian';
-import type {Jacobian} from './jacobian';
+import type {FrameJacobian, FrameMode} from './jacobian';
 
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+
+/** How each frame names its own axes, and what its determinant means */
+const FRAMES: Record<
+  FrameMode,
+  {
+    symbol: string;
+    title: string;
+    columns: [string, string];
+    rows: [string, string];
+    source: [string, string];
+    target: [string, string];
+    areaLabel: string;
+  }
+> = {
+  chart: {
+    symbol: 'J',
+    title: 'J = ∂(φ, θ) / ∂(ρ, γ)',
+    columns: ['∂ρ', '∂γ'],
+    rows: ['∂φ', '∂θ'],
+    source: ['ρ', 'γ'],
+    target: ['φ', 'θ'],
+    areaLabel: 'R²·sin φ·det J / ρ'
+  },
+  metric: {
+    symbol: 'M',
+    title: 'M = ∂(R dφ, R sin φ dθ) / ∂(dρ, ρ dγ)',
+    columns: ['dρ', 'ρ dγ'],
+    rows: ['R dφ', 'R sinφ dθ'],
+    source: ['ρ̂', 'γ̂'],
+    target: ['φ̂', 'θ̂'],
+    areaLabel: 'area ratio'
+  }
+};
 
 /** Math-space point to SVG space: the diagrams have y pointing up, SVG has it pointing down */
 const at = (x: number, y: number) => `${x.toFixed(4)},${(-y).toFixed(4)}`;
@@ -76,14 +109,15 @@ function Patch({
   );
 }
 
-function Matrix({jacobian}: {jacobian: Jacobian}) {
+function Matrix({frame}: {frame: FrameJacobian}) {
+  const labels = FRAMES[frame.mode];
   const rows: [string, number, number][] = [
-    ['∂φ', jacobian.dPhiDRho, jacobian.dPhiDGamma],
-    ['∂θ', jacobian.dThetaDRho, jacobian.dThetaDGamma]
+    [labels.rows[0], frame.rows[0][0], frame.rows[0][1]],
+    [labels.rows[1], frame.rows[1][0], frame.rows[1][1]]
   ];
 
   return (
-    <div style={{display: 'grid', gridTemplateColumns: '24px auto', columnGap: 8, alignItems: 'center'}}>
+    <div style={{display: 'grid', gridTemplateColumns: '68px auto', columnGap: 8, alignItems: 'center'}}>
       <div />
       <div
         style={{
@@ -95,11 +129,20 @@ function Matrix({jacobian}: {jacobian: Jacobian}) {
           opacity: 0.65
         }}
       >
-        <span style={{color: COLORS.radial}}>∂ρ</span>
-        <span style={{color: COLORS.azimuthal}}>∂γ</span>
+        <span style={{color: COLORS.radial}}>{labels.columns[0]}</span>
+        <span style={{color: COLORS.azimuthal}}>{labels.columns[1]}</span>
       </div>
 
-      <div style={{display: 'grid', rowGap: 6, fontSize: 13, opacity: 0.65, textAlign: 'right'}}>
+      <div
+        style={{
+          display: 'grid',
+          rowGap: 6,
+          fontSize: 12,
+          opacity: 0.65,
+          textAlign: 'right',
+          whiteSpace: 'nowrap'
+        }}
+      >
         {rows.map(([label]) => (
           <span key={label}>{label}</span>
         ))}
@@ -119,10 +162,10 @@ function Matrix({jacobian}: {jacobian: Jacobian}) {
           fontVariantNumeric: 'tabular-nums'
         }}
       >
-        {rows.map(([label, dRho, dGamma]) => (
+        {rows.map(([label, radial, azimuthal]) => (
           <React.Fragment key={label}>
-            <span style={{textAlign: 'right'}}>{dRho.toFixed(4)}</span>
-            <span style={{textAlign: 'right'}}>{dGamma.toFixed(4)}</span>
+            <span style={{textAlign: 'right'}}>{radial.toFixed(4)}</span>
+            <span style={{textAlign: 'right'}}>{azimuthal.toFixed(4)}</span>
           </React.Fragment>
         ))}
       </div>
@@ -130,8 +173,8 @@ function Matrix({jacobian}: {jacobian: Jacobian}) {
   );
 }
 
-function Decomposition({jacobian}: {jacobian: Jacobian}) {
-  const {rotation, shear, scale} = decompose(jacobian);
+function Decomposition({frame}: {frame: FrameJacobian}) {
+  const {rotation, shear, scale} = decompose(frame);
   const rows: [keyof typeof CHANNEL_INFO, string][] = [
     ['rotation', `${((rotation * 180) / Math.PI).toFixed(2)}°`],
     ['shear', shear.toFixed(3)],
@@ -155,15 +198,7 @@ function Decomposition({jacobian}: {jacobian: Jacobian}) {
               />
               {channel}
             </span>
-            <span
-              style={{
-                textAlign: 'right',
-                fontFamily: MONO,
-                fontVariantNumeric: 'tabular-nums'
-              }}
-            >
-              {value}
-            </span>
+            <span style={{textAlign: 'right', fontFamily: MONO, fontVariantNumeric: 'tabular-nums'}}>{value}</span>
           </React.Fragment>
         ))}
       </div>
@@ -171,10 +206,11 @@ function Decomposition({jacobian}: {jacobian: Jacobian}) {
   );
 }
 
-export function JacobianOverlay({polar, jacobian}: {polar: Polar; jacobian: Jacobian}) {
+export function JacobianOverlay({polar, frame}: {polar: Polar; frame: FrameJacobian}) {
   const [rho, gamma] = polar;
   const [theta, phi] = polarToSpherical(polar);
   const degrees = (radians: number) => `${((radians * 180) / Math.PI).toFixed(2)}°`;
+  const labels = FRAMES[frame.mode];
 
   return (
     <div
@@ -198,9 +234,11 @@ export function JacobianOverlay({polar, jacobian}: {polar: Polar; jacobian: Jaco
       {/* Two atomic children, so a narrow viewport can never orphan one diagram */}
       <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'flex-start', gap: 24}}>
         <div style={{flex: '0 0 auto'}}>
-          <div style={{fontSize: 12, opacity: 0.6, marginBottom: 8, fontFamily: MONO}}>J = ∂(φ, θ) / ∂(ρ, γ)</div>
-          <Matrix jacobian={jacobian} />
-          <Decomposition jacobian={jacobian} />
+          <div style={{fontSize: 12, opacity: 0.6, marginBottom: 8, fontFamily: MONO, whiteSpace: 'nowrap'}}>
+            {labels.title}
+          </div>
+          <Matrix frame={frame} />
+          <Decomposition frame={frame} />
         </div>
 
         <div style={{display: 'flex', alignItems: 'center', gap: 14, flex: '0 0 auto'}}>
@@ -209,16 +247,16 @@ export function JacobianOverlay({polar, jacobian}: {polar: Polar; jacobian: Jaco
               [1, 0],
               [0, 1]
             ]}
-            axes={['ρ', 'γ']}
+            axes={labels.source}
             caption="unit patch on the face"
           />
           <div style={{fontSize: 20, opacity: 0.5}}>→</div>
           <Patch
             columns={[
-              [jacobian.dPhiDRho, jacobian.dThetaDRho],
-              [jacobian.dPhiDGamma, jacobian.dThetaDGamma]
+              [frame.rows[0][0], frame.rows[1][0]],
+              [frame.rows[0][1], frame.rows[1][1]]
             ]}
-            axes={['φ', 'θ']}
+            axes={labels.target}
             caption="its image on the sphere"
           />
         </div>
@@ -235,9 +273,9 @@ export function JacobianOverlay({polar, jacobian}: {polar: Polar; jacobian: Jaco
         }}
       >
         <div>
-          det J = {jacobian.determinant.toFixed(4)}
+          det {labels.symbol} = {frame.determinant.toFixed(6)}
           {' '}
-          R²·sin φ·det J / ρ = {jacobian.areaRatio.toFixed(6)}
+          {labels.areaLabel} = {frame.areaRatio.toFixed(6)}
           {' '}R = {SPHERE_RADIUS.toFixed(6)}
         </div>
         <div>

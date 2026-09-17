@@ -65,6 +65,30 @@ export function isOnFace([rho, gamma]: Polar): boolean {
   return rho <= faceRadius(gamma);
 }
 
+/** Distance from the face center to a mirrored face center, the far point of the domain */
+export const DOMAIN_CIRCUMRADIUS = 2 * FACE_APOTHEM;
+
+const TAN_PI_OVER_5 = Math.tan(PI_OVER_5);
+
+/**
+ * Distance from the face center to the edge of the projectable domain, in the
+ * direction `gamma`.
+ *
+ * Past the face edge the projection reflects each of its ten triangles across
+ * that edge and unprojects onto the neighbouring dodecahedron face. Those ten
+ * reflections cover the mirror image of each quintant, so the domain is the face
+ * with a triangle erected on every edge: a ten-sided outline alternating between
+ * the face corners and the mirrored face centers.
+ */
+export function domainRadius(gamma: Radians): number {
+  const beta = Math.abs(projection.normalizeGamma(gamma));
+  return (DOMAIN_CIRCUMRADIUS * TAN_PI_OVER_5) / (TAN_PI_OVER_5 * Math.cos(beta) + Math.sin(beta));
+}
+
+export function isInDomain([rho, gamma]: Polar): boolean {
+  return rho <= domainRadius(gamma);
+}
+
 /**
  * The Jacobian of the projection at a point, relating the face's polar coordinates
  * (rho, gamma) to the sphere's spherical coordinates (phi, theta).
@@ -140,16 +164,25 @@ export function faceCorners(): Face[] {
   return corners;
 }
 
-/**
- * The face boundary as a closed ring of polar coordinates. The edges are straight
- * on the face but curved on the sphere, hence the subdivision.
- */
-export function faceBoundary(segmentsPerEdge = 24): Polar[] {
-  const corners = faceCorners();
-  const ring: Polar[] = [];
+/** The ten corners of the domain, alternating mirrored face center and face corner */
+export function domainCorners(): Face[] {
+  const corners: Face[] = [];
   for (let i = 0; i < 5; i++) {
+    corners.push(toFace([DOMAIN_CIRCUMRADIUS, i * TWO_PI_OVER_5] as Polar));
+    corners.push(toFace([FACE_CIRCUMRADIUS, PI_OVER_5 + i * TWO_PI_OVER_5] as Polar));
+  }
+  return corners;
+}
+
+/**
+ * A closed ring through the given corners. The edges are straight on the face but
+ * curved on the sphere, hence the subdivision.
+ */
+function boundaryThrough(corners: Face[], segmentsPerEdge: number): Polar[] {
+  const ring: Polar[] = [];
+  for (let i = 0; i < corners.length; i++) {
     const from = corners[i];
-    const to = corners[(i + 1) % 5];
+    const to = corners[(i + 1) % corners.length];
     for (let s = 0; s < segmentsPerEdge; s++) {
       const t = s / segmentsPerEdge;
       ring.push(toPolar([from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t] as Face));
@@ -159,23 +192,65 @@ export function faceBoundary(segmentsPerEdge = 24): Polar[] {
   return ring;
 }
 
-/** Radii of the polar grid rings. All lie within the apothem, so every ring closes inside the face */
-export const GRID_RINGS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
-
-/** One ray every 18°, so every second ray falls on a cusp */
-export const GRID_RAYS = 20;
-
-export function gridRing(rho: number, segments = 240): Polar[] {
-  const ring: Polar[] = [];
-  for (let i = 0; i <= segments; i++) {
-    ring.push([rho, (TWO_PI * i) / segments] as Polar);
-  }
-  return ring;
+export function faceBoundary(segmentsPerEdge = 24): Polar[] {
+  return boundaryThrough(faceCorners(), segmentsPerEdge);
 }
 
+export function domainBoundary(segmentsPerEdge = 24): Polar[] {
+  return boundaryThrough(domainCorners(), segmentsPerEdge);
+}
+
+/**
+ * Radii of the polar grid rings. Those out to the face circumradius close on
+ * themselves; beyond it a ring survives only inside the five reflected points.
+ */
+export const GRID_RINGS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1];
+
+/** One spoke every 4.5°, so every eighth falls on a cusp and every fourth on a triangle bisector */
+export const GRID_RAYS = 80;
+
+/**
+ * A constant-rho ring, split into the arcs that stay inside the domain. Rings out
+ * to the face circumradius come back as a single closed arc, beyond that as one
+ * arc per reflected point.
+ */
+export function gridRingArcs(rho: number, segments = 720): Polar[][] {
+  const angle = (i: number) => ((TWO_PI * i) / segments) as Radians;
+
+  if (rho <= FACE_CIRCUMRADIUS) {
+    const ring: Polar[] = [];
+    for (let i = 0; i <= segments; i++) ring.push([rho, angle(i)] as Polar);
+    return [ring];
+  }
+
+  const inside: boolean[] = new Array(segments);
+  for (let i = 0; i < segments; i++) inside[i] = rho <= domainRadius(angle(i));
+
+  // Walk from a gap, so that an arc straddling gamma = 0 is not cut in two
+  const start = inside.indexOf(false);
+  if (start < 0) return [];
+
+  const arcs: Polar[][] = [];
+  let current: Polar[] | null = null;
+  for (let k = 0; k < segments; k++) {
+    const i = (start + k) % segments;
+    if (!inside[i]) {
+      current = null;
+      continue;
+    }
+    if (!current) {
+      current = [];
+      arcs.push(current);
+    }
+    current.push([rho, angle(i)] as Polar);
+  }
+  return arcs;
+}
+
+/** A ray from the face center out to the edge of the domain */
 export function gridRay(gamma: Radians, segments = 32): Polar[] {
   const ray: Polar[] = [];
-  const radius = faceRadius(gamma);
+  const radius = domainRadius(gamma);
   for (let i = 0; i <= segments; i++) {
     ray.push([(radius * i) / segments, gamma] as Polar);
   }
@@ -183,10 +258,18 @@ export function gridRay(gamma: Radians, segments = 32): Polar[] {
 }
 
 const RAYS_PER_CUSP = Math.round(CUSP_SPACING / (TWO_PI / GRID_RAYS));
+const RAYS_PER_BISECTOR = RAYS_PER_CUSP / 2;
 
-/** True for rays that lie on a cusp, where the projection switches face triangle */
-export function isCuspRay(index: number): boolean {
-  return index % RAYS_PER_CUSP === 0;
+/**
+ * How prominently a spoke is drawn: those on a cusp, where the projection
+ * switches face triangle, then those bisecting a triangle, then the rest.
+ */
+export type RayWeight = 'cusp' | 'bisector' | 'minor';
+
+export function rayWeight(index: number): RayWeight {
+  if (index % RAYS_PER_CUSP === 0) return 'cusp';
+  if (index % RAYS_PER_BISECTOR === 0) return 'bisector';
+  return 'minor';
 }
 
 /**
@@ -194,7 +277,7 @@ export function isCuspRay(index: number): boolean {
  * it reads as a square of side `size` on the face. Its image on the sphere is the
  * finite version of what the Jacobian describes in the limit.
  */
-export function patchOutline(polar: Polar, size: number, segments = 8): Polar[] {
+export function patchOutline(polar: Polar, size: number, segments = 16): Polar[] {
   const [rho, gamma] = polar;
   const dRho = size / 2;
   // Matching arc length in the azimuthal direction, clamped so the patch stays
@@ -214,7 +297,11 @@ export function patchOutline(polar: Polar, size: number, segments = 8): Polar[] 
     const [rhoB, gammaB] = corners[(i + 1) % 4];
     for (let s = 0; s < segments; s++) {
       const t = s / segments;
-      outline.push([rhoA + (rhoB - rhoA) * t, gammaA + (gammaB - gammaA) * t] as Polar);
+      const gammaT = (gammaA + (gammaB - gammaA) * t) as Radians;
+      // Clip to the domain. Past it the projection saturates at a triangle vertex,
+      // which would collapse the patch rather than simply cutting it off
+      const rhoT = Math.min(rhoA + (rhoB - rhoA) * t, domainRadius(gammaT));
+      outline.push([rhoT, gammaT] as Polar);
     }
   }
   outline.push(outline[0]);
@@ -222,16 +309,26 @@ export function patchOutline(polar: Polar, size: number, segments = 8): Polar[] 
 }
 
 /**
- * Triangle mesh covering the face, tessellated in polar coordinates and projected
- * onto the sphere, so it can be drawn as the image of the face.
+ * Triangle mesh over an annular band of the domain, tessellated in polar
+ * coordinates and projected onto the sphere, so the image of the face and the
+ * image of the reflected region can each be drawn.
+ *
+ * angularSegments must be a multiple of ten, so that samples land exactly on the
+ * face corners and the mirrored centers, where both radii have a kink.
  */
-export function faceMesh(angularSegments = 160, radialSegments = 12) {
+export function radialMesh(
+  innerRadius: (gamma: Radians) => number,
+  outerRadius: (gamma: Radians) => number,
+  angularSegments = 160,
+  radialSegments = 12
+) {
   const positions = new Float32Array((angularSegments + 1) * (radialSegments + 1) * 3);
   let p = 0;
   for (let j = 0; j <= radialSegments; j++) {
     for (let i = 0; i <= angularSegments; i++) {
       const gamma = ((TWO_PI * i) / angularSegments) as Radians;
-      const rho = (faceRadius(gamma) * j) / radialSegments;
+      const inner = innerRadius(gamma);
+      const rho = inner + ((outerRadius(gamma) - inner) * j) / radialSegments;
       const point = polarToCartesian([rho, gamma] as Polar);
       positions[p++] = point[0];
       positions[p++] = point[1];
@@ -259,9 +356,73 @@ export function faceMesh(angularSegments = 160, radialSegments = 12) {
   return {positions, indices};
 }
 
+const ZERO = () => 0;
+
+/** The face itself */
+export function faceMesh() {
+  return radialMesh(ZERO, faceRadius);
+}
+
+/** The reflected region: the five triangles mirrored across the face edges */
+export function beyondFaceMesh() {
+  return radialMesh(faceRadius, domainRadius);
+}
+
 /**
- * The Jacobian split into the three deformations it performs, via the polar
- * decomposition J = Rotation · Stretch with Stretch symmetric.
+ * Which pair of frames the derivative is expressed in.
+ *
+ * 'chart' differentiates the raw coordinates, (rho, gamma) -> (phi, theta). Both
+ * charts are centred on this face, so reflecting across a face edge is not a
+ * symmetry of either: the reflected region's numbers are a mirror of the face's
+ * only after the chart's own contribution is removed.
+ *
+ * 'metric' removes it, by using the local orthonormal frames instead —
+ * (drho, rho·dgamma) on the plane and (R·dphi, R·sinphi·dtheta) on the sphere.
+ * Its singular values do not depend on either chart, so they are the projection's
+ * own distortion, and they do mirror exactly across a face edge.
+ */
+export type FrameMode = 'chart' | 'metric';
+
+export interface FrameJacobian {
+  mode: FrameMode;
+  /** Row 0 is the radial output direction and row 1 the azimuthal; columns likewise for the input */
+  rows: [[number, number], [number, number]];
+  determinant: number;
+  /** Ratio of the surface area elements. Exactly 1 for an equal-area projection */
+  areaRatio: number;
+}
+
+export function toFrame(jacobian: Jacobian, polar: Polar, mode: FrameMode): FrameJacobian {
+  if (mode === 'chart') {
+    return {
+      mode,
+      rows: [
+        [jacobian.dPhiDRho, jacobian.dPhiDGamma],
+        [jacobian.dThetaDRho, jacobian.dThetaDGamma]
+      ],
+      determinant: jacobian.determinant,
+      areaRatio: jacobian.areaRatio
+    };
+  }
+
+  // Scale each row by the length its coordinate measures on the sphere, and each
+  // column by the length its coordinate measures on the plane
+  const rho = Math.max(polar[0], 1e-9);
+  const [, phi] = polarToSpherical(polar);
+  const radial = SPHERE_RADIUS;
+  const azimuthal = SPHERE_RADIUS * Math.sin(phi);
+  const rows: [[number, number], [number, number]] = [
+    [radial * jacobian.dPhiDRho, (radial * jacobian.dPhiDGamma) / rho],
+    [azimuthal * jacobian.dThetaDRho, (azimuthal * jacobian.dThetaDGamma) / rho]
+  ];
+  const determinant = rows[0][0] * rows[1][1] - rows[0][1] * rows[1][0];
+  // In these frames the determinant already is the ratio of the area elements
+  return {mode, rows, determinant, areaRatio: determinant};
+}
+
+/**
+ * The derivative split into the three deformations it performs, via the polar
+ * decomposition = Rotation · Stretch with Stretch symmetric.
  *
  * Note that the Gram-Schmidt decomposition (J = Rotation · Shear · Scale) is not
  * useful here: the projection radiates from the face center, so rays of constant
@@ -281,8 +442,8 @@ export interface Decomposition {
   sigma2: number;
 }
 
-export function decompose(jacobian: Jacobian): Decomposition {
-  const {dPhiDRho: a, dPhiDGamma: b, dThetaDRho: c, dThetaDGamma: d} = jacobian;
+export function decompose({rows, determinant}: FrameJacobian): Decomposition {
+  const [[a, b], [c, d]] = rows;
 
   // Closed form 2x2 SVD: the singular values are the sum and difference of the
   // two rotation-invariant magnitudes below, and the polar rotation is the angle
@@ -300,7 +461,7 @@ export function decompose(jacobian: Jacobian): Decomposition {
   return {
     rotation: Math.atan2(antiDifference, sum),
     shear: sigma2 === 0 ? Infinity : sigma1 / sigma2 - 1,
-    scale: Math.sqrt(Math.abs(jacobian.determinant)),
+    scale: Math.sqrt(Math.abs(determinant)),
     sigma1,
     sigma2
   };
@@ -313,20 +474,49 @@ export const DEFORMATION_CHANNELS: DeformationChannel[] = ['rotation', 'shear', 
 
 export interface DeformationField {
   size: number;
-  /** Magnitude per pixel, row-major over the face's bounding box with row 0 at maximum y */
+  /** Magnitude per pixel, row-major over the domain's bounding box with row 0 at maximum y */
   values: Record<DeformationChannel, Float32Array>;
-  /** Range of each channel over the face, used to normalise it for display */
+  /**
+   * Range of each channel used to normalise it for display. Robust rather than
+   * exact: see `robustRange`.
+   */
   ranges: Record<DeformationChannel, [number, number]>;
-  /** Non-zero for pixels that lie on the face */
+  /** True where a channel is constant, so nothing should be read into its variation */
+  constant: Record<DeformationChannel, boolean>;
+  /** Non-zero for pixels that lie within the domain */
   mask: Uint8Array;
 }
 
 /**
- * Samples the decomposition across the face, so the three deformations can be
+ * Samples the decomposition across the domain, so the three deformations can be
  * drawn as a raster. Magnitudes are unsigned: the rotation and shear both change
  * sign across every cusp, and their sign carries no information the picture needs.
  */
-export function deformationField(size: number): DeformationField {
+/** Fraction trimmed from each end before taking a channel's display range */
+const RANGE_TRIM = 0.01;
+
+/** A channel whose spread is this small relative to its size carries no signal */
+const CONSTANT_TOLERANCE = 1e-6;
+
+/**
+ * The range to normalise a channel over, ignoring the extreme one percent at each
+ * end. Central differences are meaningless within a step of a cusp or of the face
+ * edge, and those few pixels would otherwise stretch the range and flatten
+ * everything else. A channel that is constant up to that differencing error is
+ * reported as such, so that its noise is not amplified into a full range image.
+ */
+function robustRange(sorted: Float32Array): {range: [number, number]; constant: boolean} {
+  const count = sorted.length;
+  if (count === 0) return {range: [0, 0], constant: true};
+
+  const low = sorted[Math.floor(RANGE_TRIM * (count - 1))];
+  const high = sorted[Math.ceil((1 - RANGE_TRIM) * (count - 1))];
+  const span = high - low;
+  const constant = span <= CONSTANT_TOLERANCE * (1 + Math.abs(high));
+  return {range: constant ? [high, high] : [low, high], constant};
+}
+
+export function deformationField(size: number, mode: FrameMode): DeformationField {
   const pixels = size * size;
   const values: Record<DeformationChannel, Float32Array> = {
     rotation: new Float32Array(pixels),
@@ -334,23 +524,26 @@ export function deformationField(size: number): DeformationField {
     scale: new Float32Array(pixels)
   };
   const mask = new Uint8Array(pixels);
-  const ranges: Record<DeformationChannel, [number, number]> = {
-    rotation: [Infinity, -Infinity],
-    shear: [Infinity, -Infinity],
-    scale: [Infinity, -Infinity]
+
+  // Masked values only, packed, for the range pass below
+  const samples: Record<DeformationChannel, Float32Array> = {
+    rotation: new Float32Array(pixels),
+    shear: new Float32Array(pixels),
+    scale: new Float32Array(pixels)
   };
+  let sampleCount = 0;
 
   for (let j = 0; j < size; j++) {
-    const y = FACE_CIRCUMRADIUS - ((j + 0.5) / size) * 2 * FACE_CIRCUMRADIUS;
+    const y = DOMAIN_CIRCUMRADIUS - ((j + 0.5) / size) * 2 * DOMAIN_CIRCUMRADIUS;
     for (let i = 0; i < size; i++) {
-      const x = -FACE_CIRCUMRADIUS + ((i + 0.5) / size) * 2 * FACE_CIRCUMRADIUS;
+      const x = -DOMAIN_CIRCUMRADIUS + ((i + 0.5) / size) * 2 * DOMAIN_CIRCUMRADIUS;
       const polar = [Math.hypot(x, y), Math.atan2(y, x)] as Polar;
-      if (!isOnFace(polar)) continue;
+      if (!isInDomain(polar)) continue;
 
       const index = j * size + i;
       mask[index] = 1;
 
-      const {rotation, shear, scale} = decompose(computeJacobian(polar));
+      const {rotation, shear, scale} = decompose(toFrame(computeJacobian(polar), polar, mode));
       const magnitudes: Record<DeformationChannel, number> = {
         rotation: Math.abs(radToDeg(rotation as Radians)),
         shear: Math.abs(shear),
@@ -361,12 +554,21 @@ export function deformationField(size: number): DeformationField {
         const channel = DEFORMATION_CHANNELS[c];
         const magnitude = magnitudes[channel];
         values[channel][index] = magnitude;
-        const range = ranges[channel];
-        if (magnitude < range[0]) range[0] = magnitude;
-        if (magnitude > range[1]) range[1] = magnitude;
+        samples[channel][sampleCount] = magnitude;
       }
+      sampleCount++;
     }
   }
 
-  return {size, values, ranges, mask};
+  const ranges = {} as Record<DeformationChannel, [number, number]>;
+  const constant = {} as Record<DeformationChannel, boolean>;
+  for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
+    const channel = DEFORMATION_CHANNELS[c];
+    const sorted = samples[channel].slice(0, sampleCount).sort();
+    const result = robustRange(sorted);
+    ranges[channel] = result.range;
+    constant[channel] = result.constant;
+  }
+
+  return {size, values, ranges, constant, mask};
 }
