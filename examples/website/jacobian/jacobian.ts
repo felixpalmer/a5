@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import {DodecahedronProjection} from 'a5/projections/dodecahedron';
-import {toCartesian, toFace, toPolar} from 'a5/core/coordinate-transforms';
+import {radToDeg, toCartesian, toFace, toPolar} from 'a5/core/coordinate-transforms';
 import {distanceToEdge, PI_OVER_5, TWO_PI, TWO_PI_OVER_5} from 'a5/core/constants';
 import type {Cartesian, Face, Polar, Radians, Spherical} from 'a5/core/coordinate-systems';
 import type {OriginId} from 'a5/core/utils';
@@ -24,6 +24,20 @@ export const FACE_CIRCUMRADIUS = distanceToEdge / Math.cos(PI_OVER_5);
 
 /** Each face is projected as ten triangles; the projection has a cusp at every multiple of this angle */
 export const CUSP_SPACING = PI_OVER_5;
+
+/** Area of the flat face, for the dodecahedron of inradius 1 that A5 is built on */
+export const FACE_AREA = 5 * FACE_APOTHEM * FACE_APOTHEM * Math.tan(PI_OVER_5);
+
+/**
+ * Radius at which the sphere's surface area is exactly twelve face areas.
+ *
+ * A dodecahedron of inradius 1 circumscribes the unit sphere, so its faces are
+ * larger than the spherical pentagons they map onto — by a factor of 1.325. The
+ * projection is equal-area between the face and *this* sphere, so drawing the
+ * sphere at any other radius would make the area check below come out as
+ * something other than one.
+ */
+export const SPHERE_RADIUS = Math.sqrt((3 * FACE_AREA) / Math.PI);
 
 /**
  * DSEA projection of a point on the dodecahedron face, taking the face's polar
@@ -66,7 +80,11 @@ export interface Jacobian {
   dThetaDGamma: number;
   /** Determinant: the area scale factor between the two coordinate charts */
   determinant: number;
-  /** sin(phi)·det/rho — the ratio of the *surface* area elements, constant for an equal-area projection */
+  /**
+   * R²·sin(phi)·det/rho — the ratio of the *surface* area elements. This, rather
+   * than the determinant, is what the projection holds constant, and with the
+   * sphere at SPHERE_RADIUS it is exactly one.
+   */
   areaRatio: number;
 }
 
@@ -104,11 +122,11 @@ export function computeJacobian([rho, gamma]: Polar): Jacobian {
 
   const determinant = dPhiDRho * dThetaDGamma - dPhiDGamma * dThetaDRho;
 
-  // Area elements are rho·drho·dgamma on the face and sin(phi)·dphi·dtheta on the
-  // sphere, so it is this ratio, not the determinant itself, that the projection
-  // holds constant.
+  // Area elements are rho·drho·dgamma on the face and R²·sin(phi)·dphi·dtheta on
+  // the sphere. Neither chart is area-preserving on its own, which is why the
+  // determinant varies across the face while this ratio does not.
   const [, phi] = polarToSpherical([r, gamma] as Polar);
-  const areaRatio = (Math.sin(phi) * determinant) / r;
+  const areaRatio = (SPHERE_RADIUS * SPHERE_RADIUS * Math.sin(phi) * determinant) / r;
 
   return {dPhiDRho, dPhiDGamma, dThetaDRho, dThetaDGamma, determinant, areaRatio};
 }
@@ -239,4 +257,116 @@ export function faceMesh(angularSegments = 160, radialSegments = 12) {
   }
 
   return {positions, indices};
+}
+
+/**
+ * The Jacobian split into the three deformations it performs, via the polar
+ * decomposition J = Rotation · Stretch with Stretch symmetric.
+ *
+ * Note that the Gram-Schmidt decomposition (J = Rotation · Shear · Scale) is not
+ * useful here: the projection radiates from the face center, so rays of constant
+ * gamma map to meridians of constant theta, dtheta/drho is identically zero on the
+ * face, and that rotation is therefore always zero. The closest *rigid* rotation,
+ * which is what the polar decomposition returns, is not.
+ */
+export interface Decomposition {
+  /** Angle of the closest rigid rotation, in radians */
+  rotation: number;
+  /** Anisotropy sigma1/sigma2 - 1. Zero where a small circle stays a circle */
+  shear: number;
+  /** sqrt|det J|, the area scale between the two charts */
+  scale: number;
+  /** Principal stretches, largest first */
+  sigma1: number;
+  sigma2: number;
+}
+
+export function decompose(jacobian: Jacobian): Decomposition {
+  const {dPhiDRho: a, dPhiDGamma: b, dThetaDRho: c, dThetaDGamma: d} = jacobian;
+
+  // Closed form 2x2 SVD: the singular values are the sum and difference of the
+  // two rotation-invariant magnitudes below, and the polar rotation is the angle
+  // of the first of them
+  const sum = (a + d) / 2;
+  const difference = (a - d) / 2;
+  const antiSum = (c + b) / 2;
+  const antiDifference = (c - b) / 2;
+  const mean = Math.hypot(sum, antiDifference);
+  const deviation = Math.hypot(difference, antiSum);
+
+  const sigma1 = mean + deviation;
+  const sigma2 = mean - deviation;
+
+  return {
+    rotation: Math.atan2(antiDifference, sum),
+    shear: sigma2 === 0 ? Infinity : sigma1 / sigma2 - 1,
+    scale: Math.sqrt(Math.abs(jacobian.determinant)),
+    sigma1,
+    sigma2
+  };
+}
+
+export type DeformationChannel = 'rotation' | 'shear' | 'scale';
+
+/** Channel order is also the RGB order of the raster */
+export const DEFORMATION_CHANNELS: DeformationChannel[] = ['rotation', 'shear', 'scale'];
+
+export interface DeformationField {
+  size: number;
+  /** Magnitude per pixel, row-major over the face's bounding box with row 0 at maximum y */
+  values: Record<DeformationChannel, Float32Array>;
+  /** Range of each channel over the face, used to normalise it for display */
+  ranges: Record<DeformationChannel, [number, number]>;
+  /** Non-zero for pixels that lie on the face */
+  mask: Uint8Array;
+}
+
+/**
+ * Samples the decomposition across the face, so the three deformations can be
+ * drawn as a raster. Magnitudes are unsigned: the rotation and shear both change
+ * sign across every cusp, and their sign carries no information the picture needs.
+ */
+export function deformationField(size: number): DeformationField {
+  const pixels = size * size;
+  const values: Record<DeformationChannel, Float32Array> = {
+    rotation: new Float32Array(pixels),
+    shear: new Float32Array(pixels),
+    scale: new Float32Array(pixels)
+  };
+  const mask = new Uint8Array(pixels);
+  const ranges: Record<DeformationChannel, [number, number]> = {
+    rotation: [Infinity, -Infinity],
+    shear: [Infinity, -Infinity],
+    scale: [Infinity, -Infinity]
+  };
+
+  for (let j = 0; j < size; j++) {
+    const y = FACE_CIRCUMRADIUS - ((j + 0.5) / size) * 2 * FACE_CIRCUMRADIUS;
+    for (let i = 0; i < size; i++) {
+      const x = -FACE_CIRCUMRADIUS + ((i + 0.5) / size) * 2 * FACE_CIRCUMRADIUS;
+      const polar = [Math.hypot(x, y), Math.atan2(y, x)] as Polar;
+      if (!isOnFace(polar)) continue;
+
+      const index = j * size + i;
+      mask[index] = 1;
+
+      const {rotation, shear, scale} = decompose(computeJacobian(polar));
+      const magnitudes: Record<DeformationChannel, number> = {
+        rotation: Math.abs(radToDeg(rotation as Radians)),
+        shear: Math.abs(shear),
+        scale
+      };
+
+      for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
+        const channel = DEFORMATION_CHANNELS[c];
+        const magnitude = magnitudes[channel];
+        values[channel][index] = magnitude;
+        const range = ranges[channel];
+        if (magnitude < range[0]) range[0] = magnitude;
+        if (magnitude > range[1]) range[1] = magnitude;
+      }
+    }
+  }
+
+  return {size, values, ranges, mask};
 }

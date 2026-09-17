@@ -28,13 +28,27 @@ class JacobianDemo extends Component {
           rays of constant γ map to meridians of constant θ.
         </p>
         <p>
-          Area elements are ρ·dρ·dγ on the face and sin φ·dφ·dθ on the sphere, so it is sin φ·det J / ρ that an
-          equal-area projection holds constant — here at 0.754697, the ratio of a face's area to a twelfth of the
-          sphere.
+          Area elements are ρ·dρ·dγ on the face and R²·sin φ·dφ·dθ on the sphere, so the determinant on its own is not
+          the area scale. Put those weights back and R²·sin φ·det J / ρ is exactly 1 — the equal-area property. That
+          holds for one sphere only: R = 1.151102, the radius at which the sphere's area is twelve face areas. The
+          dodecahedron A5 is built on circumscribes the unit sphere, so its faces are larger than the spherical
+          pentagons they map onto, and the sphere here is drawn at R to match.
+        </p>
+        <p>
+          The decomposition splits J into the three deformations it performs, using the polar decomposition J = rotation
+          · stretch: the rotation is the closest rigid rotation, the shear is the anisotropy σ₁/σ₂ − 1 (zero where a
+          small circle stays a circle) and the scale is √|det J|. The Gram-Schmidt decomposition is not used, as its
+          rotation is identically zero for the reason above.
+        </p>
+        <p>
+          The raster maps the magnitude of each component over the face to a colour channel — red for rotation, green
+          for shear, blue for scale — each normalised over its own range, since the ranges are narrow. The scale channel
+          varies even though the projection is equal-area: that variation belongs to the polar and spherical charts, not
+          to the projection.
         </p>
         <p>
           The projection is built from ten triangles per face, and the grid rays at multiples of 36° mark where they
-          meet. The Jacobian is discontinuous across these cusps.
+          meet. The Jacobian is discontinuous across these cusps, which is what the raster's ten-fold pattern traces.
         </p>
       </div>
     );

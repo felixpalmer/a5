@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import React, {Suspense, useMemo, useRef} from 'react';
+import React, {Suspense, useId, useMemo, useRef} from 'react';
 import {Canvas, ThreeEvent} from '@react-three/fiber';
 import {Line, OrbitControls} from '@react-three/drei';
 import {BufferAttribute, BufferGeometry, DoubleSide} from 'three';
@@ -21,13 +21,16 @@ import {
   isCuspRay,
   isOnFace,
   patchOutline,
-  polarToCartesian
+  polarToCartesian,
+  SPHERE_RADIUS
 } from './jacobian';
 
 export const COLORS = {
   face: '#00aa55',
   grid: 'rgba(255, 255, 255, 0.2)',
   cusp: 'rgba(255, 255, 255, 0.5)',
+  gridOverRaster: 'rgba(255, 255, 255, 0.4)',
+  cuspOverRaster: 'rgba(255, 255, 255, 0.8)',
   outline: '#ffffff',
   patch: '#ffb400',
   radial: '#ff7043',
@@ -45,11 +48,23 @@ const TAU = 2 * Math.PI;
 
 const VIEW_EXTENT = 1.12 * FACE_CIRCUMRADIUS;
 
-export function FaceView({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}) {
+export function FaceView({
+  polar,
+  raster,
+  onHover
+}: {
+  polar: Polar;
+  raster: string | null;
+  onHover: (polar: Polar) => void;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const frameRef = useRef<SVGGElement>(null);
+  const clipId = `face-clip-${useId()}`;
 
-  const outline = useMemo(() => faceCorners().map(corner => `${corner[0]},${corner[1]}`).join(' '), []);
+  const corners = useMemo(faceCorners, []);
+  const outline = useMemo(() => corners.map(corner => `${corner[0]},${corner[1]}`).join(' '), [corners]);
+  // The raster is drawn outside the flipped frame, where y already points down
+  const outlineScreen = useMemo(() => corners.map(corner => `${corner[0]},${-corner[1]}`).join(' '), [corners]);
   const rays = useMemo(
     () =>
       Array.from({length: GRID_RAYS}, (_, index) => {
@@ -84,20 +99,46 @@ export function FaceView({polar, onHover}: {polar: Polar; onHover: (polar: Polar
       onPointerMove={handlePointer}
       style={{width: '100%', height: '100%', display: 'block', touchAction: 'none'}}
     >
+      {raster && (
+        <>
+          <defs>
+            <clipPath id={clipId}>
+              <polygon points={outlineScreen} />
+            </clipPath>
+          </defs>
+          <image
+            href={raster}
+            x={-FACE_CIRCUMRADIUS}
+            y={-FACE_CIRCUMRADIUS}
+            width={2 * FACE_CIRCUMRADIUS}
+            height={2 * FACE_CIRCUMRADIUS}
+            clipPath={`url(#${clipId})`}
+            preserveAspectRatio="none"
+          />
+        </>
+      )}
+
       {/* SVG y points down, the face coordinate system points up */}
       <g ref={frameRef} transform="scale(1, -1)">
-        <polygon points={outline} fill={COLORS.face} fillOpacity={0.12} />
+        {!raster && <polygon points={outline} fill={COLORS.face} fillOpacity={0.12} />}
 
         {/* Rings stop at the apothem and rays at the boundary, so nothing needs clipping */}
         {GRID_RINGS.map(rho => (
-          <circle key={rho} r={rho} fill="none" stroke={COLORS.grid} strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          <circle
+            key={rho}
+            r={rho}
+            fill="none"
+            stroke={COLORS.grid}
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+          />
         ))}
         {rays.map(({cusp, end}, index) => (
           <line
             key={index}
             x2={end[0]}
             y2={end[1]}
-            stroke={cusp ? COLORS.cusp : COLORS.grid}
+            stroke={raster ? (cusp ? COLORS.cuspOverRaster : COLORS.gridOverRaster) : cusp ? COLORS.cusp : COLORS.grid}
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
           />
@@ -138,10 +179,9 @@ function toPath(ring: Polar[]): string {
 // Sphere view: the same face and the same grid, projected
 // ---------------------------------------------------------------------------
 
-const SPHERE_RADIUS = 0.995;
-
-/** Lift a ring of face points onto the sphere, just clear of its surface */
-function lift(ring: Polar[], radius: number): [number, number, number][] {
+/** Lift a ring of face points onto the sphere, `clearance` above its surface */
+function lift(ring: Polar[], clearance: number): [number, number, number][] {
+  const radius = SPHERE_RADIUS * clearance;
   const out: [number, number, number][] = new Array(ring.length);
   for (let i = 0; i < ring.length; i++) {
     const point = polarToCartesian(ring[i]);
@@ -159,8 +199,9 @@ function ProjectedFace() {
     return geometry;
   }, []);
 
+  // faceMesh samples the unit sphere, so it is scaled here like everything else
   return (
-    <mesh geometry={geometry}>
+    <mesh geometry={geometry} scale={SPHERE_RADIUS}>
       <meshBasicMaterial color={COLORS.face} transparent opacity={0.25} side={DoubleSide} depthWrite={false} />
     </mesh>
   );
@@ -216,7 +257,7 @@ function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}
       <directionalLight position={[-4, -3, -2]} intensity={0.4} />
 
       <mesh onPointerMove={handlePointer}>
-        <sphereGeometry args={[SPHERE_RADIUS, 96, 64]} />
+        <sphereGeometry args={[SPHERE_RADIUS * 0.995, 96, 64]} />
         <meshPhysicalMaterial color="#1b2330" roughness={0.65} metalness={0.1} />
       </mesh>
 
@@ -225,18 +266,26 @@ function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}
       <Line points={boundary} color={COLORS.outline} lineWidth={2} />
       <Line points={patch} color={COLORS.patch} lineWidth={2.5} />
       <mesh position={marker}>
-        <sphereGeometry args={[0.011, 16, 16]} />
+        <sphereGeometry args={[0.011 * SPHERE_RADIUS, 16, 16]} />
         <meshBasicMaterial color={COLORS.patch} />
       </mesh>
 
-      <OrbitControls enableDamping enablePan={false} minDistance={1.6} maxDistance={6} />
+      <OrbitControls
+        enableDamping
+        enablePan={false}
+        minDistance={1.6 * SPHERE_RADIUS}
+        maxDistance={6 * SPHERE_RADIUS}
+      />
     </>
   );
 }
 
 export function SphereView({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}) {
   return (
-    <Canvas camera={{position: [0, -1.15, 2.6], fov: 32, near: 0.01, far: 100}} style={{width: '100%', height: '100%'}}>
+    <Canvas
+      camera={{position: [0, -1.15 * SPHERE_RADIUS, 2.6 * SPHERE_RADIUS], fov: 32, near: 0.01, far: 100}}
+      style={{width: '100%', height: '100%'}}
+    >
       <Suspense fallback={null}>
         <Scene polar={polar} onHover={onHover} />
       </Suspense>

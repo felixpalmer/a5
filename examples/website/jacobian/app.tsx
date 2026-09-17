@@ -7,6 +7,8 @@ import {createRoot} from 'react-dom/client';
 import type {Polar} from 'a5/core/coordinate-systems';
 import {FaceView, SphereView} from './components';
 import {JacobianOverlay} from './overlay';
+import {ALL_CHANNELS, DeformationControls, useDeformationField, useDeformationRaster} from './deformation';
+import type {ChannelToggles} from './deformation';
 import {computeJacobian} from './jacobian';
 
 // Off both a cusp and the face center, so the shear terms are visible on arrival
@@ -27,12 +29,16 @@ const labelStyle: React.CSSProperties = {
   fontSize: 13,
   letterSpacing: 0.4,
   opacity: 0.65,
-  pointerEvents: 'none'
+  pointerEvents: 'none',
+  zIndex: 1
 };
 
 const App: React.FC = () => {
   const [polar, setPolar] = useState<Polar>(INITIAL_POLAR);
+  const [channels, setChannels] = useState<ChannelToggles>(ALL_CHANNELS);
   const jacobian = useMemo(() => computeJacobian(polar), [polar]);
+  const field = useDeformationField();
+  const raster = useDeformationRaster(field, channels);
 
   return (
     <div
@@ -40,13 +46,13 @@ const App: React.FC = () => {
         position: 'absolute',
         inset: 0,
         display: 'flex',
-        flexWrap: 'wrap',
         background: 'linear-gradient(0, #000, #223)'
       }}
     >
       <div style={{...panelStyle, borderRight: '1px solid rgba(255,255,255,0.12)'}}>
         <div style={labelStyle}>Dodecahedron face — polar (ρ, γ)</div>
-        <FaceView polar={polar} onHover={setPolar} />
+        <FaceView polar={polar} raster={raster} onHover={setPolar} />
+        <DeformationControls field={field} channels={channels} onChange={setChannels} />
       </div>
       <div style={panelStyle}>
         <div style={labelStyle}>Sphere — spherical (θ, φ)</div>
