@@ -59,12 +59,9 @@
   "resolutions": {
     "webpackbar": "^7.0.0"
   },
+  "packageManager": "yarn@4.6.0",
   "browserslist": [
     ">0.2% and supports async-functions",
     "not dead"
-  ],
-  "volta": {
-    "node": "22.13.1",
-    "yarn": "1.22.19"
-  }
+  ]
 }
