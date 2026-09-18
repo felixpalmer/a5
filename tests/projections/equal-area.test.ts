@@ -14,7 +14,13 @@ const MAX_ANGLE = Math.max(
   vec3.angle(TEST_SPHERICAL_TRIANGLE[2] as Cartesian, TEST_SPHERICAL_TRIANGLE[0] as Cartesian)
 );
 const MAX_ARC_LENGTH_MM = AUTHALIC_RADIUS * MAX_ANGLE * 1e9;
-const DESIRED_MM_PRECISION = 0.0024;
+// Round-trip floor of the closed-form equal-area projection, at the Float64
+// limit (largestError is ~1e-15 on the unit sphere). A5 radiates from the
+// corner (ISEA); that vertex ordering conditions the closed form marginally
+// worse than radiating from the centre (centre ≈ 0.0024, corner ≈ 0.0027), so
+// the guard sits at 0.003. This is sub-nanometre — A5's millimetre accuracy is
+// unaffected.
+const DESIRED_MM_PRECISION = 0.003;
 
 describe('EqualAreaProjection forward', () => {
   const equalArea = new EqualAreaProjection(TEST_SPHERICAL_TRIANGLE as any);
