@@ -68,6 +68,20 @@ class JacobianDemo extends Component {
           ray in either projection.
         </p>
         <p>
+          The <em>cells</em> toggle draws A5's own cells over the face at resolution 2, 3 or 4, which shows which of
+          those loci a cell boundary can actually reach. No cell edge crosses a quintant boundary at any resolution —
+          cells abut them, a vertex landing on the ray and the edge stopping there — so DSEA's most severe cusp is never
+          traversed. The crossings that do happen are on the quintant bisectors, always at the midpoint of an edge, and
+          DSEA passes through those smoothly.
+        </p>
+        <p>
+          Cells do straddle the dodecahedron face edge, though, and there are more of those crossings than bisector
+          crossings at every resolution: 20, 48 and 96 against 10, 20 and 40. That is the locus where the two
+          projections trade places. DSEA kinks there by 1.919° on average, while ISEA is smooth — its radiating corner
+          and the edge midpoint are both shared with the neighbouring face, so only the face centre moves under
+          reflection. Switch the projection with the cells drawn to see it.
+        </p>
+        <p>
           The other five rays, through the corners, are the real cusps in DSEA. There the derivative jumps: the
           one-sided shear is −0.160054 on one side and +0.160054 on the other, exact mirror images. A two-sided stencil
           would average them to zero and report a diagonal matrix that holds on neither side, so the difference stencil
@@ -126,4 +140,4 @@ class JacobianDemo extends Component {
   }
 }
 
-export default makeExample(JacobianDemo);
+export default makeExample(JacobianDemo, {collapsible: true});

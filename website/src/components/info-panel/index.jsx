@@ -65,26 +65,32 @@ const InfoPanelContent = styled.div`
   }
 `;
 
-function InfoPanel({title, children, sourceLink}) {
+// `collapsible` opts a panel into the expander at every width, rather than only
+// on mobile, and it starts collapsed
+function InfoPanel({title, children, sourceLink, collapsible}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <PanelContainer $expanded={isExpanded}>
-      <PanelTitle onClick={() => setIsExpanded(!isExpanded)} $expanded={isExpanded}>
+    <PanelContainer $expanded={isExpanded} $collapsible={collapsible}>
+      <PanelTitle onClick={() => setIsExpanded(!isExpanded)} $expanded={isExpanded} $collapsible={collapsible}>
         <div>{title}</div>
-        <PanelExpander $expanded={isExpanded}>{isExpanded ? '✕' : 'i'}</PanelExpander>
+        <PanelExpander $expanded={isExpanded} $collapsible={collapsible}>
+          {isExpanded ? '✕' : 'i'}
+        </PanelExpander>
       </PanelTitle>
-      <PanelContent $expanded={isExpanded}>{children}</PanelContent>
-      <SourceLink $expanded={isExpanded} href={sourceLink} target="_new">
+      <PanelContent $expanded={isExpanded} $collapsible={collapsible}>
+        {children}
+      </PanelContent>
+      <SourceLink $expanded={isExpanded} $collapsible={collapsible} href={sourceLink} target="_new">
         View Code ↗
       </SourceLink>
     </PanelContainer>
   );
 }
 
-export default function ExampleInfoPanel({title, sourceLink, params, meta, children, updateParam}) {
+export default function ExampleInfoPanel({title, sourceLink, params, meta, children, updateParam, collapsible}) {
   return (
-    <InfoPanel title={title} sourceLink={sourceLink}>
+    <InfoPanel title={title} sourceLink={sourceLink} collapsible={collapsible}>
       <InfoPanelContent>
         {children}
 

@@ -13,6 +13,7 @@ import type {RayWeight} from './jacobian';
 import {
   beyondFaceMesh,
   cartesianToPolar,
+  cellOutline,
   domainBoundary,
   domainCorners,
   faceBoundary,
@@ -41,6 +42,7 @@ export const COLORS = {
   cuspOverRaster: 'rgba(255, 255, 255, 0.8)',
   outline: '#ffffff',
   domainOutline: 'rgba(255, 255, 255, 0.45)',
+  cell: '#4dd0e1',
   patch: '#ffb400',
   radial: '#ff7043',
   azimuthal: '#42a5f5'
@@ -63,10 +65,12 @@ const VIEW_EXTENT = 1.06 * DOMAIN_CIRCUMRADIUS;
 export function FaceView({
   polar,
   raster,
+  cells,
   onHover
 }: {
   polar: Polar;
   raster: string | null;
+  cells: Face[][];
   onHover: (polar: Polar) => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -91,6 +95,11 @@ export function FaceView({
     []
   );
 
+  // Cell edges are straight in the plane, so no subdivision is needed here
+  const cellPaths = useMemo(
+    () => cells.map(cell => `M${cell.map(v => `${v[0].toFixed(5)},${v[1].toFixed(5)}`).join('L')}Z`),
+    [cells]
+  );
   const patch = useMemo(() => toPath(patchOutline(polar, PATCH_SIZE), true), [polar]);
   const marker = toFace(polar);
 
@@ -165,6 +174,18 @@ export function FaceView({
             y2={end[1]}
             stroke={rayStroke[weight]}
             strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+
+        {cellPaths.map((path, index) => (
+          <path
+            key={`cell-${index}`}
+            d={path}
+            fill="none"
+            stroke={COLORS.cell}
+            strokeOpacity={0.85}
+            strokeWidth={1.2}
             vectorEffect="non-scaling-stroke"
           />
         ))}
@@ -288,13 +309,32 @@ const ProjectedGrid = React.memo(function ProjectedGrid({projection}: {projectio
   );
 });
 
+/** All cell edges as one line-segment soup, so the overlay costs a single draw */
+function ProjectedCells({cells, projection}: {cells: Face[][]; projection: ProjectionMode}) {
+  const points = useMemo(() => {
+    const out: [number, number, number][] = [];
+    for (const cell of cells) {
+      const ring = lift(cellOutline(cell, 6), 1.0025, projection);
+      for (let i = 0; i + 1 < ring.length; i++) {
+        out.push(ring[i], ring[i + 1]);
+      }
+    }
+    return out;
+  }, [cells, projection]);
+
+  if (!points.length) return null;
+  return <Line points={points} segments color={COLORS.cell} transparent opacity={0.85} lineWidth={1.2} />;
+}
+
 function Scene({
   polar,
   projection,
+  cells,
   onHover
 }: {
   polar: Polar;
   projection: ProjectionMode;
+  cells: Face[][];
   onHover: (polar: Polar) => void;
 }) {
   const boundary = useMemo(() => lift(faceBoundary(), 1.002, projection), [projection]);
@@ -324,6 +364,7 @@ function Scene({
       <ProjectedRegion build={faceMesh} projection={projection} color={COLORS.face} opacity={0.25} />
       <ProjectedRegion build={beyondFaceMesh} projection={projection} color={COLORS.beyond} opacity={0.22} />
       <ProjectedGrid projection={projection} />
+      <ProjectedCells cells={cells} projection={projection} />
       <Line points={outerBoundary} color={COLORS.domainOutline} lineWidth={1.5} dashed dashSize={0.03} gapSize={0.02} />
       <Line points={boundary} color={COLORS.outline} lineWidth={2} />
       <Line points={patch} color={COLORS.patch} lineWidth={2.5} />
@@ -345,10 +386,12 @@ function Scene({
 export function SphereView({
   polar,
   projection,
+  cells,
   onHover
 }: {
   polar: Polar;
   projection: ProjectionMode;
+  cells: Face[][];
   onHover: (polar: Polar) => void;
 }) {
   return (
@@ -357,7 +400,7 @@ export function SphereView({
       style={{width: '100%', height: '100%'}}
     >
       <Suspense fallback={null}>
-        <Scene polar={polar} projection={projection} onHover={onHover} />
+        <Scene polar={polar} projection={projection} cells={cells} onHover={onHover} />
       </Suspense>
     </Canvas>
   );

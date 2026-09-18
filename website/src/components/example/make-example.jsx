@@ -38,7 +38,7 @@ const MapTip = styled.div`
   }
 `;
 
-export default function makeExample(DemoComponent, {isInteractive = true, style} = {}) {
+export default function makeExample(DemoComponent, {isInteractive = true, style, collapsible = false} = {}) {
   const {parameters = {}, mapStyle} = DemoComponent;
   const defaultParams = Object.keys(parameters).reduce((acc, name) => {
     acc[name] = normalizeParam(parameters[name]);
@@ -104,6 +104,7 @@ export default function makeExample(DemoComponent, {isInteractive = true, style}
             meta={meta}
             updateParam={updateParam}
             sourceLink={DemoComponent.code}
+            collapsible={collapsible}
           >
             {DemoComponent.renderInfo(meta)}
           </InfoPanel>

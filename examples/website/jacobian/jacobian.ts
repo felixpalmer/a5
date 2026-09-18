@@ -9,6 +9,9 @@ import {radToDeg, toCartesian, toFace, toPolar} from 'a5/core/coordinate-transfo
 import {distanceToEdge, PI_OVER_5, TWO_PI, TWO_PI_OVER_5} from 'a5/core/constants';
 import type {Cartesian, Face, Polar, Radians, Spherical} from 'a5/core/coordinate-systems';
 import type {OriginId} from 'a5/core/utils';
+import {_getPentagon} from 'a5/core/cell';
+import {deserialize} from 'a5/core/serialization';
+import {cellToChildren, getRes0Cells} from 'a5/index';
 
 /**
  * Both projections, so the two can be compared without rebuilding anything. They
@@ -641,4 +644,45 @@ export function deformationField(
   }
 
   return {size, values, ranges, constant, mask};
+}
+
+/** Resolutions offered for the cell overlay. Enough to show the pattern without crowding the face */
+export const CELL_RESOLUTIONS = [2, 3, 4] as const;
+
+/**
+ * The A5 cells of one dodecahedron face, as planar pentagons in face coordinates.
+ *
+ * The lattice is projection independent, so these are the same under either mode —
+ * only their images on the sphere differ. Drawing them shows which of the
+ * projection's non-smooth loci a cell boundary can actually reach: never a
+ * quintant boundary, which cells only abut, but the quintant bisectors and the
+ * face edge both.
+ */
+export function faceCells(resolution: number): Face[][] {
+  const out: Face[][] = [];
+  for (const res0 of getRes0Cells()) {
+    if (deserialize(res0).origin.id !== ORIGIN_ID) continue;
+    for (const cell of cellToChildren(res0, resolution)) {
+      out.push(_getPentagon(deserialize(cell)).getVertices() as Face[]);
+    }
+  }
+  return out;
+}
+
+/**
+ * A cell outline as polar coordinates, subdivided so that its image on the sphere
+ * stays smooth along each straight planar edge.
+ */
+export function cellOutline(vertices: Face[], segmentsPerEdge = 8): Polar[] {
+  const ring: Polar[] = [];
+  for (let i = 0; i < vertices.length; i++) {
+    const from = vertices[i];
+    const to = vertices[(i + 1) % vertices.length];
+    for (let s = 0; s < segmentsPerEdge; s++) {
+      const t = s / segmentsPerEdge;
+      ring.push(toPolar([from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t] as Face));
+    }
+  }
+  ring.push(ring[0]);
+  return ring;
 }

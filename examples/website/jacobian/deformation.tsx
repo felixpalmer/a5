@@ -4,7 +4,7 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 import {DEFORMATION_CHANNELS, deformationField} from './jacobian';
-import {PROJECTION_MODES} from './jacobian';
+import {CELL_RESOLUTIONS, PROJECTION_MODES} from './jacobian';
 import type {DeformationChannel, DeformationField, FrameMode} from './jacobian';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 
@@ -93,6 +93,9 @@ export function useDeformationRaster(field: DeformationField | null, channels: C
 
 const format = (value: number, channel: DeformationChannel) => value.toFixed(CHANNEL_INFO[channel].digits);
 
+/** 'off', or a resolution, as the toggle's string values */
+export const CELL_OPTIONS = ['off', ...CELL_RESOLUTIONS.map(String)];
+
 const PROJECTION_TITLES: Record<ProjectionMode, string> = {
   dsea: "Radiates from the dodecahedron face centre. A5's own projection",
   isea: 'Radiates from the dodecahedron corner, the dual icosahedron face centre'
@@ -149,17 +152,21 @@ export function DeformationControls({
   channels,
   mode,
   projection,
+  cells,
   onChange,
   onModeChange,
-  onProjectionChange
+  onProjectionChange,
+  onCellsChange
 }: {
   field: DeformationField | null;
   channels: ChannelToggles;
   mode: FrameMode;
   projection: ProjectionMode;
+  cells: string;
   onChange: (channels: ChannelToggles) => void;
   onModeChange: (mode: FrameMode) => void;
   onProjectionChange: (projection: ProjectionMode) => void;
+  onCellsChange: (cells: string) => void;
 }) {
   return (
     <div
@@ -201,6 +208,8 @@ export function DeformationControls({
           titles={FRAME_TITLES}
           onChange={onModeChange}
         />
+        <span style={{opacity: 0.6}}>Cells</span>
+        <Toggle options={CELL_OPTIONS} value={cells} onChange={onCellsChange} />
       </div>
       {DEFORMATION_CHANNELS.map(channel => {
         const {label, swatch, unit} = CHANNEL_INFO[channel];
