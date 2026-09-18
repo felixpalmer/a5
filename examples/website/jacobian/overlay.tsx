@@ -6,8 +6,48 @@ import React from 'react';
 import type {Polar} from 'a5/core/coordinate-systems';
 import {COLORS} from './components';
 import {CHANNEL_INFO} from './deformation';
-import {decompose, polarToSpherical, SPHERE_RADIUS} from './jacobian';
-import type {FrameJacobian, FrameMode} from './jacobian';
+import {decompose, deformationMagnitudes, polarToSpherical, SPHERE_RADIUS} from './jacobian';
+import type {DeformationChannel, FrameJacobian, FrameMode} from './jacobian';
+
+export type ChannelRanges = Record<DeformationChannel, [number, number]>;
+
+const GAUGE_WIDTH = 72;
+const GAUGE_DOT = 8;
+
+/** Where the current value sits between the extremes the raster is normalised over */
+function Gauge({value, range, color}: {value: number; range?: [number, number]; color: string}) {
+  const span = range ? range[1] - range[0] : 0;
+  const position = span > 0 ? Math.max(0, Math.min(1, (value - range![0]) / span)) : null;
+
+  return (
+    <span style={{position: 'relative', display: 'inline-block', width: GAUGE_WIDTH, height: GAUGE_DOT}}>
+      <span
+        style={{
+          position: 'absolute',
+          left: GAUGE_DOT / 2,
+          right: GAUGE_DOT / 2,
+          top: GAUGE_DOT / 2 - 1,
+          height: 2,
+          borderRadius: 1,
+          background: 'rgba(255,255,255,0.2)'
+        }}
+      />
+      {position !== null && (
+        <span
+          style={{
+            position: 'absolute',
+            left: position * (GAUGE_WIDTH - GAUGE_DOT),
+            top: 0,
+            width: GAUGE_DOT,
+            height: GAUGE_DOT,
+            borderRadius: '50%',
+            background: color
+          }}
+        />
+      )}
+    </span>
+  );
+}
 
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
@@ -173,17 +213,28 @@ function Matrix({frame}: {frame: FrameJacobian}) {
   );
 }
 
-function Decomposition({frame}: {frame: FrameJacobian}) {
-  const {rotation, shear, scale} = decompose(frame);
-  const rows: [keyof typeof CHANNEL_INFO, string][] = [
+function Decomposition({frame, ranges}: {frame: FrameJacobian; ranges?: ChannelRanges}) {
+  const decomposition = decompose(frame);
+  const magnitudes = deformationMagnitudes(decomposition);
+  const {rotation, shear, squash} = decomposition;
+  const rows: [DeformationChannel, string][] = [
     ['rotation', `${((rotation * 180) / Math.PI).toFixed(2)}°`],
     ['shear', shear.toFixed(3)],
-    ['scale', scale.toFixed(4)]
+    ['squash', squash.toFixed(4)]
   ];
 
   return (
     <div style={{marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.12)'}}>
-      <div style={{display: 'grid', gridTemplateColumns: 'auto 66px', rowGap: 5, columnGap: 10, fontSize: 12}}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `auto 62px ${GAUGE_WIDTH}px`,
+          rowGap: 5,
+          columnGap: 10,
+          alignItems: 'center',
+          fontSize: 12
+        }}
+      >
         {rows.map(([channel, value]) => (
           <React.Fragment key={channel}>
             <span style={{display: 'flex', alignItems: 'center', gap: 7, opacity: 0.75}}>
@@ -199,6 +250,7 @@ function Decomposition({frame}: {frame: FrameJacobian}) {
               {channel}
             </span>
             <span style={{textAlign: 'right', fontFamily: MONO, fontVariantNumeric: 'tabular-nums'}}>{value}</span>
+            <Gauge value={magnitudes[channel]} range={ranges?.[channel]} color={CHANNEL_INFO[channel].swatch} />
           </React.Fragment>
         ))}
       </div>
@@ -206,7 +258,7 @@ function Decomposition({frame}: {frame: FrameJacobian}) {
   );
 }
 
-export function JacobianOverlay({polar, frame}: {polar: Polar; frame: FrameJacobian}) {
+export function JacobianOverlay({polar, frame, ranges}: {polar: Polar; frame: FrameJacobian; ranges?: ChannelRanges}) {
   const [rho, gamma] = polar;
   const [theta, phi] = polarToSpherical(polar);
   const degrees = (radians: number) => `${((radians * 180) / Math.PI).toFixed(2)}°`;
@@ -238,7 +290,7 @@ export function JacobianOverlay({polar, frame}: {polar: Polar; frame: FrameJacob
             {labels.title}
           </div>
           <Matrix frame={frame} />
-          <Decomposition frame={frame} />
+          <Decomposition frame={frame} ranges={ranges} />
         </div>
 
         <div style={{display: 'flex', alignItems: 'center', gap: 14, flex: '0 0 auto'}}>

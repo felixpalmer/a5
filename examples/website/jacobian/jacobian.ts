@@ -128,14 +128,45 @@ function wrapAngle(angle: number): number {
   return angle;
 }
 
-export function computeJacobian([rho, gamma]: Polar): Jacobian {
-  const r = Math.max(rho, MIN_RHO);
-  const h = Math.min(STEP, 0.5 * r);
+/**
+ * Move gamma clear of the nearest cusp, where the projection switches face
+ * triangle and the derivative jumps.
+ */
+function stepClearOfCusp(gamma: Radians, margin: number): Radians {
+  const cusp = CUSP_SPACING * Math.round(gamma / CUSP_SPACING);
+  const offset = gamma - cusp;
+  if (Math.abs(offset) >= margin) return gamma;
+  return (cusp + (offset < 0 ? -margin : margin)) as Radians;
+}
 
-  const [thetaRhoPlus, phiRhoPlus] = polarToSpherical([r + h, gamma] as Polar);
-  const [thetaRhoMinus, phiRhoMinus] = polarToSpherical([r - h, gamma] as Polar);
-  const [thetaGammaPlus, phiGammaPlus] = polarToSpherical([r, gamma + h] as Polar);
-  const [thetaGammaMinus, phiGammaMinus] = polarToSpherical([r, gamma - h] as Polar);
+/**
+ * Move rho clear of the face edge, where the projection starts reflecting onto a
+ * neighbouring face and the derivative jumps. The margin also has to cover how
+ * far the edge itself moves across the gamma stencil, which is at most 0.56 of a
+ * step, hence three rather than two.
+ */
+function stepClearOfEdge(rho: number, gamma: Radians, margin: number): number {
+  const edge = faceRadius(gamma);
+  if (Math.abs(rho - edge) >= margin) return rho;
+  return rho <= edge ? edge - margin : edge + margin;
+}
+
+export function computeJacobian([rho, gamma]: Polar): Jacobian {
+  const r0 = Math.max(rho, MIN_RHO);
+  const h = Math.min(STEP, 0.5 * r0);
+
+  // Step the stencil off the two places the derivative jumps, so that it reports
+  // the one-sided derivative on the point's own side rather than averaging both.
+  // Straddling a jump is not a small error: at the face edge it puts a spurious
+  // rotation of over a degree into an interior where there is none at all. The
+  // shift is a few multiples of STEP, far below the precision displayed.
+  const g = stepClearOfCusp(gamma, 2 * h);
+  const r = stepClearOfEdge(r0, g, 3 * h);
+
+  const [thetaRhoPlus, phiRhoPlus] = polarToSpherical([r + h, g] as Polar);
+  const [thetaRhoMinus, phiRhoMinus] = polarToSpherical([r - h, g] as Polar);
+  const [thetaGammaPlus, phiGammaPlus] = polarToSpherical([r, g + h] as Polar);
+  const [thetaGammaMinus, phiGammaMinus] = polarToSpherical([r, g - h] as Polar);
 
   const scale = 1 / (2 * h);
   // phi is a colatitude and never wraps; theta is an azimuth, so its differences do
@@ -149,7 +180,7 @@ export function computeJacobian([rho, gamma]: Polar): Jacobian {
   // Area elements are rho·drho·dgamma on the face and R²·sin(phi)·dphi·dtheta on
   // the sphere. Neither chart is area-preserving on its own, which is why the
   // determinant varies across the face while this ratio does not.
-  const [, phi] = polarToSpherical([r, gamma] as Polar);
+  const [, phi] = polarToSpherical([r, g] as Polar);
   const areaRatio = (SPHERE_RADIUS * SPHERE_RADIUS * Math.sin(phi) * determinant) / r;
 
   return {dPhiDRho, dPhiDGamma, dThetaDRho, dThetaDGamma, determinant, areaRatio};
@@ -431,46 +462,50 @@ export function toFrame(jacobian: Jacobian, polar: Polar, mode: FrameMode): Fram
  * which is what the polar decomposition returns, is not.
  */
 export interface Decomposition {
-  /** Angle of the closest rigid rotation, in radians */
+  /** Angle taking the frame's radial axis onto its image, in radians */
   rotation: number;
-  /** Anisotropy sigma1/sigma2 - 1. Zero where a small circle stays a circle */
+  /** Residual shear, once the rotation, squash and scale are taken out */
   shear: number;
-  /** sqrt|det J|, the area scale between the two charts */
+  /** Unequal scaling of the two axes: radial by this, azimuthal by its reciprocal */
+  squash: number;
+  /** Area scale, sqrt|det| */
   scale: number;
-  /** Principal stretches, largest first */
-  sigma1: number;
-  sigma2: number;
+  /** Scale along the image of the radial axis, and across it */
+  radial: number;
+  azimuthal: number;
 }
 
 export function decompose({rows, determinant}: FrameJacobian): Decomposition {
   const [[a, b], [c, d]] = rows;
 
-  // Closed form 2x2 SVD: the singular values are the sum and difference of the
-  // two rotation-invariant magnitudes below, and the polar rotation is the angle
-  // of the first of them
-  const sum = (a + d) / 2;
-  const difference = (a - d) / 2;
-  const antiSum = (c + b) / 2;
-  const antiDifference = (c - b) / 2;
-  const mean = Math.hypot(sum, antiDifference);
-  const deviation = Math.hypot(difference, antiSum);
+  // Gram-Schmidt on the columns. The first column alone fixes the rotation and
+  // the radial scale; the second then splits into the azimuthal scale and what
+  // is left over, the shear.
+  const radial = Math.hypot(a, c);
+  const azimuthal = radial === 0 ? 0 : determinant / radial;
 
-  const sigma1 = mean + deviation;
-  const sigma2 = mean - deviation;
-
+  // Wherever the matrix is diagonal in this frame the projection can only scale
+  // the two axes against each other, and both the rotation and the shear vanish.
+  // That happens along every cusp ray, each of which is a mirror line of the
+  // pentagon: reflection symmetry pins the principal axes to the frame.
   return {
-    rotation: Math.atan2(antiDifference, sum),
-    shear: sigma2 === 0 ? Infinity : sigma1 / sigma2 - 1,
+    rotation: Math.atan2(c, a),
+    shear: determinant === 0 ? 0 : (a * b + c * d) / determinant,
+    squash: azimuthal === 0 ? Infinity : Math.sqrt(Math.abs(radial / azimuthal)),
     scale: Math.sqrt(Math.abs(determinant)),
-    sigma1,
-    sigma2
+    radial,
+    azimuthal
   };
 }
 
-export type DeformationChannel = 'rotation' | 'shear' | 'scale';
+export type DeformationChannel = 'rotation' | 'shear' | 'squash';
 
-/** Channel order is also the RGB order of the raster */
-export const DEFORMATION_CHANNELS: DeformationChannel[] = ['rotation', 'shear', 'scale'];
+/**
+ * Channel order is also the RGB order of the raster. The area scale is left out:
+ * in the intrinsic frame it is 1 everywhere, and in the chart frame its variation
+ * is the charts' rather than the projection's.
+ */
+export const DEFORMATION_CHANNELS: DeformationChannel[] = ['rotation', 'shear', 'squash'];
 
 export interface DeformationField {
   size: number;
@@ -489,9 +524,22 @@ export interface DeformationField {
 
 /**
  * Samples the decomposition across the domain, so the three deformations can be
- * drawn as a raster. Magnitudes are unsigned: the rotation and shear both change
- * sign across every cusp, and their sign carries no information the picture needs.
+ * drawn as a raster. See `deformationMagnitudes` for what is plotted.
  */
+/**
+ * What the raster and the gauges plot for each channel. Rotation and shear both
+ * change sign across every cusp and the sign carries nothing the picture needs,
+ * so they are taken unsigned; the squash is a ratio about 1 and is plotted as it
+ * is, so that compression and stretching read as dark and bright.
+ */
+export function deformationMagnitudes(decomposition: Decomposition): Record<DeformationChannel, number> {
+  return {
+    rotation: Math.abs(radToDeg(decomposition.rotation as Radians)),
+    shear: Math.abs(decomposition.shear),
+    squash: decomposition.squash
+  };
+}
+
 /** Fraction trimmed from each end before taking a channel's display range */
 const RANGE_TRIM = 0.01;
 
@@ -521,7 +569,7 @@ export function deformationField(size: number, mode: FrameMode): DeformationFiel
   const values: Record<DeformationChannel, Float32Array> = {
     rotation: new Float32Array(pixels),
     shear: new Float32Array(pixels),
-    scale: new Float32Array(pixels)
+    squash: new Float32Array(pixels)
   };
   const mask = new Uint8Array(pixels);
 
@@ -529,7 +577,7 @@ export function deformationField(size: number, mode: FrameMode): DeformationFiel
   const samples: Record<DeformationChannel, Float32Array> = {
     rotation: new Float32Array(pixels),
     shear: new Float32Array(pixels),
-    scale: new Float32Array(pixels)
+    squash: new Float32Array(pixels)
   };
   let sampleCount = 0;
 
@@ -543,12 +591,7 @@ export function deformationField(size: number, mode: FrameMode): DeformationFiel
       const index = j * size + i;
       mask[index] = 1;
 
-      const {rotation, shear, scale} = decompose(toFrame(computeJacobian(polar), polar, mode));
-      const magnitudes: Record<DeformationChannel, number> = {
-        rotation: Math.abs(radToDeg(rotation as Radians)),
-        shear: Math.abs(shear),
-        scale
-      };
+      const magnitudes = deformationMagnitudes(decompose(toFrame(computeJacobian(polar), polar, mode)));
 
       for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
         const channel = DEFORMATION_CHANNELS[c];

@@ -67,7 +67,7 @@ const App: React.FC = () => {
         <SphereView polar={polar} onHover={setPolar} />
       </div>
 
-      <JacobianOverlay polar={polar} frame={frame} />
+      <JacobianOverlay polar={polar} frame={frame} ranges={field?.ranges} />
     </div>
   );
 };

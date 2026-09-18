@@ -11,12 +11,12 @@ const RASTER_SIZE = 384;
 
 export type ChannelToggles = Record<DeformationChannel, boolean>;
 
-export const ALL_CHANNELS: ChannelToggles = {rotation: true, shear: true, scale: true};
+export const ALL_CHANNELS: ChannelToggles = {rotation: true, shear: true, squash: true};
 
-export const CHANNEL_INFO: Record<DeformationChannel, {label: string; swatch: string; unit: string}> = {
-  rotation: {label: 'rotation', swatch: '#ff4d4d', unit: '°'},
-  shear: {label: 'shear', swatch: '#4dff88', unit: ''},
-  scale: {label: 'scale', swatch: '#4d9dff', unit: ''}
+export const CHANNEL_INFO: Record<DeformationChannel, {label: string; swatch: string; unit: string; digits: number}> = {
+  rotation: {label: 'rotation', swatch: '#ff4d4d', unit: '°', digits: 2},
+  shear: {label: 'shear', swatch: '#4dff88', unit: '', digits: 3},
+  squash: {label: 'squash', swatch: '#4d9dff', unit: '', digits: 4}
 };
 
 // One field per frame, kept so that flipping the toggle back is instant
@@ -88,8 +88,7 @@ export function useDeformationRaster(field: DeformationField | null, channels: C
   }, [field, channels]);
 }
 
-const format = (value: number, channel: DeformationChannel) =>
-  channel === 'rotation' ? value.toFixed(2) : value.toFixed(3);
+const format = (value: number, channel: DeformationChannel) => value.toFixed(CHANNEL_INFO[channel].digits);
 
 const FRAME_LABELS: Record<FrameMode, string> = {chart: 'chart', metric: 'intrinsic'};
 

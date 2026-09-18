@@ -26,14 +26,9 @@ class JacobianDemo extends Component {
           pentagons are not reachable: the projection has no triangle for them.
         </p>
         <p>
-          The Jacobian is discontinuous across the face edge. Crossing it at γ = 18°, ∂θ/∂ρ jumps from 0 to 0.068 and
-          the rotation from 1.49° to 3.59°, while the scale passes through unchanged. The area check holds on both
-          sides.
-        </p>
-        <p>
           The matrix relates the face's polar coordinates (ρ, γ) to the sphere's spherical coordinates (φ, θ), and is
           computed by central differences. The two small diagrams show a unit patch and the parallelogram it is mapped
-          to, which is what the rotation, shear and scaling in the matrix amount to.
+          to, which is what the matrix amounts to.
         </p>
         <p>
           On the face the first column is vertical: ∂θ/∂ρ is zero because the projection radiates from the face center,
@@ -48,42 +43,48 @@ class JacobianDemo extends Component {
           pentagons they map onto, and the sphere here is drawn at R to match.
         </p>
         <p>
-          The decomposition splits the matrix into the three deformations it performs, using the polar decomposition =
-          rotation · stretch: the rotation is the closest rigid rotation, the shear is the anisotropy σ₁/σ₂ − 1 (zero
-          where a small circle stays a circle) and the scale is √|det|. The Gram-Schmidt decomposition is not used, as
-          its rotation is identically zero for the reason above.
+          The decomposition is Gram-Schmidt on the columns, giving rotation · shear · scale · squash. The first column
+          alone fixes the rotation and the radial scale; the second then splits into the azimuthal scale and the shear
+          left over. The squash is √(radial / azimuthal): the two axes scaled against each other, radial by that factor
+          and azimuthal by its reciprocal. The scale is √|det|.
         </p>
         <p>
-          The <em>chart</em> and <em>intrinsic</em> toggle decides which frames that matrix is written in. Chart
-          differentiates the raw coordinates, so it carries the charts' own distortion: both are centred on this face,
-          and reflecting across a face edge is not a symmetry of either. A point and its mirror therefore disagree — (ρ
-          0.5500, γ 10.00°) reads rotation 0.71°, shear 0.076, while its mirror at (0.7010, 7.83°) reads 1.69° and
-          0.082.
+          The rotation is zero across the whole face — 1.2e-9° at worst — for the same reason the first column is
+          vertical. It appears only past the face edge, which is why the red channel is black over the pentagon and
+          lights up only in the reflected points.
         </p>
         <p>
-          Intrinsic writes the same derivative in the local orthonormal frames instead, (dρ, ρ·dγ) on the plane and
-          (R·dφ, R·sin φ·dθ) on the sphere. Its singular values do not depend on either chart, so they are the
-          projection's own distortion, and they mirror exactly: both of those points read shear 0.105602, agreeing to 9
-          digits across the whole face. The reflected triangles really are mirror images — the squash that builds them
-          is applied only when deriving the spherical triangle, never to the planar one, which is reflected by a factor
-          of exactly 2.
+          Along the five rays through the edge midpoints the matrix is diagonal, and the projection can do nothing but
+          squash: rotation below 1e-10° and shear below 6e-6, with the squash running from 1.0179 at the face center to
+          1.0582 at the edge midpoint. Each of those rays is a mirror line of the pentagon, and reflection symmetry pins
+          the principal axes to the frame.
         </p>
         <p>
-          In the intrinsic frame the determinant is 1 everywhere, so its scale channel is constant and is drawn as such.
-          That is also why the area element shows no cusp at the face edge in either frame: equal-area pins det J to ρ /
-          (R²·sin φ), and ρ and φ are both continuous across the edge, so det J must be too. Only the shape is free to
-          jump, and it does — ∂θ/∂ρ leaves zero and the rotation more than doubles.
+          The other five rays, through the corners, are the real cusps. There the derivative jumps: the one-sided shear
+          is −0.160054 on one side and +0.160054 on the other, exact mirror images. A two-sided stencil would average
+          them to zero and report a diagonal matrix that holds on neither side, so the difference stencil is stepped
+          clear of both the cusps and the face edge and reports the one-sided derivative on the point's own side.
+          Straddling the face edge was worth fixing: it put a spurious rotation of 1.30° into an interior that has none
+          at all.
         </p>
         <p>
-          The raster maps the magnitude of each component over the whole domain to a colour channel — red for rotation,
-          green for shear, blue for scale — each normalised over its own range, since the ranges are narrow. The range
-          ignores the extreme one percent at each end: central differences are meaningless within a step of a cusp or of
-          the face edge, and those few pixels would otherwise flatten everything else.
+          The <em>chart</em> and <em>intrinsic</em> toggle decides which frames the matrix is written in. Chart
+          differentiates the raw coordinates, so it carries the charts' own distortion. Intrinsic uses the local
+          orthonormal frames instead, (dρ, ρ·dγ) on the plane and (R·dφ, R·sin φ·dθ) on the sphere, where the
+          determinant is 1 everywhere and the numbers are lengths rather than coordinate steps.
         </p>
         <p>
-          The projection is built from ten triangles per face, and the grid rays at multiples of 36° mark where they
-          meet. The Jacobian is discontinuous across these cusps too, which is what the raster's ten-fold pattern
-          traces.
+          All three quantities are measured against the (ρ̂, γ̂) axes, so none of them mirrors across a face edge: those
+          axes point away from this face's center, not the mirrored one. Only the singular values are frame free, and
+          they do mirror exactly — σ₁/σ₂ agrees to 9 digits between a point and its reflection. It is recoverable from
+          the squash, shear and scale, so nothing is lost by plotting the frame-aligned split instead.
+        </p>
+        <p>
+          The raster maps each component over the whole domain to a colour channel — red for rotation, green for shear,
+          blue for squash. The area scale is not plotted: it is 1 everywhere in the intrinsic frame, and in the chart
+          frame its variation belongs to the charts rather than the projection. Each channel is normalised over its own
+          range, ignoring the extreme one percent at each end, and the dot beside each value in the readout shows where
+          the hovered point sits in that range.
         </p>
       </div>
     );
