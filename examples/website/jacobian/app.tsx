@@ -11,6 +11,8 @@ import {ALL_CHANNELS, DeformationControls, useDeformationField, useDeformationRa
 import type {ChannelToggles} from './deformation';
 import {computeJacobian, toFrame} from './jacobian';
 import type {FrameMode} from './jacobian';
+import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
+import type {ProjectionMode} from 'a5/projections/projection-mode';
 
 // Off both a cusp and the face center, so the shear terms are visible on arrival
 const INITIAL_POLAR = [0.34, Math.PI / 9] as Polar;
@@ -38,8 +40,12 @@ const App: React.FC = () => {
   const [polar, setPolar] = useState<Polar>(INITIAL_POLAR);
   const [channels, setChannels] = useState<ChannelToggles>(ALL_CHANNELS);
   const [mode, setMode] = useState<FrameMode>('chart');
-  const frame = useMemo(() => toFrame(computeJacobian(polar), polar, mode), [polar, mode]);
-  const field = useDeformationField(mode);
+  const [projection, setProjection] = useState<ProjectionMode>(DEFAULT_PROJECTION_MODE);
+  const frame = useMemo(
+    () => toFrame(computeJacobian(polar, projection), polar, mode, projection),
+    [polar, mode, projection]
+  );
+  const field = useDeformationField(mode, projection);
   const raster = useDeformationRaster(field, channels);
 
   return (
@@ -58,16 +64,18 @@ const App: React.FC = () => {
           field={field}
           channels={channels}
           mode={mode}
+          projection={projection}
           onChange={setChannels}
           onModeChange={setMode}
+          onProjectionChange={setProjection}
         />
       </div>
       <div style={panelStyle}>
         <div style={labelStyle}>Sphere — spherical (θ, φ)</div>
-        <SphereView polar={polar} onHover={setPolar} />
+        <SphereView polar={polar} projection={projection} onHover={setPolar} />
       </div>
 
-      <JacobianOverlay polar={polar} frame={frame} ranges={field?.ranges} />
+      <JacobianOverlay polar={polar} frame={frame} projection={projection} ranges={field?.ranges} />
     </div>
   );
 };

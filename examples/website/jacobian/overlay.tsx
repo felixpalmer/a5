@@ -8,6 +8,7 @@ import {COLORS} from './components';
 import {CHANNEL_INFO} from './deformation';
 import {decompose, deformationMagnitudes, polarToSpherical, SPHERE_RADIUS} from './jacobian';
 import type {DeformationChannel, FrameJacobian, FrameMode} from './jacobian';
+import type {ProjectionMode} from 'a5/projections/projection-mode';
 
 export type ChannelRanges = Record<DeformationChannel, [number, number]>;
 
@@ -258,9 +259,19 @@ function Decomposition({frame, ranges}: {frame: FrameJacobian; ranges?: ChannelR
   );
 }
 
-export function JacobianOverlay({polar, frame, ranges}: {polar: Polar; frame: FrameJacobian; ranges?: ChannelRanges}) {
+export function JacobianOverlay({
+  polar,
+  frame,
+  projection,
+  ranges
+}: {
+  polar: Polar;
+  frame: FrameJacobian;
+  projection: ProjectionMode;
+  ranges?: ChannelRanges;
+}) {
   const [rho, gamma] = polar;
-  const [theta, phi] = polarToSpherical(polar);
+  const [theta, phi] = polarToSpherical(polar, projection);
   const degrees = (radians: number) => `${((radians * 180) / Math.PI).toFixed(2)}°`;
   const labels = FRAMES[frame.mode];
 

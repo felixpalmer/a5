@@ -49,23 +49,50 @@ class JacobianDemo extends Component {
           and azimuthal by its reciprocal. The scale is √|det|.
         </p>
         <p>
-          The rotation is zero across the whole face — 1.2e-9° at worst — for the same reason the first column is
-          vertical. It appears only past the face edge, which is why the red channel is black over the pentagon and
-          lights up only in the reflected points.
+          In DSEA the rotation is zero across the whole face — 1.2e-9° at worst — for the same reason the first column
+          is vertical. It appears only past the face edge, which is why the red channel is black over the pentagon and
+          lights up only in the reflected points. That is a property of the map, not of the decomposition: θ is constant
+          along every ray of constant γ to 4e-13°, so rays from the face center land on meridians exactly.
         </p>
         <p>
-          Along the five rays through the edge midpoints the matrix is diagonal, and the projection can do nothing but
-          squash: rotation below 1e-10° and shear below 6e-6, with the squash running from 1.0179 at the face center to
-          1.0582 at the edge midpoint. Each of those rays is a mirror line of the pentagon, and reflection symmetry pins
-          the principal axes to the frame.
+          It does not mean the map never turns. Gram-Schmidt anchors on the first column, and the second does turn — the
+          image of γ̂ leans off θ̂ by up to 9.96°, and that lean is exactly what the shear reports: shear = tan(lean), to
+          2.4e-11. The polar decomposition, which measures the closest rigid rotation instead, reads up to 4.95° on the
+          same face.
         </p>
         <p>
-          The other five rays, through the corners, are the real cusps. There the derivative jumps: the one-sided shear
-          is −0.160054 on one side and +0.160054 on the other, exact mirror images. A two-sided stencil would average
-          them to zero and report a diagonal matrix that holds on neither side, so the difference stencil is stepped
-          clear of both the cusps and the face edge and reports the one-sided derivative on the point's own side.
-          Straddling the face edge was worth fixing: it put a spurious rotation of 1.30° into an interior that has none
-          at all.
+          In DSEA, along the five rays through the edge midpoints the matrix is diagonal and the projection can do
+          nothing but squash: rotation below 1e-10° and shear below 6e-6, with the squash running from 1.0179 at the
+          face center to 1.0582 at the edge midpoint. All ten rays are mirror lines of the pentagon, and reflection
+          symmetry pins the image of ρ̂ to the meridian on any of them, which is why the rotation vanishes on a mirror
+          ray in either projection.
+        </p>
+        <p>
+          The other five rays, through the corners, are the real cusps in DSEA. There the derivative jumps: the
+          one-sided shear is −0.160054 on one side and +0.160054 on the other, exact mirror images. A two-sided stencil
+          would average them to zero and report a diagonal matrix that holds on neither side, so the difference stencil
+          is stepped clear of both the cusps and the face edge and reports the one-sided derivative on the point's own
+          side. Straddling the face edge was worth fixing: it put a spurious rotation of 1.30° into an interior that has
+          none at all.
+        </p>
+        <p>
+          The <em>dsea</em> and <em>isea</em> toggle switches which vertex of each face triangle the equal-area map
+          radiates from. A5 uses DSEA, radiating from the dodecahedron face center; ISEA radiates from the corner, which
+          is the face center of the dual icosahedron. The two orderings are cyclic rotations of each other rather than
+          swaps, since the closed-form equal-area projection depends on the winding through its signed triple product.
+          The library default is unchanged, so cell geometry and the fixtures are untouched — this only builds a second
+          projection alongside it.
+        </p>
+        <p>
+          Two of the facts above survive the switch. Both projections are equal-area, R²·sin φ·det J / ρ = 1.000000 for
+          the same sphere radius, and in both the frame-free anisotropy σ₁/σ₂ mirrors across a face edge to about 1e-9.
+        </p>
+        <p>
+          The rest are DSEA's alone. Under ISEA the radiating vertex is no longer the face center, so rays from the
+          center stop mapping to meridians — θ spreads 0.95° along a ray instead of 4e-13° — and the rotation on the
+          face rises from 1.5e-9° to 0.79°, up to 9.98° once the reflected region is included. ISEA also cusps on all
+          ten rays rather than five: its one-sided shear jumps ±0.0134 across the edge-midpoint rays where DSEA passes
+          through smoothly.
         </p>
         <p>
           The <em>chart</em> and <em>intrinsic</em> toggle decides which frames the matrix is written in. Chart

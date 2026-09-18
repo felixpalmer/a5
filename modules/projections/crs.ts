@@ -3,6 +3,7 @@ import {distanceToEdge, distanceToVertex} from '../core/constants';
 import type {Cartesian, Radians, Spherical, SphericalTriangle} from '../core/coordinate-systems';
 import {toCartesian} from '../core/coordinate-transforms';
 import {origins} from '../core/origin';
+import type {ProjectionMode} from './projection-mode';
 
 /**
  * The Coordinate Reference System (CRS) of the dodecahedron is a set of 62 vertices:
@@ -18,11 +19,17 @@ export class CRS {
   private vertices: Cartesian[] = [];
 
   /**
-   * A canonical spherical face triangle (face center, edge midpoint, vertex)
-   * of the dodecahedron, taken from origin 0's CRS vertices. All face
-   * triangles used by DodecahedronProjection are congruent and consistently
-   * wound with this one, so it serves as the fixed source of the
-   * EqualAreaProjection shape constants — independent of projection call order.
+   * A canonical spherical face triangle of the dodecahedron, taken from origin
+   * 0's CRS vertices. All face triangles used by DodecahedronProjection are
+   * congruent and consistently wound with this one, so it serves as the fixed
+   * source of the EqualAreaProjection shape constants — independent of
+   * projection call order.
+   *
+   * The first vertex is the radiating one, which is what distinguishes the two
+   * projection modes: DSEA radiates from the face center, ISEA from the
+   * dodecahedron corner. The two orderings are cyclic rotations of each other,
+   * never a swap, because the closed-form EqualAreaProjection bakes in the
+   * signed triple product and so depends on the winding.
    *
    * The indices rely on the construction order above: vertices[0] is origin
    * 0's face center, vertices[12] its first corner (after the 12 centers) and
@@ -30,8 +37,9 @@ export class CRS {
    * and midpoint are adjacent (π/5 apart), forming a genuine face triangle —
    * the constants-agreement test verifies this against every face triangle.
    */
-  getCanonicalTriangle(): SphericalTriangle {
-    return [this.vertices[0], this.vertices[32], this.vertices[12]] as SphericalTriangle;
+  getCanonicalTriangle(mode: ProjectionMode = 'dsea'): SphericalTriangle {
+    const [center, midpoint, corner] = [this.vertices[0], this.vertices[32], this.vertices[12]];
+    return (mode === 'isea' ? [corner, center, midpoint] : [center, midpoint, corner]) as SphericalTriangle;
   }
 
   constructor() {

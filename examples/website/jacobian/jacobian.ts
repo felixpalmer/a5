@@ -3,12 +3,27 @@
 // Copyright (c) A5 contributors
 
 import {DodecahedronProjection} from 'a5/projections/dodecahedron';
+import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
+import type {ProjectionMode} from 'a5/projections/projection-mode';
 import {radToDeg, toCartesian, toFace, toPolar} from 'a5/core/coordinate-transforms';
 import {distanceToEdge, PI_OVER_5, TWO_PI, TWO_PI_OVER_5} from 'a5/core/constants';
 import type {Cartesian, Face, Polar, Radians, Spherical} from 'a5/core/coordinate-systems';
 import type {OriginId} from 'a5/core/utils';
 
-const projection = new DodecahedronProjection();
+/**
+ * Both projections, so the two can be compared without rebuilding anything. They
+ * differ only in which vertex of each face triangle the equal-area map radiates
+ * from: DSEA the face center, ISEA the dodecahedron corner.
+ */
+const projections: Record<ProjectionMode, DodecahedronProjection> = {
+  dsea: new DodecahedronProjection('dsea'),
+  isea: new DodecahedronProjection('isea')
+};
+
+export const PROJECTION_MODES: ProjectionMode[] = ['dsea', 'isea'];
+
+/** Only the planar side of the projection is used here, and that is mode independent */
+const projection = projections[DEFAULT_PROJECTION_MODE];
 
 /**
  * The arctic face. Its center projects to the north pole, which keeps the sphere
@@ -43,17 +58,17 @@ export const SPHERE_RADIUS = Math.sqrt((3 * FACE_AREA) / Math.PI);
  * DSEA projection of a point on the dodecahedron face, taking the face's polar
  * coordinates (rho, gamma) to the sphere's spherical coordinates (theta, phi).
  */
-export function polarToSpherical(polar: Polar): Spherical {
-  return projection.inverse(toFace(polar), ORIGIN_ID);
+export function polarToSpherical(polar: Polar, mode: ProjectionMode = DEFAULT_PROJECTION_MODE): Spherical {
+  return projections[mode].inverse(toFace(polar), ORIGIN_ID);
 }
 
-export function polarToCartesian(polar: Polar): Cartesian {
-  return toCartesian(polarToSpherical(polar));
+export function polarToCartesian(polar: Polar, mode: ProjectionMode = DEFAULT_PROJECTION_MODE): Cartesian {
+  return toCartesian(polarToSpherical(polar, mode));
 }
 
 /** Inverse of `polarToCartesian`: where a point on the sphere lands on the face */
-export function cartesianToPolar(point: Cartesian): Polar {
-  return toPolar(projection.forwardCartesian(point, ORIGIN_ID));
+export function cartesianToPolar(point: Cartesian, mode: ProjectionMode = DEFAULT_PROJECTION_MODE): Polar {
+  return toPolar(projections[mode].forwardCartesian(point, ORIGIN_ID));
 }
 
 /** Distance from the face center to the face boundary, in the direction `gamma` */
@@ -151,7 +166,7 @@ function stepClearOfEdge(rho: number, gamma: Radians, margin: number): number {
   return rho <= edge ? edge - margin : edge + margin;
 }
 
-export function computeJacobian([rho, gamma]: Polar): Jacobian {
+export function computeJacobian([rho, gamma]: Polar, mode: ProjectionMode = DEFAULT_PROJECTION_MODE): Jacobian {
   const r0 = Math.max(rho, MIN_RHO);
   const h = Math.min(STEP, 0.5 * r0);
 
@@ -163,10 +178,10 @@ export function computeJacobian([rho, gamma]: Polar): Jacobian {
   const g = stepClearOfCusp(gamma, 2 * h);
   const r = stepClearOfEdge(r0, g, 3 * h);
 
-  const [thetaRhoPlus, phiRhoPlus] = polarToSpherical([r + h, g] as Polar);
-  const [thetaRhoMinus, phiRhoMinus] = polarToSpherical([r - h, g] as Polar);
-  const [thetaGammaPlus, phiGammaPlus] = polarToSpherical([r, g + h] as Polar);
-  const [thetaGammaMinus, phiGammaMinus] = polarToSpherical([r, g - h] as Polar);
+  const [thetaRhoPlus, phiRhoPlus] = polarToSpherical([r + h, g] as Polar, mode);
+  const [thetaRhoMinus, phiRhoMinus] = polarToSpherical([r - h, g] as Polar, mode);
+  const [thetaGammaPlus, phiGammaPlus] = polarToSpherical([r, g + h] as Polar, mode);
+  const [thetaGammaMinus, phiGammaMinus] = polarToSpherical([r, g - h] as Polar, mode);
 
   const scale = 1 / (2 * h);
   // phi is a colatitude and never wraps; theta is an azimuth, so its differences do
@@ -180,7 +195,7 @@ export function computeJacobian([rho, gamma]: Polar): Jacobian {
   // Area elements are rho·drho·dgamma on the face and R²·sin(phi)·dphi·dtheta on
   // the sphere. Neither chart is area-preserving on its own, which is why the
   // determinant varies across the face while this ratio does not.
-  const [, phi] = polarToSpherical([r, g] as Polar);
+  const [, phi] = polarToSpherical([r, g] as Polar, mode);
   const areaRatio = (SPHERE_RADIUS * SPHERE_RADIUS * Math.sin(phi) * determinant) / r;
 
   return {dPhiDRho, dPhiDGamma, dThetaDRho, dThetaDGamma, determinant, areaRatio};
@@ -350,6 +365,7 @@ export function patchOutline(polar: Polar, size: number, segments = 16): Polar[]
 export function radialMesh(
   innerRadius: (gamma: Radians) => number,
   outerRadius: (gamma: Radians) => number,
+  mode: ProjectionMode = DEFAULT_PROJECTION_MODE,
   angularSegments = 160,
   radialSegments = 12
 ) {
@@ -360,7 +376,7 @@ export function radialMesh(
       const gamma = ((TWO_PI * i) / angularSegments) as Radians;
       const inner = innerRadius(gamma);
       const rho = inner + ((outerRadius(gamma) - inner) * j) / radialSegments;
-      const point = polarToCartesian([rho, gamma] as Polar);
+      const point = polarToCartesian([rho, gamma] as Polar, mode);
       positions[p++] = point[0];
       positions[p++] = point[1];
       positions[p++] = point[2];
@@ -390,13 +406,13 @@ export function radialMesh(
 const ZERO = () => 0;
 
 /** The face itself */
-export function faceMesh() {
-  return radialMesh(ZERO, faceRadius);
+export function faceMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
+  return radialMesh(ZERO, faceRadius, mode);
 }
 
 /** The reflected region: the five triangles mirrored across the face edges */
-export function beyondFaceMesh() {
-  return radialMesh(faceRadius, domainRadius);
+export function beyondFaceMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
+  return radialMesh(faceRadius, domainRadius, mode);
 }
 
 /**
@@ -423,7 +439,12 @@ export interface FrameJacobian {
   areaRatio: number;
 }
 
-export function toFrame(jacobian: Jacobian, polar: Polar, mode: FrameMode): FrameJacobian {
+export function toFrame(
+  jacobian: Jacobian,
+  polar: Polar,
+  mode: FrameMode,
+  projectionMode: ProjectionMode = DEFAULT_PROJECTION_MODE
+): FrameJacobian {
   if (mode === 'chart') {
     return {
       mode,
@@ -439,7 +460,7 @@ export function toFrame(jacobian: Jacobian, polar: Polar, mode: FrameMode): Fram
   // Scale each row by the length its coordinate measures on the sphere, and each
   // column by the length its coordinate measures on the plane
   const rho = Math.max(polar[0], 1e-9);
-  const [, phi] = polarToSpherical(polar);
+  const [, phi] = polarToSpherical(polar, projectionMode);
   const radial = SPHERE_RADIUS;
   const azimuthal = SPHERE_RADIUS * Math.sin(phi);
   const rows: [[number, number], [number, number]] = [
@@ -564,7 +585,11 @@ function robustRange(sorted: Float32Array): {range: [number, number]; constant: 
   return {range: constant ? [high, high] : [low, high], constant};
 }
 
-export function deformationField(size: number, mode: FrameMode): DeformationField {
+export function deformationField(
+  size: number,
+  mode: FrameMode,
+  projectionMode: ProjectionMode = DEFAULT_PROJECTION_MODE
+): DeformationField {
   const pixels = size * size;
   const values: Record<DeformationChannel, Float32Array> = {
     rotation: new Float32Array(pixels),
@@ -591,7 +616,9 @@ export function deformationField(size: number, mode: FrameMode): DeformationFiel
       const index = j * size + i;
       mask[index] = 1;
 
-      const magnitudes = deformationMagnitudes(decompose(toFrame(computeJacobian(polar), polar, mode)));
+      const magnitudes = deformationMagnitudes(
+        decompose(toFrame(computeJacobian(polar, projectionMode), polar, mode, projectionMode))
+      );
 
       for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
         const channel = DEFORMATION_CHANNELS[c];

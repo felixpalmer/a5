@@ -8,6 +8,7 @@ import {Line, OrbitControls} from '@react-three/drei';
 import {BufferAttribute, BufferGeometry, DoubleSide} from 'three';
 import {toFace, toPolar} from 'a5/core/coordinate-transforms';
 import type {Cartesian, Face, Polar, Radians} from 'a5/core/coordinate-systems';
+import type {ProjectionMode} from 'a5/projections/projection-mode';
 import type {RayWeight} from './jacobian';
 import {
   beyondFaceMesh,
@@ -212,11 +213,11 @@ function toPath(ring: Polar[], close: boolean): string {
 // ---------------------------------------------------------------------------
 
 /** Lift a ring of face points onto the sphere, `clearance` above its surface */
-function lift(ring: Polar[], clearance: number): [number, number, number][] {
+function lift(ring: Polar[], clearance: number, mode: ProjectionMode): [number, number, number][] {
   const radius = SPHERE_RADIUS * clearance;
   const out: [number, number, number][] = new Array(ring.length);
   for (let i = 0; i < ring.length; i++) {
-    const point = polarToCartesian(ring[i]);
+    const point = polarToCartesian(ring[i], mode);
     out[i] = [point[0] * radius, point[1] * radius, point[2] * radius];
   }
   return out;
@@ -224,21 +225,23 @@ function lift(ring: Polar[], clearance: number): [number, number, number][] {
 
 function ProjectedRegion({
   build,
+  projection,
   color,
   opacity
 }: {
-  build: () => {positions: Float32Array; indices: Uint32Array};
+  build: (mode: ProjectionMode) => {positions: Float32Array; indices: Uint32Array};
+  projection: ProjectionMode;
   color: string;
   opacity: number;
 }) {
   const geometry = useMemo(() => {
-    const {positions, indices} = build();
+    const {positions, indices} = build(projection);
     const geometry = new BufferGeometry();
     geometry.setAttribute('position', new BufferAttribute(positions, 3));
     geometry.setIndex(new BufferAttribute(indices, 1));
     return geometry;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [projection]);
 
   // The meshes sample the unit sphere, so they are scaled here like everything else
   return (
@@ -252,15 +255,18 @@ const RAY_OPACITY: Record<RayWeight, number> = {cusp: 0.55, bisector: 0.25, mino
 
 // Fixed for the life of the scene, and now some hundred separate lines, so it is
 // kept out of the hover re-render
-const ProjectedGrid = React.memo(function ProjectedGrid() {
-  const rings = useMemo(() => GRID_RINGS.flatMap(rho => gridRingArcs(rho).map(arc => lift(arc, 1.001))), []);
+const ProjectedGrid = React.memo(function ProjectedGrid({projection}: {projection: ProjectionMode}) {
+  const rings = useMemo(
+    () => GRID_RINGS.flatMap(rho => gridRingArcs(rho).map(arc => lift(arc, 1.001, projection))),
+    [projection]
+  );
   const rays = useMemo(
     () =>
       Array.from({length: GRID_RAYS}, (_, index) => ({
         weight: rayWeight(index),
-        points: lift(gridRay(((TAU * index) / GRID_RAYS) as Radians), 1.001)
+        points: lift(gridRay(((TAU * index) / GRID_RAYS) as Radians), 1.001, projection)
       })),
-    []
+    [projection]
   );
 
   return (
@@ -282,17 +288,25 @@ const ProjectedGrid = React.memo(function ProjectedGrid() {
   );
 });
 
-function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}) {
-  const boundary = useMemo(() => lift(faceBoundary(), 1.002), []);
-  const outerBoundary = useMemo(() => lift(domainBoundary(), 1.002), []);
-  const patch = useMemo(() => lift(patchOutline(polar, PATCH_SIZE), 1.003), [polar]);
-  const marker = useMemo(() => lift([polar], 1.004)[0], [polar]);
+function Scene({
+  polar,
+  projection,
+  onHover
+}: {
+  polar: Polar;
+  projection: ProjectionMode;
+  onHover: (polar: Polar) => void;
+}) {
+  const boundary = useMemo(() => lift(faceBoundary(), 1.002, projection), [projection]);
+  const outerBoundary = useMemo(() => lift(domainBoundary(), 1.002, projection), [projection]);
+  const patch = useMemo(() => lift(patchOutline(polar, PATCH_SIZE), 1.003, projection), [polar, projection]);
+  const marker = useMemo(() => lift([polar], 1.004, projection)[0], [polar, projection]);
 
   const handlePointer = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
     const {x, y, z} = event.point;
     const length = Math.hypot(x, y, z);
-    const hovered = cartesianToPolar([x / length, y / length, z / length] as Cartesian);
+    const hovered = cartesianToPolar([x / length, y / length, z / length] as Cartesian, projection);
     if (isInDomain(hovered)) onHover(hovered);
   };
 
@@ -307,9 +321,9 @@ function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}
         <meshPhysicalMaterial color="#1b2330" roughness={0.65} metalness={0.1} />
       </mesh>
 
-      <ProjectedRegion build={faceMesh} color={COLORS.face} opacity={0.25} />
-      <ProjectedRegion build={beyondFaceMesh} color={COLORS.beyond} opacity={0.22} />
-      <ProjectedGrid />
+      <ProjectedRegion build={faceMesh} projection={projection} color={COLORS.face} opacity={0.25} />
+      <ProjectedRegion build={beyondFaceMesh} projection={projection} color={COLORS.beyond} opacity={0.22} />
+      <ProjectedGrid projection={projection} />
       <Line points={outerBoundary} color={COLORS.domainOutline} lineWidth={1.5} dashed dashSize={0.03} gapSize={0.02} />
       <Line points={boundary} color={COLORS.outline} lineWidth={2} />
       <Line points={patch} color={COLORS.patch} lineWidth={2.5} />
@@ -328,14 +342,22 @@ function Scene({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}
   );
 }
 
-export function SphereView({polar, onHover}: {polar: Polar; onHover: (polar: Polar) => void}) {
+export function SphereView({
+  polar,
+  projection,
+  onHover
+}: {
+  polar: Polar;
+  projection: ProjectionMode;
+  onHover: (polar: Polar) => void;
+}) {
   return (
     <Canvas
       camera={{position: [0, -1.3 * SPHERE_RADIUS, 2.9 * SPHERE_RADIUS], fov: 36, near: 0.01, far: 100}}
       style={{width: '100%', height: '100%'}}
     >
       <Suspense fallback={null}>
-        <Scene polar={polar} onHover={onHover} />
+        <Scene polar={polar} projection={projection} onHover={onHover} />
       </Suspense>
     </Canvas>
   );

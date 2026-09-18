@@ -4,7 +4,9 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 import {DEFORMATION_CHANNELS, deformationField} from './jacobian';
+import {PROJECTION_MODES} from './jacobian';
 import type {DeformationChannel, DeformationField, FrameMode} from './jacobian';
+import type {ProjectionMode} from 'a5/projections/projection-mode';
 
 /** Enough to resolve the cusps without making the one-off sample pass noticeable */
 const RASTER_SIZE = 384;
@@ -19,19 +21,20 @@ export const CHANNEL_INFO: Record<DeformationChannel, {label: string; swatch: st
   squash: {label: 'squash', swatch: '#4d9dff', unit: '', digits: 4}
 };
 
-// One field per frame, kept so that flipping the toggle back is instant
-const fieldCache = new Map<FrameMode, DeformationField>();
+// One field per frame and projection, kept so that flipping a toggle back is instant
+const fieldCache = new Map<string, DeformationField>();
 
 /**
  * Samples the deformation field once per frame, after mount. It takes a few
  * hundred milliseconds, so it is kept out of the render pass and out of the
  * server-side build.
  */
-export function useDeformationField(mode: FrameMode): DeformationField | null {
-  const [field, setField] = useState<DeformationField | null>(() => fieldCache.get(mode) ?? null);
+export function useDeformationField(mode: FrameMode, projection: ProjectionMode): DeformationField | null {
+  const key = `${projection}/${mode}`;
+  const [field, setField] = useState<DeformationField | null>(() => fieldCache.get(key) ?? null);
 
   useEffect(() => {
-    const cached = fieldCache.get(mode);
+    const cached = fieldCache.get(key);
     if (cached) {
       setField(cached);
       return;
@@ -40,12 +43,12 @@ export function useDeformationField(mode: FrameMode): DeformationField | null {
     // Yield first, so the raster clears and the toggle responds before the
     // sampling pass blocks the main thread
     const handle = window.setTimeout(() => {
-      const sampled = deformationField(RASTER_SIZE, mode);
-      fieldCache.set(mode, sampled);
+      const sampled = deformationField(RASTER_SIZE, mode, projection);
+      fieldCache.set(key, sampled);
       setField(sampled);
     }, 0);
     return () => window.clearTimeout(handle);
-  }, [mode]);
+  }, [key, mode, projection]);
 
   return field;
 }
@@ -90,6 +93,50 @@ export function useDeformationRaster(field: DeformationField | null, channels: C
 
 const format = (value: number, channel: DeformationChannel) => value.toFixed(CHANNEL_INFO[channel].digits);
 
+const PROJECTION_TITLES: Record<ProjectionMode, string> = {
+  dsea: "Radiates from the dodecahedron face centre. A5's own projection",
+  isea: 'Radiates from the dodecahedron corner, the dual icosahedron face centre'
+};
+
+/** A row of buttons acting as a segmented control */
+function Toggle<T extends string>({
+  options,
+  value,
+  labels,
+  titles,
+  onChange
+}: {
+  options: T[];
+  value: T;
+  labels?: Record<T, string>;
+  titles?: Record<T, string>;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <span style={{display: 'flex', borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.18)'}}>
+      {options.map(option => (
+        <button
+          key={option}
+          type="button"
+          title={titles?.[option]}
+          onClick={() => onChange(option)}
+          style={{
+            padding: '2px 8px',
+            border: 'none',
+            cursor: 'pointer',
+            font: 'inherit',
+            fontSize: 11,
+            color: '#fff',
+            background: option === value ? 'rgba(255,255,255,0.22)' : 'transparent'
+          }}
+        >
+          {labels?.[option] ?? option}
+        </button>
+      ))}
+    </span>
+  );
+}
+
 const FRAME_LABELS: Record<FrameMode, string> = {chart: 'chart', metric: 'intrinsic'};
 
 const FRAME_TITLES: Record<FrameMode, string> = {
@@ -101,14 +148,18 @@ export function DeformationControls({
   field,
   channels,
   mode,
+  projection,
   onChange,
-  onModeChange
+  onModeChange,
+  onProjectionChange
 }: {
   field: DeformationField | null;
   channels: ChannelToggles;
   mode: FrameMode;
+  projection: ProjectionMode;
   onChange: (channels: ChannelToggles) => void;
   onModeChange: (mode: FrameMode) => void;
+  onProjectionChange: (projection: ProjectionMode) => void;
 }) {
   return (
     <div
@@ -125,31 +176,31 @@ export function DeformationControls({
         zIndex: 1
       }}
     >
-      <div style={{display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8}}>
-        <span style={{opacity: 0.6}}>Deformation</span>
-        <span
-          style={{display: 'flex', borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.18)'}}
-        >
-          {(Object.keys(FRAME_LABELS) as FrameMode[]).map(option => (
-            <button
-              key={option}
-              type="button"
-              title={FRAME_TITLES[option]}
-              onClick={() => onModeChange(option)}
-              style={{
-                padding: '2px 8px',
-                border: 'none',
-                cursor: 'pointer',
-                font: 'inherit',
-                fontSize: 11,
-                color: '#fff',
-                background: option === mode ? 'rgba(255,255,255,0.22)' : 'transparent'
-              }}
-            >
-              {FRAME_LABELS[option]}
-            </button>
-          ))}
-        </span>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'auto auto',
+          gap: '6px 8px',
+          alignItems: 'center',
+          justifyContent: 'start',
+          marginBottom: 10
+        }}
+      >
+        <span style={{opacity: 0.6}}>Projection</span>
+        <Toggle
+          options={PROJECTION_MODES}
+          value={projection}
+          titles={PROJECTION_TITLES}
+          onChange={onProjectionChange}
+        />
+        <span style={{opacity: 0.6}}>Frame</span>
+        <Toggle
+          options={Object.keys(FRAME_LABELS) as FrameMode[]}
+          value={mode}
+          labels={FRAME_LABELS}
+          titles={FRAME_TITLES}
+          onChange={onModeChange}
+        />
       </div>
       {DEFORMATION_CHANNELS.map(channel => {
         const {label, swatch, unit} = CHANNEL_INFO[channel];

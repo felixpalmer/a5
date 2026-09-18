@@ -14,6 +14,7 @@ import {EqualAreaProjection} from './equal-area';
 import {getQuintantVertices} from '../core/tiling';
 import {OriginId} from 'a5/core/utils';
 import {CRS} from './crs';
+import {DEFAULT_PROJECTION_MODE, type ProjectionMode} from './projection-mode';
 
 type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type FaceTriangle = [Face, Face, Face];
@@ -27,8 +28,18 @@ export class DodecahedronProjection {
   private equalArea: EqualAreaProjection;
   private gnomonic: GnomonicProjection;
 
-  constructor() {
-    this.equalArea = new EqualAreaProjection(crs.getCanonicalTriangle());
+  private mode: ProjectionMode;
+
+  /**
+   * @param mode Which vertex the equal-area projection radiates from. Defaults to
+   * DSEA, which is what A5's cell geometry is defined in terms of; ISEA is
+   * available so the two can be compared side by side.
+   */
+  constructor(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
+    this.mode = mode;
+    // The canonical triangle leads with the radiating vertex, matching the face
+    // triangles built in `_getFaceTriangle`
+    this.equalArea = new EqualAreaProjection(crs.getCanonicalTriangle(mode));
     this.gnomonic = new GnomonicProjection();
   }
 
@@ -147,20 +158,39 @@ export class DodecahedronProjection {
 
     // Note: center & midpoint compared to DGGAL implementation are swapped
     // as we are using a dodecahedron, rather than a icosahedron.
+    if (this.mode === 'isea') {
+      // Lead with the corner instead of the centre. This is a cyclic rotation of
+      // the DSEA order, not a swap, so the winding is preserved.
+      return even ? [vCorner1, vCenter, vEdgeMidpoint] : [vCorner2, vEdgeMidpoint, vCenter];
+    }
     return even ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
   }
 
   private _getReflectedFaceTriangle(faceTriangleIndex: FaceTriangleIndex, squashed: boolean = false): FaceTriangle {
     // First obtain ordinary unreflected triangle
-    let [A, B, C] = this._getFaceTriangle(faceTriangleIndex).map(face => vec2.clone(face)) as FaceTriangle;
-
-    // Reflect dodecahedron center (A) across edge (BC)
+    const [A, B, C] = this._getFaceTriangle(faceTriangleIndex).map(face => vec2.clone(face)) as FaceTriangle;
     const even = faceTriangleIndex % 2 === 0;
-    vec2.negate(A, A);
-    const midpoint = even ? B : C;
 
-    // Squashing is important. A squashed triangle when unprojected will yield the correct spherical triangle.
-    vec2.scaleAndAdd(A, A, midpoint, squashed ? 1 + 1 / Math.cos(interhedralAngle) : 2);
+    // In both modes it is the face centre that moves: it is the only vertex not
+    // shared with the neighbouring face across the dodecahedron edge. Reflecting
+    // it across that edge means negating it (it sits at the origin) and stepping
+    // twice along the edge midpoint, which is the foot of the perpendicular.
+    // Squashing instead yields the correct spherical triangle when unprojected.
+    const step = squashed ? 1 + 1 / Math.cos(interhedralAngle) : 2;
+
+    if (this.mode === 'isea') {
+      // [corner, centre, midpoint] (even) or [corner, midpoint, centre] (odd)
+      const centre = even ? B : C;
+      const midpoint = even ? C : B;
+      vec2.negate(centre, centre);
+      vec2.scaleAndAdd(centre, centre, midpoint, step);
+      return even ? ([A, midpoint, centre] as FaceTriangle) : ([A, centre, midpoint] as FaceTriangle);
+    }
+
+    // DSEA: the centre leads, so it is A that moves
+    const midpoint = even ? B : C;
+    vec2.negate(A, A);
+    vec2.scaleAndAdd(A, A, midpoint, step);
 
     // Swap midpoint and corner to maintain correct vertex order
     return [A, C, B] as FaceTriangle;
