@@ -5,8 +5,9 @@
 import React from 'react';
 import type {Polar} from 'a5/core/coordinate-systems';
 import {COLORS} from './components';
-import {CHANNEL_INFO} from './deformation';
-import {decompose, deformationMagnitudes, polarToSpherical, SPHERE_RADIUS} from './jacobian';
+import {CHANNEL_INFO, rampCss} from './deformation';
+import type {RasterQuantity} from './deformation';
+import {decompose, deformationValues, polarToSpherical, SPHERE_RADIUS} from './jacobian';
 import type {DeformationChannel, FrameJacobian, FrameMode} from './jacobian';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 
@@ -15,10 +16,14 @@ export type ChannelRanges = Record<DeformationChannel, [number, number]>;
 const GAUGE_WIDTH = 72;
 const GAUGE_DOT = 8;
 
-/** Where the current value sits between the extremes the raster is normalised over */
-function Gauge({value, range, color}: {value: number; range?: [number, number]; color: string}) {
-  const span = range ? range[1] - range[0] : 0;
-  const position = span > 0 ? Math.max(0, Math.min(1, (value - range![0]) / span)) : null;
+/**
+ * Where the current value sits in the symmetric range the raster is normalised
+ * over. Zero is the centre tick, and the dot takes its colour from the same ramp,
+ * so the readout and the raster agree on what the sign means.
+ */
+function Gauge({value, range}: {value: number; range?: [number, number]}) {
+  const extent = range ? range[1] : 0;
+  const t = extent > 0 ? Math.max(-1, Math.min(1, value / extent)) : null;
 
   return (
     <span style={{position: 'relative', display: 'inline-block', width: GAUGE_WIDTH, height: GAUGE_DOT}}>
@@ -33,16 +38,28 @@ function Gauge({value, range, color}: {value: number; range?: [number, number]; 
           background: 'rgba(255,255,255,0.2)'
         }}
       />
-      {position !== null && (
+      <span
+        style={{
+          position: 'absolute',
+          left: GAUGE_WIDTH / 2 - 0.5,
+          top: 0,
+          width: 1,
+          height: GAUGE_DOT,
+          background: 'rgba(255,255,255,0.35)'
+        }}
+      />
+      {t !== null && (
         <span
           style={{
             position: 'absolute',
-            left: position * (GAUGE_WIDTH - GAUGE_DOT),
+            left: ((t + 1) / 2) * (GAUGE_WIDTH - GAUGE_DOT),
             top: 0,
             width: GAUGE_DOT,
             height: GAUGE_DOT,
             borderRadius: '50%',
-            background: color
+            background: rampCss(t),
+            border: '1px solid rgba(255,255,255,0.45)',
+            boxSizing: 'border-box'
           }}
         />
       )}
@@ -214,9 +231,17 @@ function Matrix({frame}: {frame: FrameJacobian}) {
   );
 }
 
-function Decomposition({frame, ranges}: {frame: FrameJacobian; ranges?: ChannelRanges}) {
+function Decomposition({
+  frame,
+  ranges,
+  quantity
+}: {
+  frame: FrameJacobian;
+  ranges?: ChannelRanges;
+  quantity: RasterQuantity;
+}) {
   const decomposition = decompose(frame);
-  const magnitudes = deformationMagnitudes(decomposition);
+  const signed = deformationValues(decomposition);
   const {rotation, shear, squash} = decomposition;
   const rows: [DeformationChannel, string][] = [
     ['rotation', `${((rotation * 180) / Math.PI).toFixed(2)}°`],
@@ -238,20 +263,18 @@ function Decomposition({frame, ranges}: {frame: FrameJacobian; ranges?: ChannelR
       >
         {rows.map(([channel, value]) => (
           <React.Fragment key={channel}>
-            <span style={{display: 'flex', alignItems: 'center', gap: 7, opacity: 0.75}}>
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  background: CHANNEL_INFO[channel].swatch,
-                  flex: '0 0 auto'
-                }}
-              />
-              {channel}
+            <span style={{opacity: channel === quantity ? 1 : 0.6}}>{CHANNEL_INFO[channel].label}</span>
+            <span
+              style={{
+                textAlign: 'right',
+                fontFamily: MONO,
+                fontVariantNumeric: 'tabular-nums',
+                opacity: channel === quantity ? 1 : 0.8
+              }}
+            >
+              {value}
             </span>
-            <span style={{textAlign: 'right', fontFamily: MONO, fontVariantNumeric: 'tabular-nums'}}>{value}</span>
-            <Gauge value={magnitudes[channel]} range={ranges?.[channel]} color={CHANNEL_INFO[channel].swatch} />
+            <Gauge value={signed[channel]} range={ranges?.[channel]} />
           </React.Fragment>
         ))}
       </div>
@@ -263,12 +286,14 @@ export function JacobianOverlay({
   polar,
   frame,
   projection,
-  ranges
+  ranges,
+  quantity
 }: {
   polar: Polar;
   frame: FrameJacobian;
   projection: ProjectionMode;
   ranges?: ChannelRanges;
+  quantity: RasterQuantity;
 }) {
   const [rho, gamma] = polar;
   const [theta, phi] = polarToSpherical(polar, projection);
@@ -301,7 +326,7 @@ export function JacobianOverlay({
             {labels.title}
           </div>
           <Matrix frame={frame} />
-          <Decomposition frame={frame} ranges={ranges} />
+          <Decomposition frame={frame} ranges={ranges} quantity={quantity} />
         </div>
 
         <div style={{display: 'flex', alignItems: 'center', gap: 14, flex: '0 0 auto'}}>

@@ -4,30 +4,57 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 import {DEFORMATION_CHANNELS, deformationField} from './jacobian';
-import {CELL_RESOLUTIONS, PROJECTION_MODES} from './jacobian';
-import type {DeformationChannel, DeformationField, FrameMode} from './jacobian';
+import {CELL_RESOLUTIONS, PROJECTION_MODES, cellEdgeMetrics} from './jacobian';
+import type {DeformationChannel, DeformationField, EdgeMetrics, FrameMode} from './jacobian';
+import type {Face} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 
 /** Enough to resolve the cusps without making the one-off sample pass noticeable */
 const RASTER_SIZE = 384;
 
-export type ChannelToggles = Record<DeformationChannel, boolean>;
+/** The raster shows one quantity at a time, or none */
+export type RasterQuantity = DeformationChannel | 'off';
 
-export const ALL_CHANNELS: ChannelToggles = {rotation: true, shear: true, squash: true};
+export const RASTER_QUANTITIES: RasterQuantity[] = ['off', ...DEFORMATION_CHANNELS];
 
-export const CHANNEL_INFO: Record<DeformationChannel, {label: string; swatch: string; unit: string; digits: number}> = {
-  rotation: {label: 'rotation', swatch: '#ff4d4d', unit: '°', digits: 2},
-  shear: {label: 'shear', swatch: '#4dff88', unit: '', digits: 3},
-  squash: {label: 'squash', swatch: '#4d9dff', unit: '', digits: 4}
+export const CHANNEL_INFO: Record<DeformationChannel, {label: string; unit: string; digits: number}> = {
+  rotation: {label: 'rotation', unit: '°', digits: 2},
+  shear: {label: 'shear', unit: '', digits: 3},
+  squash: {label: 'squash', unit: '', digits: 4}
 };
 
-// One field per frame and projection, kept so that flipping a toggle back is instant
+/**
+ * Diverging ramp, green through black to red, with zero at the midpoint.
+ *
+ * Showing one signed quantity this way rather than three magnitudes in RGB is
+ * what makes the cusps legible: rotation and shear both flip sign across one, so
+ * a cusp is a jump from one extreme to the other. Plotting magnitudes made the
+ * two sides identical and hid it completely.
+ */
+export const NEGATIVE_COLOR = [40, 230, 90];
+export const POSITIVE_COLOR = [245, 70, 50];
+
+export function rampColor(t: number): [number, number, number] {
+  const clamped = Math.max(-1, Math.min(1, t));
+  const intensity = Math.abs(clamped);
+  const base = clamped < 0 ? NEGATIVE_COLOR : POSITIVE_COLOR;
+  return [base[0] * intensity, base[1] * intensity, base[2] * intensity];
+}
+
+export const rampCss = (t: number) => {
+  const [r, g, b] = rampColor(t);
+  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+};
+
+// One field per frame and projection, kept so that flipping a toggle back is
+// instant. All three quantities are sampled together, so switching which one is
+// shown costs nothing.
 const fieldCache = new Map<string, DeformationField>();
 
 /**
- * Samples the deformation field once per frame, after mount. It takes a few
- * hundred milliseconds, so it is kept out of the render pass and out of the
- * server-side build.
+ * Samples the deformation field once per frame and projection, after mount. It
+ * takes a few hundred milliseconds, so it is kept out of the render pass and out
+ * of the server-side build.
  */
 export function useDeformationField(mode: FrameMode, projection: ProjectionMode): DeformationField | null {
   const key = `${projection}/${mode}`;
@@ -54,17 +81,35 @@ export function useDeformationField(mode: FrameMode, projection: ProjectionMode)
 }
 
 /**
- * Packs the three channels into RGB, each normalised over its own range across
- * the face. The ranges are narrow — a few percent for the scale — so without the
- * normalisation the variation would not be visible at all.
+ * Edge lengths and bowing for the drawn cells. A few hundred milliseconds at the
+ * highest resolution, so it is deferred like the field rather than run in render.
  */
-export function useDeformationRaster(field: DeformationField | null, channels: ChannelToggles): string | null {
+export function useEdgeMetrics(cells: Face[][], projection: ProjectionMode): EdgeMetrics | null {
+  const [metrics, setMetrics] = useState<EdgeMetrics | null>(null);
+
+  useEffect(() => {
+    if (!cells.length) {
+      setMetrics(null);
+      return;
+    }
+    setMetrics(null);
+    const handle = window.setTimeout(() => setMetrics(cellEdgeMetrics(cells, projection)), 0);
+    return () => window.clearTimeout(handle);
+  }, [cells, projection]);
+
+  return metrics;
+}
+
+export function useDeformationRaster(field: DeformationField | null, quantity: RasterQuantity): string | null {
   return useMemo(() => {
-    if (!field || typeof document === 'undefined') return null;
-    const enabled = DEFORMATION_CHANNELS.some(channel => channels[channel]);
-    if (!enabled) return null;
+    if (!field || quantity === 'off' || typeof document === 'undefined') return null;
 
     const {size, values, ranges, constant, mask} = field;
+    if (constant[quantity]) return null;
+    const extent = ranges[quantity][1];
+    if (!(extent > 0)) return null;
+    const channel = values[quantity];
+
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
@@ -76,25 +121,19 @@ export function useDeformationRaster(field: DeformationField | null, channels: C
     for (let i = 0; i < size * size; i++) {
       const offset = 4 * i;
       if (!mask[i]) continue; // left fully transparent
-      for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
-        const channel = DEFORMATION_CHANNELS[c];
-        if (!channels[channel] || constant[channel]) continue;
-        const [min, max] = ranges[channel];
-        // Clamped, because the range trims the extremes rather than covering them
-        const t = (values[channel][i] - min) / (max - min);
-        data[offset + c] = Math.round(255 * Math.max(0, Math.min(1, t)));
-      }
+      // Clamped inside rampColor, since the range trims the extremes
+      const [r, g, b] = rampColor(channel[i] / extent);
+      data[offset] = Math.round(r);
+      data[offset + 1] = Math.round(g);
+      data[offset + 2] = Math.round(b);
       data[offset + 3] = 255;
     }
     context.putImageData(image, 0, 0);
     return canvas.toDataURL();
-  }, [field, channels]);
+  }, [field, quantity]);
 }
 
 const format = (value: number, channel: DeformationChannel) => value.toFixed(CHANNEL_INFO[channel].digits);
-
-/** 'off', or a resolution, as the toggle's string values */
-export const CELL_OPTIONS = ['off', ...CELL_RESOLUTIONS.map(String)];
 
 const PROJECTION_TITLES: Record<ProjectionMode, string> = {
   dsea: "Radiates from the dodecahedron face centre. A5's own projection",
@@ -147,26 +186,115 @@ const FRAME_TITLES: Record<FrameMode, string> = {
   metric: 'Derivative in local orthonormal frames. Chart independent, so it mirrors exactly across a face edge'
 };
 
+/** 'off', or a resolution, as the toggle's string values */
+export const CELL_OPTIONS = ['off', ...CELL_RESOLUTIONS.map(String)];
+
+const SAG_OPTIONS = ['off', 'on'];
+
+const SAG_TITLES: Record<string, string> = {
+  off: 'Hide the gap between each cell edge and the great circle joining its vertices',
+  on: 'Fill the gap between each cell edge and the great circle joining its vertices, at true scale'
+};
+
+/** The ramp, with the range it currently spans */
+function Legend({field, quantity}: {field: DeformationField | null; quantity: RasterQuantity}) {
+  if (quantity === 'off') return null;
+  const range = field?.ranges[quantity];
+  const ready = range && Number.isFinite(range[1]) && !field?.constant[quantity];
+  const stops = [-1, -0.5, 0, 0.5, 1].map(t => rampCss(t)).join(', ');
+
+  return (
+    <div style={{marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.12)'}}>
+      <div style={{height: 8, borderRadius: 2, background: `linear-gradient(to right, ${stops})`}} />
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: 4,
+          fontSize: 11,
+          opacity: 0.55,
+          fontVariantNumeric: 'tabular-nums'
+        }}
+      >
+        {ready ? (
+          <>
+            <span>{format(range![0], quantity)}</span>
+            <span>0</span>
+            <span>
+              +{format(range![1], quantity)}
+              {CHANNEL_INFO[quantity].unit}
+            </span>
+          </>
+        ) : (
+          <span>{field ? 'constant' : 'sampling…'}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Edge length and straightness of the drawn cells, under the current projection */
+function EdgeStats({metrics}: {metrics: EdgeMetrics | null}) {
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        paddingTop: 10,
+        borderTop: '1px solid rgba(255,255,255,0.12)',
+        fontSize: 11,
+        lineHeight: 1.7,
+        fontVariantNumeric: 'tabular-nums'
+      }}
+    >
+      {metrics ? (
+        <>
+          <div style={{opacity: 0.6}}>{metrics.edges} cell edges, as curves</div>
+          <div>
+            {metrics.meanKm.toFixed(1)} km mean, spread ±{(100 * metrics.spread).toFixed(2)}%
+          </div>
+          <div style={{opacity: 0.6}}>
+            {metrics.minKm.toFixed(1)} – {metrics.maxKm.toFixed(1)} km
+          </div>
+          <div title="Greatest angular departure from the great circle through the edge's endpoints">
+            bowing {metrics.bowingMeanDeg.toFixed(4)}° mean, {metrics.bowingMaxDeg.toFixed(4)}° max
+          </div>
+          <div title="Total area between the cell edges and the great circles joining their vertices">
+            sag area {(100 * metrics.sagAreaFraction).toFixed(3)}% of the face
+          </div>
+        </>
+      ) : (
+        <div style={{opacity: 0.6}}>measuring edges…</div>
+      )}
+    </div>
+  );
+}
+
 export function DeformationControls({
   field,
-  channels,
+  quantity,
   mode,
   projection,
   cells,
-  onChange,
+  sag,
+  edges,
+  onQuantityChange,
   onModeChange,
   onProjectionChange,
-  onCellsChange
+  onCellsChange,
+  onSagChange
 }: {
   field: DeformationField | null;
-  channels: ChannelToggles;
+  quantity: RasterQuantity;
   mode: FrameMode;
   projection: ProjectionMode;
   cells: string;
-  onChange: (channels: ChannelToggles) => void;
+  sag: boolean;
+  edges: EdgeMetrics | null;
+  onQuantityChange: (quantity: RasterQuantity) => void;
   onModeChange: (mode: FrameMode) => void;
   onProjectionChange: (projection: ProjectionMode) => void;
   onCellsChange: (cells: string) => void;
+  onSagChange: (sag: boolean) => void;
 }) {
   return (
     <div
@@ -180,6 +308,7 @@ export function DeformationControls({
         borderRadius: 6,
         color: '#fff',
         fontSize: 12,
+        minWidth: 208,
         zIndex: 1
       }}
     >
@@ -189,8 +318,7 @@ export function DeformationControls({
           gridTemplateColumns: 'auto auto',
           gap: '6px 8px',
           alignItems: 'center',
-          justifyContent: 'start',
-          marginBottom: 10
+          justifyContent: 'start'
         }}
       >
         <span style={{opacity: 0.6}}>Projection</span>
@@ -210,33 +338,24 @@ export function DeformationControls({
         />
         <span style={{opacity: 0.6}}>Cells</span>
         <Toggle options={CELL_OPTIONS} value={cells} onChange={onCellsChange} />
-      </div>
-      {DEFORMATION_CHANNELS.map(channel => {
-        const {label, swatch, unit} = CHANNEL_INFO[channel];
-        const range = field?.ranges[channel];
-        return (
-          <label
-            key={channel}
-            style={{display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', lineHeight: 1.9}}
-          >
-            <input
-              type="checkbox"
-              checked={channels[channel]}
-              onChange={event => onChange({...channels, [channel]: event.target.checked})}
-              style={{accentColor: swatch, margin: 0}}
+        {cells !== 'off' && (
+          <>
+            <span style={{opacity: 0.6}}>Sag</span>
+            <Toggle
+              options={SAG_OPTIONS}
+              value={sag ? 'on' : 'off'}
+              titles={SAG_TITLES}
+              onChange={value => onSagChange(value === 'on')}
             />
-            <span style={{width: 10, height: 10, borderRadius: 2, background: swatch, flex: '0 0 auto'}} />
-            <span style={{width: 58}}>{label}</span>
-            <span style={{opacity: 0.55, fontVariantNumeric: 'tabular-nums'}}>
-              {!range || !Number.isFinite(range[0])
-                ? '…'
-                : field?.constant[channel]
-                  ? `${format(range[1], channel)}${unit} constant`
-                  : `${format(range[0], channel)} – ${format(range[1], channel)}${unit}`}
-            </span>
-          </label>
-        );
-      })}
+          </>
+        )}
+        <span style={{opacity: 0.6}}>Raster</span>
+        <Toggle options={RASTER_QUANTITIES} value={quantity} onChange={onQuantityChange} />
+      </div>
+
+      {cells !== 'off' && <EdgeStats metrics={edges} />}
+
+      <Legend field={field} quantity={quantity} />
     </div>
   );
 }

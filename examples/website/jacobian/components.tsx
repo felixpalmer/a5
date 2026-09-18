@@ -14,6 +14,7 @@ import {
   beyondFaceMesh,
   cartesianToPolar,
   cellOutline,
+  cellSagGeometry,
   domainBoundary,
   domainCorners,
   faceBoundary,
@@ -43,6 +44,7 @@ export const COLORS = {
   outline: '#ffffff',
   domainOutline: 'rgba(255, 255, 255, 0.45)',
   cell: '#4dd0e1',
+  sag: '#ff0000',
   patch: '#ffb400',
   radial: '#ff7043',
   azimuthal: '#42a5f5'
@@ -309,6 +311,29 @@ const ProjectedGrid = React.memo(function ProjectedGrid({projection}: {projectio
   );
 });
 
+/**
+ * The gap between each cell edge and the great circle joining its endpoints, filled.
+ * The band is what the projection costs in cell shape, at true scale.
+ */
+function ProjectedSag({cells, projection}: {cells: Face[][]; projection: ProjectionMode}) {
+  const geometry = useMemo(() => {
+    const sag = cellSagGeometry(cells, projection, SPHERE_RADIUS * 1.0015);
+    const built = new BufferGeometry();
+    built.setAttribute('position', new BufferAttribute(sag.positions, 3));
+    built.setIndex(new BufferAttribute(sag.indices, 1));
+    return built;
+  }, [cells, projection]);
+
+  if (!geometry.index?.count) return null;
+  // Opaque, and drawn without the edges or the great circles beside it. A line has
+  // constant width however thin the band is, which makes the area impossible to judge
+  return (
+    <mesh geometry={geometry}>
+      <meshBasicMaterial color={COLORS.sag} side={DoubleSide} />
+    </mesh>
+  );
+}
+
 /** All cell edges as one line-segment soup, so the overlay costs a single draw */
 function ProjectedCells({cells, projection}: {cells: Face[][]; projection: ProjectionMode}) {
   const points = useMemo(() => {
@@ -330,11 +355,13 @@ function Scene({
   polar,
   projection,
   cells,
+  showSag,
   onHover
 }: {
   polar: Polar;
   projection: ProjectionMode;
   cells: Face[][];
+  showSag: boolean;
   onHover: (polar: Polar) => void;
 }) {
   const boundary = useMemo(() => lift(faceBoundary(), 1.002, projection), [projection]);
@@ -364,7 +391,11 @@ function Scene({
       <ProjectedRegion build={faceMesh} projection={projection} color={COLORS.face} opacity={0.25} />
       <ProjectedRegion build={beyondFaceMesh} projection={projection} color={COLORS.beyond} opacity={0.22} />
       <ProjectedGrid projection={projection} />
-      <ProjectedCells cells={cells} projection={projection} />
+      {showSag ? (
+        <ProjectedSag cells={cells} projection={projection} />
+      ) : (
+        <ProjectedCells cells={cells} projection={projection} />
+      )}
       <Line points={outerBoundary} color={COLORS.domainOutline} lineWidth={1.5} dashed dashSize={0.03} gapSize={0.02} />
       <Line points={boundary} color={COLORS.outline} lineWidth={2} />
       <Line points={patch} color={COLORS.patch} lineWidth={2.5} />
@@ -376,7 +407,7 @@ function Scene({
       <OrbitControls
         enableDamping
         enablePan={false}
-        minDistance={1.6 * SPHERE_RADIUS}
+        minDistance={1.2 * SPHERE_RADIUS}
         maxDistance={6 * SPHERE_RADIUS}
       />
     </>
@@ -387,11 +418,13 @@ export function SphereView({
   polar,
   projection,
   cells,
+  showSag,
   onHover
 }: {
   polar: Polar;
   projection: ProjectionMode;
   cells: Face[][];
+  showSag: boolean;
   onHover: (polar: Polar) => void;
 }) {
   return (
@@ -400,7 +433,7 @@ export function SphereView({
       style={{width: '100%', height: '100%'}}
     >
       <Suspense fallback={null}>
-        <Scene polar={polar} projection={projection} cells={cells} onHover={onHover} />
+        <Scene polar={polar} projection={projection} cells={cells} showSag={showSag} onHover={onHover} />
       </Suspense>
     </Canvas>
   );

@@ -19,14 +19,23 @@ about *shape* distortion and about where the projection is non-smooth.
 
 ## Recommendation
 
-**ISEA**, on every measure that reaches the cells.
+**Close, with ISEA ahead on three of four criteria and DSEA winning the fourth.**
 
-It has lower distortion everywhere, and — the decisive part — A5's cell boundaries are
-kink-free under ISEA and are not under DSEA. The two projections are C¹ across
-complementary loci, and ISEA's happens to be the one A5's cells actually cross.
+| criterion | winner | margin |
+| --- | --- | --- |
+| angular distortion, mean ω | ISEA | 25% |
+| kink where cell edges cross a cusp | ISEA | 20× (0.110° vs 2.205°) |
+| edge length uniformity | ISEA | spread 3.25% vs 4.03% |
+| edge straightness (bowing) | **DSEA** | 1.7× overall, 3.5× near a dodecahedron vertex |
 
-The cost is a breaking change to every cell ID, so this is a release-timing decision, not
-a geometry one. The geometry is settled.
+ISEA's advantages are the larger ones in absolute terms — a 2.2° kink is a visible corner,
+where the bowing difference is two thousandths of a degree. But DSEA's straighter edges are
+a real property, visible at low resolutions, and they mean fewer great-circle segments are
+needed to represent a boundary to a given tolerance.
+
+Neither is dominant. Given that switching costs a breaking change to every cell ID, the
+case for moving is weaker than the distortion and kink figures alone suggest, and staying
+on DSEA is defensible.
 
 ## Distortion
 
@@ -65,34 +74,73 @@ Jump in shear across each, intrinsic frame:
 | quintant boundaries (γ = 36° mod 72°) | 0.353275 | 0.107193 |
 | dodecahedron face edge | kinked (see below) | **smooth** (see below) |
 
-Neither projection is smooth everywhere. They are smooth in *different places*, and which
-one matters is decided entirely by where the cell tiling goes.
+Neither projection is smooth everywhere. **ISEA is not cusp-free** — it cusps on all ten
+internal rays, including the quintant bisectors. It is smooth only at the dodecahedron face
+edge. DSEA is the mirror image of that: smooth on the five bisectors, kinked on the five
+quintant boundaries and at the face edge.
+
+Measured directly as the turn for a curve crossing each locus at 90°, at ρ = 0.45, ε → 0:
+
+| locus | DSEA | ISEA |
+| --- | --- | --- |
+| quintant bisector (γ = 0) | **0.000124° smooth** | 1.355642° cusp |
+| quintant boundary (γ = 36°) | 18.771055° cusp | 5.633866° cusp |
+| dodecahedron face edge | 2.284826° cusp | **0.000152° smooth** |
+
+These are perpendicular crossings, and they are **not** what the cells experience. Because
+the map is continuous *along* a locus, the jump in the Jacobian annihilates the locus
+direction: it is rank one, Δ = w ⊗ n, so J⁺d = J⁻d + w(n·d). The kink is the *angle*
+between those two, which collapses not when the crossing is shallow but when w happens to
+be parallel to J⁻d — the jump is then a pure stretch along the tangent rather than a turn.
+
+Where A5's cells cross, at resolution 5:
+
+| | angle to the locus | kink as cells cross | kink if perpendicular |
+| --- | --- | --- | --- |
+| ISEA, quintant bisector | 69.7° | **0.1103°** | 1.0768° |
+| DSEA, face edge | 20.3° | **2.2052°** | 2.4316° |
+
+Every crossing sits at the same angle, fixed by the lattice symmetry rather than varying
+per cell. ISEA's cells cross steeply yet get a tenfold reduction from the perpendicular
+figure; DSEA's cross shallowly and get barely ten percent. The layout lands close to the
+kink-neutral direction on the ISEA locus and close to the worst one on the DSEA locus.
+
+So the comparison that matters is **0.110° against 2.205°**, a factor of twenty — not the
+1.36 against 2.28 the perpendicular probes suggest.
+
+They are smooth in *different places*, and which one matters is decided entirely by where
+the cell tiling goes.
 
 ## What the cells actually do
 
-Enumerating every cell of one origin and testing all five edges of each against all ten
-rays and against the face boundary:
+Every cell of one origin, all five edges of each, tested against all ten rays and against
+the face boundary. One rule throughout: a crossing is **interior** when the edge passes
+through with both endpoints strictly off the locus, and a **touch** when an endpoint lies
+on it.
 
-| resolution | cells | edges | crossings of a **bisector** | crossings of a **quintant boundary** | crossings of the **face edge** | cells straddling the face edge |
+| res | cells | edges | bisector (int / touch) | quintant boundary (int / touch) | face edge (int / touch) | straddling |
 | --- | --- | --- | --- | --- | --- | --- |
-| 2 | 20 | 100 | — | — | 14 | 10 (50.0%) |
-| 3 | 80 | 400 | — | — | 38 | 24 (30.0%) |
-| 4 | 320 | 1600 | 40 | **0** | 77 | 48 (15.0%) |
-| 5 | 1280 | 6400 | 80 | **0** | 175 | 105 (8.2%) |
-| 6 | 5120 | 25600 | 160 | **0** | — | — |
-| 7 | 20480 | 102400 | 320 | **0** | — | — |
+| 2 | 20 | 100 | 10 / 20 | **0** / 50 | 10 / 30 | 50.00% |
+| 3 | 80 | 400 | 20 / 60 | **0** / 130 | 20 / 70 | 25.00% |
+| 4 | 320 | 1600 | 40 / 140 | **0** / 290 | 40 / 150 | 12.50% |
+| 5 | 1280 | 6400 | 80 / 300 | **0** / 610 | 80 / 310 | 6.25% |
+| 6 | 5120 | 25600 | 160 / 620 | **0** / 1250 | 160 / 630 | 3.13% |
+| 7 | 20480 | 102400 | 320 / 1260 | **0** / 2530 | 320 / 1270 | 1.56% |
 
-Two things fall out:
+Three things fall out:
 
-**No cell edge ever crosses a quintant boundary.** Cells abut them — a vertex lands on the
-ray and the edge stops. So DSEA's most severe cusp, the 0.353 shear jump on the corner
-rays, is never traversed at any resolution. It costs nothing. Every bisector crossing, in
-turn, happens at exactly 50.0% along the edge.
+**No cell edge ever crosses a quintant boundary.** Not at any resolution. Cells abut them —
+a vertex lands on the ray and the edge stops, which is what the 2530 touches at resolution 7
+are. So DSEA's most severe cusp, the 18.77° turn on the corner rays, is never traversed. The
+layout cuts the cells exactly there.
 
-**Cells do straddle the dodecahedron face edge**, and there are more of those crossings
-than bisector crossings at every resolution. The straddling fraction halves with each
-level (50% → 30% → 15% → 8.2%), since the band has fixed width while cells shrink, but it
-is never zero and it dominates the kink budget at the resolutions where cells are large.
+**Bisector and face-edge crossings are equally common**, 320 of each at resolution 7. The
+two loci are hit the same number of times, so the comparison comes down entirely to the
+kink per crossing.
+
+**Cells straddle the face edge**, at a fraction that halves exactly with each level: 50% →
+25% → 12.5% → 6.25% → 3.13% → 1.56%. The band has fixed width while cells shrink. It never
+reaches zero.
 
 ## The kink is zero, on different loci
 
@@ -132,15 +180,25 @@ DSEA radiates from the centre, which is exactly the vertex that does move.
 
 ### Totals
 
-Summed over every crossing at resolution 5, one origin, excluding the face corners:
+With the two loci hit equally often, the totals are just the per-crossing kinks. At
+resolution 7, one origin, 320 crossings of each locus, excluding the face corners:
 
-| | crossings | mean kink | total |
+| | bisector | face edge | total |
 | --- | --- | --- | --- |
-| DSEA | 80 bisector + 172 face edge | 0° / 1.919° | **330.1°** |
-| ISEA | 80 bisector + 172 face edge | 0.1103° / 0.0003° | **8.9°** |
+| DSEA | 320 × 0° | 320 × 2.205° | **706°** |
+| ISEA | 320 × 0.110° | 320 × 0° | **35°** |
 
-ISEA carries about 1/37th of DSEA's total kink. Its residual is 17× smaller per crossing
-and sits on the rarer locus.
+ISEA carries about 1/20th of DSEA's total kink, and the ratio is resolution independent
+since both counts scale together.
+
+Both are small in absolute terms — a 2.2° bend in a cell edge is modest — so this is a
+directional signal rather than a dramatic one. But it is a signal, not a tie.
+
+Not measured here: the **touches**, where a cell vertex lands on a locus. They are four
+times more numerous than the interior crossings. The boundary already turns at a vertex,
+so a kink there is a change to an existing corner angle rather than a new corner, and
+quantifying it needs a different treatment than the one used above. It is the obvious next
+thing to check before any claim is made about A5 cell geometry as a whole.
 
 ### The face corners
 
@@ -149,6 +207,57 @@ faces meet. Both projections turn by ~84.4° there (DSEA 84.4237°, ISEA 84.5565
 probes fail outright. This is the angular defect of the polyhedron itself, not a property
 of either projection, and it does not discriminate between them. Any polyhedral DGGS that
 lets cells reach a vertex has it.
+
+## Cell edge length and straightness
+
+Edge lengths are arc lengths of the projected edge treated as a **curve**, not chords:
+a polyline sum with a Richardson step, on the unit sphere scaled to Earth's authalic
+radius. Bowing is the greatest angular departure of that curve from the great circle
+joining its endpoints — zero would mean the edge is exactly a great circle.
+
+Resolution 4, one origin, 1600 edges:
+
+| | DSEA | ISEA |
+| --- | --- | --- |
+| mean edge length | 299.1 km | 297.5 km |
+| range | 272.2 – 319.6 km | 279.3 – 314.5 km |
+| max / min | 1.174 | **1.126** |
+| spread (coefficient of variation) | 4.03% | **3.25%** |
+| bowing, mean | **0.0035°** | 0.0058° |
+| bowing, max | **0.0446°** | 0.0519° |
+| length excess over the great circle | **19.2 ppm** | 40.5 ppm |
+
+The split is consistent at every resolution tested. **ISEA gives more uniform edge
+lengths** — about a quarter less spread, which follows from its lower angular distortion.
+**DSEA gives straighter edges** — about 1.7× less bowing, and half the length excess.
+
+Filling the gap between each edge and the great circle joining its vertices gives one
+number for the whole face — the total area the projection costs in cell shape:
+
+| sag area, as a fraction of the face | DSEA | ISEA |
+| --- | --- | --- |
+| resolution 2 | **0.727%** | 1.115% |
+| resolution 3 | **0.477%** | 0.818% |
+| resolution 4 | **0.273%** | 0.479% |
+
+ISEA costs 1.5× to 1.75× more, and the ratio grows slightly with resolution. (Computed as
+the integral of the offset along each edge; it agrees with the drawn triangle strip to
+within 1%.)
+
+The straightness gap is widest exactly where it looks widest:
+
+| bowing at resolution 4 | DSEA | ISEA |
+| --- | --- | --- |
+| near a dodecahedron vertex (n=120) | **0.0055°** | 0.0195° |
+| elsewhere (n=1480) | **0.0033°** | 0.0047° |
+
+ISEA bows 3.5× more near a vertex against 1.4× elsewhere, so the visual impression that
+ISEA bends cell edges most near the dodecahedron vertices is correct and measurable.
+
+In absolute terms both are small: at resolution 4 the mean bow is 0.6 km under DSEA and
+2.2 km under ISEA on a 300 km edge, so 0.2% against 0.7% of the edge. The practical
+consequence is representation cost — sagitta falls as 1/N² with N great-circle segments,
+so ISEA needs about 1.3× more segments for the same tolerance.
 
 ## The structure DSEA has and ISEA does not
 

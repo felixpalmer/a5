@@ -68,6 +68,13 @@ class JacobianDemo extends Component {
           ray in either projection.
         </p>
         <p>
+          With the cells drawn, the panel reports their edge lengths — arc lengths of the projected edge as a curve, not
+          chords — and their bowing, the greatest angular departure from the great circle through the edge's endpoints.
+          The two projections split these: ISEA gives more uniform lengths (spread 3.25% against 4.03% at resolution 4)
+          while DSEA gives straighter edges (0.0035° against 0.0058° mean bowing, and 3.5× straighter near a
+          dodecahedron vertex).
+        </p>
+        <p>
           The <em>cells</em> toggle draws A5's own cells over the face at resolution 2, 3 or 4, which shows which of
           those loci a cell boundary can actually reach. No cell edge crosses a quintant boundary at any resolution —
           cells abut them, a vertex landing on the ray and the edge stopping there — so DSEA's most severe cusp is never
@@ -75,11 +82,11 @@ class JacobianDemo extends Component {
           DSEA passes through those smoothly.
         </p>
         <p>
-          Cells do straddle the dodecahedron face edge, though, and there are more of those crossings than bisector
-          crossings at every resolution: 20, 48 and 96 against 10, 20 and 40. That is the locus where the two
-          projections trade places. DSEA kinks there by 1.919° on average, while ISEA is smooth — its radiating corner
-          and the edge midpoint are both shared with the neighbouring face, so only the face centre moves under
-          reflection. Switch the projection with the cells drawn to see it.
+          Cells do straddle the dodecahedron face edge, though, and those crossings are exactly as numerous as the
+          bisector ones — 10, 20 and 40 of each at resolutions 2, 3 and 4. That is the locus where the two projections
+          trade places. DSEA kinks there by 1.919° on average, while ISEA is smooth — its radiating corner and the edge
+          midpoint are both shared with the neighbouring face, so only the face centre moves under reflection. Switch
+          the projection with the cells drawn to see it.
         </p>
         <p>
           The other five rays, through the corners, are the real cusps in DSEA. There the derivative jumps: the
@@ -121,11 +128,13 @@ class JacobianDemo extends Component {
           the squash, shear and scale, so nothing is lost by plotting the frame-aligned split instead.
         </p>
         <p>
-          The raster maps each component over the whole domain to a colour channel — red for rotation, green for shear,
-          blue for squash. The area scale is not plotted: it is 1 everywhere in the intrinsic frame, and in the chart
-          frame its variation belongs to the charts rather than the projection. Each channel is normalised over its own
-          range, ignoring the extreme one percent at each end, and the dot beside each value in the readout shows where
-          the hovered point sits in that range.
+          The raster shows one quantity at a time on a diverging ramp, green through black to red, with zero at the
+          midpoint and the range symmetric about it. The sign is the point: rotation and shear both flip across a cusp,
+          so a cusp is a jump from one extreme to the other and appears as a hard green/red boundary. Packing three
+          magnitudes into red, green and blue hid exactly that — the two sides of a cusp came out identical. The area
+          scale is not offered: it is 1 everywhere in the intrinsic frame, and in the chart frame its variation belongs
+          to the charts rather than the projection. The range ignores the extreme one percent at each end, and the dot
+          beside each value in the readout sits on the same range, coloured by the same ramp.
         </p>
       </div>
     );

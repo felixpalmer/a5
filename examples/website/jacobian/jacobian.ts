@@ -6,7 +6,8 @@ import {DodecahedronProjection} from 'a5/projections/dodecahedron';
 import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 import {radToDeg, toCartesian, toFace, toPolar} from 'a5/core/coordinate-transforms';
-import {distanceToEdge, PI_OVER_5, TWO_PI, TWO_PI_OVER_5} from 'a5/core/constants';
+import {AUTHALIC_RADIUS_EARTH, distanceToEdge, PI_OVER_5, TWO_PI, TWO_PI_OVER_5} from 'a5/core/constants';
+import * as vec3 from 'a5/math/vec3';
 import type {Cartesian, Face, Polar, Radians, Spherical} from 'a5/core/coordinate-systems';
 import type {OriginId} from 'a5/core/utils';
 import {_getPentagon} from 'a5/core/cell';
@@ -536,8 +537,8 @@ export interface DeformationField {
   /** Magnitude per pixel, row-major over the domain's bounding box with row 0 at maximum y */
   values: Record<DeformationChannel, Float32Array>;
   /**
-   * Range of each channel used to normalise it for display. Robust rather than
-   * exact: see `robustRange`.
+   * Range of each quantity used to normalise it for display, symmetric about
+   * zero. Robust rather than exact: see `symmetricRange`.
    */
   ranges: Record<DeformationChannel, [number, number]>;
   /** True where a channel is constant, so nothing should be read into its variation */
@@ -551,16 +552,18 @@ export interface DeformationField {
  * drawn as a raster. See `deformationMagnitudes` for what is plotted.
  */
 /**
- * What the raster and the gauges plot for each channel. Rotation and shear both
- * change sign across every cusp and the sign carries nothing the picture needs,
- * so they are taken unsigned; the squash is a ratio about 1 and is plotted as it
- * is, so that compression and stretching read as dark and bright.
+ * What the raster and the gauges plot for each quantity, **signed**.
+ *
+ * The sign is the point: rotation and shear both flip across a cusp, so a cusp
+ * shows up as a jump from one extreme to the other. Plotting magnitudes hid that
+ * — the two sides of a cusp came out identical. The squash is a ratio about one,
+ * so its signed deviation from one is what is plotted.
  */
-export function deformationMagnitudes(decomposition: Decomposition): Record<DeformationChannel, number> {
+export function deformationValues(decomposition: Decomposition): Record<DeformationChannel, number> {
   return {
-    rotation: Math.abs(radToDeg(decomposition.rotation as Radians)),
-    shear: Math.abs(decomposition.shear),
-    squash: decomposition.squash
+    rotation: radToDeg(decomposition.rotation as Radians),
+    shear: decomposition.shear,
+    squash: decomposition.squash - 1
   };
 }
 
@@ -571,21 +574,22 @@ const RANGE_TRIM = 0.01;
 const CONSTANT_TOLERANCE = 1e-6;
 
 /**
- * The range to normalise a channel over, ignoring the extreme one percent at each
- * end. Central differences are meaningless within a step of a cusp or of the face
- * edge, and those few pixels would otherwise stretch the range and flatten
- * everything else. A channel that is constant up to that differencing error is
- * reported as such, so that its noise is not amplified into a full range image.
+ * The range to normalise a quantity over: symmetric about zero, so that the
+ * diverging colour ramp puts zero at its midpoint and equal and opposite values
+ * read as equally strong in opposite directions.
+ *
+ * The extreme one percent is ignored. Central differences are meaningless within
+ * a step of a cusp or of the face edge, and those few pixels would otherwise
+ * stretch the range and flatten everything else. A quantity that is constant up
+ * to that differencing error is reported as such, so its noise is not amplified.
  */
-function robustRange(sorted: Float32Array): {range: [number, number]; constant: boolean} {
-  const count = sorted.length;
+function symmetricRange(sortedMagnitudes: Float32Array): {range: [number, number]; constant: boolean} {
+  const count = sortedMagnitudes.length;
   if (count === 0) return {range: [0, 0], constant: true};
 
-  const low = sorted[Math.floor(RANGE_TRIM * (count - 1))];
-  const high = sorted[Math.ceil((1 - RANGE_TRIM) * (count - 1))];
-  const span = high - low;
-  const constant = span <= CONSTANT_TOLERANCE * (1 + Math.abs(high));
-  return {range: constant ? [high, high] : [low, high], constant};
+  const extent = sortedMagnitudes[Math.ceil((1 - RANGE_TRIM) * (count - 1))];
+  const constant = extent <= CONSTANT_TOLERANCE * (1 + Math.abs(extent));
+  return {range: constant ? [0, 0] : [-extent, extent], constant};
 }
 
 export function deformationField(
@@ -619,15 +623,15 @@ export function deformationField(
       const index = j * size + i;
       mask[index] = 1;
 
-      const magnitudes = deformationMagnitudes(
+      const signed = deformationValues(
         decompose(toFrame(computeJacobian(polar, projectionMode), polar, mode, projectionMode))
       );
 
       for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
         const channel = DEFORMATION_CHANNELS[c];
-        const magnitude = magnitudes[channel];
-        values[channel][index] = magnitude;
-        samples[channel][sampleCount] = magnitude;
+        values[channel][index] = signed[channel];
+        // The range is symmetric, so only the magnitude is needed to find it
+        samples[channel][sampleCount] = Math.abs(signed[channel]);
       }
       sampleCount++;
     }
@@ -638,7 +642,7 @@ export function deformationField(
   for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
     const channel = DEFORMATION_CHANNELS[c];
     const sorted = samples[channel].slice(0, sampleCount).sort();
-    const result = robustRange(sorted);
+    const result = symmetricRange(sorted);
     ranges[channel] = result.range;
     constant[channel] = result.constant;
   }
@@ -685,4 +689,202 @@ export function cellOutline(vertices: Face[], segmentsPerEdge = 8): Polar[] {
   }
   ring.push(ring[0]);
   return ring;
+}
+
+/**
+ * Statistics of the projected cell edges.
+ *
+ * Lengths are on the unit sphere scaled to Earth's authalic radius, which is where
+ * A5's cells actually live — SPHERE_RADIUS is bookkeeping for the Jacobian only,
+ * not the sphere the cells are on.
+ */
+export interface EdgeMetrics {
+  edges: number;
+  /** Arc length of the projected edge, treated as a curve rather than a chord */
+  minKm: number;
+  maxKm: number;
+  meanKm: number;
+  /** Coefficient of variation of the edge lengths */
+  spread: number;
+  /** Greatest angular departure from the great circle through the endpoints */
+  bowingMeanDeg: number;
+  bowingMaxDeg: number;
+  /**
+   * Total area between the cell edges and the great circles joining their
+   * vertices, as a fraction of the face. One number for what the projection
+   * costs in cell shape.
+   */
+  sagAreaFraction: number;
+}
+
+function faceToCartesian(face: Face, mode: ProjectionMode): Cartesian {
+  return toCartesian(projections[mode].inverse(face, ORIGIN_ID));
+}
+
+/** 2·asin(chord/2) keeps full precision on short arcs, which acos(dot) does not */
+function greatCircle(a: Cartesian, b: Cartesian): number {
+  return 2 * Math.asin(Math.min(1, Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) / 2));
+}
+
+// A polyline underestimates arc length by O(h²), so two passes and a Richardson
+// step. At 16 the result is within 1e-9 of the same calculation at 512.
+const LENGTH_STEPS = 16;
+const BOWING_STEPS = 64;
+
+function edgeLength(from: Face, to: Face, mode: ProjectionMode): number {
+  const walk = (steps: number) => {
+    let total = 0;
+    let previous = faceToCartesian(from, mode);
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const next = faceToCartesian([from[0] + t * (to[0] - from[0]), from[1] + t * (to[1] - from[1])] as Face, mode);
+      total += greatCircle(previous, next);
+      previous = next;
+    }
+    return total;
+  };
+  return (4 * walk(2 * LENGTH_STEPS) - walk(LENGTH_STEPS)) / 3;
+}
+
+/**
+ * How far the projected edge strays from the great circle joining its endpoints —
+ * the sagitta, as an angle. Zero would mean the edge is exactly a great circle.
+ */
+function edgeBowing(from: Face, to: Face, mode: ProjectionMode): {worst: number; meanOffset: number} {
+  const a = faceToCartesian(from, mode);
+  const b = faceToCartesian(to, mode);
+  const normal = vec3.create() as Cartesian;
+  vec3.cross(normal, a, b);
+  const length = vec3.length(normal);
+  if (!(length > 1e-15)) return {worst: 0, meanOffset: 0};
+
+  let worst = 0;
+  let total = 0;
+  for (let i = 1; i < BOWING_STEPS; i++) {
+    const t = i / BOWING_STEPS;
+    const p = faceToCartesian([from[0] + t * (to[0] - from[0]), from[1] + t * (to[1] - from[1])] as Face, mode);
+    const offset = Math.abs(Math.asin(vec3.dot(p, normal) / length));
+    total += offset;
+    if (offset > worst) worst = offset;
+  }
+  // The band area is the integral of the offset along the edge, so its mean
+  // times the edge length; the endpoints contribute zero offset
+  return {worst, meanOffset: total / (BOWING_STEPS + 1)};
+}
+
+export function cellEdgeMetrics(cells: Face[][], mode: ProjectionMode): EdgeMetrics | null {
+  if (!cells.length) return null;
+
+  let count = 0;
+  let total = 0;
+  let totalSquared = 0;
+  let min = Infinity;
+  let max = -Infinity;
+  let bowingTotal = 0;
+  let bowingMax = 0;
+  let sagArea = 0;
+
+  for (let c = 0; c < cells.length; c++) {
+    const cell = cells[c];
+    for (let i = 0; i < cell.length; i++) {
+      const from = cell[i];
+      const to = cell[(i + 1) % cell.length];
+      const length = edgeLength(from, to, mode);
+      count++;
+      total += length;
+      totalSquared += length * length;
+      if (length < min) min = length;
+      if (length > max) max = length;
+
+      const bowing = edgeBowing(from, to, mode);
+      bowingTotal += bowing.worst;
+      if (bowing.worst > bowingMax) bowingMax = bowing.worst;
+      sagArea += bowing.meanOffset * length;
+    }
+  }
+
+  const mean = total / count;
+  const variance = Math.max(0, totalSquared / count - mean * mean);
+  const toKm = AUTHALIC_RADIUS_EARTH / 1000;
+  return {
+    edges: count,
+    minKm: min * toKm,
+    maxKm: max * toKm,
+    meanKm: mean * toKm,
+    spread: Math.sqrt(variance) / mean,
+    bowingMeanDeg: radToDeg((bowingTotal / count) as Radians),
+    bowingMaxDeg: radToDeg(bowingMax as Radians),
+    sagAreaFraction: sagArea / ((4 * Math.PI) / 12)
+  };
+}
+
+export interface SagGeometry {
+  /** Triangle strip filling the gap between each great circle and its cell edge */
+  positions: Float32Array;
+  indices: Uint32Array;
+}
+
+const SAG_SAMPLES = 12;
+
+/**
+ * The gap between each projected cell edge and the great circle joining the same
+ * two vertices — the sag, as a fillable band, at true scale.
+ */
+export function cellSagGeometry(cells: Face[][], mode: ProjectionMode, radius: number): SagGeometry {
+  const edges = cells.reduce((total, cell) => total + cell.length, 0);
+  const perEdge = SAG_SAMPLES + 1;
+  const positions = new Float32Array(edges * perEdge * 2 * 3);
+  const indices = new Uint32Array(edges * SAG_SAMPLES * 6);
+
+  const normal = vec3.create() as Cartesian;
+  let p = 0;
+  let k = 0;
+  let edge = 0;
+
+  for (let c = 0; c < cells.length; c++) {
+    const cell = cells[c];
+    for (let i = 0; i < cell.length; i++) {
+      const from = cell[i];
+      const to = cell[(i + 1) % cell.length];
+      const a = faceToCartesian(from, mode);
+      const b = faceToCartesian(to, mode);
+      vec3.cross(normal, a, b);
+      const length = vec3.length(normal);
+      if (length > 1e-15) vec3.scale(normal, normal, 1 / length);
+
+      const base = edge * perEdge * 2;
+      for (let s = 0; s <= SAG_SAMPLES; s++) {
+        const t = s / SAG_SAMPLES;
+        const point = faceToCartesian([from[0] + t * (to[0] - from[0]), from[1] + t * (to[1] - from[1])] as Face, mode);
+
+        // Split the point into its position along the great circle and its offset
+        // from it; the foot is where the ideal edge would run
+        const offset = length > 1e-15 ? vec3.dot(point, normal) : 0;
+        const foot = vec3.create() as Cartesian;
+        vec3.scaleAndAdd(foot, point, normal, -offset);
+        vec3.normalize(foot, foot);
+
+        positions[p++] = foot[0] * radius;
+        positions[p++] = foot[1] * radius;
+        positions[p++] = foot[2] * radius;
+        positions[p++] = point[0] * radius;
+        positions[p++] = point[1] * radius;
+        positions[p++] = point[2] * radius;
+
+        if (s > 0) {
+          const previous = base + (s - 1) * 2;
+          const current = base + s * 2;
+          indices[k++] = previous;
+          indices[k++] = previous + 1;
+          indices[k++] = current;
+          indices[k++] = current;
+          indices[k++] = previous + 1;
+          indices[k++] = current + 1;
+        }
+      }
+      edge++;
+    }
+  }
+
+  return {positions, indices};
 }

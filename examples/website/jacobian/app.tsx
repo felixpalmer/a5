@@ -8,13 +8,13 @@ import type {Polar} from 'a5/core/coordinate-systems';
 import {FaceView, SphereView} from './components';
 import {JacobianOverlay} from './overlay';
 import {
-  ALL_CHANNELS,
   CELL_OPTIONS,
   DeformationControls,
   useDeformationField,
-  useDeformationRaster
+  useDeformationRaster,
+  useEdgeMetrics
 } from './deformation';
-import type {ChannelToggles} from './deformation';
+import type {RasterQuantity} from './deformation';
 import {computeJacobian, faceCells, toFrame} from './jacobian';
 import type {FrameMode} from './jacobian';
 import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
@@ -44,10 +44,11 @@ const labelStyle: React.CSSProperties = {
 
 const App: React.FC = () => {
   const [polar, setPolar] = useState<Polar>(INITIAL_POLAR);
-  const [channels, setChannels] = useState<ChannelToggles>(ALL_CHANNELS);
+  const [quantity, setQuantity] = useState<RasterQuantity>('rotation');
   const [mode, setMode] = useState<FrameMode>('chart');
   const [projection, setProjection] = useState<ProjectionMode>(DEFAULT_PROJECTION_MODE);
   const [cellOption, setCellOption] = useState<string>(CELL_OPTIONS[0]);
+  const [showSag, setShowSag] = useState(false);
   // Projection independent: the lattice lives in the plane, only its image moves
   const cells = useMemo(() => (cellOption === 'off' ? [] : faceCells(Number(cellOption))), [cellOption]);
   const frame = useMemo(
@@ -55,7 +56,8 @@ const App: React.FC = () => {
     [polar, mode, projection]
   );
   const field = useDeformationField(mode, projection);
-  const raster = useDeformationRaster(field, channels);
+  const raster = useDeformationRaster(field, quantity);
+  const edges = useEdgeMetrics(cells, projection);
 
   return (
     <div
@@ -71,22 +73,31 @@ const App: React.FC = () => {
         <FaceView polar={polar} raster={raster} cells={cells} onHover={setPolar} />
         <DeformationControls
           field={field}
-          channels={channels}
+          quantity={quantity}
           mode={mode}
           projection={projection}
           cells={cellOption}
-          onChange={setChannels}
+          sag={showSag}
+          edges={edges}
+          onQuantityChange={setQuantity}
           onModeChange={setMode}
           onProjectionChange={setProjection}
           onCellsChange={setCellOption}
+          onSagChange={setShowSag}
         />
       </div>
       <div style={panelStyle}>
         <div style={labelStyle}>Sphere — spherical (θ, φ)</div>
-        <SphereView polar={polar} projection={projection} cells={cells} onHover={setPolar} />
+        <SphereView
+          polar={polar}
+          projection={projection}
+          cells={cells}
+          showSag={showSag && cells.length > 0}
+          onHover={setPolar}
+        />
       </div>
 
-      <JacobianOverlay polar={polar} frame={frame} projection={projection} ranges={field?.ranges} />
+      <JacobianOverlay polar={polar} frame={frame} projection={projection} ranges={field?.ranges} quantity={quantity} />
     </div>
   );
 };
