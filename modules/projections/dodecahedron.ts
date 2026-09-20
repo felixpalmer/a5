@@ -37,6 +37,8 @@ export class DodecahedronProjection {
    */
   constructor(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
     this.mode = mode;
+    // The gnomonic baseline never reaches the equal-area projection, but the
+    // canonical triangle is still built so the field stays non-optional
     // The canonical triangle leads with the radiating vertex, matching the face
     // triangles built in `_getFaceTriangle`
     this.equalArea = new EqualAreaProjection(crs.getCanonicalTriangle(mode));
@@ -71,6 +73,13 @@ export class DodecahedronProjection {
 
     // Rotate around face axis to remove origin rotation
     polar[1] = (polar[1] - origin.angle) as Radians;
+
+    // The gnomonic baseline stops here: the polar coordinates it already produced
+    // are the face coordinates, with no equal-area step and no triangles
+    if (this.mode === 'gnomonic') {
+      return toFace(polar);
+    }
+
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
     const reflect = this.shouldReflect(polar);
@@ -87,6 +96,15 @@ export class DodecahedronProjection {
    */
   inverse(face: Face, originId: OriginId): Spherical {
     const polar = toPolar(face);
+
+    if (this.mode === 'gnomonic') {
+      const origin = origins[originId];
+      const rotated = [polar[0], (polar[1] + origin.angle) as Radians] as Polar;
+      const unprojected = toCartesian(this.gnomonic.inverse(rotated));
+      vec3.transformQuat(unprojected, unprojected, origin.quat);
+      return toSpherical(unprojected);
+    }
+
     const faceTriangleIndex = this.getFaceTriangleIndex(polar);
 
     const reflect = this.shouldReflect(polar);
@@ -158,10 +176,14 @@ export class DodecahedronProjection {
 
     // Note: center & midpoint compared to DGGAL implementation are swapped
     // as we are using a dodecahedron, rather than a icosahedron.
+    // The three modes are the three cyclic rotations of [centre, midpoint, corner],
+    // each leading with the vertex the projection radiates from. Rotations, never
+    // swaps, so the winding is preserved.
     if (this.mode === 'isea') {
-      // Lead with the corner instead of the centre. This is a cyclic rotation of
-      // the DSEA order, not a swap, so the winding is preserved.
       return even ? [vCorner1, vCenter, vEdgeMidpoint] : [vCorner2, vEdgeMidpoint, vCenter];
+    }
+    if (this.mode === 'rtsea') {
+      return even ? [vEdgeMidpoint, vCorner1, vCenter] : [vEdgeMidpoint, vCenter, vCorner2];
     }
     return even ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
   }
@@ -185,6 +207,15 @@ export class DodecahedronProjection {
       vec2.negate(centre, centre);
       vec2.scaleAndAdd(centre, centre, midpoint, step);
       return even ? ([A, midpoint, centre] as FaceTriangle) : ([A, centre, midpoint] as FaceTriangle);
+    }
+
+    if (this.mode === 'rtsea') {
+      // [midpoint, corner, centre] (even) or [midpoint, centre, corner] (odd).
+      // A is the midpoint, so the centre moves in place and the order is unchanged.
+      const centre = even ? C : B;
+      vec2.negate(centre, centre);
+      vec2.scaleAndAdd(centre, centre, A, step);
+      return [A, B, C] as FaceTriangle;
     }
 
     // DSEA: the centre leads, so it is A that moves

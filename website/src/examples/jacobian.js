@@ -45,8 +45,12 @@ class JacobianDemo extends Component {
         <p>
           The decomposition is Gram-Schmidt on the columns, giving rotation · shear · scale · squash. The first column
           alone fixes the rotation and the radial scale; the second then splits into the azimuthal scale and the shear
-          left over. The squash is √(radial / azimuthal): the two axes scaled against each other, radial by that factor
-          and azimuthal by its reciprocal. The scale is √|det|.
+          left over. The squash is √(radial / azimuthal), the two axes scaled against each other: the radial axis ends
+          up scaled by scale × squash and the azimuthal by scale / squash. In the intrinsic frame the determinant is 1,
+          so the squash is exactly the radial stretch and the azimuthal is its reciprocal — at the edge midpoint, radial
+          1.0582 and azimuthal 0.9450 give squash 1.0582, and above 1 means the radial axis is the stretched one. The
+          scale is √|det|. The readout shows squash and scale as ratios, while the raster and the marker beside them
+          plot the signed deviation from 1, so that zero sits at the middle of the ramp.
         </p>
         <p>
           In DSEA the rotation is zero across the whole face — 1.2e-9° at worst — for the same reason the first column
@@ -97,16 +101,23 @@ class JacobianDemo extends Component {
           none at all.
         </p>
         <p>
-          The <em>dsea</em> and <em>isea</em> toggle switches which vertex of each face triangle the equal-area map
-          radiates from. A5 uses DSEA, radiating from the dodecahedron face center; ISEA radiates from the corner, which
-          is the face center of the dual icosahedron. The two orderings are cyclic rotations of each other rather than
-          swaps, since the closed-form equal-area projection depends on the winding through its signed triple product.
-          The library default is unchanged, so cell geometry and the fixtures are untouched — this only builds a second
-          projection alongside it.
+          The projection toggle switches which vertex of each face triangle the equal-area map radiates from. There are
+          three such vertices and so three members of the family, each named for the solid whose face fan it radiates
+          from: DSEA the dodecahedron face centre, ISEA the corner, RTSEA the edge midpoint. The fourth option,
+          <em>gnomonic</em>, is the plain central projection — not equal-area, but it maps great circles to straight
+          lines, so it has no cusps and no sag at all. It is the baseline that shows what equal-area costs: choose it
+          with the scale raster to see cell area vary by a factor of two across one face.
         </p>
         <p>
-          Two of the facts above survive the switch. Both projections are equal-area, R²·sin φ·det J / ρ = 1.000000 for
-          the same sphere radius, and in both the frame-free anisotropy σ₁/σ₂ mirrors across a face edge to about 1e-9.
+          A5 uses DSEA. The three Snyder orderings are cyclic rotations of each other rather than swaps, since the
+          closed-form equal-area projection depends on the winding through its signed triple product, and all three
+          decompose into the same 120 Möbius triangles. The library default is unchanged, so cell geometry and the
+          fixtures are untouched — the alternatives are built alongside it.
+        </p>
+        <p>
+          Two of the facts above survive the switch between DSEA and ISEA. Both are equal-area, R²·sin φ·det J / ρ =
+          1.000000 for the same sphere radius, and in both the frame-free anisotropy σ₁/σ₂ mirrors across a face edge to
+          about 1e-9. Gnomonic is neither: its area ratio runs from 0.67 to 1.33 across a single face.
         </p>
         <p>
           The rest are DSEA's alone. Under ISEA the radiating vertex is no longer the face center, so rays from the
@@ -128,13 +139,17 @@ class JacobianDemo extends Component {
           the squash, shear and scale, so nothing is lost by plotting the frame-aligned split instead.
         </p>
         <p>
-          The raster shows one quantity at a time on a diverging ramp, green through black to red, with zero at the
-          midpoint and the range symmetric about it. The sign is the point: rotation and shear both flip across a cusp,
-          so a cusp is a jump from one extreme to the other and appears as a hard green/red boundary. Packing three
-          magnitudes into red, green and blue hid exactly that — the two sides of a cusp came out identical. The area
-          scale is not offered: it is 1 everywhere in the intrinsic frame, and in the chart frame its variation belongs
-          to the charts rather than the projection. The range ignores the extreme one percent at each end, and the dot
-          beside each value in the readout sits on the same range, coloured by the same ramp.
+          The raster shows one quantity at a time on a diverging ramp, each quantity with its own colour pair — green
+          and red for rotation, cyan and orange for shear, blue and yellow for squash, purple and lime for scale — with
+          zero at the midpoint and the range symmetric about it. The sign is the point: rotation and shear both flip
+          across a cusp, so a cusp is a jump from one extreme to the other and appears as a hard green/red boundary.
+          Packing three magnitudes into red, green and blue hid exactly that — the two sides of a cusp came out
+          identical. The area scale is not offered: it is 1 everywhere in the intrinsic frame, and in the chart frame
+          its variation belongs to the charts rather than the projection, and in the intrinsic frame it is flat for any
+          of the Snyder modes — which is what equal-area means, and the legend says so instead of amplifying its noise.
+          It is worth choosing for the gnomonic baseline, where it is the whole story. The range ignores the extreme one
+          percent at each end, and the dot beside each value in the readout sits on the same range, coloured by the same
+          ramp.
         </p>
       </div>
     );

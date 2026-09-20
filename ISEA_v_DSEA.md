@@ -1,16 +1,34 @@
 # ISEA vs DSEA for A5
 
-Comparison of the two equal-area arrangements A5 can use, measured with the machinery
-added for the [Jacobian example](examples/website/jacobian). Both radiate Snyder's
-equal-area projection from a different vertex of each face triangle:
+Comparison of the equal-area arrangements A5 can use, measured with the machinery added
+for the [Jacobian example](examples/website/jacobian). Snyder's equal-area projection
+radiates from one vertex of each face triangle, and a triangle has three vertices, so the
+design space has **exactly three members**:
 
-- **DSEA** — radiates from the dodecahedron **face centre**. A5's current projection.
-- **ISEA** — radiates from the dodecahedron **corner**, which is the face centre of the
-  dual icosahedron.
+Each is named for the solid whose face fan it radiates from, following the precedent set
+by ISEA and RTSEA. All three decompose into the same 120 Möbius triangles of the
+icosahedral symmetry group:
 
-The two vertex orderings are cyclic rotations of each other, never swaps, because the
+| solid | faces × triangles | radiating vertex, in dodecahedron terms | projection |
+| --- | --- | --- | --- |
+| dodecahedron | 12 × 10 | the face centre | **DSEA** |
+| icosahedron | 20 × 6 | the corner | **ISEA** |
+| rhombic triacontahedron | 30 × 4 | the edge midpoint | **RTSEA** |
+
+The three orderings are the cyclic rotations of each other, never swaps, because the
 closed-form equal-area projection depends on the winding through its signed triple
-product.
+product. All three are exactly equal-area and round-trip to 3e-15.
+
+| resolution 4 | DSEA | ISEA | RTSEA |
+| --- | --- | --- | --- |
+| Tissot ω, mean | 6.4019° | **4.8140°** | 7.0024° |
+| Tissot ω, max | 10.1506° | **8.2676°** | 10.9349° |
+| edge length spread | 4.03% | **3.25%** | 4.12% |
+| sag area | **0.2733%** | 0.4787% | 0.3660% |
+| worst gap, as a fraction of an edge | **1.66%** | 1.94% | 3.29% |
+
+**RTSEA is dominated by DSEA** on every measure, and has the worst single excursion of the
+three. The design space is closed — there is no fourth variant for anyone to propose.
 
 Both are **exactly** equal area. `R²·sin φ·det J / ρ` is 1.000000 for both, at the same
 sphere radius `R = 1.151102` (the radius at which the sphere's area is twelve face
@@ -19,23 +37,188 @@ about *shape* distortion and about where the projection is non-smooth.
 
 ## Recommendation
 
-**Close, with ISEA ahead on three of four criteria and DSEA winning the fourth.**
+**DSEA**, on the merits.
+
+The two projections are better on different axes, and the case for DSEA does not rest on
+the cost of changing the index. It rests on the fact that only one of those axes has an
+observable failure mode.
 
 | criterion | winner | margin |
 | --- | --- | --- |
-| angular distortion, mean ω | ISEA | 25% |
-| kink where cell edges cross a cusp | ISEA | 20× (0.110° vs 2.205°) |
+| pointwise shape distortion, mean Tissot ω | ISEA | 25% |
 | edge length uniformity | ISEA | spread 3.25% vs 4.03% |
-| edge straightness (bowing) | **DSEA** | 1.7× overall, 3.5× near a dodecahedron vertex |
+| kink where a cell edge crosses a cusp | ISEA | 20× (0.110° vs 2.205°) |
+| **total boundary shape deviation (sag area)** | **DSEA** | **1.75×** (0.273% vs 0.479% of the face) |
 
-ISEA's advantages are the larger ones in absolute terms — a 2.2° kink is a visible corner,
-where the bowing difference is two thousandths of a degree. But DSEA's straighter edges are
-a real property, visible at low resolutions, and they mean fewer great-circle segments are
-needed to represent a boundary to a given tolerance.
+The last row is the one that reframes the others, because **the sag measurement already
+contains the kinks** — it samples the real projected curve, so a kinked edge shows up as a
+larger departure from its great circle. Decomposing the sag area at resolution 4 by what
+each edge crosses:
 
-Neither is dominant. Given that switching costs a breaking change to every cell ID, the
-case for moving is weaker than the distortion and kink figures alone suggest, and staying
-on DSEA is defensible.
+| | edges | DSEA mean bowing | ISEA mean bowing | share of DSEA sag | share of ISEA sag |
+| --- | --- | --- | --- | --- | --- |
+| crosses the face edge | 40 | 0.0282° | 0.0114° | 16.1% | 4.9% |
+| crosses a bisector | 40 | 0.0012° | 0.0026° | 0.9% | 1.0% |
+| crosses nothing | 1520 | **0.0029°** | 0.0057° | 82.9% | 94.1% |
+
+DSEA's kinked edges are visibly worse — ten times the bowing of an uncrossed edge — but
+there are only forty of them, and they account for 16% of its total. ISEA's kinked edges
+contribute 1%. What dominates for both is the 95% of edges that cross nothing at all, and
+there **DSEA is twice as straight**.
+
+So ISEA's 20× kink advantage is real but carries little weight, while DSEA's straightness
+advantage applies to almost every edge. That is why the two metric families disagree:
+Tissot ω measures distortion *at a point*, while sag measures how far the image of a
+straight line strays, which depends on how fast the distortion field *varies*. ISEA
+distorts less but less evenly.
+
+### Why the sag is the axis that matters
+
+Every consumer that draws or tests an A5 cell will treat it as the polygon through its
+vertices, joined by great circles. The sag is **exactly** the region where that polygon and
+the true cell disagree: a point inside one and outside the other. It is the same class of
+surprise that H3 users report, where a point indexes into a cell it appears to sit outside.
+
+Disputed area, as a percentage of a cell:
+
+| res | cell edge | DSEA | ISEA | RTSEA |
+| --- | --- | --- | --- | --- |
+| 2 | 1190 km | **0.7275%** | 1.1147% | 0.7560% |
+| 3 | 598 km | **0.4771%** | 0.8179% | 0.5933% |
+| 4 | 299 km | **0.2733%** | 0.4787% | 0.3660% |
+| 5 | 150 km | **0.1454%** | 0.2567% | 0.2043% |
+| 6 | 75 km | **0.0748%** | 0.1327% | 0.1085% |
+
+Worst single gap, the furthest a point can sit outside the great-circle polygon and still
+be in the cell:
+
+| res | DSEA | ISEA | RTSEA |
+| --- | --- | --- | --- |
+| 2 | **15.30 km** | 17.37 km | 30.33 km |
+| 4 | **4.96 km** | 5.77 km | 9.83 km |
+| 6 | **1.26 km** | 1.47 km | 2.51 km |
+
+DSEA is lowest at every resolution on both, and RTSEA has by far the worst single
+excursion despite beating ISEA on total area.
+
+The disputed area halves with each resolution — the ratio converges to 0.51 — so this is a
+coarse-resolution phenomenon that decays as O(2⁻ʳ) for all three. The worst-case excursion
+settles at a resolution-independent **1.69% of an edge length under DSEA, 1.97% under ISEA
+and 3.35% under RTSEA**, and the disputed area at about 1.75× in DSEA's favour over ISEA.
+
+### The gnomonic baseline: what equal-area costs
+
+The plain central projection is available as a fourth option. It is not a member of the
+Snyder family and is **not equal-area**, but it maps great circles to straight lines, so a
+straight planar cell edge is *exactly* a great-circle arc. It is the baseline that shows
+what the equal-area property is bought with.
+
+| resolution 4 | area ratio across one face | Tissot ω mean / max | sag area | worst gap |
+| --- | --- | --- | --- | --- |
+| DSEA | **1.0000 – 1.0000** | 6.404° / 10.151° | 0.27327% | 4.96 km |
+| ISEA | **1.0000 – 1.0000** | 4.816° / 8.268° | 0.47873% | 5.77 km |
+| RTSEA | **1.0000 – 1.0000** | 7.004° / 10.935° | 0.36601% | 9.83 km |
+| gnomonic | 0.6697 – 1.3250 | 5.618° / **13.003°** | **0.00000%** | **0.0000 km** |
+
+Gnomonic is perfect on exactly the axis this document has spent its length on — zero sag,
+zero containment disagreement, and no cusps at all — and it is disqualified anyway, because
+the area of a cell varies by a factor of **1.98** across a single face. A grid built on it
+would have cells at one end of a face nearly twice the true area of those at the other. Its
+worst-case angular distortion is also the highest of the four, at 13.0°.
+
+So the trade A5 makes is: give up exact great-circle edges, costing 0.27% of a cell's area
+in containment disagreement and a shear discontinuity at the triangle boundaries, in return
+for area error of exactly zero rather than ±33%. Stated that way the Snyder family is not a
+close call, and the argument among DSEA, ISEA and RTSEA is about how well each recovers
+what gnomonic gives away for free.
+
+### Cusps, measured directly
+
+The turn in the boundary direction crossing each locus, measured by projecting points
+rather than through the Jacobian, so no difference stencil is involved. Step-independent
+values are genuine cusps; values that shrink with the step are smooth curvature:
+
+| locus | DSEA | ISEA | RTSEA | gnomonic |
+| --- | --- | --- | --- | --- |
+| quintant bisector | smooth | 1.36° | 17.4° | **none** |
+| quintant boundary | 18.8° | 5.64° | 13.4° | **none** |
+| dodecahedron face edge | 2.28° | smooth | 7.50° | **none** |
+
+RTSEA cusps at all three loci, which is the clearest single statement of why it is
+dominated. DSEA and ISEA each cusp at two of the three, on complementary sets.
+
+### Which part of the Jacobian jumps
+
+The decomposition is rotation · shear · scale · squash. Taking Gram-Schmidt on the columns,
+`radial` is the length of the first column and `azimuthal` is `det / radial`, so the two
+axis scale factors come out as `scale × squash` and `scale / squash` with
+`squash = √(radial / azimuthal)` and `scale = √|det|`. In the intrinsic frame `det` is 1,
+so the squash is exactly the radial stretch and the azimuthal is its reciprocal.
+
+The cusps are not spread evenly across these four. Measured on both sides of each locus in the intrinsic frame at ρ = 0.45:
+
+| locus | rotation | shear | squash | scale |
+| --- | --- | --- | --- | --- |
+| any of the ten internal rays | continuous | **jumps, sign-flipped** | continuous | continuous |
+| dodecahedron face edge | **jumps** | **jumps** | **jumps** | continuous |
+
+**Scale never jumps**, at any locus, in any of the three projections — agreement to 1e-12.
+Equal-area pins it: det is forced to ρ/(R²·sin φ), and ρ and φ are both continuous.
+
+**Across the ten internal rays the cusp is pure shear.** Rotation and squash agree to 1e-12
+on either side while the shear flips sign — ±0.165285 for DSEA at a quintant boundary,
+±0.011838 for ISEA at a bisector, ±0.153381 for RTSEA at a bisector.
+
+That is forced rather than incidental. The map is continuous *along* a locus, so the jump
+Δ = J⁺ − J⁻ annihilates the locus tangent: it is rank one. Along a ray of constant γ that
+tangent is ρ̂ itself, so the first column of the matrix is continuous. Gram-Schmidt anchors
+both the rotation and the radial scale on that column, so both survive; det is already
+fixed, so the azimuthal scale and hence the squash follow. Of the matrix's four degrees of
+freedom, three are pinned and the shear is the only one left free to jump.
+
+**At the face edge the tangent is oblique to ρ̂**, so the first column is no longer
+protected and rotation, shear and squash all jump together — DSEA by 2.28°, 0.035 and
+0.012, RTSEA by 7.5°, 0.11 and 0.039. ISEA is smooth there and jumps in nothing.
+
+### The ordering follows the vertex defect
+
+The measured ranking is the one the vertex-defect argument predicts — quality set by the
+defect of the solid the projection is named for:
+
+| projection | solid | vertex defect | disputed area, res 4 |
+| --- | --- | --- | --- |
+| DSEA | dodecahedron | **36.000°** | **0.2733%** |
+| RTSEA | rhombic triacontahedron | 42.825° | 0.3660% |
+| ISEA | icosahedron | 60.000° | 0.4787% |
+
+Monotonic, though not proportional — the area-per-degree runs 0.0076, 0.0086, 0.0080. Worth
+pinning down for the paper: the rhombic triacontahedron has **two** vertex defects, 42.825°
+at its twelve degree-5 vertices and 10.305° at its twenty degree-3 ones. Only the degree-5
+figure gives an ordering consistent with the measurement; the degree-3 figure would predict
+RTSEA as the best of the three, and it is not.
+
+One caution for the paper. On **angular distortion** the ranking is the other way round:
+ISEA has the lower mean Tissot ω, 4.81° against DSEA's 6.40°, measured on the same
+dodecahedral cell structure with only the radiating vertex changed. Snyder's "the
+dodecahedron, not the icosahedron, is the most distortion-free in the equal-area form" is a
+statement about the choice of *base solid*, not about the radiating vertex within a fixed
+dodecahedral arrangement, and a reader may not separate the two. The cusp claim holds; the
+distortion claim needs the distinction made explicitly, or a reviewer will measure ω and
+find ISEA ahead.
+
+Against that, ISEA's advantages are sub-perceptual. A mean Tissot ω of 4.81° against 6.40°
+is not something a user can see in a cell; nor is an edge-length spread of 3.25% against
+4.03%. And its 20× kink advantage is already inside the sag figure, where it is outweighed:
+kinked edges are 2.5% of the population and contribute 16% of DSEA's disputed area, while
+the 95% of edges that cross nothing are twice as straight under DSEA.
+
+This is a judgement about which metric matters, not a mathematical dominance, and a paper
+should say so. A reviewer preferring angular distortion as the standard DGGS measure would
+choose ISEA. The argument for DSEA is that angular distortion at this magnitude is
+invisible, whereas the containment disagreement is something a user can hit, reproduce and
+file.
+
+This is the fourth position this document has held; see the note at the end.
 
 ## Distortion
 
@@ -301,3 +484,23 @@ excluded.
 Not verified here: the comparison with H3's pentagon cells, which are reported to gain
 five kinks on alternate resolutions and be decagons in practice. That should be measured
 before being claimed alongside these figures.
+
+
+## A note on how this changed
+
+The recommendation moved four times as the measurements got better, which is worth
+recording so the reasoning can be audited:
+
+1. **ISEA**, on Tissot distortion alone (25% lower mean ω).
+2. **DSEA**, after finding that cell edges never cross a quintant boundary and that DSEA is
+   C¹ across the bisectors they do cross. This was wrong: only the ten internal rays had
+   been tested, not the dodecahedron face edge.
+3. **ISEA**, after finding that cells straddle the face edge, where DSEA kinks by 1.9–2.2°
+   and ISEA is smooth.
+4. **DSEA**, after measuring the sag — which subsumes both bowing and kinks — and finding
+   that kinked edges are a small share of the total, while DSEA is twice as straight on the
+   95% of edges that cross nothing.
+
+The lesson for anyone revisiting this: a per-crossing kink figure is a ratio over a small
+population, and it needs weighting by how many edges are affected before it can be compared
+with a field-wide measure.

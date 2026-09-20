@@ -10,12 +10,14 @@ import {JacobianOverlay} from './overlay';
 import {
   CELL_OPTIONS,
   DeformationControls,
+  resolveExtents,
   useDeformationField,
   useDeformationRaster,
-  useEdgeMetrics
+  useEdgeMetrics,
+  useSharedExtents
 } from './deformation';
 import type {RasterQuantity} from './deformation';
-import {computeJacobian, faceCells, toFrame} from './jacobian';
+import {computeJacobian, decompose, deformationValues, faceCells, toFrame} from './jacobian';
 import type {FrameMode} from './jacobian';
 import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
@@ -49,6 +51,7 @@ const App: React.FC = () => {
   const [projection, setProjection] = useState<ProjectionMode>(DEFAULT_PROJECTION_MODE);
   const [cellOption, setCellOption] = useState<string>(CELL_OPTIONS[0]);
   const [showSag, setShowSag] = useState(false);
+  const [relativeScale, setRelativeScale] = useState(false);
   // Projection independent: the lattice lives in the plane, only its image moves
   const cells = useMemo(() => (cellOption === 'off' ? [] : faceCells(Number(cellOption))), [cellOption]);
   const frame = useMemo(
@@ -56,7 +59,12 @@ const App: React.FC = () => {
     [polar, mode, projection]
   );
   const field = useDeformationField(mode, projection);
-  const raster = useDeformationRaster(field, quantity);
+  // Shared by default, so the ramp means the same thing whichever projection is on
+  const shared = useSharedExtents(mode);
+  const extents = useMemo(() => resolveExtents(field, shared, relativeScale), [field, shared, relativeScale]);
+  const raster = useDeformationRaster(field, quantity, extents);
+  // What the hovered point reads, so the legend can mark it on the ramp
+  const hovered = useMemo(() => deformationValues(decompose(frame)), [frame]);
   const edges = useEdgeMetrics(cells, projection);
 
   return (
@@ -78,12 +86,16 @@ const App: React.FC = () => {
           projection={projection}
           cells={cellOption}
           sag={showSag}
+          extents={extents}
+          relativeScale={relativeScale}
+          value={quantity === 'off' ? null : hovered[quantity]}
           edges={edges}
           onQuantityChange={setQuantity}
           onModeChange={setMode}
           onProjectionChange={setProjection}
           onCellsChange={setCellOption}
           onSagChange={setShowSag}
+          onRelativeScaleChange={setRelativeScale}
         />
       </div>
       <div style={panelStyle}>
@@ -97,7 +109,7 @@ const App: React.FC = () => {
         />
       </div>
 
-      <JacobianOverlay polar={polar} frame={frame} projection={projection} ranges={field?.ranges} quantity={quantity} />
+      <JacobianOverlay polar={polar} frame={frame} projection={projection} extents={extents} quantity={quantity} />
     </div>
   );
 };

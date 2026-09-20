@@ -39,7 +39,10 @@ export class CRS {
    */
   getCanonicalTriangle(mode: ProjectionMode = 'dsea'): SphericalTriangle {
     const [center, midpoint, corner] = [this.vertices[0], this.vertices[32], this.vertices[12]];
-    return (mode === 'isea' ? [corner, center, midpoint] : [center, midpoint, corner]) as SphericalTriangle;
+    if (mode === 'isea') return [corner, center, midpoint] as SphericalTriangle;
+    if (mode === 'rtsea') return [midpoint, corner, center] as SphericalTriangle;
+    // 'gnomonic' never uses it; the DSEA ordering keeps the constants well formed
+    return [center, midpoint, corner] as SphericalTriangle;
   }
 
   constructor() {

@@ -21,10 +21,12 @@ import {cellToChildren, getRes0Cells} from 'a5/index';
  */
 const projections: Record<ProjectionMode, DodecahedronProjection> = {
   dsea: new DodecahedronProjection('dsea'),
-  isea: new DodecahedronProjection('isea')
+  isea: new DodecahedronProjection('isea'),
+  rtsea: new DodecahedronProjection('rtsea'),
+  gnomonic: new DodecahedronProjection('gnomonic')
 };
 
-export const PROJECTION_MODES: ProjectionMode[] = ['dsea', 'isea'];
+export const PROJECTION_MODES: ProjectionMode[] = ['dsea', 'isea', 'rtsea', 'gnomonic'];
 
 /** Only the planar side of the projection is used here, and that is mode independent */
 const projection = projections[DEFAULT_PROJECTION_MODE];
@@ -523,22 +525,25 @@ export function decompose({rows, determinant}: FrameJacobian): Decomposition {
   };
 }
 
-export type DeformationChannel = 'rotation' | 'shear' | 'squash';
+export type DeformationChannel = 'rotation' | 'shear' | 'squash' | 'scale';
 
 /**
- * Channel order is also the RGB order of the raster. The area scale is left out:
- * in the intrinsic frame it is 1 everywhere, and in the chart frame its variation
- * is the charts' rather than the projection's.
+ * The quantities the raster can show, one at a time.
+ *
+ * `scale` is flat for any of the Snyder modes in the intrinsic frame — that is
+ * what equal-area means — and the raster says so rather than amplifying its
+ * noise. It is worth having for the gnomonic baseline, where it is the whole
+ * story.
  */
-export const DEFORMATION_CHANNELS: DeformationChannel[] = ['rotation', 'shear', 'squash'];
+export const DEFORMATION_CHANNELS: DeformationChannel[] = ['rotation', 'shear', 'squash', 'scale'];
 
 export interface DeformationField {
   size: number;
   /** Magnitude per pixel, row-major over the domain's bounding box with row 0 at maximum y */
   values: Record<DeformationChannel, Float32Array>;
   /**
-   * Range of each quantity used to normalise it for display, symmetric about
-   * zero. Robust rather than exact: see `symmetricRange`.
+   * Range of each quantity used to normalise it for display, low and high taken
+   * separately. Robust rather than exact: see `robustRange`.
    */
   ranges: Record<DeformationChannel, [number, number]>;
   /** True where a channel is constant, so nothing should be read into its variation */
@@ -563,7 +568,9 @@ export function deformationValues(decomposition: Decomposition): Record<Deformat
   return {
     rotation: radToDeg(decomposition.rotation as Radians),
     shear: decomposition.shear,
-    squash: decomposition.squash - 1
+    // Both are ratios about one, so the signed deviation is what the ramp needs
+    squash: decomposition.squash - 1,
+    scale: decomposition.scale - 1
   };
 }
 
@@ -574,22 +581,26 @@ const RANGE_TRIM = 0.01;
 const CONSTANT_TOLERANCE = 1e-6;
 
 /**
- * The range to normalise a quantity over: symmetric about zero, so that the
- * diverging colour ramp puts zero at its midpoint and equal and opposite values
- * read as equally strong in opposite directions.
+ * The true range a quantity reaches, low and high taken separately rather than
+ * forced symmetric. Most of these are lopsided — the scale runs much further
+ * below one than above it — and a symmetric range spends half the ramp on values
+ * that never occur.
  *
- * The extreme one percent is ignored. Central differences are meaningless within
- * a step of a cusp or of the face edge, and those few pixels would otherwise
- * stretch the range and flatten everything else. A quantity that is constant up
- * to that differencing error is reported as such, so its noise is not amplified.
+ * The extreme one percent at each end is ignored. Central differences are
+ * meaningless within a step of a cusp or of the face edge, and those few pixels
+ * would otherwise stretch the range and flatten everything else. A quantity that
+ * is constant up to that differencing error is reported as such, so its noise is
+ * not amplified.
  */
-function symmetricRange(sortedMagnitudes: Float32Array): {range: [number, number]; constant: boolean} {
-  const count = sortedMagnitudes.length;
+function robustRange(sortedValues: Float32Array): {range: [number, number]; constant: boolean} {
+  const count = sortedValues.length;
   if (count === 0) return {range: [0, 0], constant: true};
 
-  const extent = sortedMagnitudes[Math.ceil((1 - RANGE_TRIM) * (count - 1))];
-  const constant = extent <= CONSTANT_TOLERANCE * (1 + Math.abs(extent));
-  return {range: constant ? [0, 0] : [-extent, extent], constant};
+  const low = sortedValues[Math.floor(RANGE_TRIM * (count - 1))];
+  const high = sortedValues[Math.ceil((1 - RANGE_TRIM) * (count - 1))];
+  const span = high - low;
+  const constant = span <= CONSTANT_TOLERANCE * (1 + Math.max(Math.abs(low), Math.abs(high)));
+  return {range: constant ? [0, 0] : [low, high], constant};
 }
 
 export function deformationField(
@@ -598,19 +609,16 @@ export function deformationField(
   projectionMode: ProjectionMode = DEFAULT_PROJECTION_MODE
 ): DeformationField {
   const pixels = size * size;
-  const values: Record<DeformationChannel, Float32Array> = {
-    rotation: new Float32Array(pixels),
-    shear: new Float32Array(pixels),
-    squash: new Float32Array(pixels)
-  };
+  const buffers = () =>
+    Object.fromEntries(DEFORMATION_CHANNELS.map(channel => [channel, new Float32Array(pixels)])) as Record<
+      DeformationChannel,
+      Float32Array
+    >;
+  const values = buffers();
   const mask = new Uint8Array(pixels);
 
   // Masked values only, packed, for the range pass below
-  const samples: Record<DeformationChannel, Float32Array> = {
-    rotation: new Float32Array(pixels),
-    shear: new Float32Array(pixels),
-    squash: new Float32Array(pixels)
-  };
+  const samples = buffers();
   let sampleCount = 0;
 
   for (let j = 0; j < size; j++) {
@@ -630,8 +638,7 @@ export function deformationField(
       for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
         const channel = DEFORMATION_CHANNELS[c];
         values[channel][index] = signed[channel];
-        // The range is symmetric, so only the magnitude is needed to find it
-        samples[channel][sampleCount] = Math.abs(signed[channel]);
+        samples[channel][sampleCount] = signed[channel];
       }
       sampleCount++;
     }
@@ -642,7 +649,7 @@ export function deformationField(
   for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
     const channel = DEFORMATION_CHANNELS[c];
     const sorted = samples[channel].slice(0, sampleCount).sort();
-    const result = symmetricRange(sorted);
+    const result = robustRange(sorted);
     ranges[channel] = result.range;
     constant[channel] = result.constant;
   }
@@ -887,4 +894,37 @@ export function cellSagGeometry(cells: Face[][], mode: ProjectionMode, radius: n
   }
 
   return {positions, indices};
+}
+
+/**
+ * The largest extent each quantity reaches across *all* the projections, so the
+ * ramp can mean the same thing whichever one is selected.
+ *
+ * Normalising each projection over its own range is actively misleading for
+ * comparison: DSEA's rotation peaks at 2.9° and ISEA's at 10.1°, but scaled
+ * separately both fill the ramp and DSEA looks the worse of the two.
+ *
+ * Sampled coarsely — the ranges are 99th percentiles, which are stable well
+ * below the raster's own resolution.
+ */
+export function sharedExtents(mode: FrameMode, size = 160): Record<DeformationChannel, [number, number]> {
+  const extents = Object.fromEntries(
+    DEFORMATION_CHANNELS.map(channel => [channel, [Infinity, -Infinity] as [number, number]])
+  ) as Record<DeformationChannel, [number, number]>;
+
+  for (const projection of PROJECTION_MODES) {
+    const field = deformationField(size, mode, projection);
+    for (const channel of DEFORMATION_CHANNELS) {
+      if (field.constant[channel]) continue;
+      const [low, high] = field.ranges[channel];
+      extents[channel][0] = Math.min(extents[channel][0], low);
+      extents[channel][1] = Math.max(extents[channel][1], high);
+    }
+  }
+
+  // A quantity constant in every projection has no range at all
+  for (const channel of DEFORMATION_CHANNELS) {
+    if (!Number.isFinite(extents[channel][0])) extents[channel] = [0, 0];
+  }
+  return extents;
 }

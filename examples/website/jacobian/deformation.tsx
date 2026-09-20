@@ -3,8 +3,8 @@
 // Copyright (c) A5 contributors
 
 import React, {useEffect, useMemo, useState} from 'react';
-import {DEFORMATION_CHANNELS, deformationField} from './jacobian';
-import {CELL_RESOLUTIONS, PROJECTION_MODES, cellEdgeMetrics} from './jacobian';
+import {deformationField} from './jacobian';
+import {CELL_RESOLUTIONS, DEFORMATION_CHANNELS, PROJECTION_MODES, cellEdgeMetrics, sharedExtents} from './jacobian';
 import type {DeformationChannel, DeformationField, EdgeMetrics, FrameMode} from './jacobian';
 import type {Face} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
@@ -20,7 +20,8 @@ export const RASTER_QUANTITIES: RasterQuantity[] = ['off', ...DEFORMATION_CHANNE
 export const CHANNEL_INFO: Record<DeformationChannel, {label: string; unit: string; digits: number}> = {
   rotation: {label: 'rotation', unit: '°', digits: 2},
   shear: {label: 'shear', unit: '', digits: 3},
-  squash: {label: 'squash', unit: '', digits: 4}
+  squash: {label: 'squash', unit: '', digits: 4},
+  scale: {label: 'scale', unit: '', digits: 4}
 };
 
 /**
@@ -31,18 +32,37 @@ export const CHANNEL_INFO: Record<DeformationChannel, {label: string; unit: stri
  * a cusp is a jump from one extreme to the other. Plotting magnitudes made the
  * two sides identical and hid it completely.
  */
-export const NEGATIVE_COLOR = [40, 230, 90];
-export const POSITIVE_COLOR = [245, 70, 50];
+// One pair per quantity, so it is never ambiguous which is on screen
+export const RAMPS: Record<DeformationChannel, {negative: number[]; positive: number[]}> = {
+  rotation: {negative: [40, 230, 90], positive: [245, 70, 50]},
+  shear: {negative: [40, 200, 245], positive: [255, 150, 40]},
+  squash: {negative: [90, 130, 255], positive: [250, 220, 60]},
+  scale: {negative: [200, 90, 245], positive: [150, 230, 60]}
+};
 
-export function rampColor(t: number): [number, number, number] {
+/** The ramp's parameter for a value, with zero pinned to black however lopsided the range */
+export function rampT(value: number, range: [number, number]): number {
+  const [low, high] = range;
+  if (value >= 0) return high > 0 ? Math.min(1, value / high) : 0;
+  return low < 0 ? Math.max(-1, -(value / low)) : 0;
+}
+
+/** Where a value sits along the bar, 0 at the low end and 1 at the high end */
+export function rampFraction(value: number, range: [number, number]): number {
+  const span = range[1] - range[0];
+  if (!(span > 0)) return 0.5;
+  return Math.max(0, Math.min(1, (value - range[0]) / span));
+}
+
+export function rampColor(t: number, channel: DeformationChannel): [number, number, number] {
   const clamped = Math.max(-1, Math.min(1, t));
   const intensity = Math.abs(clamped);
-  const base = clamped < 0 ? NEGATIVE_COLOR : POSITIVE_COLOR;
+  const base = clamped < 0 ? RAMPS[channel].negative : RAMPS[channel].positive;
   return [base[0] * intensity, base[1] * intensity, base[2] * intensity];
 }
 
-export const rampCss = (t: number) => {
-  const [r, g, b] = rampColor(t);
+export const rampCss = (t: number, channel: DeformationChannel) => {
+  const [r, g, b] = rampColor(t, channel);
   return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 };
 
@@ -100,14 +120,63 @@ export function useEdgeMetrics(cells: Face[][], projection: ProjectionMode): Edg
   return metrics;
 }
 
-export function useDeformationRaster(field: DeformationField | null, quantity: RasterQuantity): string | null {
-  return useMemo(() => {
-    if (!field || quantity === 'off' || typeof document === 'undefined') return null;
+/** How far the ramp reaches for each quantity, symmetric about zero */
+export type Extents = Record<DeformationChannel, [number, number]>;
 
-    const {size, values, ranges, constant, mask} = field;
-    if (constant[quantity]) return null;
-    const extent = ranges[quantity][1];
-    if (!(extent > 0)) return null;
+const extentsCache = new Map<FrameMode, Extents>();
+
+/** The extents every projection shares, so the ramp means the same thing across them */
+export function useSharedExtents(mode: FrameMode): Extents | null {
+  const [extents, setExtents] = useState<Extents | null>(() => extentsCache.get(mode) ?? null);
+
+  useEffect(() => {
+    const cached = extentsCache.get(mode);
+    if (cached) {
+      setExtents(cached);
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      const sampled = sharedExtents(mode);
+      extentsCache.set(mode, sampled);
+      setExtents(sampled);
+    }, 0);
+    return () => window.clearTimeout(handle);
+  }, [mode]);
+
+  return extents;
+}
+
+/**
+ * Either the extents this projection alone reaches, or the ones shared across all
+ * of them. A quantity that is constant has no relative range to speak of, so it
+ * drops out; on the shared scale it stays and renders flat, which is the point.
+ */
+export function resolveExtents(
+  field: DeformationField | null,
+  shared: Extents | null,
+  relative: boolean
+): Extents | null {
+  if (!relative) return shared;
+  if (!field) return null;
+  return Object.fromEntries(
+    DEFORMATION_CHANNELS.map(channel => [
+      channel,
+      field.constant[channel] ? ([0, 0] as [number, number]) : field.ranges[channel]
+    ])
+  ) as Extents;
+}
+
+export function useDeformationRaster(
+  field: DeformationField | null,
+  quantity: RasterQuantity,
+  extents: Extents | null
+): string | null {
+  return useMemo(() => {
+    if (!field || quantity === 'off' || !extents || typeof document === 'undefined') return null;
+
+    const {size, values, mask} = field;
+    const range = extents[quantity];
+    if (!(range[1] - range[0] > 0)) return null;
     const channel = values[quantity];
 
     const canvas = document.createElement('canvas');
@@ -122,7 +191,7 @@ export function useDeformationRaster(field: DeformationField | null, quantity: R
       const offset = 4 * i;
       if (!mask[i]) continue; // left fully transparent
       // Clamped inside rampColor, since the range trims the extremes
-      const [r, g, b] = rampColor(channel[i] / extent);
+      const [r, g, b] = rampColor(rampT(channel[i], range), quantity);
       data[offset] = Math.round(r);
       data[offset + 1] = Math.round(g);
       data[offset + 2] = Math.round(b);
@@ -130,14 +199,16 @@ export function useDeformationRaster(field: DeformationField | null, quantity: R
     }
     context.putImageData(image, 0, 0);
     return canvas.toDataURL();
-  }, [field, quantity]);
+  }, [field, quantity, extents]);
 }
 
 const format = (value: number, channel: DeformationChannel) => value.toFixed(CHANNEL_INFO[channel].digits);
 
 const PROJECTION_TITLES: Record<ProjectionMode, string> = {
   dsea: "Radiates from the dodecahedron face centre. A5's own projection",
-  isea: 'Radiates from the dodecahedron corner, the dual icosahedron face centre'
+  isea: 'Radiates from the dodecahedron corner, the dual icosahedron face centre',
+  rtsea: 'Radiates from the edge midpoint, a face centre of the rhombic triacontahedron',
+  gnomonic: 'The plain central projection. Not equal-area, but maps great circles to straight lines'
 };
 
 /** A row of buttons acting as a segmented control */
@@ -197,15 +268,60 @@ const SAG_TITLES: Record<string, string> = {
 };
 
 /** The ramp, with the range it currently spans */
-function Legend({field, quantity}: {field: DeformationField | null; quantity: RasterQuantity}) {
+function Legend({
+  quantity,
+  extents,
+  relative,
+  value
+}: {
+  quantity: RasterQuantity;
+  extents: Extents | null;
+  relative: boolean;
+  value: number | null;
+}) {
   if (quantity === 'off') return null;
-  const range = field?.ranges[quantity];
-  const ready = range && Number.isFinite(range[1]) && !field?.constant[quantity];
-  const stops = [-1, -0.5, 0, 0.5, 1].map(t => rampCss(t)).join(', ');
+  const range = extents?.[quantity];
+  const span = range ? range[1] - range[0] : 0;
+  const ready = range !== undefined && span > 0;
+
+  // Stops at the ends, plus one where the value crosses zero if it does, so the
+  // black point lands exactly there however lopsided the range is
+  const zeroAt = ready ? rampFraction(0, range!) : 0.5;
+  const breaks = ready ? [0, ...(zeroAt > 0 && zeroAt < 1 ? [zeroAt] : []), 1] : [0, 1];
+  const stops = breaks
+    .map(f => {
+      const at = ready ? range![0] + f * span : 0;
+      return `${rampCss(ready ? rampT(at, range!) : 0, quantity)} ${(100 * f).toFixed(2)}%`;
+    })
+    .join(', ');
+  const marker = ready && value !== null ? rampFraction(value, range!) : null;
 
   return (
     <div style={{marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.12)'}}>
-      <div style={{height: 8, borderRadius: 2, background: `linear-gradient(to right, ${stops})`}} />
+      <div
+        style={{
+          position: 'relative',
+          height: 8,
+          borderRadius: 2,
+          background: `linear-gradient(to right, ${stops})`
+        }}
+      >
+        {marker !== null && (
+          <span
+            style={{
+              position: 'absolute',
+              left: `${100 * marker}%`,
+              top: -2,
+              width: 2,
+              height: 12,
+              marginLeft: -1,
+              background: '#fff',
+              mixBlendMode: 'difference',
+              pointerEvents: 'none'
+            }}
+          />
+        )}
+      </div>
       <div
         style={{
           display: 'flex',
@@ -219,14 +335,15 @@ function Legend({field, quantity}: {field: DeformationField | null; quantity: Ra
         {ready ? (
           <>
             <span>{format(range![0], quantity)}</span>
-            <span>0</span>
+            <span>{relative ? 'this projection' : 'all projections'}</span>
             <span>
-              +{format(range![1], quantity)}
+              {range![1] > 0 ? '+' : ''}
+              {format(range![1], quantity)}
               {CHANNEL_INFO[quantity].unit}
             </span>
           </>
         ) : (
-          <span>{field ? 'constant' : 'sampling…'}</span>
+          <span>{extents ? 'constant' : 'sampling…'}</span>
         )}
       </div>
     </div>
@@ -277,11 +394,15 @@ export function DeformationControls({
   cells,
   sag,
   edges,
+  extents,
+  relativeScale,
+  value,
   onQuantityChange,
   onModeChange,
   onProjectionChange,
   onCellsChange,
-  onSagChange
+  onSagChange,
+  onRelativeScaleChange
 }: {
   field: DeformationField | null;
   quantity: RasterQuantity;
@@ -290,11 +411,15 @@ export function DeformationControls({
   cells: string;
   sag: boolean;
   edges: EdgeMetrics | null;
+  extents: Extents | null;
+  relativeScale: boolean;
+  value: number | null;
   onQuantityChange: (quantity: RasterQuantity) => void;
   onModeChange: (mode: FrameMode) => void;
   onProjectionChange: (projection: ProjectionMode) => void;
   onCellsChange: (cells: string) => void;
   onSagChange: (sag: boolean) => void;
+  onRelativeScaleChange: (relative: boolean) => void;
 }) {
   return (
     <div
@@ -355,7 +480,20 @@ export function DeformationControls({
 
       {cells !== 'off' && <EdgeStats metrics={edges} />}
 
-      <Legend field={field} quantity={quantity} />
+      <label
+        style={{display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, cursor: 'pointer', fontSize: 11}}
+        title="Normalise the ramp over this projection's own range instead of the range shared by all of them"
+      >
+        <input
+          type="checkbox"
+          checked={relativeScale}
+          onChange={event => onRelativeScaleChange(event.target.checked)}
+          style={{margin: 0}}
+        />
+        <span style={{opacity: 0.7}}>relative color scale</span>
+      </label>
+
+      <Legend quantity={quantity} extents={extents} relative={relativeScale} value={value} />
     </div>
   );
 }
