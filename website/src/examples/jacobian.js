@@ -134,10 +134,37 @@ class JacobianDemo extends Component {
           Under DSEA the rotation over the whole domain is identically zero this way.
         </p>
         <p>
+          <em>Grid from</em> chooses which side of the projection the grid is drawn from. From the <em>plane</em> it is
+          the lines of constant ρ and γ, straight and circular on the face and bent on the sphere. From the{' '}
+          <em>sphere</em> it is the meridians and parallels of constant θ and φ, straight there and kinked on the face.
+          The lines are the same curves either way; what changes is which window the distortion appears in.
+        </p>
+        <p>
+          The sphere side puts the cusps where they are easiest to read. A parallel pulled back onto the face kinks by
+          19.4018° where it crosses a quintant boundary under DSEA — and by exactly that at every colatitude from 10° to
+          35°, to four decimals — against 5.938° under ISEA and 13.1–14.7° under RTSEA. Crossing a quintant bisector
+          instead, DSEA reads 0.0000° and RTSEA 16.75°; crossing the face edge, ISEA reads 0.0000° and DSEA 1.46–3.22°.
+          Gnomonic reads zero at all three. Crossing the interior of a triangle, where nothing is glued, every mode
+          reads zero, which is the check that the method is sound. Under DSEA and gnomonic a meridian pulls back to an
+          exactly straight ray, γ constant along it to 0.000000°, while ISEA leaves 0.93° and RTSEA 0.67°.
+        </p>
+        <p>
+          The grid follows the frame, so that it reads the same way the raster does: each face draws its own rays and
+          rings, and the five neighbours radiate from their own centres rather than continuing this one's. Under DSEA
+          every one of those rays lands on a meridian of the face it belongs to, longitude constant along it to
+          0.000000°, where this face's rays continued outward bend by up to 34.98° over the same region. ISEA and RTSEA
+          leave 0.92° and 0.64°, which is their own departure from rays-to-meridians and nothing to do with the fold.
+        </p>
+        <p>
           <em>Single face frame</em> measures the whole domain in this one face's frame instead, which is what the
           reflected triangles give. That exposes the seam at the face edge, but it exaggerates everything past it, since
           the chart is being used far from the face it belongs to: DSEA's rotation goes from zero to ±2.87° and ISEA's
-          from ±1.05° to ±8.54°, none of which is distortion the system actually produces.
+          from ±1.05° to ±8.54°, none of which is distortion the system actually produces. Its grid is this face's own
+          rays, continued outward with it. It is still the frame to use for the cusps: a cusp is a comparison of the two
+          sides of a locus and needs one ruler across it. At γ = 18° the kink of a ray crossing the face edge, measured
+          on the sphere with no chart at all, is 2.2848° under DSEA and 0.0000° under ISEA — which is what this frame
+          reports (2.2853° and 0.0027°) and what the own face frame does not (0.0000° and −2.1171°, the ρ̂ axis having
+          turned over between the two sides).
         </p>
         <p>
           <em>Close the vertices</em> adds the other two triangles each neighbour contributes at a corner, ten in all.
@@ -153,12 +180,15 @@ class JacobianDemo extends Component {
           exactly one face of area between them, 1.047198 — a twelfth of the sphere.
         </p>
         <p>
-          The added triangles are always measured in their own face's frame, whatever the frame toggle says: this face's
-          chart genuinely does not reach them, since the equal-area charts are assembled one triangle at a time and
-          saturate past the last of them. Gnomonic is the exception, being a single central projection over the whole
-          plane, and there they stay in this face's chart and go on shrinking — its reflected region already covers
-          0.599 of a face's area against exactly 1.000 for all three Snyder modes. Over the whole closed domain DSEA's
-          rotation is still identically zero, against ±1.06° for ISEA and ±2.35° for RTSEA.
+          Which face <em>maps</em> a point and which frame the answer is <em>written in</em> are separate choices. The
+          map has to come from the face the point belongs to — this face's projection saturates past the reflected
+          region, the equal-area charts being assembled one triangle at a time with no eleventh to reach further with —
+          but the frame need not, and it is the frame alone that the single face option moves. In the own face frame
+          DSEA's rotation is identically zero over the whole closed domain, against ±1.05° for ISEA and ±2.35° for
+          RTSEA. In the single face frame all three run to about ±17°, this face's chart now being read two faces from
+          home. Gnomonic is the exception to the first half: a single central projection covering the whole plane, so
+          there the added triangles stay in this face's chart and go on shrinking — its reflected region already covers
+          0.599 of a face's area, against exactly 1.000 for all three Snyder modes.
         </p>
         <p>
           The matrix is written in the local orthonormal frames, (dρ, ρ·dγ) on the plane and (R·dφ, R·sin φ·dθ) on the
@@ -173,6 +203,15 @@ class JacobianDemo extends Component {
           mirrored one. Only σ₁/σ₂ is frame free, and it mirrors exactly either way, agreeing to 9 digits between a
           point and its reflection. It is shown in the readout and is recoverable from the squash, shear and scale, so
           nothing is lost by plotting the frame-aligned split.
+        </p>
+        <p>
+          Switching the frame at a fixed point shows what that means. One point of a reflected triangle under DSEA reads
+          rotation 2.5586° with shear −0.0027 and squash 1.0697 in this face's frame, and rotation 0 with shear +0.1350
+          and squash 1.0067 in its own — while σ₁/σ₂ is 1.144197289 and the determinant 1 in both. Changing either frame
+          is a rotation of an orthonormal basis, so it can only move quantity between the three; the singular values
+          cannot move at all. The split is bookkeeping and the invariants are the map, which is why a rotation of zero
+          is a statement about the chart — rays landing on meridians — and not a claim that the projection does not
+          turn. It does: the image of γ̂ leans up to 9.96° off θ̂ on the face itself, all of it booked as shear.
         </p>
         <p>
           The raster shows one quantity at a time on a diverging ramp, each quantity with its own colour pair — green

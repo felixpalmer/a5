@@ -4,8 +4,15 @@
 
 import React, {useEffect, useMemo, useState} from 'react';
 import {deformationField} from './jacobian';
-import {CELL_RESOLUTIONS, DEFORMATION_CHANNELS, PROJECTION_MODES, cellEdgeMetrics, sharedExtents} from './jacobian';
-import type {DeformationChannel, DeformationField, EdgeMetrics} from './jacobian';
+import {
+  CELL_RESOLUTIONS,
+  DEFORMATION_CHANNELS,
+  GRID_SOURCES,
+  PROJECTION_MODES,
+  cellEdgeMetrics,
+  sharedExtents
+} from './jacobian';
+import type {DeformationChannel, DeformationField, EdgeMetrics, GridSource} from './jacobian';
 import type {Face} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 
@@ -258,6 +265,12 @@ function Toggle<T extends string>({
 /** 'off', or a resolution, as the toggle's string values */
 export const CELL_OPTIONS = ['off', ...CELL_RESOLUTIONS.map(String)];
 
+const GRID_TITLES: Record<GridSource, string> = {
+  plane: 'Draw the lines of constant ρ and γ: straight and circular on the face, bent on the sphere',
+  sphere:
+    'Draw the meridians and parallels of constant θ and φ instead: straight on the sphere, and kinked on the face wherever the projection is. Same lines either way — it is which window the distortion shows up in that changes'
+};
+
 const SAG_OPTIONS = ['off', 'on'];
 
 const SAG_TITLES: Record<string, string> = {
@@ -395,6 +408,7 @@ export function DeformationControls({
   relativeScale,
   singleFace,
   closed,
+  source,
   value,
   onQuantityChange,
   onProjectionChange,
@@ -402,7 +416,8 @@ export function DeformationControls({
   onSagChange,
   onRelativeScaleChange,
   onSingleFaceChange,
-  onClosedChange
+  onClosedChange,
+  onSourceChange
 }: {
   field: DeformationField | null;
   quantity: RasterQuantity;
@@ -414,6 +429,7 @@ export function DeformationControls({
   relativeScale: boolean;
   singleFace: boolean;
   closed: boolean;
+  source: GridSource;
   value: number | null;
   onQuantityChange: (quantity: RasterQuantity) => void;
   onProjectionChange: (projection: ProjectionMode) => void;
@@ -422,6 +438,7 @@ export function DeformationControls({
   onRelativeScaleChange: (relative: boolean) => void;
   onSingleFaceChange: (single: boolean) => void;
   onClosedChange: (closed: boolean) => void;
+  onSourceChange: (source: GridSource) => void;
 }) {
   return (
     <div
@@ -470,6 +487,8 @@ export function DeformationControls({
         )}
         <span style={{opacity: 0.6}}>Raster</span>
         <Toggle options={RASTER_QUANTITIES} value={quantity} onChange={onQuantityChange} />
+        <span style={{opacity: 0.6}}>Grid from</span>
+        <Toggle options={GRID_SOURCES} value={source} titles={GRID_TITLES} onChange={onSourceChange} />
       </div>
 
       {cells !== 'off' && <EdgeStats metrics={edges} />}

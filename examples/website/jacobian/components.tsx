@@ -7,9 +7,9 @@ import {Canvas, ThreeEvent} from '@react-three/fiber';
 import {Line, OrbitControls} from '@react-three/drei';
 import {BufferAttribute, BufferGeometry, DoubleSide} from 'three';
 import {toFace, toPolar} from 'a5/core/coordinate-transforms';
-import type {Cartesian, Face, Polar, Radians} from 'a5/core/coordinate-systems';
+import type {Cartesian, Face, Polar} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
-import type {RayWeight} from './jacobian';
+import type {GridSource, RayWeight} from './jacobian';
 import {
   beyondFaceMesh,
   cartesianToPolar,
@@ -23,14 +23,10 @@ import {
   faceCorners,
   faceMesh,
   DOMAIN_CIRCUMRADIUS,
-  GRID_RAYS,
-  GRID_RINGS,
-  gridRay,
-  gridRingArcs,
+  gridLines,
   isInDrawnDomain,
   patchOutline,
   polarToCartesian,
-  rayWeight,
   SPHERE_RADIUS,
   vertexMesh
 } from './jacobian';
@@ -57,8 +53,6 @@ export const COLORS = {
 /** Side of the patch drawn at the hovered point, in face units */
 export const PATCH_SIZE = 0.09;
 
-const TAU = 2 * Math.PI;
-
 const points = (corners: Face[], flipY: boolean) =>
   corners.map(corner => `${corner[0]},${flipY ? -corner[1] : corner[1]}`).join(' ');
 
@@ -73,12 +67,18 @@ export function FaceView({
   raster,
   cells,
   closed,
+  ownFrame,
+  source,
+  projection,
   onHover
 }: {
   polar: Polar;
   raster: string | null;
   cells: Face[][];
   closed: boolean;
+  ownFrame: boolean;
+  source: GridSource;
+  projection: ProjectionMode;
   onHover: (polar: Polar) => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -91,21 +91,11 @@ export function FaceView({
   // The raster is drawn outside the flipped frame, where y already points down
   const clipOutline = useMemo(() => points(closed ? closedDomainCorners() : domainCorners(), true), [closed]);
 
-  // Rings out to the face circumradius close on themselves; beyond it each
-  // survives only as five arcs, one inside each reflected point
-  const rings = useMemo(
-    () => GRID_RINGS.flatMap(rho => gridRingArcs(rho, closed).map(arc => toPath(arc, false))),
-    [closed]
-  );
-  const rays = useMemo(
-    () =>
-      Array.from({length: GRID_RAYS}, (_, index) => {
-        const gamma = ((TAU * index) / GRID_RAYS) as Radians;
-        const ray = gridRay(gamma, closed, 1);
-        return {weight: rayWeight(index), end: toFace(ray[ray.length - 1])};
-      }),
-    [closed]
-  );
+  // Straight here when the grid comes from the plane, kinked when it comes from
+  // the sphere, so both families are drawn as paths
+  const grid = useMemo(() => gridLines(closed, ownFrame, source, projection), [closed, ownFrame, source, projection]);
+  const rings = useMemo(() => grid.rings.map(arc => toPath(arc, false)), [grid]);
+  const rays = useMemo(() => grid.rays.map(({weight, points}) => ({weight, path: toPath(points, false)})), [grid]);
 
   // Cell edges are straight in the plane, so no subdivision is needed here
   const cellPaths = useMemo(
@@ -180,11 +170,11 @@ export function FaceView({
             vectorEffect="non-scaling-stroke"
           />
         ))}
-        {rays.map(({weight, end}, index) => (
-          <line
+        {rays.map(({weight, path}, index) => (
+          <path
             key={`ray-${index}`}
-            x2={end[0]}
-            y2={end[1]}
+            d={path}
+            fill="none"
             stroke={rayStroke[weight]}
             strokeWidth={1}
             vectorEffect="non-scaling-stroke"
@@ -296,44 +286,57 @@ function ProjectedRegion({
 }
 
 const RAY_OPACITY: Record<RayWeight, number> = {cusp: 0.55, bisector: 0.25, minor: 0.1};
+const RAY_WEIGHTS: RayWeight[] = ['cusp', 'bisector', 'minor'];
+
+/** Polylines flattened into the pairs of endpoints a segment soup wants */
+function segments(lines: [number, number, number][][]): [number, number, number][] {
+  const out: [number, number, number][] = [];
+  for (const line of lines) {
+    for (let i = 0; i + 1 < line.length; i++) out.push(line[i], line[i + 1]);
+  }
+  return out;
+}
 
 // Fixed for the life of the scene, and now some hundred separate lines, so it is
 // kept out of the hover re-render
 const ProjectedGrid = React.memo(function ProjectedGrid({
   projection,
-  closed
+  closed,
+  ownFrame,
+  source
 }: {
   projection: ProjectionMode;
   closed: boolean;
+  ownFrame: boolean;
+  source: GridSource;
 }) {
-  const rings = useMemo(
-    () => GRID_RINGS.flatMap(rho => gridRingArcs(rho, closed).map(arc => lift(arc, 1.001, projection))),
-    [projection, closed]
-  );
-  const rays = useMemo(
-    () =>
-      Array.from({length: GRID_RAYS}, (_, index) => ({
-        weight: rayWeight(index),
-        points: lift(gridRay(((TAU * index) / GRID_RAYS) as Radians, closed), 1.001, projection)
-      })),
-    [projection, closed]
-  );
+  const grid = useMemo(() => gridLines(closed, ownFrame, source, projection), [closed, ownFrame, source, projection]);
+  // One line-segment soup per style rather than one line object per curve: with
+  // every face drawing its own grid there are some three hundred of them
+  const rings = useMemo(() => segments(grid.rings.map(arc => lift(arc, 1.001, projection))), [grid, projection]);
+  const rays = useMemo(() => {
+    const byWeight: Record<RayWeight, [number, number, number][][]> = {cusp: [], bisector: [], minor: []};
+    for (const {weight, points} of grid.rays) byWeight[weight].push(lift(points, 1.001, projection));
+    return RAY_WEIGHTS.map(weight => ({weight, points: segments(byWeight[weight])}));
+  }, [grid, projection]);
 
   return (
     <>
-      {rings.map((points, index) => (
-        <Line key={`ring-${index}`} points={points} color="#ffffff" transparent opacity={0.25} lineWidth={1} />
-      ))}
-      {rays.map(({weight, points}, index) => (
-        <Line
-          key={`ray-${index}`}
-          points={points}
-          color="#ffffff"
-          transparent
-          opacity={RAY_OPACITY[weight]}
-          lineWidth={1}
-        />
-      ))}
+      {rings.length > 0 && <Line points={rings} segments color="#ffffff" transparent opacity={0.25} lineWidth={1} />}
+      {rays.map(
+        ({weight, points}) =>
+          points.length > 0 && (
+            <Line
+              key={weight}
+              points={points}
+              segments
+              color="#ffffff"
+              transparent
+              opacity={RAY_OPACITY[weight]}
+              lineWidth={1}
+            />
+          )
+      )}
     </>
   );
 });
@@ -384,6 +387,8 @@ function Scene({
   cells,
   showSag,
   closed,
+  ownFrame,
+  source,
   onHover
 }: {
   polar: Polar;
@@ -391,6 +396,8 @@ function Scene({
   cells: Face[][];
   showSag: boolean;
   closed: boolean;
+  ownFrame: boolean;
+  source: GridSource;
   onHover: (polar: Polar) => void;
 }) {
   const boundary = useMemo(() => lift(faceBoundary(), 1.002, projection), [projection]);
@@ -427,7 +434,7 @@ function Scene({
       <ProjectedRegion build={faceMesh} projection={projection} color={COLORS.face} opacity={0.25} />
       <ProjectedRegion build={beyondFaceMesh} projection={projection} color={COLORS.beyond} opacity={0.22} />
       {closed && <ProjectedRegion build={vertexMesh} projection={projection} color={COLORS.closing} opacity={0.3} />}
-      <ProjectedGrid projection={projection} closed={closed} />
+      <ProjectedGrid projection={projection} closed={closed} ownFrame={ownFrame} source={source} />
       {showSag ? (
         <ProjectedSag cells={cells} projection={projection} />
       ) : (
@@ -460,6 +467,8 @@ export function SphereView({
   cells,
   showSag,
   closed,
+  ownFrame,
+  source,
   onHover
 }: {
   polar: Polar;
@@ -467,6 +476,8 @@ export function SphereView({
   cells: Face[][];
   showSag: boolean;
   closed: boolean;
+  ownFrame: boolean;
+  source: GridSource;
   onHover: (polar: Polar) => void;
 }) {
   return (
@@ -481,6 +492,8 @@ export function SphereView({
           cells={cells}
           showSag={showSag}
           closed={closed}
+          ownFrame={ownFrame}
+          source={source}
           onHover={onHover}
         />
       </Suspense>

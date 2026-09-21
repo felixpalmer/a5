@@ -88,9 +88,26 @@ function sphericalAbout(cartesian: Cartesian, origin: OriginId): Spherical {
   return [(theta - origins[origin].angle) as Radians, phi] as Spherical;
 }
 
-/** The projection of a point of `origin`'s face, in that face's own spherical frame */
-function polarToSphericalIn(polar: Polar, mode: ProjectionMode, origin: OriginId): Spherical {
-  return sphericalAbout(toCartesian(projections[mode].inverse(toFace(polar), origin)), origin);
+/** The reverse: where a point of a face's own spherical frame sits globally */
+function cartesianAbout(theta: number, phi: number, origin: OriginId): Cartesian {
+  const local = toCartesian([(theta + origins[origin].angle) as Radians, phi as Radians] as Spherical);
+  const out = vec3.create() as Cartesian;
+  vec3.transformQuat(out, local, origins[origin].quat);
+  return out;
+}
+
+/**
+ * The projection of a point, measured about `origin`'s centre.
+ *
+ * `local` says which chart the polar coordinates are in. In `origin`'s own chart
+ * that face's projection maps them directly; otherwise they are this face's, and
+ * the map is the one this chart carries — A5's reflected triangles where they
+ * reach, the unfolding past them. The frame is `origin`'s either way, and it is
+ * the frame alone that the single face option changes.
+ */
+function polarToSphericalIn(polar: Polar, mode: ProjectionMode, origin: OriginId, local: boolean): Spherical {
+  const spherical = local ? projections[mode].inverse(toFace(polar), origin) : polarToSpherical(polar, mode);
+  return sphericalAbout(toCartesian(spherical), origin);
 }
 
 /**
@@ -102,18 +119,28 @@ function polarToSphericalIn(polar: Polar, mode: ProjectionMode, origin: OriginId
  * reflected triangles give — exposes the seam but exaggerates the distortion, as
  * the chart is being used far from the centre it belongs to.
  */
-export function resolveOrigin(polar: Polar, mode: ProjectionMode, ownFrame: boolean): {origin: OriginId; polar: Polar} {
-  // Past the reflected region there is no chart of this face left to fall back on
+export function resolveOrigin(
+  polar: Polar,
+  mode: ProjectionMode,
+  ownFrame: boolean
+): {origin: OriginId; polar: Polar; local: boolean} {
+  // Everything in this face's frames, wherever the point is. The map still comes
+  // from whichever face carries it; only the two frames the derivative is written
+  // in stay put
+  if (!ownFrame) return {origin: ORIGIN_ID, polar, local: false};
+  if (isOnFace(polar)) return {origin: ORIGIN_ID, polar, local: true};
+
+  // Past the reflected region the sphere lookup below has nothing to work with,
+  // since this chart's projection saturates there
   if (needsUnfolding(polar, mode)) {
     const {origin, face} = unfold(polar);
-    return {origin, polar: toPolar(face)};
+    return {origin, polar: toPolar(face), local: true};
   }
-  if (!ownFrame || isOnFace(polar)) return {origin: ORIGIN_ID, polar};
 
   const spherical = projections[mode].inverse(toFace(polar), ORIGIN_ID);
   const neighbour = findNearestOrigin(spherical);
-  if (neighbour.id === ORIGIN_ID) return {origin: ORIGIN_ID, polar};
-  return {origin: neighbour.id, polar: toPolar(projections[mode].forward(spherical, neighbour.id))};
+  if (neighbour.id === ORIGIN_ID) return {origin: ORIGIN_ID, polar, local: true};
+  return {origin: neighbour.id, polar: toPolar(projections[mode].forward(spherical, neighbour.id)), local: true};
 }
 
 /**
@@ -185,6 +212,8 @@ interface NeighbourFrame {
   centre: Face;
   cos: number;
   sin: number;
+  /** Which way this face lies, in the neighbour's own chart. A multiple of 36° */
+  toward: Radians;
 }
 
 const neighbourFrames: NeighbourFrame[] = Array.from({length: 5}, (_, index) => {
@@ -200,8 +229,9 @@ const neighbourFrames: NeighbourFrame[] = Array.from({length: 5}, (_, index) => 
   // unfolding, which comes out as a rotation by -36 degrees for every neighbour.
   const midpoint = toFace([FACE_APOTHEM, centreAngle] as Polar);
   const image = projection.forward(projection.inverse(midpoint, ORIGIN_ID), origin);
-  const angle = Math.atan2(image[1], image[0]) - (centreAngle + Math.PI);
-  return {origin, centre, cos: Math.cos(angle), sin: Math.sin(angle)};
+  const toward = Math.atan2(image[1], image[0]) as Radians;
+  const angle = toward - (centreAngle + Math.PI);
+  return {origin, centre, cos: Math.cos(angle), sin: Math.sin(angle), toward};
 });
 
 /** Which neighbour's unfolded face a point past this one's edge belongs to */
@@ -219,15 +249,28 @@ export function unfold(polar: Polar): {origin: OriginId; face: Face} {
   return {origin, face: [cos * x - sin * y, sin * x + cos * y] as Face};
 }
 
-/** The reverse: a point of a neighbouring face, folded back into this face's chart */
-function foldIn(point: Cartesian, mode: ProjectionMode, origin: OriginId): Polar | null {
-  const frame = neighbourFrames.find(candidate => candidate.origin === origin);
-  if (!frame) return null;
-  const [x, y] = projections[mode].forwardCartesian(point, origin);
+/** The reverse of `unfold`: a point of a neighbour's own chart, placed in this one */
+function foldPolar(polar: Polar, frame: NeighbourFrame): Polar {
+  const [x, y] = toFace(polar);
   return toPolar([
     frame.centre[0] + frame.cos * x + frame.sin * y,
     frame.centre[1] - frame.sin * x + frame.cos * y
   ] as Face);
+}
+
+/** A point of a neighbouring face, folded back into this face's chart */
+function foldIn(point: Cartesian, mode: ProjectionMode, origin: OriginId): Polar | null {
+  const frame = neighbourFrames.find(candidate => candidate.origin === origin);
+  if (!frame) return null;
+  return foldPolar(toPolar(projections[mode].forwardCartesian(point, origin)), frame);
+}
+
+/**
+ * How much of a neighbour's own chart is drawn: the one quintant that abuts the
+ * shared edge, or two of them once the vertices are closed.
+ */
+function inNeighbourSector(gamma: Radians, frame: NeighbourFrame, closed: boolean): boolean {
+  return Math.abs(wrapAngle(gamma - frame.toward)) <= (closed ? 2 : 1) * PI_OVER_5 + 1e-9;
 }
 
 /**
@@ -354,7 +397,7 @@ export function computeJacobian(
   mode: ProjectionMode = DEFAULT_PROJECTION_MODE,
   ownFrame = false
 ): Jacobian {
-  const {origin, polar} = resolveOrigin(point, mode, ownFrame);
+  const {origin, polar, local} = resolveOrigin(point, mode, ownFrame);
   const [rho, gamma] = polar;
   const r0 = Math.max(rho, MIN_RHO);
   const h = Math.min(STEP, 0.5 * r0);
@@ -367,10 +410,10 @@ export function computeJacobian(
   const g = stepClearOfCusp(gamma, 2 * h);
   const r = stepClearOfEdge(r0, g, 3 * h);
 
-  const [thetaRhoPlus, phiRhoPlus] = polarToSphericalIn([r + h, g] as Polar, mode, origin);
-  const [thetaRhoMinus, phiRhoMinus] = polarToSphericalIn([r - h, g] as Polar, mode, origin);
-  const [thetaGammaPlus, phiGammaPlus] = polarToSphericalIn([r, g + h] as Polar, mode, origin);
-  const [thetaGammaMinus, phiGammaMinus] = polarToSphericalIn([r, g - h] as Polar, mode, origin);
+  const [thetaRhoPlus, phiRhoPlus] = polarToSphericalIn([r + h, g] as Polar, mode, origin, local);
+  const [thetaRhoMinus, phiRhoMinus] = polarToSphericalIn([r - h, g] as Polar, mode, origin, local);
+  const [thetaGammaPlus, phiGammaPlus] = polarToSphericalIn([r, g + h] as Polar, mode, origin, local);
+  const [thetaGammaMinus, phiGammaMinus] = polarToSphericalIn([r, g - h] as Polar, mode, origin, local);
 
   const scale = 1 / (2 * h);
   // phi is a colatitude and never wraps; theta is an azimuth, so its differences do
@@ -384,7 +427,7 @@ export function computeJacobian(
   // Area elements are rho·drho·dgamma on the face and R²·sin(phi)·dphi·dtheta on
   // the sphere. Neither chart is area-preserving on its own, which is why the
   // determinant varies across the face while this ratio does not.
-  const [, phi] = polarToSphericalIn([r, g] as Polar, mode, origin);
+  const [, phi] = polarToSphericalIn([r, g] as Polar, mode, origin, local);
   const areaRatio = (SPHERE_RADIUS * SPHERE_RADIUS * Math.sin(phi) * determinant) / r;
 
   return {dPhiDRho, dPhiDGamma, dThetaDRho, dThetaDGamma, determinant, areaRatio, localRho: r, localPhi: phi};
@@ -465,22 +508,20 @@ export const GRID_RINGS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1
 export const GRID_RAYS = 80;
 
 /**
- * A constant-rho ring, split into the arcs that stay inside the domain. Rings out
- * to the face circumradius come back as a single closed arc, beyond that as one
- * arc per reflected point.
+ * A constant-rho ring, split into the arcs that stay inside `limit`. A ring no
+ * larger than the smallest the limit ever gets comes back whole.
  */
-export function gridRingArcs(rho: number, closed = false, segments = 720): Polar[][] {
+function ringArcs(rho: number, limit: (gamma: Radians) => number, smallest: number, segments: number): Polar[][] {
   const angle = (i: number) => ((TWO_PI * i) / segments) as Radians;
 
-  if (rho <= FACE_CIRCUMRADIUS) {
+  if (rho <= smallest) {
     const ring: Polar[] = [];
     for (let i = 0; i <= segments; i++) ring.push([rho, angle(i)] as Polar);
     return [ring];
   }
 
-  const radius = outerRadius(closed);
   const inside: boolean[] = new Array(segments);
-  for (let i = 0; i < segments; i++) inside[i] = rho <= radius(angle(i));
+  for (let i = 0; i < segments; i++) inside[i] = rho <= limit(angle(i));
 
   // Walk from a gap, so that an arc straddling gamma = 0 is not cut in two
   const start = inside.indexOf(false);
@@ -503,14 +544,189 @@ export function gridRingArcs(rho: number, closed = false, segments = 720): Polar
   return arcs;
 }
 
-/** A ray from the face center out to the edge of the domain */
-export function gridRay(gamma: Radians, closed = false, segments = 32): Polar[] {
-  const ray: Polar[] = [];
-  const radius = outerRadius(closed)(gamma);
+/** The same, over one sector of a chart rather than the whole of it */
+function sectorRingArcs(rho: number, from: Radians, to: Radians, segments: number): Polar[][] {
+  const arcs: Polar[][] = [];
+  let current: Polar[] | null = null;
   for (let i = 0; i <= segments; i++) {
-    ray.push([(radius * i) / segments, gamma] as Polar);
+    const gamma = (from + ((to - from) * i) / segments) as Radians;
+    if (rho > faceRadius(gamma)) {
+      current = null;
+      continue;
+    }
+    if (!current) {
+      current = [];
+      arcs.push(current);
+    }
+    current.push([rho, gamma] as Polar);
   }
-  return ray;
+  return arcs;
+}
+
+export interface GridRay {
+  weight: RayWeight;
+  /** Straight in the plane whichever chart it comes from, but not on the sphere */
+  points: Polar[];
+}
+
+/**
+ * Which side of the projection the grid is drawn from.
+ *
+ * `plane` takes the lines of constant rho and gamma, which are straight and
+ * circular on the face and bent on the sphere. `sphere` takes the meridians and
+ * parallels of constant theta and phi, which are the straight ones there and come
+ * back kinked on the face. Same projection either way; the two put the distortion
+ * in opposite windows.
+ */
+export type GridSource = 'plane' | 'sphere';
+export const GRID_SOURCES: GridSource[] = ['plane', 'sphere'];
+
+export interface Grid {
+  rays: GridRay[];
+  rings: Polar[][];
+}
+
+/** Parallels drawn when the grid comes from the sphere, in degrees of colatitude */
+const GRID_PARALLELS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85];
+
+/** A face reaches 37.377° from its own centre, at its corners */
+const FACE_PHI_LIMIT = 40;
+
+const MERIDIAN_STEPS = 80;
+const PARALLEL_STEPS = 360;
+
+/**
+ * Samples a curve of the sphere, keeping the runs of it that are drawn, as
+ * positions in this face's chart.
+ */
+function drawnRuns(
+  sample: (t: number) => Cartesian,
+  steps: number,
+  mode: ProjectionMode,
+  closed: boolean,
+  face: OriginId | null
+): Polar[][] {
+  const runs: Polar[][] = [];
+  let current: Polar[] | null = null;
+  for (let i = 0; i <= steps; i++) {
+    const point = sample(i / steps);
+    // A face's own lines stop at its own edge; this face's carry on past it
+    if (face !== null && findNearestOrigin(toSpherical(point)).id !== face) {
+      current = null;
+      continue;
+    }
+    const polar = cartesianToPolar(point, mode);
+    if (!isInDrawnDomain(polar, closed)) {
+      current = null;
+      continue;
+    }
+    if (!current) {
+      current = [];
+      runs.push(current);
+    }
+    current.push(polar);
+  }
+  return runs;
+}
+
+/** Meridians and parallels, pulled back into this face's chart */
+function sphereGrid(closed: boolean, ownFrame: boolean, mode: ProjectionMode): Grid {
+  const faces: OriginId[] = ownFrame ? [ORIGIN_ID, ...neighbourFrames.map(frame => frame.origin)] : [ORIGIN_ID];
+  const limit = ((ownFrame ? FACE_PHI_LIMIT : 95) * Math.PI) / 180;
+  const rays: GridRay[] = [];
+  const rings: Polar[][] = [];
+
+  for (const face of faces) {
+    const restrict = ownFrame ? face : null;
+    for (let index = 0; index < GRID_RAYS; index++) {
+      const theta = (TWO_PI * index) / GRID_RAYS;
+      const weight = rayWeight(index);
+      const runs = drawnRuns(t => cartesianAbout(theta, t * limit, face), MERIDIAN_STEPS, mode, closed, restrict);
+      for (const points of runs) rays.push({weight, points});
+    }
+    for (const degrees of GRID_PARALLELS) {
+      if (ownFrame && degrees > FACE_PHI_LIMIT) continue;
+      const phi = (degrees * Math.PI) / 180;
+      rings.push(...drawnRuns(t => cartesianAbout(TWO_PI * t, phi, face), PARALLEL_STEPS, mode, closed, restrict));
+    }
+  }
+  return {rays, rings};
+}
+
+// The sphere side costs a projection per sample, so each configuration is built
+// once and kept; both views ask for the same one
+const gridCache = new Map<string, Grid>();
+
+export function gridLines(closed: boolean, ownFrame: boolean, source: GridSource, mode: ProjectionMode): Grid {
+  const key = `${closed}/${ownFrame}/${source}/${source === 'sphere' ? mode : 'any'}`;
+  const cached = gridCache.get(key);
+  if (cached) return cached;
+
+  const grid: Grid =
+    source === 'sphere'
+      ? sphereGrid(closed, ownFrame, mode)
+      : {rays: gridRays(closed, ownFrame), rings: gridRings(closed, ownFrame)};
+  gridCache.set(key, grid);
+  return grid;
+}
+
+/**
+ * The rays of the polar grid.
+ *
+ * In the single face frame they are this face's own, running out past its edge
+ * with the chart that measures there. Otherwise the grid follows the frame, as the
+ * raster does: each face draws its own rays, so the five neighbours radiate from
+ * their own centres rather than continuing this one's, and each set lands on its
+ * own face's meridians instead of being bent across the fold.
+ */
+export function gridRays(closed: boolean, ownFrame: boolean, segments = 32): GridRay[] {
+  const rays: GridRay[] = [];
+  const add = (weight: RayWeight, gamma: Radians, limit: number, frame: NeighbourFrame | null) => {
+    const points: Polar[] = [];
+    for (let i = 0; i <= segments; i++) {
+      const polar = [(limit * i) / segments, gamma] as Polar;
+      points.push(frame ? foldPolar(polar, frame) : polar);
+    }
+    rays.push({weight, points});
+  };
+
+  for (let index = 0; index < GRID_RAYS; index++) {
+    const gamma = ((TWO_PI * index) / GRID_RAYS) as Radians;
+    const weight = rayWeight(index);
+    if (!ownFrame) {
+      add(weight, gamma, outerRadius(closed)(gamma), null);
+      continue;
+    }
+    add(weight, gamma, faceRadius(gamma), null);
+    for (const frame of neighbourFrames) {
+      if (inNeighbourSector(gamma, frame, closed)) add(weight, gamma, faceRadius(gamma), frame);
+    }
+  }
+  return rays;
+}
+
+/** The rings of the polar grid, following the same frame as the rays */
+export function gridRings(closed: boolean, ownFrame: boolean, segments = 720): Polar[][] {
+  if (!ownFrame) {
+    return GRID_RINGS.flatMap(rho => ringArcs(rho, outerRadius(closed), FACE_CIRCUMRADIUS, segments));
+  }
+
+  const rings: Polar[][] = [];
+  const width = ((closed ? 2 : 1) * PI_OVER_5) as Radians;
+  for (const rho of GRID_RINGS) {
+    // No face's own chart reaches past its corners
+    if (rho > FACE_CIRCUMRADIUS) continue;
+    rings.push(...ringArcs(rho, faceRadius, FACE_APOTHEM, segments));
+    for (const frame of neighbourFrames) {
+      const sector = Math.max(16, Math.round((segments * width) / Math.PI));
+      const from = (frame.toward - width) as Radians;
+      const to = (frame.toward + width) as Radians;
+      for (const arc of sectorRingArcs(rho, from, to, sector)) {
+        rings.push(arc.map(polar => foldPolar(polar, frame)));
+      }
+    }
+  }
+  return rings;
 }
 
 const RAYS_PER_CUSP = Math.round(CUSP_SPACING / (TWO_PI / GRID_RAYS));

@@ -17,6 +17,7 @@ import {
   useSharedExtents
 } from './deformation';
 import type {RasterQuantity} from './deformation';
+import type {GridSource} from './jacobian';
 import {clampToDomain, computeJacobian, decompose, deformationValues, faceCells, toFrame} from './jacobian';
 import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
@@ -57,6 +58,9 @@ const App: React.FC = () => {
   const [singleFace, setSingleFace] = useState(false);
   // The ten triangles that complete each dodecahedron vertex of this face
   const [closed, setClosed] = useState(false);
+  // Which side of the projection the grid is drawn from: the side it comes from is
+  // the straight one, the other shows the kinks
+  const [source, setSource] = useState<GridSource>('plane');
   const ownFrame = !singleFace;
   // Projection independent: the lattice lives in the plane, only its image moves
   const cells = useMemo(() => (cellOption === 'off' ? [] : faceCells(Number(cellOption))), [cellOption]);
@@ -87,7 +91,16 @@ const App: React.FC = () => {
     >
       <div style={{...panelStyle, borderRight: '1px solid rgba(255,255,255,0.12)'}}>
         <div style={labelStyle}>Dodecahedron face and its reflections — polar (ρ, γ)</div>
-        <FaceView polar={polar} raster={raster} cells={cells} closed={closed} onHover={setPolar} />
+        <FaceView
+          polar={polar}
+          raster={raster}
+          cells={cells}
+          closed={closed}
+          ownFrame={ownFrame}
+          source={source}
+          projection={projection}
+          onHover={setPolar}
+        />
         <DeformationControls
           field={field}
           quantity={quantity}
@@ -98,6 +111,7 @@ const App: React.FC = () => {
           relativeScale={relativeScale}
           singleFace={singleFace}
           closed={closed}
+          source={source}
           value={quantity === 'off' ? null : hovered[quantity]}
           edges={edges}
           onQuantityChange={setQuantity}
@@ -107,6 +121,7 @@ const App: React.FC = () => {
           onRelativeScaleChange={setRelativeScale}
           onSingleFaceChange={setSingleFace}
           onClosedChange={handleClosedChange}
+          onSourceChange={setSource}
         />
       </div>
       <div style={panelStyle}>
@@ -117,6 +132,8 @@ const App: React.FC = () => {
           cells={cells}
           showSag={showSag && cells.length > 0}
           closed={closed}
+          ownFrame={ownFrame}
+          source={source}
           onHover={setPolar}
         />
       </div>

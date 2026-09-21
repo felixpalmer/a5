@@ -171,6 +171,35 @@ effect. Both frames are smooth across the edge, so a discontinuity measured agai
 is a genuine discontinuity of the derivative. It is DSEA's face-edge cusp, and it is what
 the sag comparison charges DSEA for.
 
+The identification needs **one ruler across the edge**, which is what the single face frame
+is for: both of its frames are smooth there, so a discontinuity measured against them is a
+discontinuity of the derivative. Measured per-face instead, the two sides use different ρ̂
+and the reported jump stops meaning anything. At γ = 18°:
+
+| at the face edge, γ = 18° | DSEA | ISEA |
+| --- | --- | --- |
+| kink on the sphere, no chart | **2.2848°** | **0.0000°** |
+| rotation jump, single face frame | 2.2853° | 0.0027° |
+| rotation jump, own face frame | 0.0000° | −2.1171° |
+
+The own-face row is the warning: it reports no jump where there is a 2.28° kink, and a
+2.12° jump where there is none at all.
+
+The same ray crossing the *outer* boundary of the reflected region — a neighbour's own
+corner ray — kinks much harder, and this is the 18.8° corner locus seen from the other
+side:
+
+| kink of a ray at the reflected region's outer edge | γ = 3.6° | 18° | 32.4° |
+| --- | --- | --- | --- |
+| DSEA | 8.08° | 12.72° | **17.16°** |
+| ISEA | 2.41° | 3.82° | 4.88° |
+| RTSEA | 6.23° | 8.96° | 13.06° |
+| gnomonic | 0.00° | 0.00° | 0.00° |
+
+No A5 cell edge ever reaches that locus (cells abut the quintant boundaries, never cross
+them), which is why it costs the index nothing — but it is the largest kink either
+projection has.
+
 ### Measuring the reflected region in its own face
 
 The figures above measure the whole domain in the central face's chart, which is what the
@@ -328,6 +357,23 @@ values are genuine cusps; values that shrink with the step are smooth curvature:
 
 RTSEA cusps at all three loci, which is the clearest single statement of why it is
 dominated. DSEA and ISEA each cusp at two of the three, on complementary sets.
+
+The same thing measured from the other side. Instead of projecting planar curves and
+watching the turn on the sphere, take the sphere's own meridians and parallels — smooth
+there by construction — and pull them back onto the face:
+
+| locus, measured on the plane | DSEA | ISEA | RTSEA | gnomonic |
+| --- | --- | --- | --- | --- |
+| quintant bisector | **0.0000°** | 0.28–1.17° | 16.75° | 0.0001° |
+| quintant boundary | **19.4018°** | 5.938° | 13.1–14.7° | 0.0001° |
+| dodecahedron face edge | 1.46–3.22° | **0.0000°** | 7.6–9.1° | 0.0000° |
+| triangle interior (control) | 0.0000° | 0.0000° | 0.0000° | 0.0001° |
+
+Same taxonomy, different magnitudes: the cusp is a property of the map, not of which
+window it is measured in. Two details are worth noting. DSEA's quintant-boundary figure is
+**independent of colatitude** — 19.4018° at every φ from 10° to 35°, to four decimals —
+where RTSEA's drifts with it. And the control row is the check that the method is sound:
+crossing the interior of a triangle, where nothing is glued, every mode reads zero.
 
 ### Which part of the Jacobian jumps
 
