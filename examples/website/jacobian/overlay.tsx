@@ -3,18 +3,10 @@
 // Copyright (c) A5 contributors
 
 import React from 'react';
-import type {Polar} from 'a5/core/coordinate-systems';
 import {COLORS} from './components';
 import {CELL_OPTIONS, CHANNEL_INFO, RASTER_QUANTITIES, rampCss, rampFraction, rampT} from './deformation';
 import type {Extents, RasterQuantity} from './deformation';
-import {
-  GRID_SOURCES,
-  PROJECTION_MODES,
-  SPHERE_RADIUS,
-  decompose,
-  deformationValues,
-  polarToSpherical
-} from './jacobian';
+import {GRID_SOURCES, PROJECTION_MODES, decompose, deformationValues} from './jacobian';
 import type {DeformationChannel, EdgeMetrics, FrameJacobian, GridSource} from './jacobian';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 
@@ -275,14 +267,12 @@ function Gauge({value, range, channel}: {value: number; range?: [number, number]
   );
 }
 
-/** The frame's axis names. Only the intrinsic frame is offered; see `toFrame` */
+/** The frame the derivative is written in; only the intrinsic one is offered, see `toFrame` */
 const LABELS = {
-  symbol: 'M',
-  title: 'M = ∂(R dφ, R sin φ dθ) / ∂(dρ, ρ dγ)',
-  columns: ['dρ', 'ρ dγ'] as [string, string],
-  rows: ['R dφ', 'R sinφ dθ'] as [string, string],
-  source: ['γ̂', 'ρ̂'] as [string, string],
-  target: ['θ̂', 'φ̂'] as [string, string]
+  symbol: 'J',
+  definition: 'J = \u2202(R d\u03c6, R sin \u03c6 d\u03b8) / \u2202(d\u03c1, \u03c1 d\u03b3)',
+  source: ['\u03b3\u0302', '\u03c1\u0302'] as [string, string],
+  target: ['\u03b8\u0302', '\u03c6\u0302'] as [string, string]
 };
 
 /** Math-space point to SVG space: the diagrams have y pointing up, SVG has it pointing down */
@@ -360,72 +350,107 @@ function Patch({
   );
 }
 
-const MATRIX_COLUMN = 64;
+/**
+ * The unit patch and its image, with the map between them named.
+ *
+ * Which of the two is the square one is what the grid source sets: reading from
+ * the plane, J carries the face's unit patch onto the sphere; reading from the
+ * sphere it is the sphere's patch that is square and J's inverse that brings it
+ * back, so the arrow turns around with it.
+ */
+function PatchPair({frame, source}: {frame: FrameJacobian; source: GridSource}) {
+  const [[a, b], [c, d]] = frame.rows;
+  const unit = {radial: [0, 1] as [number, number], azimuthal: [1, 0] as [number, number]};
+  // Plot space is x across and y up, with the radial component vertical, so each
+  // column of the matrix is read out bottom entry first
+  const forward = {radial: [c, a] as [number, number], azimuthal: [d, b] as [number, number]};
+  const det = frame.determinant;
+  const backward = {
+    radial: [-c / det, d / det] as [number, number],
+    azimuthal: [a / det, -b / det] as [number, number]
+  };
 
-function Matrix({frame}: {frame: FrameJacobian}) {
-  const rows: [string, number, number][] = [
-    [LABELS.rows[0], frame.rows[0][0], frame.rows[0][1]],
-    [LABELS.rows[1], frame.rows[1][0], frame.rows[1][1]]
-  ];
-  const columns = `${MATRIX_COLUMN}px ${MATRIX_COLUMN}px`;
+  const fromPlane = source === 'plane';
+  const face = fromPlane ? unit : backward;
+  const sphere = fromPlane ? forward : unit;
 
   return (
-    <div style={{display: 'grid', gridTemplateColumns: '58px auto', columnGap: '6px', alignItems: 'center'}}>
-      <div />
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: columns,
-          columnGap: '8px',
-          textAlign: 'center',
-          fontSize: '11px'
-        }}
-      >
-        <span style={{color: COLORS.radial}}>{LABELS.columns[0]}</span>
-        <span style={{color: COLORS.azimuthal}}>{LABELS.columns[1]}</span>
+    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '10px'}}>
+      <Patch radial={face.radial} azimuthal={face.azimuthal} axes={LABELS.source} caption="on the face" />
+      <div style={{textAlign: 'center', lineHeight: 1.1}}>
+        <div style={{fontSize: '12px', fontFamily: MONO}}>
+          {LABELS.symbol}
+          {!fromPlane && <sup style={{fontSize: '0.75em'}}>−1</sup>}
+        </div>
+        <div style={{fontSize: '18px', color: MUTED}}>{fromPlane ? '→' : '←'}</div>
       </div>
-
-      <div
-        style={{
-          display: 'grid',
-          rowGap: '6px',
-          fontSize: '11px',
-          color: MUTED,
-          textAlign: 'right',
-          whiteSpace: 'nowrap'
-        }}
-      >
-        {rows.map(([label]) => (
-          <span key={label}>{label}</span>
-        ))}
-      </div>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: columns,
-          rowGap: '6px',
-          columnGap: '8px',
-          padding: '6px 6px',
-          borderLeft: '2px solid #888',
-          borderRight: '2px solid #888',
-          borderRadius: '3px',
-          fontFamily: MONO,
-          fontSize: '13px',
-          fontVariantNumeric: 'tabular-nums'
-        }}
-      >
-        {rows.map(([label, radial, azimuthal]) => (
-          <React.Fragment key={label}>
-            <span style={{textAlign: 'right'}}>{radial.toFixed(4)}</span>
-            <span style={{textAlign: 'right'}}>{azimuthal.toFixed(4)}</span>
-          </React.Fragment>
-        ))}
-      </div>
+      <Patch radial={sphere.radial} azimuthal={sphere.azimuthal} axes={LABELS.target} caption="on the sphere" />
     </div>
   );
 }
 
-function Decomposition({
+/** A bracketed 2x2, whose entries may be numbers or the symbols standing for them */
+function Matrix2({
+  entries,
+  width = 46,
+  size = 13
+}: {
+  entries: [string, string, string, string];
+  width?: number;
+  size?: number;
+}) {
+  return (
+    <span
+      style={{
+        display: 'inline-grid',
+        gridTemplateColumns: `${width}px ${width}px`,
+        columnGap: '6px',
+        rowGap: '3px',
+        padding: '4px 5px',
+        borderLeft: '2px solid #888',
+        borderRight: '2px solid #888',
+        borderRadius: '3px',
+        fontFamily: MONO,
+        fontSize: `${size}px`,
+        fontVariantNumeric: 'tabular-nums',
+        textAlign: 'right'
+      }}
+    >
+      {entries.map((entry, index) => (
+        <span key={index}>{entry}</span>
+      ))}
+    </span>
+  );
+}
+
+/** One of the factors' names, as M with a subscript */
+const Factor = ({name}: {name: string}) => (
+  <span style={{whiteSpace: 'nowrap'}}>
+    M<sub style={{fontSize: '0.75em'}}>{name}</sub>
+  </span>
+);
+
+/** toFixed, without the "-0.00" a value rounding to zero from below would give */
+const fixed = (value: number, digits: number) => {
+  const text = value.toFixed(digits);
+  return Number(text) === 0 ? (0).toFixed(digits) : text;
+};
+
+const entriesOf = (frame: FrameJacobian): [string, string, string, string] => [
+  fixed(frame.rows[0][0], 4),
+  fixed(frame.rows[0][1], 4),
+  fixed(frame.rows[1][0], 4),
+  fixed(frame.rows[1][1], 4)
+];
+
+/**
+ * How the derivative factors, and what each factor is.
+ *
+ * This is the Gram-Schmidt factorisation `decompose` performs, written out:
+ * rotate, then shear, then scale the two axes against each other, then scale
+ * both together. Multiplied back out in that order it reproduces J exactly.
+ */
+function Factorisation({
   frame,
   extents,
   quantity
@@ -437,88 +462,85 @@ function Decomposition({
   const decomposition = decompose(frame);
   const signed = deformationValues(decomposition);
   const {rotation, shear, squash, scale, radial, azimuthal} = decomposition;
-  const rows: [DeformationChannel, string, string][] = [
-    ['rotation', `${((rotation * 180) / Math.PI).toFixed(2)}°`, 'Angle taking the radial axis onto its image'],
-    ['shear', shear.toFixed(3), 'How far the image of the azimuthal axis leans off the other one: shear = tan(lean)'],
-    [
-      'squash',
-      squash.toFixed(4),
-      `The two axes scaled against each other: radial x${radial.toFixed(4)}, azimuthal x${azimuthal.toFixed(4)}, ` +
-        `squash = sqrt(radial / azimuthal). Above 1 the radial axis is the stretched one`
-    ],
-    ['scale', scale.toFixed(4), 'Area scale, sqrt|det|. Exactly 1 for an equal-area projection in the intrinsic frame']
+
+  const factors: {
+    channel: DeformationChannel;
+    name: string;
+    entries: [string, string, string, string];
+    parameter: string;
+    hint: string;
+  }[] = [
+    {
+      channel: 'rotation',
+      name: 'rot',
+      entries: ['cos α', '−sin α', 'sin α', 'cos α'],
+      parameter: `α = ${fixed((rotation * 180) / Math.PI, 2)}°`,
+      hint: 'Angle taking the radial axis onto its image'
+    },
+    {
+      channel: 'shear',
+      name: 'shear',
+      entries: ['1', 's', '0', '1'],
+      parameter: `s = ${fixed(shear, 3)}`,
+      hint: 'How far the image of the azimuthal axis leans off the other one: s = tan(lean)'
+    },
+    {
+      channel: 'squash',
+      name: 'squash',
+      entries: ['q', '0', '0', '1/q'],
+      parameter: `q = ${fixed(squash, 4)}`,
+      hint:
+        `The two axes scaled against each other: radial x${radial.toFixed(4)}, azimuthal x${azimuthal.toFixed(4)}, ` +
+        `q = sqrt(radial / azimuthal). Above 1 the radial axis is the stretched one`
+    },
+    {
+      channel: 'scale',
+      name: 'scale',
+      entries: ['k', '0', '0', 'k'],
+      parameter: `k = ${fixed(scale, 4)}`,
+      hint: 'Area scale, sqrt|det|. Exactly 1 for an equal-area projection in the intrinsic frame'
+    }
   ];
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `auto 56px ${GAUGE_WIDTH}px`,
-        rowGap: '5px',
-        columnGap: '8px',
-        alignItems: 'center',
-        marginTop: '10px'
-      }}
-    >
-      {rows.map(([channel, value, hint]) => (
-        <React.Fragment key={channel}>
-          <span
-            style={{color: channel === quantity ? '#000' : MUTED, fontWeight: channel === quantity ? 600 : 400}}
-            title={hint}
-          >
-            {CHANNEL_INFO[channel].label}
-          </span>
-          <span style={{textAlign: 'right', fontFamily: MONO, fontVariantNumeric: 'tabular-nums'}}>{value}</span>
-          <Gauge value={signed[channel]} range={extents?.[channel]} channel={channel} />
-        </React.Fragment>
-      ))}
-    </div>
-  );
-}
+    <>
+      <div style={{marginTop: '12px', textAlign: 'center', fontSize: '12px'}}>
+        {LABELS.symbol} ={' '}
+        {factors.map(({name}, index) => (
+          <React.Fragment key={name}>
+            {index > 0 && <span style={{color: MUTED}}> · </span>}
+            <Factor name={name} />
+          </React.Fragment>
+        ))}
+      </div>
 
-/** The frame free numbers, and where on the two charts the hovered point sits */
-function Readouts({polar, frame, projection}: {polar: Polar; frame: FrameJacobian; projection: ProjectionMode}) {
-  const [rho, gamma] = polar;
-  const [theta, phi] = polarToSpherical(polar, projection);
-  const degrees = (radians: number) => `${((radians * 180) / Math.PI).toFixed(2)}°`;
-
-  // Frame free, so it is the one number here that any observer would agree on
-  const {scale, squash, shear} = decompose(frame);
-  const a = scale * squash;
-  const b = scale / squash;
-  const k = shear * b;
-  const half = (a * a + k * k + b * b) / 2;
-  const root = Math.sqrt(Math.max(0, half * half - (a * b) ** 2));
-  const anisotropy = Math.sqrt((half + root) / (half - root));
-
-  const rows: [string, string][] = [
-    [`det ${LABELS.symbol}`, frame.determinant.toFixed(6)],
-    ['σ₁/σ₂', anisotropy.toFixed(6)],
-    ['R', SPHERE_RADIUS.toFixed(6)],
-    ['ρ, γ', `${rho.toFixed(4)}, ${degrees(gamma)}`],
-    ['θ, φ', `${degrees(theta)}, ${degrees(phi)}`]
-  ];
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'auto 1fr',
-        rowGap: '3px',
-        columnGap: '10px',
-        marginTop: '10px',
-        fontSize: '11px',
-        fontFamily: MONO,
-        fontVariantNumeric: 'tabular-nums'
-      }}
-    >
-      {rows.map(([label, value]) => (
-        <React.Fragment key={label}>
-          <span style={{color: MUTED}}>{label}</span>
-          <span style={{textAlign: 'right'}}>{value}</span>
-        </React.Fragment>
-      ))}
-    </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'auto auto 1fr',
+          columnGap: '8px',
+          rowGap: '8px',
+          marginTop: '10px',
+          alignItems: 'center'
+        }}
+      >
+        {factors.map(({channel, name, entries, parameter, hint}) => (
+          <React.Fragment key={name}>
+            <span
+              title={hint}
+              style={{color: channel === quantity ? '#000' : MUTED, fontWeight: channel === quantity ? 600 : 400}}
+            >
+              <Factor name={name} />
+            </span>
+            <Matrix2 entries={entries} width={38} size={11} />
+            <span style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px'}}>
+              <span style={{fontFamily: MONO, fontSize: '11px', fontVariantNumeric: 'tabular-nums'}}>{parameter}</span>
+              <Gauge value={signed[channel]} range={extents?.[channel]} channel={channel} />
+            </span>
+          </React.Fragment>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -527,7 +549,6 @@ function Readouts({polar, frame, projection}: {polar: Polar; frame: FrameJacobia
 // ---------------------------------------------------------------------------
 
 export function ControlPanel({
-  polar,
   frame,
   projection,
   quantity,
@@ -547,7 +568,6 @@ export function ControlPanel({
   onSingleFaceChange,
   onSourceChange
 }: {
-  polar: Polar;
   frame: FrameJacobian;
   projection: ProjectionMode;
   quantity: RasterQuantity;
@@ -632,22 +652,16 @@ export function ControlPanel({
 
       <div style={section}>
         <h3 style={heading}>Jacobian at the cursor</h3>
-        <div style={{fontSize: '11px', color: MUTED, marginBottom: '8px', fontFamily: MONO}}>{LABELS.title}</div>
-        <Matrix frame={frame} />
-
-        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '10px'}}>
-          <Patch radial={[0, 1]} azimuthal={[1, 0]} axes={LABELS.source} caption="on the face" />
-          <div style={{fontSize: '18px', color: MUTED}}>{'→'}</div>
-          <Patch
-            radial={[frame.rows[1][0], frame.rows[0][0]]}
-            azimuthal={[frame.rows[1][1], frame.rows[0][1]]}
-            axes={LABELS.target}
-            caption="on the sphere"
-          />
+        <div
+          style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
+          title={LABELS.definition}
+        >
+          <span style={{fontFamily: MONO, fontSize: '13px'}}>{LABELS.symbol} =</span>
+          <Matrix2 entries={entriesOf(frame)} />
         </div>
 
-        <Decomposition frame={frame} extents={extents} quantity={quantity} />
-        <Readouts polar={polar} frame={frame} projection={projection} />
+        <PatchPair frame={frame} source={source} />
+        <Factorisation frame={frame} extents={extents} quantity={quantity} />
       </div>
     </div>
   );

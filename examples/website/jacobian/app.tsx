@@ -115,7 +115,6 @@ const App: React.FC = () => {
       </div>
 
       <ControlPanel
-        polar={polar}
         frame={frame}
         projection={projection}
         quantity={quantity}

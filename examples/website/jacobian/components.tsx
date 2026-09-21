@@ -460,13 +460,15 @@ function Scene({
 
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[3, 3, 5]} intensity={1.2} />
-      <directionalLight position={[-4, -3, -2]} intensity={0.4} />
+      {/* Low ambient against a strong key, so the terminator is somewhere to read
+          the curvature off rather than a flat disc */}
+      <ambientLight intensity={0.3} />
+      <directionalLight position={[3, 3, 5]} intensity={1.6} />
+      <directionalLight position={[-4, -3, -2]} intensity={0.35} />
 
       <mesh onPointerMove={handlePointer}>
         <sphereGeometry args={[SPHERE_RADIUS * 0.995, 96, 64]} />
-        <meshPhysicalMaterial color="#1b2330" roughness={0.65} metalness={0.1} />
+        <meshPhysicalMaterial color="#8f9bad" roughness={0.55} metalness={0.05} />
       </mesh>
 
       {/* The flat region colours would tint the ramp, so the raster replaces them */}
@@ -496,11 +498,14 @@ function Scene({
         enableDamping
         enablePan={false}
         minDistance={1.2 * SPHERE_RADIUS}
-        maxDistance={6 * SPHERE_RADIUS}
+        maxDistance={8 * SPHERE_RADIUS}
       />
     </>
   );
 }
+
+/** Pulled back from the 3.18 radii the view opened at, to draw the sphere at 3/4 the size */
+const CAMERA_POSITION: [number, number, number] = [0, (-1.3 * 4) / 3, (2.9 * 4) / 3];
 
 export function SphereView({
   polar,
@@ -523,7 +528,12 @@ export function SphereView({
 }) {
   return (
     <Canvas
-      camera={{position: [0, -1.3 * SPHERE_RADIUS, 2.9 * SPHERE_RADIUS], fov: 36, near: 0.01, far: 100}}
+      camera={{
+        position: CAMERA_POSITION.map(component => component * SPHERE_RADIUS) as [number, number, number],
+        fov: 36,
+        near: 0.01,
+        far: 100
+      }}
       style={{width: '100%', height: '100%'}}
     >
       <Suspense fallback={null}>
