@@ -70,6 +70,11 @@ const App: React.FC = () => {
   const shared = useSharedExtents(ownFrame, closed);
   const extents = useMemo(() => resolveExtents(field, shared, relativeScale), [field, shared, relativeScale]);
   const raster = useDeformationRaster(field, quantity, extents);
+  // The grid source is the frame of reference the Jacobian is read from, and the
+  // raster measures what the projection does to it — so it belongs on the far side
+  // of the map, drawn on the image rather than on the domain
+  const faceRaster = source === 'sphere' ? raster : null;
+  const sphereRaster = source === 'plane' ? raster : null;
   // What the hovered point reads, so the legend can mark it on the ramp
   const hovered = useMemo(() => deformationValues(decompose(frame)), [frame]);
   const edges = useEdgeMetrics(cells, projection);
@@ -93,7 +98,7 @@ const App: React.FC = () => {
         <div style={labelStyle}>Dodecahedron face and its reflections — polar (ρ, γ)</div>
         <FaceView
           polar={polar}
-          raster={raster}
+          raster={faceRaster}
           cells={cells}
           closed={closed}
           ownFrame={ownFrame}
@@ -128,6 +133,7 @@ const App: React.FC = () => {
         <div style={labelStyle}>Sphere — spherical (θ, φ)</div>
         <SphereView
           polar={polar}
+          raster={sphereRaster}
           projection={projection}
           cells={cells}
           showSag={showSag && cells.length > 0}

@@ -744,12 +744,18 @@ export function rayWeight(index: number): RayWeight {
   return 'minor';
 }
 
+/** Enough to round the patch's two circular edges */
+const PLANE_PATCH_SEGMENTS = 16;
+
+/** Finer: the sphere patch's edges bend in this chart, and kink wherever a cusp crosses them */
+const SPHERE_PATCH_SEGMENTS = 32;
+
 /**
  * A small patch centered on `polar`, aligned with the polar frame and sized so that
  * it reads as a square of side `size` on the face. Its image on the sphere is the
  * finite version of what the Jacobian describes in the limit.
  */
-export function patchOutline(polar: Polar, size: number, closed = false, segments = 16): Polar[] {
+function planePatch(polar: Polar, size: number, closed: boolean): Polar[] {
   const [rho, gamma] = polar;
   const dRho = size / 2;
   // Matching arc length in the azimuthal direction, clamped so the patch stays
@@ -768,8 +774,8 @@ export function patchOutline(polar: Polar, size: number, closed = false, segment
   for (let i = 0; i < 4; i++) {
     const [rhoA, gammaA] = corners[i];
     const [rhoB, gammaB] = corners[(i + 1) % 4];
-    for (let s = 0; s < segments; s++) {
-      const t = s / segments;
+    for (let s = 0; s < PLANE_PATCH_SEGMENTS; s++) {
+      const t = s / PLANE_PATCH_SEGMENTS;
       const gammaT = (gammaA + (gammaB - gammaA) * t) as Radians;
       // Clip to the domain. Past it there is no face to project from, and the
       // patch would be collapsed onto the boundary rather than simply cut off
@@ -779,6 +785,83 @@ export function patchOutline(polar: Polar, size: number, closed = false, segment
   }
   outline.push(outline[0]);
   return outline;
+}
+
+/**
+ * The same patch taken from the other side: a box of constant phi and theta, which
+ * is the square one on the sphere and comes back bent — and kinked at every cusp
+ * it crosses — in this chart.
+ *
+ * It is built in the frame the Jacobian is measured in, the point's own face when
+ * that is what the frame follows, so the two describe the same thing. The side is
+ * an arc length on the sphere the projection is equal-area onto, so this patch and
+ * the plane one cover the same area and read against each other directly.
+ */
+function spherePatch(polar: Polar, size: number, mode: ProjectionMode, ownFrame: boolean, closed: boolean): Polar[] {
+  const {origin, polar: centre, local} = resolveOrigin(polar, mode, ownFrame);
+  const [theta, phi] = polarToSphericalIn(centre, mode, origin, local);
+
+  const angle = size / SPHERE_RADIUS;
+  const dPhi = angle / 2;
+  // Matching arc length in azimuth, clamped the way the plane patch clamps its own
+  // as rho vanishes: here it is the pole, where the spherical chart is singular
+  const dTheta = dPhi / Math.max(Math.sin(phi), Math.sin(angle));
+
+  const corners: [number, number][] = [
+    [Math.max(0, phi - dPhi), theta - dTheta],
+    [phi + dPhi, theta - dTheta],
+    [phi + dPhi, theta + dTheta],
+    [Math.max(0, phi - dPhi), theta + dTheta]
+  ];
+
+  const outline: Polar[] = [];
+  for (let i = 0; i < 4; i++) {
+    const [phiA, thetaA] = corners[i];
+    const [phiB, thetaB] = corners[(i + 1) % 4];
+    for (let s = 0; s < SPHERE_PATCH_SEGMENTS; s++) {
+      const t = s / SPHERE_PATCH_SEGMENTS;
+      const point = cartesianAbout(thetaA + (thetaB - thetaA) * t, phiA + (phiB - phiA) * t, origin);
+      // Clipped like the plane patch, for the same reason
+      outline.push(clampToDomain(cartesianToPolar(point, mode), closed));
+    }
+  }
+  outline.push(outline[0]);
+  return outline;
+}
+
+/**
+ * The patch at the hovered point, squared off on whichever side the grid is drawn
+ * from, so that it reads as the one cell of that grid it is.
+ */
+export function patchOutline(
+  polar: Polar,
+  size: number,
+  source: GridSource,
+  mode: ProjectionMode,
+  ownFrame: boolean,
+  closed: boolean
+): Polar[] {
+  return source === 'sphere' ? spherePatch(polar, size, mode, ownFrame, closed) : planePatch(polar, size, closed);
+}
+
+/** A piece of the domain's image on the unit sphere, ready for a BufferGeometry */
+export interface DomainMesh {
+  positions: Float32Array;
+  /** Where each vertex reads the deformation raster */
+  uvs: Float32Array;
+  indices: Uint32Array;
+}
+
+/**
+ * Texture coordinates of a face point in the deformation raster, which spans the
+ * domain's bounding box, so the mapping is just the position rescaled.
+ *
+ * `v` runs with y rather than against it: the raster's first row is at maximum y,
+ * and a texture's default flipY already puts that row at v = 1.
+ */
+function writeRasterUV(uvs: Float32Array, offset: number, [x, y]: Face): void {
+  uvs[offset] = 0.5 + x / (2 * DOMAIN_CIRCUMRADIUS);
+  uvs[offset + 1] = 0.5 + y / (2 * DOMAIN_CIRCUMRADIUS);
 }
 
 /**
@@ -795,18 +878,24 @@ export function radialMesh(
   mode: ProjectionMode = DEFAULT_PROJECTION_MODE,
   angularSegments = 160,
   radialSegments = 12
-) {
-  const positions = new Float32Array((angularSegments + 1) * (radialSegments + 1) * 3);
+): DomainMesh {
+  const vertices = (angularSegments + 1) * (radialSegments + 1);
+  const positions = new Float32Array(vertices * 3);
+  const uvs = new Float32Array(vertices * 2);
   let p = 0;
+  let q = 0;
   for (let j = 0; j <= radialSegments; j++) {
     for (let i = 0; i <= angularSegments; i++) {
       const gamma = ((TWO_PI * i) / angularSegments) as Radians;
       const inner = innerRadius(gamma);
       const rho = inner + ((outerRadius(gamma) - inner) * j) / radialSegments;
-      const point = polarToCartesian([rho, gamma] as Polar, mode);
+      const polar = [rho, gamma] as Polar;
+      const point = polarToCartesian(polar, mode);
       positions[p++] = point[0];
       positions[p++] = point[1];
       positions[p++] = point[2];
+      writeRasterUV(uvs, q, toFace(polar));
+      q += 2;
     }
   }
 
@@ -827,7 +916,7 @@ export function radialMesh(
     }
   }
 
-  return {positions, indices};
+  return {positions, uvs, indices};
 }
 
 const ZERO = () => 0;
@@ -852,7 +941,7 @@ const VERTEX_MESH_STEPS = 12;
  * pinched to nothing at both ends of every sector, and a polar grid would spend
  * all its resolution there and none at the corners.
  */
-export function vertexMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
+export function vertexMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE, steps = VERTEX_MESH_STEPS): DomainMesh {
   const triangles: [Face, Face, Face][] = [];
   for (let i = 0; i < 5; i++) {
     const centre = toFace([DOMAIN_CIRCUMRADIUS, (i * TWO_PI_OVER_5) as Radians] as Polar);
@@ -862,11 +951,12 @@ export function vertexMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
     }
   }
 
-  const steps = VERTEX_MESH_STEPS;
   const perTriangle = ((steps + 1) * (steps + 2)) / 2;
   const positions = new Float32Array(triangles.length * perTriangle * 3);
+  const uvs = new Float32Array(triangles.length * perTriangle * 2);
   const indices = new Uint32Array(triangles.length * steps * steps * 3);
   let p = 0;
+  let q = 0;
   let k = 0;
 
   for (let t = 0; t < triangles.length; t++) {
@@ -883,6 +973,8 @@ export function vertexMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
         positions[p++] = point[0];
         positions[p++] = point[1];
         positions[p++] = point[2];
+        writeRasterUV(uvs, q, face);
+        q += 2;
       }
     }
 
@@ -904,7 +996,64 @@ export function vertexMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
     }
   }
 
-  return {positions, indices};
+  return {positions, uvs, indices};
+}
+
+/**
+ * Resolution of the mesh the raster is painted on. Finer than the flat-coloured
+ * regions want: the texture is carried across each quad by a linear map, so the
+ * quads have to be small enough that the projection is near-linear over one, or
+ * the cusps come out kinked.
+ */
+const RASTER_MESH_ANGULAR = 320;
+const RASTER_MESH_RADIAL = 24;
+const RASTER_VERTEX_STEPS = 20;
+
+/** The pieces of several meshes joined into one, so the raster costs a single draw */
+function concatMeshes(parts: DomainMesh[]): DomainMesh {
+  let vertices = 0;
+  let indexCount = 0;
+  for (const part of parts) {
+    vertices += part.positions.length / 3;
+    indexCount += part.indices.length;
+  }
+
+  const positions = new Float32Array(vertices * 3);
+  const uvs = new Float32Array(vertices * 2);
+  const indices = new Uint32Array(indexCount);
+  let p = 0;
+  let q = 0;
+  let k = 0;
+  let base = 0;
+  for (const part of parts) {
+    positions.set(part.positions, p);
+    uvs.set(part.uvs, q);
+    for (let i = 0; i < part.indices.length; i++) indices[k++] = part.indices[i] + base;
+    p += part.positions.length;
+    q += part.uvs.length;
+    base += part.positions.length / 3;
+  }
+
+  return {positions, uvs, indices};
+}
+
+/**
+ * The whole drawn domain as one textured mesh, so the deformation raster can be
+ * painted onto the sphere rather than onto the flat face.
+ *
+ * The pieces are the same three the flat-coloured regions use — the face, the
+ * reflected triangles beyond it, and the ten that close the vertices — which is
+ * what keeps the mesh's outline exactly on the field's mask. A single polar mesh
+ * out to `closedDomainRadius` would not: that outline notches inward at angles
+ * that are not multiples of the sector, so its corners would fall between samples.
+ */
+export function domainRasterMesh(mode: ProjectionMode, closed: boolean): DomainMesh {
+  const parts = [
+    radialMesh(ZERO, faceRadius, mode, RASTER_MESH_ANGULAR, RASTER_MESH_RADIAL),
+    radialMesh(faceRadius, domainRadius, mode, RASTER_MESH_ANGULAR, RASTER_MESH_RADIAL)
+  ];
+  if (closed) parts.push(vertexMesh(mode, RASTER_VERTEX_STEPS));
+  return concatMeshes(parts);
 }
 
 export interface FrameJacobian {

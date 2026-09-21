@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import React, {Suspense, useId, useMemo, useRef} from 'react';
+import React, {Suspense, useEffect, useId, useMemo, useRef} from 'react';
 import {Canvas, ThreeEvent} from '@react-three/fiber';
 import {Line, OrbitControls} from '@react-three/drei';
-import {BufferAttribute, BufferGeometry, DoubleSide} from 'three';
+import {BufferAttribute, BufferGeometry, CanvasTexture, DoubleSide, SRGBColorSpace} from 'three';
 import {toFace, toPolar} from 'a5/core/coordinate-transforms';
 import type {Cartesian, Face, Polar} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
+import type {DeformationRaster} from './deformation';
 import type {GridSource, RayWeight} from './jacobian';
 import {
   beyondFaceMesh,
@@ -19,6 +20,7 @@ import {
   closedDomainCorners,
   domainBoundary,
   domainCorners,
+  domainRasterMesh,
   faceBoundary,
   faceCorners,
   faceMesh,
@@ -73,7 +75,7 @@ export function FaceView({
   onHover
 }: {
   polar: Polar;
-  raster: string | null;
+  raster: DeformationRaster | null;
   cells: Face[][];
   closed: boolean;
   ownFrame: boolean;
@@ -102,7 +104,10 @@ export function FaceView({
     () => cells.map(cell => `M${cell.map(v => `${v[0].toFixed(5)},${v[1].toFixed(5)}`).join('L')}Z`),
     [cells]
   );
-  const patch = useMemo(() => toPath(patchOutline(polar, PATCH_SIZE, closed), true), [polar, closed]);
+  const patch = useMemo(
+    () => toPath(patchOutline(polar, PATCH_SIZE, source, projection, ownFrame, closed), true),
+    [polar, source, projection, ownFrame, closed]
+  );
   const marker = toFace(polar);
 
   const gridStroke = raster ? COLORS.gridOverRaster : COLORS.grid;
@@ -139,7 +144,7 @@ export function FaceView({
             </clipPath>
           </defs>
           <image
-            href={raster}
+            href={raster.url}
             x={-DOMAIN_CIRCUMRADIUS}
             y={-DOMAIN_CIRCUMRADIUS}
             width={2 * DOMAIN_CIRCUMRADIUS}
@@ -286,6 +291,10 @@ function ProjectedRegion({
 }
 
 const RAY_OPACITY: Record<RayWeight, number> = {cusp: 0.55, bisector: 0.25, minor: 0.1};
+// The same lift the face view gives its strokes once there is a raster under them
+const RAY_OPACITY_OVER_RASTER: Record<RayWeight, number> = {cusp: 0.85, bisector: 0.45, minor: 0.2};
+const RING_OPACITY = 0.25;
+const RING_OPACITY_OVER_RASTER = 0.45;
 const RAY_WEIGHTS: RayWeight[] = ['cusp', 'bisector', 'minor'];
 
 /** Polylines flattened into the pairs of endpoints a segment soup wants */
@@ -303,12 +312,14 @@ const ProjectedGrid = React.memo(function ProjectedGrid({
   projection,
   closed,
   ownFrame,
-  source
+  source,
+  overRaster
 }: {
   projection: ProjectionMode;
   closed: boolean;
   ownFrame: boolean;
   source: GridSource;
+  overRaster: boolean;
 }) {
   const grid = useMemo(() => gridLines(closed, ownFrame, source, projection), [closed, ownFrame, source, projection]);
   // One line-segment soup per style rather than one line object per curve: with
@@ -320,9 +331,20 @@ const ProjectedGrid = React.memo(function ProjectedGrid({
     return RAY_WEIGHTS.map(weight => ({weight, points: segments(byWeight[weight])}));
   }, [grid, projection]);
 
+  const rayOpacity = overRaster ? RAY_OPACITY_OVER_RASTER : RAY_OPACITY;
+
   return (
     <>
-      {rings.length > 0 && <Line points={rings} segments color="#ffffff" transparent opacity={0.25} lineWidth={1} />}
+      {rings.length > 0 && (
+        <Line
+          points={rings}
+          segments
+          color="#ffffff"
+          transparent
+          opacity={overRaster ? RING_OPACITY_OVER_RASTER : RING_OPACITY}
+          lineWidth={1}
+        />
+      )}
       {rays.map(
         ({weight, points}) =>
           points.length > 0 && (
@@ -332,7 +354,7 @@ const ProjectedGrid = React.memo(function ProjectedGrid({
               segments
               color="#ffffff"
               transparent
-              opacity={RAY_OPACITY[weight]}
+              opacity={rayOpacity[weight]}
               lineWidth={1}
             />
           )
@@ -340,6 +362,54 @@ const ProjectedGrid = React.memo(function ProjectedGrid({
     </>
   );
 });
+
+/**
+ * The deformation raster on the sphere: the very canvas the face view draws as an
+ * image, mapped through the projection onto the image of the domain.
+ *
+ * `toneMapped` is off deliberately. The canvas has the renderer's default filmic
+ * tone mapping on it, which greys saturated colour down until the ramp and the
+ * legend beside it no longer agree — and at the ends of the ramp, where the
+ * colours are strongest, the greying is worst.
+ */
+function ProjectedRaster({
+  raster,
+  projection,
+  closed
+}: {
+  raster: DeformationRaster;
+  projection: ProjectionMode;
+  closed: boolean;
+}) {
+  const geometry = useMemo(() => {
+    const {positions, uvs, indices} = domainRasterMesh(projection, closed);
+    const built = new BufferGeometry();
+    built.setAttribute('position', new BufferAttribute(positions, 3));
+    built.setAttribute('uv', new BufferAttribute(uvs, 2));
+    built.setIndex(new BufferAttribute(indices, 1));
+    return built;
+  }, [projection, closed]);
+
+  // A canvas texture rather than one loaded from the data URL: it is ready on the
+  // frame it is made, so there is no pass where the mesh draws untextured
+  const texture = useMemo(() => {
+    const created = new CanvasTexture(raster.canvas);
+    created.colorSpace = SRGBColorSpace;
+    return created;
+  }, [raster]);
+
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => () => texture.dispose(), [texture]);
+
+  // The field is transparent outside the domain, and the mesh runs a texel or two
+  // past it in places. Cutting those out with alphaTest rather than blending them
+  // keeps the surface in the opaque pass, where it needs no sorting against itself
+  return (
+    <mesh geometry={geometry} scale={SPHERE_RADIUS}>
+      <meshBasicMaterial map={texture} side={DoubleSide} alphaTest={0.5} toneMapped={false} />
+    </mesh>
+  );
+}
 
 /**
  * The gap between each cell edge and the great circle joining its endpoints, filled.
@@ -383,6 +453,7 @@ function ProjectedCells({cells, projection}: {cells: Face[][]; projection: Proje
 
 function Scene({
   polar,
+  raster,
   projection,
   cells,
   showSag,
@@ -392,6 +463,7 @@ function Scene({
   onHover
 }: {
   polar: Polar;
+  raster: DeformationRaster | null;
   projection: ProjectionMode;
   cells: Face[][];
   showSag: boolean;
@@ -407,8 +479,8 @@ function Scene({
     [closed, projection]
   );
   const patch = useMemo(
-    () => lift(patchOutline(polar, PATCH_SIZE, closed), 1.003, projection),
-    [polar, projection, closed]
+    () => lift(patchOutline(polar, PATCH_SIZE, source, projection, ownFrame, closed), 1.003, projection),
+    [polar, source, projection, ownFrame, closed]
   );
   const marker = useMemo(() => lift([polar], 1.004, projection)[0], [polar, projection]);
 
@@ -431,10 +503,25 @@ function Scene({
         <meshPhysicalMaterial color="#1b2330" roughness={0.65} metalness={0.1} />
       </mesh>
 
-      <ProjectedRegion build={faceMesh} projection={projection} color={COLORS.face} opacity={0.25} />
-      <ProjectedRegion build={beyondFaceMesh} projection={projection} color={COLORS.beyond} opacity={0.22} />
-      {closed && <ProjectedRegion build={vertexMesh} projection={projection} color={COLORS.closing} opacity={0.3} />}
-      <ProjectedGrid projection={projection} closed={closed} ownFrame={ownFrame} source={source} />
+      {/* The flat region colours would tint the ramp, so the raster replaces them */}
+      {raster ? (
+        <ProjectedRaster raster={raster} projection={projection} closed={closed} />
+      ) : (
+        <>
+          <ProjectedRegion build={faceMesh} projection={projection} color={COLORS.face} opacity={0.25} />
+          <ProjectedRegion build={beyondFaceMesh} projection={projection} color={COLORS.beyond} opacity={0.22} />
+          {closed && (
+            <ProjectedRegion build={vertexMesh} projection={projection} color={COLORS.closing} opacity={0.3} />
+          )}
+        </>
+      )}
+      <ProjectedGrid
+        projection={projection}
+        closed={closed}
+        ownFrame={ownFrame}
+        source={source}
+        overRaster={raster !== null}
+      />
       {showSag ? (
         <ProjectedSag cells={cells} projection={projection} />
       ) : (
@@ -463,6 +550,7 @@ function Scene({
 
 export function SphereView({
   polar,
+  raster,
   projection,
   cells,
   showSag,
@@ -472,6 +560,7 @@ export function SphereView({
   onHover
 }: {
   polar: Polar;
+  raster: DeformationRaster | null;
   projection: ProjectionMode;
   cells: Face[][];
   showSag: boolean;
@@ -488,6 +577,7 @@ export function SphereView({
       <Suspense fallback={null}>
         <Scene
           polar={polar}
+          raster={raster}
           projection={projection}
           cells={cells}
           showSag={showSag}

@@ -178,11 +178,20 @@ export function resolveExtents(
   ) as Extents;
 }
 
+/**
+ * The sampled field as pixels, in the two forms the two views want: the face
+ * draws it as an SVG image, the sphere textures a mesh with the canvas itself.
+ */
+export interface DeformationRaster {
+  canvas: HTMLCanvasElement;
+  url: string;
+}
+
 export function useDeformationRaster(
   field: DeformationField | null,
   quantity: RasterQuantity,
   extents: Extents | null
-): string | null {
+): DeformationRaster | null {
   return useMemo(() => {
     if (!field || quantity === 'off' || !extents || typeof document === 'undefined') return null;
 
@@ -210,7 +219,7 @@ export function useDeformationRaster(
       data[offset + 3] = 255;
     }
     context.putImageData(image, 0, 0);
-    return canvas.toDataURL();
+    return {canvas, url: canvas.toDataURL()};
   }, [field, quantity, extents]);
 }
 
@@ -266,9 +275,10 @@ function Toggle<T extends string>({
 export const CELL_OPTIONS = ['off', ...CELL_RESOLUTIONS.map(String)];
 
 const GRID_TITLES: Record<GridSource, string> = {
-  plane: 'Draw the lines of constant ρ and γ: straight and circular on the face, bent on the sphere',
+  plane:
+    'Read the projection from the plane: the lines of constant ρ and γ, straight and circular on the face and bent on the sphere, with the raster painted on the sphere alongside them',
   sphere:
-    'Draw the meridians and parallels of constant θ and φ instead: straight on the sphere, and kinked on the face wherever the projection is. Same lines either way — it is which window the distortion shows up in that changes'
+    'Read it from the sphere instead: the meridians and parallels of constant θ and φ, straight on the sphere and kinked on the face wherever the projection is, with the raster on the face. Same lines and the same field either way — it is which window the distortion shows up in that changes'
 };
 
 const SAG_OPTIONS = ['off', 'on'];
