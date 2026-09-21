@@ -5,11 +5,12 @@
 import {DodecahedronProjection} from 'a5/projections/dodecahedron';
 import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
-import {radToDeg, toCartesian, toFace, toPolar} from 'a5/core/coordinate-transforms';
+import {radToDeg, toCartesian, toFace, toPolar, toSpherical} from 'a5/core/coordinate-transforms';
 import {AUTHALIC_RADIUS_EARTH, distanceToEdge, PI_OVER_5, TWO_PI, TWO_PI_OVER_5} from 'a5/core/constants';
 import * as vec3 from 'a5/math/vec3';
 import type {Cartesian, Face, Polar, Radians, Spherical} from 'a5/core/coordinate-systems';
 import type {OriginId} from 'a5/core/utils';
+import {findNearestOrigin, origins} from 'a5/core/origin';
 import {_getPentagon} from 'a5/core/cell';
 import {deserialize} from 'a5/core/serialization';
 import {cellToChildren, getRes0Cells} from 'a5/index';
@@ -65,6 +66,10 @@ export const SPHERE_RADIUS = Math.sqrt((3 * FACE_AREA) / Math.PI);
  * coordinates (rho, gamma) to the sphere's spherical coordinates (theta, phi).
  */
 export function polarToSpherical(polar: Polar, mode: ProjectionMode = DEFAULT_PROJECTION_MODE): Spherical {
+  if (needsUnfolding(polar, mode)) {
+    const {origin, face} = unfold(polar);
+    return projections[mode].inverse(face, origin);
+  }
   return projections[mode].inverse(toFace(polar), ORIGIN_ID);
 }
 
@@ -72,8 +77,59 @@ export function polarToCartesian(polar: Polar, mode: ProjectionMode = DEFAULT_PR
   return toCartesian(polarToSpherical(polar, mode));
 }
 
-/** Inverse of `polarToCartesian`: where a point on the sphere lands on the face */
+/**
+ * Spherical coordinates measured about a given face's own centre, rather than the
+ * global frame. For the central face these agree, since its centre is the pole.
+ */
+function sphericalAbout(cartesian: Cartesian, origin: OriginId): Spherical {
+  const rotated = vec3.create() as Cartesian;
+  vec3.transformQuat(rotated, cartesian, origins[origin].inverseQuat);
+  const [theta, phi] = toSpherical(rotated);
+  return [(theta - origins[origin].angle) as Radians, phi] as Spherical;
+}
+
+/** The projection of a point of `origin`'s face, in that face's own spherical frame */
+function polarToSphericalIn(polar: Polar, mode: ProjectionMode, origin: OriginId): Spherical {
+  return sphericalAbout(toCartesian(projections[mode].inverse(toFace(polar), origin)), origin);
+}
+
+/**
+ * Which face to measure a point in, and where it sits in that face's chart.
+ *
+ * A5 projects every point from its own face, so a point past this face's edge
+ * belongs to a neighbour. Measuring it in the neighbour's frame is what the whole
+ * system actually does; measuring it in this face's frame — which is what the
+ * reflected triangles give — exposes the seam but exaggerates the distortion, as
+ * the chart is being used far from the centre it belongs to.
+ */
+export function resolveOrigin(polar: Polar, mode: ProjectionMode, ownFrame: boolean): {origin: OriginId; polar: Polar} {
+  // Past the reflected region there is no chart of this face left to fall back on
+  if (needsUnfolding(polar, mode)) {
+    const {origin, face} = unfold(polar);
+    return {origin, polar: toPolar(face)};
+  }
+  if (!ownFrame || isOnFace(polar)) return {origin: ORIGIN_ID, polar};
+
+  const spherical = projections[mode].inverse(toFace(polar), ORIGIN_ID);
+  const neighbour = findNearestOrigin(spherical);
+  if (neighbour.id === ORIGIN_ID) return {origin: ORIGIN_ID, polar};
+  return {origin: neighbour.id, polar: toPolar(projections[mode].forward(spherical, neighbour.id))};
+}
+
+/**
+ * Inverse of `polarToCartesian`: where a point on the sphere lands on the face.
+ *
+ * A point of a neighbouring face is read in that face's own frame and folded back
+ * into this chart. Within the reflected region that agrees with the reflected
+ * chart to 1e-13 degrees, and past it the reflected chart saturates and would
+ * report every point as sitting on the boundary.
+ */
 export function cartesianToPolar(point: Cartesian, mode: ProjectionMode = DEFAULT_PROJECTION_MODE): Polar {
+  if (mode !== 'gnomonic') {
+    const origin = findNearestOrigin(toSpherical(point)).id;
+    const folded = origin === ORIGIN_ID ? null : foldIn(point, mode, origin);
+    if (folded) return folded;
+  }
   return toPolar(projections[mode].forwardCartesian(point, ORIGIN_ID));
 }
 
@@ -110,6 +166,124 @@ export function isInDomain([rho, gamma]: Polar): boolean {
   return rho <= domainRadius(gamma);
 }
 
+// ---------------------------------------------------------------------------
+// The unfolded neighbours
+// ---------------------------------------------------------------------------
+
+/**
+ * Where a neighbouring face sits once it is rotated flat about the edge it shares
+ * with this one, and how to read a point of it in that face's own frame.
+ *
+ * A5's reflected triangles already do exactly this for the two triangles of each
+ * neighbour that abut the shared edge: measured against this, the two agree to
+ * 1e-13 degrees under every equal-area mode. They stop there, but the rotation
+ * carries on, and with it the rest of the neighbour.
+ */
+interface NeighbourFrame {
+  origin: OriginId;
+  /** The neighbour's centre, in this face's chart */
+  centre: Face;
+  cos: number;
+  sin: number;
+}
+
+const neighbourFrames: NeighbourFrame[] = Array.from({length: 5}, (_, index) => {
+  const centreAngle = (index * TWO_PI_OVER_5) as Radians;
+  const centre = toFace([DOMAIN_CIRCUMRADIUS, centreAngle] as Polar);
+
+  // Far enough past the edge that the lookup cannot land back on this face
+  const probe = projection.inverse(toFace([1.8 * FACE_APOTHEM, centreAngle] as Polar), ORIGIN_ID);
+  const origin = findNearestOrigin(probe).id;
+
+  // The shared edge's midpoint is a vertex of the face triangle on both sides, so
+  // every mode sends it to the same point of the sphere. That alone fixes the
+  // unfolding, which comes out as a rotation by -36 degrees for every neighbour.
+  const midpoint = toFace([FACE_APOTHEM, centreAngle] as Polar);
+  const image = projection.forward(projection.inverse(midpoint, ORIGIN_ID), origin);
+  const angle = Math.atan2(image[1], image[0]) - (centreAngle + Math.PI);
+  return {origin, centre, cos: Math.cos(angle), sin: Math.sin(angle)};
+});
+
+/** Which neighbour's unfolded face a point past this one's edge belongs to */
+function neighbourOf(gamma: Radians): NeighbourFrame {
+  const index = Math.round(gamma / TWO_PI_OVER_5) % 5;
+  return neighbourFrames[index < 0 ? index + 5 : index];
+}
+
+/** A point past the face edge, in the frame of the face it actually belongs to */
+export function unfold(polar: Polar): {origin: OriginId; face: Face} {
+  const {origin, centre, cos, sin} = neighbourOf(polar[1]);
+  const point = toFace(polar);
+  const x = point[0] - centre[0];
+  const y = point[1] - centre[1];
+  return {origin, face: [cos * x - sin * y, sin * x + cos * y] as Face};
+}
+
+/** The reverse: a point of a neighbouring face, folded back into this face's chart */
+function foldIn(point: Cartesian, mode: ProjectionMode, origin: OriginId): Polar | null {
+  const frame = neighbourFrames.find(candidate => candidate.origin === origin);
+  if (!frame) return null;
+  const [x, y] = projections[mode].forwardCartesian(point, origin);
+  return toPolar([
+    frame.centre[0] + frame.cos * x + frame.sin * y,
+    frame.centre[1] - frame.sin * x + frame.cos * y
+  ] as Face);
+}
+
+/**
+ * Whether a point has to be read in its own face's frame rather than this one's.
+ *
+ * The equal-area charts are assembled one triangle at a time and saturate past the
+ * last of them: every point beyond the reflected region comes back pinned to its
+ * boundary. The gnomonic chart is a single central projection and covers the whole
+ * plane, and continuing it is the honest picture there in any case, since its
+ * faces do not agree with each other to begin with.
+ */
+function needsUnfolding(polar: Polar, mode: ProjectionMode): boolean {
+  return mode !== 'gnomonic' && !isInDomain(polar);
+}
+
+/**
+ * The domain with the dodecahedron vertices closed: each neighbour contributing
+ * four of its ten triangles rather than the two that abut the shared edge.
+ *
+ * Around a corner of this face that leaves 108 degrees from this face and 108 from
+ * each of the two neighbours meeting there, which is all 324 the solid has. The
+ * 36 left over is the vertex's angular defect, and it is why the outline notches
+ * inward at every corner rather than closing into a decagon.
+ */
+function beyondMidpoint(index: number, side: 1 | -1): Face {
+  const centreAngle = index * TWO_PI_OVER_5;
+  const centre = toFace([DOMAIN_CIRCUMRADIUS, centreAngle as Radians] as Polar);
+  const angle = centreAngle + side * 3 * PI_OVER_5;
+  return [centre[0] + FACE_APOTHEM * Math.cos(angle), centre[1] + FACE_APOTHEM * Math.sin(angle)] as Face;
+}
+
+/** Distance to the edge of the closed domain, in the direction `gamma` */
+export function closedDomainRadius(gamma: Radians): number {
+  const beta = Math.abs(projection.normalizeGamma(gamma));
+  // The neighbour's two outer edges, each as a line: r = distance / cos(beta - normal)
+  const outer = (DOMAIN_CIRCUMRADIUS * Math.cos(PI_OVER_5 / 2)) / Math.cos(beta - PI_OVER_5 / 2);
+  const across = (FACE_CIRCUMRADIUS * Math.cos(2 * PI_OVER_5)) / Math.cos(beta - 3 * PI_OVER_5);
+  // The second only bites once the ray is pointing at it
+  return across > 0 ? Math.min(outer, across) : outer;
+}
+
+/** The outer edge of whichever of the two domains is on show */
+export function outerRadius(closed: boolean): (gamma: Radians) => number {
+  return closed ? closedDomainRadius : domainRadius;
+}
+
+export function isInDrawnDomain([rho, gamma]: Polar, closed: boolean): boolean {
+  return rho <= (closed ? closedDomainRadius(gamma) : domainRadius(gamma));
+}
+
+/** A point pulled back inside the domain, for when the domain shrinks out from under it */
+export function clampToDomain(polar: Polar, closed: boolean): Polar {
+  const radius = outerRadius(closed)(polar[1]);
+  return polar[0] <= radius ? polar : ([radius * (1 - 1e-6), polar[1]] as Polar);
+}
+
 /**
  * The Jacobian of the projection at a point, relating the face's polar coordinates
  * (rho, gamma) to the sphere's spherical coordinates (phi, theta).
@@ -131,6 +305,9 @@ export interface Jacobian {
    * sphere at SPHERE_RADIUS it is exactly one.
    */
   areaRatio: number;
+  /** Where the point sat in the frame it was measured in, for the metric rescaling */
+  localRho: number;
+  localPhi: Radians;
 }
 
 // Central difference step. Small enough that the O(h²) truncation error stays
@@ -172,7 +349,13 @@ function stepClearOfEdge(rho: number, gamma: Radians, margin: number): number {
   return rho <= edge ? edge - margin : edge + margin;
 }
 
-export function computeJacobian([rho, gamma]: Polar, mode: ProjectionMode = DEFAULT_PROJECTION_MODE): Jacobian {
+export function computeJacobian(
+  point: Polar,
+  mode: ProjectionMode = DEFAULT_PROJECTION_MODE,
+  ownFrame = false
+): Jacobian {
+  const {origin, polar} = resolveOrigin(point, mode, ownFrame);
+  const [rho, gamma] = polar;
   const r0 = Math.max(rho, MIN_RHO);
   const h = Math.min(STEP, 0.5 * r0);
 
@@ -184,10 +367,10 @@ export function computeJacobian([rho, gamma]: Polar, mode: ProjectionMode = DEFA
   const g = stepClearOfCusp(gamma, 2 * h);
   const r = stepClearOfEdge(r0, g, 3 * h);
 
-  const [thetaRhoPlus, phiRhoPlus] = polarToSpherical([r + h, g] as Polar, mode);
-  const [thetaRhoMinus, phiRhoMinus] = polarToSpherical([r - h, g] as Polar, mode);
-  const [thetaGammaPlus, phiGammaPlus] = polarToSpherical([r, g + h] as Polar, mode);
-  const [thetaGammaMinus, phiGammaMinus] = polarToSpherical([r, g - h] as Polar, mode);
+  const [thetaRhoPlus, phiRhoPlus] = polarToSphericalIn([r + h, g] as Polar, mode, origin);
+  const [thetaRhoMinus, phiRhoMinus] = polarToSphericalIn([r - h, g] as Polar, mode, origin);
+  const [thetaGammaPlus, phiGammaPlus] = polarToSphericalIn([r, g + h] as Polar, mode, origin);
+  const [thetaGammaMinus, phiGammaMinus] = polarToSphericalIn([r, g - h] as Polar, mode, origin);
 
   const scale = 1 / (2 * h);
   // phi is a colatitude and never wraps; theta is an azimuth, so its differences do
@@ -201,10 +384,10 @@ export function computeJacobian([rho, gamma]: Polar, mode: ProjectionMode = DEFA
   // Area elements are rho·drho·dgamma on the face and R²·sin(phi)·dphi·dtheta on
   // the sphere. Neither chart is area-preserving on its own, which is why the
   // determinant varies across the face while this ratio does not.
-  const [, phi] = polarToSpherical([r, g] as Polar, mode);
+  const [, phi] = polarToSphericalIn([r, g] as Polar, mode, origin);
   const areaRatio = (SPHERE_RADIUS * SPHERE_RADIUS * Math.sin(phi) * determinant) / r;
 
-  return {dPhiDRho, dPhiDGamma, dThetaDRho, dThetaDGamma, determinant, areaRatio};
+  return {dPhiDRho, dPhiDGamma, dThetaDRho, dThetaDGamma, determinant, areaRatio, localRho: r, localPhi: phi};
 }
 
 /** The five corners of the face, which lie halfway between the edge midpoints */
@@ -253,6 +436,26 @@ export function domainBoundary(segmentsPerEdge = 24): Polar[] {
 }
 
 /**
+ * The twenty corners of the closed domain: the five mirrored face centres, the ten
+ * far edge midpoints of the added triangles, and the five face corners, where the
+ * outline notches back in by the vertex defect.
+ */
+export function closedDomainCorners(): Face[] {
+  const corners: Face[] = [];
+  for (let i = 0; i < 5; i++) {
+    corners.push(toFace([DOMAIN_CIRCUMRADIUS, (i * TWO_PI_OVER_5) as Radians] as Polar));
+    corners.push(beyondMidpoint(i, 1));
+    corners.push(toFace([FACE_CIRCUMRADIUS, (PI_OVER_5 + i * TWO_PI_OVER_5) as Radians] as Polar));
+    corners.push(beyondMidpoint(i + 1, -1));
+  }
+  return corners;
+}
+
+export function closedDomainBoundary(segmentsPerEdge = 24): Polar[] {
+  return boundaryThrough(closedDomainCorners(), segmentsPerEdge);
+}
+
+/**
  * Radii of the polar grid rings. Those out to the face circumradius close on
  * themselves; beyond it a ring survives only inside the five reflected points.
  */
@@ -266,7 +469,7 @@ export const GRID_RAYS = 80;
  * to the face circumradius come back as a single closed arc, beyond that as one
  * arc per reflected point.
  */
-export function gridRingArcs(rho: number, segments = 720): Polar[][] {
+export function gridRingArcs(rho: number, closed = false, segments = 720): Polar[][] {
   const angle = (i: number) => ((TWO_PI * i) / segments) as Radians;
 
   if (rho <= FACE_CIRCUMRADIUS) {
@@ -275,8 +478,9 @@ export function gridRingArcs(rho: number, segments = 720): Polar[][] {
     return [ring];
   }
 
+  const radius = outerRadius(closed);
   const inside: boolean[] = new Array(segments);
-  for (let i = 0; i < segments; i++) inside[i] = rho <= domainRadius(angle(i));
+  for (let i = 0; i < segments; i++) inside[i] = rho <= radius(angle(i));
 
   // Walk from a gap, so that an arc straddling gamma = 0 is not cut in two
   const start = inside.indexOf(false);
@@ -300,9 +504,9 @@ export function gridRingArcs(rho: number, segments = 720): Polar[][] {
 }
 
 /** A ray from the face center out to the edge of the domain */
-export function gridRay(gamma: Radians, segments = 32): Polar[] {
+export function gridRay(gamma: Radians, closed = false, segments = 32): Polar[] {
   const ray: Polar[] = [];
-  const radius = domainRadius(gamma);
+  const radius = outerRadius(closed)(gamma);
   for (let i = 0; i <= segments; i++) {
     ray.push([(radius * i) / segments, gamma] as Polar);
   }
@@ -329,7 +533,7 @@ export function rayWeight(index: number): RayWeight {
  * it reads as a square of side `size` on the face. Its image on the sphere is the
  * finite version of what the Jacobian describes in the limit.
  */
-export function patchOutline(polar: Polar, size: number, segments = 16): Polar[] {
+export function patchOutline(polar: Polar, size: number, closed = false, segments = 16): Polar[] {
   const [rho, gamma] = polar;
   const dRho = size / 2;
   // Matching arc length in the azimuthal direction, clamped so the patch stays
@@ -343,6 +547,7 @@ export function patchOutline(polar: Polar, size: number, segments = 16): Polar[]
     [Math.max(0, rho - dRho), gamma + dGamma] as Polar
   ];
 
+  const radius = outerRadius(closed);
   const outline: Polar[] = [];
   for (let i = 0; i < 4; i++) {
     const [rhoA, gammaA] = corners[i];
@@ -350,9 +555,9 @@ export function patchOutline(polar: Polar, size: number, segments = 16): Polar[]
     for (let s = 0; s < segments; s++) {
       const t = s / segments;
       const gammaT = (gammaA + (gammaB - gammaA) * t) as Radians;
-      // Clip to the domain. Past it the projection saturates at a triangle vertex,
-      // which would collapse the patch rather than simply cutting it off
-      const rhoT = Math.min(rhoA + (rhoB - rhoA) * t, domainRadius(gammaT));
+      // Clip to the domain. Past it there is no face to project from, and the
+      // patch would be collapsed onto the boundary rather than simply cut off
+      const rhoT = Math.min(rhoA + (rhoB - rhoA) * t, radius(gammaT));
       outline.push([rhoT, gammaT] as Polar);
     }
   }
@@ -421,23 +626,72 @@ export function beyondFaceMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
   return radialMesh(faceRadius, domainRadius, mode);
 }
 
+/** Subdivision of each closing triangle. Its edges are straight in the plane, not on the sphere */
+const VERTEX_MESH_STEPS = 12;
+
 /**
- * Which pair of frames the derivative is expressed in.
+ * The ten triangles that close the face's dodecahedron vertices, as a mesh.
  *
- * 'chart' differentiates the raw coordinates, (rho, gamma) -> (phi, theta). Both
- * charts are centred on this face, so reflecting across a face edge is not a
- * symmetry of either: the reflected region's numbers are a mirror of the face's
- * only after the chart's own contribution is removed.
- *
- * 'metric' removes it, by using the local orthonormal frames instead —
- * (drho, rho·dgamma) on the plane and (R·dphi, R·sinphi·dtheta) on the sphere.
- * Its singular values do not depend on either chart, so they are the projection's
- * own distortion, and they do mirror exactly across a face edge.
+ * Tessellated barycentrically rather than in polar coordinates: the band is
+ * pinched to nothing at both ends of every sector, and a polar grid would spend
+ * all its resolution there and none at the corners.
  */
-export type FrameMode = 'chart' | 'metric';
+export function vertexMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
+  const triangles: [Face, Face, Face][] = [];
+  for (let i = 0; i < 5; i++) {
+    const centre = toFace([DOMAIN_CIRCUMRADIUS, (i * TWO_PI_OVER_5) as Radians] as Polar);
+    for (const side of [1, -1] as const) {
+      const corner = toFace([FACE_CIRCUMRADIUS, (i * TWO_PI_OVER_5 + side * PI_OVER_5) as Radians] as Polar);
+      triangles.push([centre, corner, beyondMidpoint(i, side)]);
+    }
+  }
+
+  const steps = VERTEX_MESH_STEPS;
+  const perTriangle = ((steps + 1) * (steps + 2)) / 2;
+  const positions = new Float32Array(triangles.length * perTriangle * 3);
+  const indices = new Uint32Array(triangles.length * steps * steps * 3);
+  let p = 0;
+  let k = 0;
+
+  for (let t = 0; t < triangles.length; t++) {
+    const [a, b, c] = triangles[t];
+    const base = t * perTriangle;
+
+    for (let row = 0; row <= steps; row++) {
+      for (let column = 0; column <= row; column++) {
+        const wa = (steps - row) / steps;
+        const wc = column / steps;
+        const wb = 1 - wa - wc;
+        const face = [a[0] * wa + b[0] * wb + c[0] * wc, a[1] * wa + b[1] * wb + c[1] * wc] as Face;
+        const point = polarToCartesian(toPolar(face), mode);
+        positions[p++] = point[0];
+        positions[p++] = point[1];
+        positions[p++] = point[2];
+      }
+    }
+
+    // Row `row` holds row + 1 points, so it spans row upward triangles and
+    // row - 1 downward ones
+    for (let row = 1; row <= steps; row++) {
+      const above = base + ((row - 1) * row) / 2;
+      const here = base + (row * (row + 1)) / 2;
+      for (let column = 0; column < row; column++) {
+        indices[k++] = above + column;
+        indices[k++] = here + column;
+        indices[k++] = here + column + 1;
+        if (column < row - 1) {
+          indices[k++] = above + column;
+          indices[k++] = here + column + 1;
+          indices[k++] = above + column + 1;
+        }
+      }
+    }
+  }
+
+  return {positions, indices};
+}
 
 export interface FrameJacobian {
-  mode: FrameMode;
   /** Row 0 is the radial output direction and row 1 the azimuthal; columns likewise for the input */
   rows: [[number, number], [number, number]];
   determinant: number;
@@ -445,37 +699,29 @@ export interface FrameJacobian {
   areaRatio: number;
 }
 
-export function toFrame(
-  jacobian: Jacobian,
-  polar: Polar,
-  mode: FrameMode,
-  projectionMode: ProjectionMode = DEFAULT_PROJECTION_MODE
-): FrameJacobian {
-  if (mode === 'chart') {
-    return {
-      mode,
-      rows: [
-        [jacobian.dPhiDRho, jacobian.dPhiDGamma],
-        [jacobian.dThetaDRho, jacobian.dThetaDGamma]
-      ],
-      determinant: jacobian.determinant,
-      areaRatio: jacobian.areaRatio
-    };
-  }
-
+/**
+ * The derivative in the local orthonormal frames — (drho, rho·dgamma) on the plane
+ * and (R·dphi, R·sinphi·dtheta) on the sphere — so both sides measure length.
+ *
+ * The raw coordinate derivative is not offered. Its singular values depend on the
+ * charts rather than the projection, and its determinant varies across the face
+ * even though the map is exactly equal-area, which invites precisely the wrong
+ * conclusion. Here the determinant is 1 by construction, so everything that does
+ * vary is shape.
+ */
+export function toFrame(jacobian: Jacobian): FrameJacobian {
   // Scale each row by the length its coordinate measures on the sphere, and each
   // column by the length its coordinate measures on the plane
-  const rho = Math.max(polar[0], 1e-9);
-  const [, phi] = polarToSpherical(polar, projectionMode);
+  const rho = Math.max(jacobian.localRho, 1e-9);
   const radial = SPHERE_RADIUS;
-  const azimuthal = SPHERE_RADIUS * Math.sin(phi);
+  const azimuthal = SPHERE_RADIUS * Math.sin(jacobian.localPhi);
   const rows: [[number, number], [number, number]] = [
     [radial * jacobian.dPhiDRho, (radial * jacobian.dPhiDGamma) / rho],
     [azimuthal * jacobian.dThetaDRho, (azimuthal * jacobian.dThetaDGamma) / rho]
   ];
   const determinant = rows[0][0] * rows[1][1] - rows[0][1] * rows[1][0];
   // In these frames the determinant already is the ratio of the area elements
-  return {mode, rows, determinant, areaRatio: determinant};
+  return {rows, determinant, areaRatio: determinant};
 }
 
 /**
@@ -605,8 +851,9 @@ function robustRange(sortedValues: Float32Array): {range: [number, number]; cons
 
 export function deformationField(
   size: number,
-  mode: FrameMode,
-  projectionMode: ProjectionMode = DEFAULT_PROJECTION_MODE
+  projectionMode: ProjectionMode = DEFAULT_PROJECTION_MODE,
+  ownFrame = false,
+  closed = false
 ): DeformationField {
   const pixels = size * size;
   const buffers = () =>
@@ -626,14 +873,12 @@ export function deformationField(
     for (let i = 0; i < size; i++) {
       const x = -DOMAIN_CIRCUMRADIUS + ((i + 0.5) / size) * 2 * DOMAIN_CIRCUMRADIUS;
       const polar = [Math.hypot(x, y), Math.atan2(y, x)] as Polar;
-      if (!isInDomain(polar)) continue;
+      if (!isInDrawnDomain(polar, closed)) continue;
 
       const index = j * size + i;
       mask[index] = 1;
 
-      const signed = deformationValues(
-        decompose(toFrame(computeJacobian(polar, projectionMode), polar, mode, projectionMode))
-      );
+      const signed = deformationValues(decompose(toFrame(computeJacobian(polar, projectionMode, ownFrame))));
 
       for (let c = 0; c < DEFORMATION_CHANNELS.length; c++) {
         const channel = DEFORMATION_CHANNELS[c];
@@ -907,13 +1152,17 @@ export function cellSagGeometry(cells: Face[][], mode: ProjectionMode, radius: n
  * Sampled coarsely — the ranges are 99th percentiles, which are stable well
  * below the raster's own resolution.
  */
-export function sharedExtents(mode: FrameMode, size = 160): Record<DeformationChannel, [number, number]> {
+export function sharedExtents(
+  size = 160,
+  ownFrame = false,
+  closed = false
+): Record<DeformationChannel, [number, number]> {
   const extents = Object.fromEntries(
     DEFORMATION_CHANNELS.map(channel => [channel, [Infinity, -Infinity] as [number, number]])
   ) as Record<DeformationChannel, [number, number]>;
 
   for (const projection of PROJECTION_MODES) {
-    const field = deformationField(size, mode, projection);
+    const field = deformationField(size, projection, ownFrame, closed);
     for (const channel of DEFORMATION_CHANNELS) {
       if (field.constant[channel]) continue;
       const [low, high] = field.ranges[channel];

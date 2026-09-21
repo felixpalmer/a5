@@ -8,7 +8,7 @@ import {COLORS} from './components';
 import {CHANNEL_INFO, rampCss, rampFraction, rampT} from './deformation';
 import type {Extents, RasterQuantity} from './deformation';
 import {decompose, deformationValues, polarToSpherical, SPHERE_RADIUS} from './jacobian';
-import type {DeformationChannel, FrameJacobian, FrameMode} from './jacobian';
+import type {DeformationChannel, FrameJacobian} from './jacobian';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 
 const GAUGE_WIDTH = 72;
@@ -68,37 +68,14 @@ function Gauge({value, range, channel}: {value: number; range?: [number, number]
 
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
-/** How each frame names its own axes, and what its determinant means */
-const FRAMES: Record<
-  FrameMode,
-  {
-    symbol: string;
-    title: string;
-    columns: [string, string];
-    rows: [string, string];
-    source: [string, string];
-    target: [string, string];
-    areaLabel: string;
-  }
-> = {
-  chart: {
-    symbol: 'J',
-    title: 'J = ∂(φ, θ) / ∂(ρ, γ)',
-    columns: ['∂ρ', '∂γ'],
-    rows: ['∂φ', '∂θ'],
-    source: ['γ', 'ρ'],
-    target: ['θ', 'φ'],
-    areaLabel: 'R²·sin φ·det J / ρ'
-  },
-  metric: {
-    symbol: 'M',
-    title: 'M = ∂(R dφ, R sin φ dθ) / ∂(dρ, ρ dγ)',
-    columns: ['dρ', 'ρ dγ'],
-    rows: ['R dφ', 'R sinφ dθ'],
-    source: ['γ̂', 'ρ̂'],
-    target: ['θ̂', 'φ̂'],
-    areaLabel: 'area ratio'
-  }
+/** The frame's axis names. Only the intrinsic frame is offered; see `toFrame` */
+const LABELS = {
+  symbol: 'M',
+  title: 'M = ∂(R dφ, R sin φ dθ) / ∂(dρ, ρ dγ)',
+  columns: ['dρ', 'ρ dγ'] as [string, string],
+  rows: ['R dφ', 'R sinφ dθ'] as [string, string],
+  source: ['γ̂', 'ρ̂'] as [string, string],
+  target: ['θ̂', 'φ̂'] as [string, string]
 };
 
 /** Math-space point to SVG space: the diagrams have y pointing up, SVG has it pointing down */
@@ -171,10 +148,9 @@ function Patch({
 }
 
 function Matrix({frame}: {frame: FrameJacobian}) {
-  const labels = FRAMES[frame.mode];
   const rows: [string, number, number][] = [
-    [labels.rows[0], frame.rows[0][0], frame.rows[0][1]],
-    [labels.rows[1], frame.rows[1][0], frame.rows[1][1]]
+    [LABELS.rows[0], frame.rows[0][0], frame.rows[0][1]],
+    [LABELS.rows[1], frame.rows[1][0], frame.rows[1][1]]
   ];
 
   return (
@@ -190,8 +166,8 @@ function Matrix({frame}: {frame: FrameJacobian}) {
           opacity: 0.65
         }}
       >
-        <span style={{color: COLORS.radial}}>{labels.columns[0]}</span>
-        <span style={{color: COLORS.azimuthal}}>{labels.columns[1]}</span>
+        <span style={{color: COLORS.radial}}>{LABELS.columns[0]}</span>
+        <span style={{color: COLORS.azimuthal}}>{LABELS.columns[1]}</span>
       </div>
 
       <div
@@ -309,7 +285,14 @@ export function JacobianOverlay({
   const [rho, gamma] = polar;
   const [theta, phi] = polarToSpherical(polar, projection);
   const degrees = (radians: number) => `${((radians * 180) / Math.PI).toFixed(2)}°`;
-  const labels = FRAMES[frame.mode];
+  // Frame free, so it is the one number here that any observer would agree on
+  const {scale, squash, shear} = decompose(frame);
+  const a = scale * squash;
+  const b = scale / squash;
+  const k = shear * b;
+  const half = (a * a + k * k + b * b) / 2;
+  const root = Math.sqrt(Math.max(0, half * half - (a * b) ** 2));
+  const anisotropy = Math.sqrt((half + root) / (half - root));
 
   return (
     <div
@@ -334,19 +317,19 @@ export function JacobianOverlay({
       <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'flex-start', gap: 24}}>
         <div style={{flex: '0 0 auto'}}>
           <div style={{fontSize: 12, opacity: 0.6, marginBottom: 8, fontFamily: MONO, whiteSpace: 'nowrap'}}>
-            {labels.title}
+            {LABELS.title}
           </div>
           <Matrix frame={frame} />
           <Decomposition frame={frame} extents={extents} quantity={quantity} />
         </div>
 
         <div style={{display: 'flex', alignItems: 'center', gap: 14, flex: '0 0 auto'}}>
-          <Patch radial={[0, 1]} azimuthal={[1, 0]} axes={labels.source} caption="unit patch on the face" />
+          <Patch radial={[0, 1]} azimuthal={[1, 0]} axes={LABELS.source} caption="unit patch on the face" />
           <div style={{fontSize: 20, opacity: 0.5}}>→</div>
           <Patch
             radial={[frame.rows[1][0], frame.rows[0][0]]}
             azimuthal={[frame.rows[1][1], frame.rows[0][1]]}
-            axes={labels.target}
+            axes={LABELS.target}
             caption="its image on the sphere"
           />
         </div>
@@ -363,9 +346,8 @@ export function JacobianOverlay({
         }}
       >
         <div>
-          det {labels.symbol} = {frame.determinant.toFixed(6)}
-          {' '}
-          {labels.areaLabel} = {frame.areaRatio.toFixed(6)}
+          det {LABELS.symbol} = {frame.determinant.toFixed(6)}
+          {' '}σ₁/σ₂ = {anisotropy.toFixed(6)}
           {' '}R = {SPHERE_RADIUS.toFixed(6)}
         </div>
         <div>

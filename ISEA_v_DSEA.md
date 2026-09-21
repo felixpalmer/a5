@@ -106,6 +106,188 @@ coarse-resolution phenomenon that decays as O(2⁻ʳ) for all three. The worst-c
 settles at a resolution-independent **1.69% of an edge length under DSEA, 1.97% under ISEA
 and 3.35% under RTSEA**, and the disputed area at about 1.75× in DSEA's favour over ISEA.
 
+### The seam closes exactly
+
+A5 projects each face independently and only reaches the reflected triangles when a cell
+straddles an edge, which raises the question of whether cells from adjacent faces meet
+cleanly there. They do, and the reason is stronger than continuity.
+
+Sampling inside every straddling cell of one origin and asking `lonLatToCell` which cell
+each point belongs to:
+
+| resolution | straddling cells | samples on the face | samples beyond the edge | disagreements |
+| --- | --- | --- | --- | --- |
+| 3 | 24 | 8438 | 1162 | **0** |
+| 4 | 48 | 16803 | 2397 | **0** |
+| 5 | 105 | 37184 | 4816 | **0** |
+
+Every point inside a cell's planar pentagon — including the eighth of them that lie past
+the face edge and are reached through the reflected triangles — is assigned back to that
+same cell. No gaps, no overlaps.
+
+The mechanism is that face 0's chart, continued past its edge by the reflection, and face
+1's own chart differ by a **rigid motion of the plane**. Over 400 points in the overlap
+seen from both faces, all 79800 pairwise distances agree to **4.2e-16**. Since every face
+carries the same lattice, a rigid motion that fixes the shared edge carries one lattice
+onto the other exactly, so the cell boundaries coincide rather than merely meeting.
+
+C⁰ continuity alone would not give this. A merely continuous join would guarantee the
+surface does not tear, but not that two independently projected lattices land on the same
+curves. It is the isometry that does that.
+
+**All three Snyder modes close the seam, and close it identically.** Over the same 300
+points in the overlap, 44850 pairwise distances each:
+
+| projection | worst distance error | | placement in the neighbour's chart |
+| --- | --- | --- | --- |
+| DSEA | 1.3e-15 | rigid | reference |
+| ISEA | 9.8e-16 | rigid | agrees with DSEA to 1.1e-15 |
+| RTSEA | 1.4e-15 | rigid | agrees with DSEA to 1.6e-15 |
+| gnomonic | **8.2e-2** | **not rigid** | differs by up to 4.9e-2 |
+
+The three Snyder modes do not merely each produce *a* rigid motion, they produce *the
+same* one, so the seam is identical whichever is chosen and the tiling result carries over
+unchanged.
+
+### The rotation jump at the face edge *is* the cusp
+
+Worth stating plainly, because the two look like separate phenomena and are not. For a
+curve crossing the face edge **radially**, the curve's direction is ρ̂ itself, so its image
+is the matrix's first column — and the angle of that column off φ̂ is exactly what the
+decomposition calls the rotation. The jump in rotation and the kink are therefore the same
+number, reached two different ways:
+
+| γ | rotation inside | rotation outside | jump | kink measured on the sphere |
+| --- | --- | --- | --- | --- |
+| 6° | 0.000000 | 0.853306 | 0.8533° | 0.8533° |
+| 12° | −0.000000 | 1.637566 | 1.6376° | 1.6375° |
+| 18° | −0.000000 | 2.284852 | 2.2849° | 2.2848° |
+| 24° | −0.000000 | 2.728760 | 2.7288° | 2.7287° |
+| 30° | −0.000000 | 2.903223 | 2.9032° | 2.9033° |
+
+That the rotation is exactly *zero* inside is a property of the chart: it is zero because
+ρ̂ happens to lie along a preserved great circle there. But the *jump* is not a chart
+effect. Both frames are smooth across the edge, so a discontinuity measured against them
+is a genuine discontinuity of the derivative. It is DSEA's face-edge cusp, and it is what
+the sag comparison charges DSEA for.
+
+### Measuring the reflected region in its own face
+
+The figures above measure the whole domain in the central face's chart, which is what the
+reflected triangles give and what exposes the seam — the example calls that the *single
+face frame*, and it is the opt-in rather than the default. A5 projects every point from
+*its own* face — twelve radiating vertices, not one — so the reflected region is more
+honestly measured in the neighbour's frame. Doing so restores the symmetry exactly: a point and its
+mirror then report identical squash and sign-flipped shear, with rotation zero on both
+sides.
+
+Range over the whole domain, intrinsic frame:
+
+| | measured in this face | measured in its own face |
+| --- | --- | --- |
+| DSEA rotation | ±2.8704° | **0 exactly (constant)** |
+| ISEA rotation | ±8.5408° | ±1.0528° |
+| RTSEA rotation | ±4.8908° | ±2.3702° |
+| gnomonic scale | −0.3873 … +0.1434 | −0.1575 … +0.1434 |
+
+The DSEA row is the striking one: measured per-face, its rotation is identically zero across
+the *entire* domain, not just the central face. Rays mapping to meridians is a property of
+the system, not of one face's chart. The ±2.87° seen otherwise is the central face's chart
+being used past the face it belongs to.
+
+This does not change the cusp results — the seam is still there, and the face-edge
+discontinuity is still real — but it means the large values in the reflected region should
+not be read as distortion the system actually produces.
+
+### Why the reflection is an exact mirror
+
+The reflected triangle steps twice along the edge midpoint — a true mirror. The code also
+builds a *squashed* triangle, stepping 1 + 1/cos(interhedral) = 3.236068, but only to derive
+the spherical vertices, never as the planar triangle. Using the squashed one to unproject
+instead does not help:
+
+| step along the edge midpoint | cusp at γ = 18° | seam with the neighbour |
+| --- | --- | --- |
+| 1.849404 (tuned) | **0.0000°** | not rigid, 2.4e-2 |
+| **2.000000 (true mirror)** | 2.2848° | **rigid, 1.1e-15** |
+| 3.236068 (squashed) | 18.6774° | not rigid, 7.5e-2 |
+
+Squashing makes the cusp eight times worse. Tuning the step does remove it — but only at
+the γ it was tuned for, leaving 0.04° to 0.91° elsewhere along the edge, and a single scalar
+cannot zero a quantity that varies along the seam.
+
+More decisively, **any step other than the exact mirror breaks the rigid seam**, and with it
+the tiling — the same failure mode as gnomonic. The factor of two is not a tuning choice.
+It is forced by the requirement that cells from adjacent faces align, and DSEA's face-edge
+cusp is the price of that alignment. ISEA avoids the cusp while keeping the mirror, which is
+precisely why it wins the sag comparison there.
+
+### And at the vertices
+
+An edge is shared by two faces, but a dodecahedron **vertex** is shared by three, and there
+the three charts provably cannot all agree: the dodecahedron's angular defect is 36°, so
+unfolding all three faces flat around a vertex leaves a 36° wedge missing. Composing the
+three pairwise rigid motions around the vertex gives a 36° rotation, not the identity.
+
+The tiling closes anyway. Rings of points centred exactly on a vertex, each tested against
+the assigned cell's own planar pentagon — A5's own definition of containment, with no
+boundary approximation:
+
+| distance from the vertex | 500 km | 50 km | 5 km | 0.5 km | 5 m |
+| --- | --- | --- | --- | --- | --- |
+| outside the assigned cell, res 5 | 0 | 0 | 0 | 0 | 0 |
+| outside the assigned cell, res 8 | 0 | 0 | 0 | 0 | 0 |
+| outside the assigned cell, res 12 | 0 | 0 | 0 | 0 | 0 |
+
+3600 points per ring, three origins represented throughout.
+
+The reason the defect never bites is that **no cell ever wraps a corner**. A straddling cell
+lies beyond exactly one of its face's five edges, never two:
+
+| resolution | 3 | 4 | 5 | 6 | 7 |
+| --- | --- | --- | --- | --- | --- |
+| straddling cells | 20 | 40 | 80 | 160 | 320 |
+| wrapping two edges | **0** | **0** | **0** | **0** | **0** |
+
+So every cell needs at most one reflection, and only ever meets its neighbours across
+pairwise seams — each of which is rigid. The three-way disagreement is real but nothing is
+ever asked to span it.
+
+**Gnomonic does not close the seam at all.** Two gnomonic charts of the same region are
+related by a projective map, not a rigid one — it preserves straight lines, which is why
+its cell edges stay great circles, but it does not preserve distance, so the two faces
+disagree about where a shared lattice point belongs:
+
+| under gnomonic | gap between the two faces' placement |
+| --- | --- |
+| mean | **100.5 km** |
+| worst | **300.3 km** |
+
+An A5 cell edge is 299 km at resolution 4 and 75 km at resolution 6, so the misalignment is
+of the order of a whole cell. Gnomonic would tear the grid apart at every face boundary.
+That is a second and independent disqualification, on top of not being equal-area: even
+setting area aside, it cannot tile.
+
+Nor does the asymmetry visible in the raster contradict it: that is measured in the polar
+chart centred on *this* face, which has no reason to be symmetric about the face's own
+edge. The frame-free quantities are symmetric — σ₁/σ₂ mirrors across the edge to 1e-9 —
+while the frame-aligned ones are not, and only the former describe the geometry.
+
+**Seeing the defect.** The example can close the vertices. Each neighbour then contributes
+four of its ten triangles rather than the two that abut the shared edge — ten added
+triangles in all — following the same unfolding the reflections already perform: a rotation
+by exactly −36°, which agrees with A5's reflected chart to 1e-13° everywhere the two
+overlap. That brings each vertex of the face up to 108° from this face and 108° from each of
+the two neighbours meeting there, all 324° the solid has, and the wedge left empty at every
+corner is the 36° defect drawn to scale.
+
+Closing them changes nothing about the distortion figures, which is the point: measured
+per-face over the closed domain, DSEA's rotation is still identically zero, ISEA's still
+±1.07° and RTSEA's still ±2.37°. The ten added triangles come to exactly one face of area
+between them — 1.047198, a twelfth of the sphere — under all three Snyder modes. Under
+gnomonic they come to 0.470 of a face, the same failure the reflected region already shows
+at 0.599 against an exact 1.000 for the Snyder modes.
+
 ### The gnomonic baseline: what equal-area costs
 
 The plain central projection is available as a fourth option. It is not a member of the
@@ -472,7 +654,10 @@ derivative on the point's own side rather than averaging across a discontinuity.
 
 Distortion is measured from the **metric** Jacobian — the derivative in local orthonormal
 frames, `(dρ, ρ·dγ)` on the plane and `(R·dφ, R·sin φ·dθ)` on the sphere — whose singular
-values do not depend on either chart.
+values do not depend on either chart. The raw coordinate derivative, referred to below as
+the chart Jacobian, is used only where the text says so; the interactive example offers the
+metric frame alone, since a chart determinant that varies across an exactly equal-area map
+is more misleading than it is instructive.
 
 Cell geometry comes from `_getPentagon(deserialize(cell))`, which returns the planar
 pentagon in face coordinates; the lattice is projection-independent, so the same pentagons

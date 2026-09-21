@@ -22,8 +22,9 @@ class JacobianDemo extends Component {
           The domain runs past the face itself. Beyond an edge the projection reflects each of its ten triangles across
           that edge and unprojects onto the neighbouring dodecahedron face, so the plane stays in one face's coordinate
           system while the sphere shows five neighbouring regions. Those reflections cover the mirror image of each
-          quintant — two triangles per neighbour — which is the ten-pointed outline drawn dashed. The full neighbouring
-          pentagons are not reachable: the projection has no triangle for them.
+          quintant — two triangles per neighbour — which is the ten-pointed outline drawn dashed. The projection has no
+          eleventh triangle to reach the rest of a neighbour with, but the unfolding those reflections perform does; see{' '}
+          <em>close the vertices</em> below.
         </p>
         <p>
           The matrix relates the face's polar coordinates (ρ, γ) to the sphere's spherical coordinates (φ, θ), and is
@@ -127,16 +128,51 @@ class JacobianDemo extends Component {
           through smoothly.
         </p>
         <p>
-          The <em>chart</em> and <em>intrinsic</em> toggle decides which frames the matrix is written in. Chart
-          differentiates the raw coordinates, so it carries the charts' own distortion. Intrinsic uses the local
-          orthonormal frames instead, (dρ, ρ·dγ) on the plane and (R·dφ, R·sin φ·dθ) on the sphere, where the
-          determinant is 1 everywhere and the numbers are lengths rather than coordinate steps.
+          By default every point is measured in the frame of the face it belongs to, which is what A5 itself does —
+          there are twelve radiating vertices, not one. A point past this face's edge is handed to its neighbour, and a
+          point and its mirror then agree exactly: identical squash, sign-flipped shear, rotation zero on both sides.
+          Under DSEA the rotation over the whole domain is identically zero this way.
         </p>
         <p>
-          All three quantities are measured against the (ρ̂, γ̂) axes, so none of them mirrors across a face edge: those
-          axes point away from this face's center, not the mirrored one. Only the singular values are frame free, and
-          they do mirror exactly — σ₁/σ₂ agrees to 9 digits between a point and its reflection. It is recoverable from
-          the squash, shear and scale, so nothing is lost by plotting the frame-aligned split instead.
+          <em>Single face frame</em> measures the whole domain in this one face's frame instead, which is what the
+          reflected triangles give. That exposes the seam at the face edge, but it exaggerates everything past it, since
+          the chart is being used far from the face it belongs to: DSEA's rotation goes from zero to ±2.87° and ISEA's
+          from ±1.05° to ±8.54°, none of which is distortion the system actually produces.
+        </p>
+        <p>
+          <em>Close the vertices</em> adds the other two triangles each neighbour contributes at a corner, ten in all.
+          A5's reflections stop at the two that abut the shared edge, but the unfolding they amount to — rotate the
+          neighbouring face flat about that edge, a turn of exactly −36° — carries on, and the rest of the neighbour
+          comes with it. Inside the reflected region the two agree to 1e-13°, so the added triangles continue the same
+          chart rather than replacing it.
+        </p>
+        <p>
+          They bring every dodecahedron vertex of this face up to 108° from this face and 108° from each of the two
+          neighbours that meet there: all 324° the solid has. The 36° left over is the vertex's angular defect, and it
+          is why the outline notches inward at every corner instead of closing into a decagon. The ten triangles come to
+          exactly one face of area between them, 1.047198 — a twelfth of the sphere.
+        </p>
+        <p>
+          The added triangles are always measured in their own face's frame, whatever the frame toggle says: this face's
+          chart genuinely does not reach them, since the equal-area charts are assembled one triangle at a time and
+          saturate past the last of them. Gnomonic is the exception, being a single central projection over the whole
+          plane, and there they stay in this face's chart and go on shrinking — its reflected region already covers
+          0.599 of a face's area against exactly 1.000 for all three Snyder modes. Over the whole closed domain DSEA's
+          rotation is still identically zero, against ±1.06° for ISEA and ±2.35° for RTSEA.
+        </p>
+        <p>
+          The matrix is written in the local orthonormal frames, (dρ, ρ·dγ) on the plane and (R·dφ, R·sin φ·dθ) on the
+          sphere, so both sides measure length. Its determinant is then 1 by construction and everything that varies is
+          shape. The raw coordinate derivative is not offered: its singular values depend on the charts rather than the
+          projection, and its determinant varies across the face even though the map is exactly equal-area, which
+          invites precisely the wrong conclusion.
+        </p>
+        <p>
+          All three quantities are measured against the (ρ̂, γ̂) axes, so none of them mirrors across a face edge unless
+          the reflected region is measured in its own face: those axes point away from this face's center, not the
+          mirrored one. Only σ₁/σ₂ is frame free, and it mirrors exactly either way, agreeing to 9 digits between a
+          point and its reflection. It is shown in the readout and is recoverable from the squash, shear and scale, so
+          nothing is lost by plotting the frame-aligned split.
         </p>
         <p>
           The raster shows one quantity at a time on a diverging ramp, each quantity with its own colour pair — green

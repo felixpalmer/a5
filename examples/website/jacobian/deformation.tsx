@@ -5,7 +5,7 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {deformationField} from './jacobian';
 import {CELL_RESOLUTIONS, DEFORMATION_CHANNELS, PROJECTION_MODES, cellEdgeMetrics, sharedExtents} from './jacobian';
-import type {DeformationChannel, DeformationField, EdgeMetrics, FrameMode} from './jacobian';
+import type {DeformationChannel, DeformationField, EdgeMetrics} from './jacobian';
 import type {Face} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 
@@ -76,8 +76,12 @@ const fieldCache = new Map<string, DeformationField>();
  * takes a few hundred milliseconds, so it is kept out of the render pass and out
  * of the server-side build.
  */
-export function useDeformationField(mode: FrameMode, projection: ProjectionMode): DeformationField | null {
-  const key = `${projection}/${mode}`;
+export function useDeformationField(
+  projection: ProjectionMode,
+  ownFrame: boolean,
+  closed: boolean
+): DeformationField | null {
+  const key = `${projection}/${ownFrame ? 'own' : 'face'}/${closed ? 'closed' : 'star'}`;
   const [field, setField] = useState<DeformationField | null>(() => fieldCache.get(key) ?? null);
 
   useEffect(() => {
@@ -90,12 +94,12 @@ export function useDeformationField(mode: FrameMode, projection: ProjectionMode)
     // Yield first, so the raster clears and the toggle responds before the
     // sampling pass blocks the main thread
     const handle = window.setTimeout(() => {
-      const sampled = deformationField(RASTER_SIZE, mode, projection);
+      const sampled = deformationField(RASTER_SIZE, projection, ownFrame, closed);
       fieldCache.set(key, sampled);
       setField(sampled);
     }, 0);
     return () => window.clearTimeout(handle);
-  }, [key, mode, projection]);
+  }, [key, projection, ownFrame, closed]);
 
   return field;
 }
@@ -123,25 +127,26 @@ export function useEdgeMetrics(cells: Face[][], projection: ProjectionMode): Edg
 /** How far the ramp reaches for each quantity, symmetric about zero */
 export type Extents = Record<DeformationChannel, [number, number]>;
 
-const extentsCache = new Map<FrameMode, Extents>();
+const extentsCache = new Map<string, Extents>();
 
 /** The extents every projection shares, so the ramp means the same thing across them */
-export function useSharedExtents(mode: FrameMode): Extents | null {
-  const [extents, setExtents] = useState<Extents | null>(() => extentsCache.get(mode) ?? null);
+export function useSharedExtents(ownFrame: boolean, closed: boolean): Extents | null {
+  const key = `${ownFrame ? 'own' : 'face'}/${closed ? 'closed' : 'star'}`;
+  const [extents, setExtents] = useState<Extents | null>(() => extentsCache.get(key) ?? null);
 
   useEffect(() => {
-    const cached = extentsCache.get(mode);
+    const cached = extentsCache.get(key);
     if (cached) {
       setExtents(cached);
       return;
     }
     const handle = window.setTimeout(() => {
-      const sampled = sharedExtents(mode);
-      extentsCache.set(mode, sampled);
+      const sampled = sharedExtents(undefined, ownFrame, closed);
+      extentsCache.set(key, sampled);
       setExtents(sampled);
     }, 0);
     return () => window.clearTimeout(handle);
-  }, [mode]);
+  }, [key, ownFrame, closed]);
 
   return extents;
 }
@@ -249,13 +254,6 @@ function Toggle<T extends string>({
     </span>
   );
 }
-
-const FRAME_LABELS: Record<FrameMode, string> = {chart: 'chart', metric: 'intrinsic'};
-
-const FRAME_TITLES: Record<FrameMode, string> = {
-  chart: 'Derivative of the raw coordinates. Both charts are centred on this face, so their own distortion is included',
-  metric: 'Derivative in local orthonormal frames. Chart independent, so it mirrors exactly across a face edge'
-};
 
 /** 'off', or a resolution, as the toggle's string values */
 export const CELL_OPTIONS = ['off', ...CELL_RESOLUTIONS.map(String)];
@@ -389,37 +387,41 @@ function EdgeStats({metrics}: {metrics: EdgeMetrics | null}) {
 export function DeformationControls({
   field,
   quantity,
-  mode,
   projection,
   cells,
   sag,
   edges,
   extents,
   relativeScale,
+  singleFace,
+  closed,
   value,
   onQuantityChange,
-  onModeChange,
   onProjectionChange,
   onCellsChange,
   onSagChange,
-  onRelativeScaleChange
+  onRelativeScaleChange,
+  onSingleFaceChange,
+  onClosedChange
 }: {
   field: DeformationField | null;
   quantity: RasterQuantity;
-  mode: FrameMode;
   projection: ProjectionMode;
   cells: string;
   sag: boolean;
   edges: EdgeMetrics | null;
   extents: Extents | null;
   relativeScale: boolean;
+  singleFace: boolean;
+  closed: boolean;
   value: number | null;
   onQuantityChange: (quantity: RasterQuantity) => void;
-  onModeChange: (mode: FrameMode) => void;
   onProjectionChange: (projection: ProjectionMode) => void;
   onCellsChange: (cells: string) => void;
   onSagChange: (sag: boolean) => void;
   onRelativeScaleChange: (relative: boolean) => void;
+  onSingleFaceChange: (single: boolean) => void;
+  onClosedChange: (closed: boolean) => void;
 }) {
   return (
     <div
@@ -453,14 +455,6 @@ export function DeformationControls({
           titles={PROJECTION_TITLES}
           onChange={onProjectionChange}
         />
-        <span style={{opacity: 0.6}}>Frame</span>
-        <Toggle
-          options={Object.keys(FRAME_LABELS) as FrameMode[]}
-          value={mode}
-          labels={FRAME_LABELS}
-          titles={FRAME_TITLES}
-          onChange={onModeChange}
-        />
         <span style={{opacity: 0.6}}>Cells</span>
         <Toggle options={CELL_OPTIONS} value={cells} onChange={onCellsChange} />
         {cells !== 'off' && (
@@ -482,6 +476,32 @@ export function DeformationControls({
 
       <label
         style={{display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, cursor: 'pointer', fontSize: 11}}
+        title="Measure the whole domain in this one face's frame. A5 itself projects every point from its own face, so leaving this off is the truer view; turning it on exposes the seam at the face edge"
+      >
+        <input
+          type="checkbox"
+          checked={singleFace}
+          onChange={event => onSingleFaceChange(event.target.checked)}
+          style={{margin: 0}}
+        />
+        <span style={{opacity: 0.7}}>single face frame</span>
+      </label>
+
+      <label
+        style={{display: 'flex', alignItems: 'center', gap: 7, marginTop: 6, cursor: 'pointer', fontSize: 11}}
+        title="Add the other two triangles each neighbour contributes at a corner, closing every dodecahedron vertex of this face. They are always measured in their own face's frame — this face's chart does not reach them at all"
+      >
+        <input
+          type="checkbox"
+          checked={closed}
+          onChange={event => onClosedChange(event.target.checked)}
+          style={{margin: 0}}
+        />
+        <span style={{opacity: 0.7}}>close the vertices</span>
+      </label>
+
+      <label
+        style={{display: 'flex', alignItems: 'center', gap: 7, marginTop: 6, cursor: 'pointer', fontSize: 11}}
         title="Normalise the ramp over this projection's own range instead of the range shared by all of them"
       >
         <input

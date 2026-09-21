@@ -17,8 +17,7 @@ import {
   useSharedExtents
 } from './deformation';
 import type {RasterQuantity} from './deformation';
-import {computeJacobian, decompose, deformationValues, faceCells, toFrame} from './jacobian';
-import type {FrameMode} from './jacobian';
+import {clampToDomain, computeJacobian, decompose, deformationValues, faceCells, toFrame} from './jacobian';
 import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
 import type {ProjectionMode} from 'a5/projections/projection-mode';
 
@@ -46,26 +45,36 @@ const labelStyle: React.CSSProperties = {
 
 const App: React.FC = () => {
   const [polar, setPolar] = useState<Polar>(INITIAL_POLAR);
-  const [quantity, setQuantity] = useState<RasterQuantity>('rotation');
-  const [mode, setMode] = useState<FrameMode>('chart');
+  // Rotation is identically zero per-face under DSEA, so it would open on a blank
+  // raster; shear is the quantity with something to show in the default view
+  const [quantity, setQuantity] = useState<RasterQuantity>('shear');
   const [projection, setProjection] = useState<ProjectionMode>(DEFAULT_PROJECTION_MODE);
   const [cellOption, setCellOption] = useState<string>(CELL_OPTIONS[0]);
   const [showSag, setShowSag] = useState(false);
   const [relativeScale, setRelativeScale] = useState(false);
+  // A5 projects every point from its own face, so that is the default; the single
+  // face view is the opt-in, for looking at the seam
+  const [singleFace, setSingleFace] = useState(false);
+  // The ten triangles that complete each dodecahedron vertex of this face
+  const [closed, setClosed] = useState(false);
+  const ownFrame = !singleFace;
   // Projection independent: the lattice lives in the plane, only its image moves
   const cells = useMemo(() => (cellOption === 'off' ? [] : faceCells(Number(cellOption))), [cellOption]);
-  const frame = useMemo(
-    () => toFrame(computeJacobian(polar, projection), polar, mode, projection),
-    [polar, mode, projection]
-  );
-  const field = useDeformationField(mode, projection);
+  const frame = useMemo(() => toFrame(computeJacobian(polar, projection, ownFrame)), [polar, projection, ownFrame]);
+  const field = useDeformationField(projection, ownFrame, closed);
   // Shared by default, so the ramp means the same thing whichever projection is on
-  const shared = useSharedExtents(mode);
+  const shared = useSharedExtents(ownFrame, closed);
   const extents = useMemo(() => resolveExtents(field, shared, relativeScale), [field, shared, relativeScale]);
   const raster = useDeformationRaster(field, quantity, extents);
   // What the hovered point reads, so the legend can mark it on the ramp
   const hovered = useMemo(() => deformationValues(decompose(frame)), [frame]);
   const edges = useEdgeMetrics(cells, projection);
+
+  const handleClosedChange = (next: boolean) => {
+    setClosed(next);
+    // Taking the triangles away shrinks the domain out from under the hovered point
+    setPolar(current => clampToDomain(current, next));
+  };
 
   return (
     <div
@@ -78,24 +87,26 @@ const App: React.FC = () => {
     >
       <div style={{...panelStyle, borderRight: '1px solid rgba(255,255,255,0.12)'}}>
         <div style={labelStyle}>Dodecahedron face and its reflections — polar (ρ, γ)</div>
-        <FaceView polar={polar} raster={raster} cells={cells} onHover={setPolar} />
+        <FaceView polar={polar} raster={raster} cells={cells} closed={closed} onHover={setPolar} />
         <DeformationControls
           field={field}
           quantity={quantity}
-          mode={mode}
           projection={projection}
           cells={cellOption}
           sag={showSag}
           extents={extents}
           relativeScale={relativeScale}
+          singleFace={singleFace}
+          closed={closed}
           value={quantity === 'off' ? null : hovered[quantity]}
           edges={edges}
           onQuantityChange={setQuantity}
-          onModeChange={setMode}
           onProjectionChange={setProjection}
           onCellsChange={setCellOption}
           onSagChange={setShowSag}
           onRelativeScaleChange={setRelativeScale}
+          onSingleFaceChange={setSingleFace}
+          onClosedChange={handleClosedChange}
         />
       </div>
       <div style={panelStyle}>
@@ -105,6 +116,7 @@ const App: React.FC = () => {
           projection={projection}
           cells={cells}
           showSag={showSag && cells.length > 0}
+          closed={closed}
           onHover={setPolar}
         />
       </div>
