@@ -16,8 +16,6 @@ import {
   cartesianToPolar,
   cellOutline,
   cellSagGeometry,
-  closedDomainBoundary,
-  closedDomainCorners,
   domainBoundary,
   domainCorners,
   domainRasterMesh,
@@ -26,17 +24,15 @@ import {
   faceMesh,
   DOMAIN_CIRCUMRADIUS,
   gridLines,
-  isInDrawnDomain,
+  isInDomain,
   patchOutline,
   polarToCartesian,
-  SPHERE_RADIUS,
-  vertexMesh
+  SPHERE_RADIUS
 } from './jacobian';
 
 export const COLORS = {
   face: '#00aa55',
   beyond: '#8866dd',
-  closing: '#4488cc',
   grid: 'rgba(255, 255, 255, 0.2)',
   gridFaint: 'rgba(255, 255, 255, 0.08)',
   cusp: 'rgba(255, 255, 255, 0.5)',
@@ -48,8 +44,8 @@ export const COLORS = {
   cell: '#4dd0e1',
   sag: '#ff0000',
   patch: '#ffb400',
-  radial: '#ff7043',
-  azimuthal: '#42a5f5'
+  radial: '#d84315',
+  azimuthal: '#1565c0'
 };
 
 /** Side of the patch drawn at the hovered point, in face units */
@@ -68,7 +64,6 @@ export function FaceView({
   polar,
   raster,
   cells,
-  closed,
   ownFrame,
   source,
   projection,
@@ -77,7 +72,6 @@ export function FaceView({
   polar: Polar;
   raster: DeformationRaster | null;
   cells: Face[][];
-  closed: boolean;
   ownFrame: boolean;
   source: GridSource;
   projection: ProjectionMode;
@@ -89,13 +83,12 @@ export function FaceView({
 
   const outline = useMemo(() => points(faceCorners(), false), []);
   const domainOutline = useMemo(() => points(domainCorners(), false), []);
-  const closedOutline = useMemo(() => (closed ? points(closedDomainCorners(), false) : null), [closed]);
   // The raster is drawn outside the flipped frame, where y already points down
-  const clipOutline = useMemo(() => points(closed ? closedDomainCorners() : domainCorners(), true), [closed]);
+  const clipOutline = useMemo(() => points(domainCorners(), true), []);
 
   // Straight here when the grid comes from the plane, kinked when it comes from
   // the sphere, so both families are drawn as paths
-  const grid = useMemo(() => gridLines(closed, ownFrame, source, projection), [closed, ownFrame, source, projection]);
+  const grid = useMemo(() => gridLines(ownFrame, source, projection), [ownFrame, source, projection]);
   const rings = useMemo(() => grid.rings.map(arc => toPath(arc, false)), [grid]);
   const rays = useMemo(() => grid.rays.map(({weight, points}) => ({weight, path: toPath(points, false)})), [grid]);
 
@@ -105,8 +98,8 @@ export function FaceView({
     [cells]
   );
   const patch = useMemo(
-    () => toPath(patchOutline(polar, PATCH_SIZE, source, projection, ownFrame, closed), true),
-    [polar, source, projection, ownFrame, closed]
+    () => toPath(patchOutline(polar, PATCH_SIZE, source, projection, ownFrame), true),
+    [polar, source, projection, ownFrame]
   );
   const marker = toFace(polar);
 
@@ -126,7 +119,7 @@ export function FaceView({
     point.y = event.clientY;
     const {x, y} = point.matrixTransform(matrix.inverse());
     const hovered = toPolar([x, y] as Face);
-    if (isInDrawnDomain(hovered, closed)) onHover(hovered);
+    if (isInDomain(hovered)) onHover(hovered);
   };
 
   return (
@@ -159,7 +152,6 @@ export function FaceView({
       <g ref={frameRef} transform="scale(1, -1)">
         {!raster && (
           <>
-            {closedOutline && <polygon points={closedOutline} fill={COLORS.closing} fillOpacity={0.12} />}
             <polygon points={domainOutline} fill={COLORS.beyond} fillOpacity={0.12} />
             <polygon points={outline} fill={COLORS.face} fillOpacity={0.14} />
           </>
@@ -198,16 +190,6 @@ export function FaceView({
           />
         ))}
 
-        {closedOutline && (
-          <polygon
-            points={closedOutline}
-            fill="none"
-            stroke={COLORS.closing}
-            strokeWidth={1.5}
-            strokeDasharray="6 4"
-            vectorEffect="non-scaling-stroke"
-          />
-        )}
         <polygon
           points={domainOutline}
           fill="none"
@@ -310,18 +292,16 @@ function segments(lines: [number, number, number][][]): [number, number, number]
 // kept out of the hover re-render
 const ProjectedGrid = React.memo(function ProjectedGrid({
   projection,
-  closed,
   ownFrame,
   source,
   overRaster
 }: {
   projection: ProjectionMode;
-  closed: boolean;
   ownFrame: boolean;
   source: GridSource;
   overRaster: boolean;
 }) {
-  const grid = useMemo(() => gridLines(closed, ownFrame, source, projection), [closed, ownFrame, source, projection]);
+  const grid = useMemo(() => gridLines(ownFrame, source, projection), [ownFrame, source, projection]);
   // One line-segment soup per style rather than one line object per curve: with
   // every face drawing its own grid there are some three hundred of them
   const rings = useMemo(() => segments(grid.rings.map(arc => lift(arc, 1.001, projection))), [grid, projection]);
@@ -372,23 +352,15 @@ const ProjectedGrid = React.memo(function ProjectedGrid({
  * legend beside it no longer agree — and at the ends of the ramp, where the
  * colours are strongest, the greying is worst.
  */
-function ProjectedRaster({
-  raster,
-  projection,
-  closed
-}: {
-  raster: DeformationRaster;
-  projection: ProjectionMode;
-  closed: boolean;
-}) {
+function ProjectedRaster({raster, projection}: {raster: DeformationRaster; projection: ProjectionMode}) {
   const geometry = useMemo(() => {
-    const {positions, uvs, indices} = domainRasterMesh(projection, closed);
+    const {positions, uvs, indices} = domainRasterMesh(projection);
     const built = new BufferGeometry();
     built.setAttribute('position', new BufferAttribute(positions, 3));
     built.setAttribute('uv', new BufferAttribute(uvs, 2));
     built.setIndex(new BufferAttribute(indices, 1));
     return built;
-  }, [projection, closed]);
+  }, [projection]);
 
   // A canvas texture rather than one loaded from the data URL: it is ready on the
   // frame it is made, so there is no pass where the mesh draws untextured
@@ -457,7 +429,6 @@ function Scene({
   projection,
   cells,
   showSag,
-  closed,
   ownFrame,
   source,
   onHover
@@ -467,20 +438,15 @@ function Scene({
   projection: ProjectionMode;
   cells: Face[][];
   showSag: boolean;
-  closed: boolean;
   ownFrame: boolean;
   source: GridSource;
   onHover: (polar: Polar) => void;
 }) {
   const boundary = useMemo(() => lift(faceBoundary(), 1.002, projection), [projection]);
   const outerBoundary = useMemo(() => lift(domainBoundary(), 1.002, projection), [projection]);
-  const closedBoundary = useMemo(
-    () => (closed ? lift(closedDomainBoundary(), 1.002, projection) : null),
-    [closed, projection]
-  );
   const patch = useMemo(
-    () => lift(patchOutline(polar, PATCH_SIZE, source, projection, ownFrame, closed), 1.003, projection),
-    [polar, source, projection, ownFrame, closed]
+    () => lift(patchOutline(polar, PATCH_SIZE, source, projection, ownFrame), 1.003, projection),
+    [polar, source, projection, ownFrame]
   );
   const marker = useMemo(() => lift([polar], 1.004, projection)[0], [polar, projection]);
 
@@ -489,7 +455,7 @@ function Scene({
     const {x, y, z} = event.point;
     const length = Math.hypot(x, y, z);
     const hovered = cartesianToPolar([x / length, y / length, z / length] as Cartesian, projection);
-    if (isInDrawnDomain(hovered, closed)) onHover(hovered);
+    if (isInDomain(hovered)) onHover(hovered);
   };
 
   return (
@@ -505,30 +471,18 @@ function Scene({
 
       {/* The flat region colours would tint the ramp, so the raster replaces them */}
       {raster ? (
-        <ProjectedRaster raster={raster} projection={projection} closed={closed} />
+        <ProjectedRaster raster={raster} projection={projection} />
       ) : (
         <>
           <ProjectedRegion build={faceMesh} projection={projection} color={COLORS.face} opacity={0.25} />
           <ProjectedRegion build={beyondFaceMesh} projection={projection} color={COLORS.beyond} opacity={0.22} />
-          {closed && (
-            <ProjectedRegion build={vertexMesh} projection={projection} color={COLORS.closing} opacity={0.3} />
-          )}
         </>
       )}
-      <ProjectedGrid
-        projection={projection}
-        closed={closed}
-        ownFrame={ownFrame}
-        source={source}
-        overRaster={raster !== null}
-      />
+      <ProjectedGrid projection={projection} ownFrame={ownFrame} source={source} overRaster={raster !== null} />
       {showSag ? (
         <ProjectedSag cells={cells} projection={projection} />
       ) : (
         <ProjectedCells cells={cells} projection={projection} />
-      )}
-      {closedBoundary && (
-        <Line points={closedBoundary} color={COLORS.closing} lineWidth={1.5} dashed dashSize={0.03} gapSize={0.02} />
       )}
       <Line points={outerBoundary} color={COLORS.domainOutline} lineWidth={1.5} dashed dashSize={0.03} gapSize={0.02} />
       <Line points={boundary} color={COLORS.outline} lineWidth={2} />
@@ -554,7 +508,6 @@ export function SphereView({
   projection,
   cells,
   showSag,
-  closed,
   ownFrame,
   source,
   onHover
@@ -564,7 +517,6 @@ export function SphereView({
   projection: ProjectionMode;
   cells: Face[][];
   showSag: boolean;
-  closed: boolean;
   ownFrame: boolean;
   source: GridSource;
   onHover: (polar: Polar) => void;
@@ -581,7 +533,6 @@ export function SphereView({
           projection={projection}
           cells={cells}
           showSag={showSag}
-          closed={closed}
           ownFrame={ownFrame}
           source={source}
           onHover={onHover}

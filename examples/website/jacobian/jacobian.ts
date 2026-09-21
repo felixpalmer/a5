@@ -265,12 +265,9 @@ function foldIn(point: Cartesian, mode: ProjectionMode, origin: OriginId): Polar
   return foldPolar(toPolar(projections[mode].forwardCartesian(point, origin)), frame);
 }
 
-/**
- * How much of a neighbour's own chart is drawn: the one quintant that abuts the
- * shared edge, or two of them once the vertices are closed.
- */
-function inNeighbourSector(gamma: Radians, frame: NeighbourFrame, closed: boolean): boolean {
-  return Math.abs(wrapAngle(gamma - frame.toward)) <= (closed ? 2 : 1) * PI_OVER_5 + 1e-9;
+/** How much of a neighbour's own chart is drawn: the one quintant that abuts the shared edge */
+function inNeighbourSector(gamma: Radians, frame: NeighbourFrame): boolean {
+  return Math.abs(wrapAngle(gamma - frame.toward)) <= PI_OVER_5 + 1e-9;
 }
 
 /**
@@ -286,44 +283,9 @@ function needsUnfolding(polar: Polar, mode: ProjectionMode): boolean {
   return mode !== 'gnomonic' && !isInDomain(polar);
 }
 
-/**
- * The domain with the dodecahedron vertices closed: each neighbour contributing
- * four of its ten triangles rather than the two that abut the shared edge.
- *
- * Around a corner of this face that leaves 108 degrees from this face and 108 from
- * each of the two neighbours meeting there, which is all 324 the solid has. The
- * 36 left over is the vertex's angular defect, and it is why the outline notches
- * inward at every corner rather than closing into a decagon.
- */
-function beyondMidpoint(index: number, side: 1 | -1): Face {
-  const centreAngle = index * TWO_PI_OVER_5;
-  const centre = toFace([DOMAIN_CIRCUMRADIUS, centreAngle as Radians] as Polar);
-  const angle = centreAngle + side * 3 * PI_OVER_5;
-  return [centre[0] + FACE_APOTHEM * Math.cos(angle), centre[1] + FACE_APOTHEM * Math.sin(angle)] as Face;
-}
-
-/** Distance to the edge of the closed domain, in the direction `gamma` */
-export function closedDomainRadius(gamma: Radians): number {
-  const beta = Math.abs(projection.normalizeGamma(gamma));
-  // The neighbour's two outer edges, each as a line: r = distance / cos(beta - normal)
-  const outer = (DOMAIN_CIRCUMRADIUS * Math.cos(PI_OVER_5 / 2)) / Math.cos(beta - PI_OVER_5 / 2);
-  const across = (FACE_CIRCUMRADIUS * Math.cos(2 * PI_OVER_5)) / Math.cos(beta - 3 * PI_OVER_5);
-  // The second only bites once the ray is pointing at it
-  return across > 0 ? Math.min(outer, across) : outer;
-}
-
-/** The outer edge of whichever of the two domains is on show */
-export function outerRadius(closed: boolean): (gamma: Radians) => number {
-  return closed ? closedDomainRadius : domainRadius;
-}
-
-export function isInDrawnDomain([rho, gamma]: Polar, closed: boolean): boolean {
-  return rho <= (closed ? closedDomainRadius(gamma) : domainRadius(gamma));
-}
-
-/** A point pulled back inside the domain, for when the domain shrinks out from under it */
-export function clampToDomain(polar: Polar, closed: boolean): Polar {
-  const radius = outerRadius(closed)(polar[1]);
+/** A point pulled back inside the domain, for when a drag or a patch runs past its edge */
+export function clampToDomain(polar: Polar): Polar {
+  const radius = domainRadius(polar[1]);
   return polar[0] <= radius ? polar : ([radius * (1 - 1e-6), polar[1]] as Polar);
 }
 
@@ -479,26 +441,6 @@ export function domainBoundary(segmentsPerEdge = 24): Polar[] {
 }
 
 /**
- * The twenty corners of the closed domain: the five mirrored face centres, the ten
- * far edge midpoints of the added triangles, and the five face corners, where the
- * outline notches back in by the vertex defect.
- */
-export function closedDomainCorners(): Face[] {
-  const corners: Face[] = [];
-  for (let i = 0; i < 5; i++) {
-    corners.push(toFace([DOMAIN_CIRCUMRADIUS, (i * TWO_PI_OVER_5) as Radians] as Polar));
-    corners.push(beyondMidpoint(i, 1));
-    corners.push(toFace([FACE_CIRCUMRADIUS, (PI_OVER_5 + i * TWO_PI_OVER_5) as Radians] as Polar));
-    corners.push(beyondMidpoint(i + 1, -1));
-  }
-  return corners;
-}
-
-export function closedDomainBoundary(segmentsPerEdge = 24): Polar[] {
-  return boundaryThrough(closedDomainCorners(), segmentsPerEdge);
-}
-
-/**
  * Radii of the polar grid rings. Those out to the face circumradius close on
  * themselves; beyond it a ring survives only inside the five reflected points.
  */
@@ -603,7 +545,6 @@ function drawnRuns(
   sample: (t: number) => Cartesian,
   steps: number,
   mode: ProjectionMode,
-  closed: boolean,
   face: OriginId | null
 ): Polar[][] {
   const runs: Polar[][] = [];
@@ -616,7 +557,7 @@ function drawnRuns(
       continue;
     }
     const polar = cartesianToPolar(point, mode);
-    if (!isInDrawnDomain(polar, closed)) {
+    if (!isInDomain(polar)) {
       current = null;
       continue;
     }
@@ -630,7 +571,7 @@ function drawnRuns(
 }
 
 /** Meridians and parallels, pulled back into this face's chart */
-function sphereGrid(closed: boolean, ownFrame: boolean, mode: ProjectionMode): Grid {
+function sphereGrid(ownFrame: boolean, mode: ProjectionMode): Grid {
   const faces: OriginId[] = ownFrame ? [ORIGIN_ID, ...neighbourFrames.map(frame => frame.origin)] : [ORIGIN_ID];
   const limit = ((ownFrame ? FACE_PHI_LIMIT : 95) * Math.PI) / 180;
   const rays: GridRay[] = [];
@@ -641,13 +582,13 @@ function sphereGrid(closed: boolean, ownFrame: boolean, mode: ProjectionMode): G
     for (let index = 0; index < GRID_RAYS; index++) {
       const theta = (TWO_PI * index) / GRID_RAYS;
       const weight = rayWeight(index);
-      const runs = drawnRuns(t => cartesianAbout(theta, t * limit, face), MERIDIAN_STEPS, mode, closed, restrict);
+      const runs = drawnRuns(t => cartesianAbout(theta, t * limit, face), MERIDIAN_STEPS, mode, restrict);
       for (const points of runs) rays.push({weight, points});
     }
     for (const degrees of GRID_PARALLELS) {
       if (ownFrame && degrees > FACE_PHI_LIMIT) continue;
       const phi = (degrees * Math.PI) / 180;
-      rings.push(...drawnRuns(t => cartesianAbout(TWO_PI * t, phi, face), PARALLEL_STEPS, mode, closed, restrict));
+      rings.push(...drawnRuns(t => cartesianAbout(TWO_PI * t, phi, face), PARALLEL_STEPS, mode, restrict));
     }
   }
   return {rays, rings};
@@ -657,15 +598,13 @@ function sphereGrid(closed: boolean, ownFrame: boolean, mode: ProjectionMode): G
 // once and kept; both views ask for the same one
 const gridCache = new Map<string, Grid>();
 
-export function gridLines(closed: boolean, ownFrame: boolean, source: GridSource, mode: ProjectionMode): Grid {
-  const key = `${closed}/${ownFrame}/${source}/${source === 'sphere' ? mode : 'any'}`;
+export function gridLines(ownFrame: boolean, source: GridSource, mode: ProjectionMode): Grid {
+  const key = `${ownFrame}/${source}/${source === 'sphere' ? mode : 'any'}`;
   const cached = gridCache.get(key);
   if (cached) return cached;
 
   const grid: Grid =
-    source === 'sphere'
-      ? sphereGrid(closed, ownFrame, mode)
-      : {rays: gridRays(closed, ownFrame), rings: gridRings(closed, ownFrame)};
+    source === 'sphere' ? sphereGrid(ownFrame, mode) : {rays: gridRays(ownFrame), rings: gridRings(ownFrame)};
   gridCache.set(key, grid);
   return grid;
 }
@@ -679,7 +618,7 @@ export function gridLines(closed: boolean, ownFrame: boolean, source: GridSource
  * their own centres rather than continuing this one's, and each set lands on its
  * own face's meridians instead of being bent across the fold.
  */
-export function gridRays(closed: boolean, ownFrame: boolean, segments = 32): GridRay[] {
+export function gridRays(ownFrame: boolean, segments = 32): GridRay[] {
   const rays: GridRay[] = [];
   const add = (weight: RayWeight, gamma: Radians, limit: number, frame: NeighbourFrame | null) => {
     const points: Polar[] = [];
@@ -694,25 +633,25 @@ export function gridRays(closed: boolean, ownFrame: boolean, segments = 32): Gri
     const gamma = ((TWO_PI * index) / GRID_RAYS) as Radians;
     const weight = rayWeight(index);
     if (!ownFrame) {
-      add(weight, gamma, outerRadius(closed)(gamma), null);
+      add(weight, gamma, domainRadius(gamma), null);
       continue;
     }
     add(weight, gamma, faceRadius(gamma), null);
     for (const frame of neighbourFrames) {
-      if (inNeighbourSector(gamma, frame, closed)) add(weight, gamma, faceRadius(gamma), frame);
+      if (inNeighbourSector(gamma, frame)) add(weight, gamma, faceRadius(gamma), frame);
     }
   }
   return rays;
 }
 
 /** The rings of the polar grid, following the same frame as the rays */
-export function gridRings(closed: boolean, ownFrame: boolean, segments = 720): Polar[][] {
+export function gridRings(ownFrame: boolean, segments = 720): Polar[][] {
   if (!ownFrame) {
-    return GRID_RINGS.flatMap(rho => ringArcs(rho, outerRadius(closed), FACE_CIRCUMRADIUS, segments));
+    return GRID_RINGS.flatMap(rho => ringArcs(rho, domainRadius, FACE_CIRCUMRADIUS, segments));
   }
 
   const rings: Polar[][] = [];
-  const width = ((closed ? 2 : 1) * PI_OVER_5) as Radians;
+  const width = PI_OVER_5 as Radians;
   for (const rho of GRID_RINGS) {
     // No face's own chart reaches past its corners
     if (rho > FACE_CIRCUMRADIUS) continue;
@@ -755,7 +694,7 @@ const SPHERE_PATCH_SEGMENTS = 32;
  * it reads as a square of side `size` on the face. Its image on the sphere is the
  * finite version of what the Jacobian describes in the limit.
  */
-function planePatch(polar: Polar, size: number, closed: boolean): Polar[] {
+function planePatch(polar: Polar, size: number): Polar[] {
   const [rho, gamma] = polar;
   const dRho = size / 2;
   // Matching arc length in the azimuthal direction, clamped so the patch stays
@@ -769,7 +708,6 @@ function planePatch(polar: Polar, size: number, closed: boolean): Polar[] {
     [Math.max(0, rho - dRho), gamma + dGamma] as Polar
   ];
 
-  const radius = outerRadius(closed);
   const outline: Polar[] = [];
   for (let i = 0; i < 4; i++) {
     const [rhoA, gammaA] = corners[i];
@@ -779,7 +717,7 @@ function planePatch(polar: Polar, size: number, closed: boolean): Polar[] {
       const gammaT = (gammaA + (gammaB - gammaA) * t) as Radians;
       // Clip to the domain. Past it there is no face to project from, and the
       // patch would be collapsed onto the boundary rather than simply cut off
-      const rhoT = Math.min(rhoA + (rhoB - rhoA) * t, radius(gammaT));
+      const rhoT = Math.min(rhoA + (rhoB - rhoA) * t, domainRadius(gammaT));
       outline.push([rhoT, gammaT] as Polar);
     }
   }
@@ -797,7 +735,7 @@ function planePatch(polar: Polar, size: number, closed: boolean): Polar[] {
  * an arc length on the sphere the projection is equal-area onto, so this patch and
  * the plane one cover the same area and read against each other directly.
  */
-function spherePatch(polar: Polar, size: number, mode: ProjectionMode, ownFrame: boolean, closed: boolean): Polar[] {
+function spherePatch(polar: Polar, size: number, mode: ProjectionMode, ownFrame: boolean): Polar[] {
   const {origin, polar: centre, local} = resolveOrigin(polar, mode, ownFrame);
   const [theta, phi] = polarToSphericalIn(centre, mode, origin, local);
 
@@ -822,7 +760,7 @@ function spherePatch(polar: Polar, size: number, mode: ProjectionMode, ownFrame:
       const t = s / SPHERE_PATCH_SEGMENTS;
       const point = cartesianAbout(thetaA + (thetaB - thetaA) * t, phiA + (phiB - phiA) * t, origin);
       // Clipped like the plane patch, for the same reason
-      outline.push(clampToDomain(cartesianToPolar(point, mode), closed));
+      outline.push(clampToDomain(cartesianToPolar(point, mode)));
     }
   }
   outline.push(outline[0]);
@@ -838,10 +776,9 @@ export function patchOutline(
   size: number,
   source: GridSource,
   mode: ProjectionMode,
-  ownFrame: boolean,
-  closed: boolean
+  ownFrame: boolean
 ): Polar[] {
-  return source === 'sphere' ? spherePatch(polar, size, mode, ownFrame, closed) : planePatch(polar, size, closed);
+  return source === 'sphere' ? spherePatch(polar, size, mode, ownFrame) : planePatch(polar, size);
 }
 
 /** A piece of the domain's image on the unit sphere, ready for a BufferGeometry */
@@ -931,74 +868,6 @@ export function beyondFaceMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
   return radialMesh(faceRadius, domainRadius, mode);
 }
 
-/** Subdivision of each closing triangle. Its edges are straight in the plane, not on the sphere */
-const VERTEX_MESH_STEPS = 12;
-
-/**
- * The ten triangles that close the face's dodecahedron vertices, as a mesh.
- *
- * Tessellated barycentrically rather than in polar coordinates: the band is
- * pinched to nothing at both ends of every sector, and a polar grid would spend
- * all its resolution there and none at the corners.
- */
-export function vertexMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE, steps = VERTEX_MESH_STEPS): DomainMesh {
-  const triangles: [Face, Face, Face][] = [];
-  for (let i = 0; i < 5; i++) {
-    const centre = toFace([DOMAIN_CIRCUMRADIUS, (i * TWO_PI_OVER_5) as Radians] as Polar);
-    for (const side of [1, -1] as const) {
-      const corner = toFace([FACE_CIRCUMRADIUS, (i * TWO_PI_OVER_5 + side * PI_OVER_5) as Radians] as Polar);
-      triangles.push([centre, corner, beyondMidpoint(i, side)]);
-    }
-  }
-
-  const perTriangle = ((steps + 1) * (steps + 2)) / 2;
-  const positions = new Float32Array(triangles.length * perTriangle * 3);
-  const uvs = new Float32Array(triangles.length * perTriangle * 2);
-  const indices = new Uint32Array(triangles.length * steps * steps * 3);
-  let p = 0;
-  let q = 0;
-  let k = 0;
-
-  for (let t = 0; t < triangles.length; t++) {
-    const [a, b, c] = triangles[t];
-    const base = t * perTriangle;
-
-    for (let row = 0; row <= steps; row++) {
-      for (let column = 0; column <= row; column++) {
-        const wa = (steps - row) / steps;
-        const wc = column / steps;
-        const wb = 1 - wa - wc;
-        const face = [a[0] * wa + b[0] * wb + c[0] * wc, a[1] * wa + b[1] * wb + c[1] * wc] as Face;
-        const point = polarToCartesian(toPolar(face), mode);
-        positions[p++] = point[0];
-        positions[p++] = point[1];
-        positions[p++] = point[2];
-        writeRasterUV(uvs, q, face);
-        q += 2;
-      }
-    }
-
-    // Row `row` holds row + 1 points, so it spans row upward triangles and
-    // row - 1 downward ones
-    for (let row = 1; row <= steps; row++) {
-      const above = base + ((row - 1) * row) / 2;
-      const here = base + (row * (row + 1)) / 2;
-      for (let column = 0; column < row; column++) {
-        indices[k++] = above + column;
-        indices[k++] = here + column;
-        indices[k++] = here + column + 1;
-        if (column < row - 1) {
-          indices[k++] = above + column;
-          indices[k++] = here + column + 1;
-          indices[k++] = above + column + 1;
-        }
-      }
-    }
-  }
-
-  return {positions, uvs, indices};
-}
-
 /**
  * Resolution of the mesh the raster is painted on. Finer than the flat-coloured
  * regions want: the texture is carried across each quad by a linear map, so the
@@ -1007,7 +876,6 @@ export function vertexMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE, steps
  */
 const RASTER_MESH_ANGULAR = 320;
 const RASTER_MESH_RADIAL = 24;
-const RASTER_VERTEX_STEPS = 20;
 
 /** The pieces of several meshes joined into one, so the raster costs a single draw */
 function concatMeshes(parts: DomainMesh[]): DomainMesh {
@@ -1038,22 +906,18 @@ function concatMeshes(parts: DomainMesh[]): DomainMesh {
 }
 
 /**
- * The whole drawn domain as one textured mesh, so the deformation raster can be
- * painted onto the sphere rather than onto the flat face.
+ * The whole domain as one textured mesh, so the deformation raster can be painted
+ * onto the sphere rather than onto the flat face.
  *
- * The pieces are the same three the flat-coloured regions use — the face, the
- * reflected triangles beyond it, and the ten that close the vertices — which is
- * what keeps the mesh's outline exactly on the field's mask. A single polar mesh
- * out to `closedDomainRadius` would not: that outline notches inward at angles
- * that are not multiples of the sector, so its corners would fall between samples.
+ * The two pieces are the ones the flat-coloured regions use, the face and the
+ * reflected triangles beyond it, which is what keeps the mesh's outline exactly on
+ * the field's mask.
  */
-export function domainRasterMesh(mode: ProjectionMode, closed: boolean): DomainMesh {
-  const parts = [
+export function domainRasterMesh(mode: ProjectionMode): DomainMesh {
+  return concatMeshes([
     radialMesh(ZERO, faceRadius, mode, RASTER_MESH_ANGULAR, RASTER_MESH_RADIAL),
     radialMesh(faceRadius, domainRadius, mode, RASTER_MESH_ANGULAR, RASTER_MESH_RADIAL)
-  ];
-  if (closed) parts.push(vertexMesh(mode, RASTER_VERTEX_STEPS));
-  return concatMeshes(parts);
+  ]);
 }
 
 export interface FrameJacobian {
@@ -1217,8 +1081,7 @@ function robustRange(sortedValues: Float32Array): {range: [number, number]; cons
 export function deformationField(
   size: number,
   projectionMode: ProjectionMode = DEFAULT_PROJECTION_MODE,
-  ownFrame = false,
-  closed = false
+  ownFrame = false
 ): DeformationField {
   const pixels = size * size;
   const buffers = () =>
@@ -1238,7 +1101,7 @@ export function deformationField(
     for (let i = 0; i < size; i++) {
       const x = -DOMAIN_CIRCUMRADIUS + ((i + 0.5) / size) * 2 * DOMAIN_CIRCUMRADIUS;
       const polar = [Math.hypot(x, y), Math.atan2(y, x)] as Polar;
-      if (!isInDrawnDomain(polar, closed)) continue;
+      if (!isInDomain(polar)) continue;
 
       const index = j * size + i;
       mask[index] = 1;
@@ -1517,17 +1380,13 @@ export function cellSagGeometry(cells: Face[][], mode: ProjectionMode, radius: n
  * Sampled coarsely — the ranges are 99th percentiles, which are stable well
  * below the raster's own resolution.
  */
-export function sharedExtents(
-  size = 160,
-  ownFrame = false,
-  closed = false
-): Record<DeformationChannel, [number, number]> {
+export function sharedExtents(size = 160, ownFrame = false): Record<DeformationChannel, [number, number]> {
   const extents = Object.fromEntries(
     DEFORMATION_CHANNELS.map(channel => [channel, [Infinity, -Infinity] as [number, number]])
   ) as Record<DeformationChannel, [number, number]>;
 
   for (const projection of PROJECTION_MODES) {
-    const field = deformationField(size, projection, ownFrame, closed);
+    const field = deformationField(size, projection, ownFrame);
     for (const channel of DEFORMATION_CHANNELS) {
       if (field.constant[channel]) continue;
       const [low, high] = field.ranges[channel];
