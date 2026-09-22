@@ -32,17 +32,25 @@ const viewStyle: React.CSSProperties = {
   minHeight: 0
 };
 
-// Clear of the control panel, which runs down the left
-const labelStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 16,
-  right: 20,
+const captionText: React.CSSProperties = {
   color: '#fff',
   fontSize: 13,
   letterSpacing: 0.4,
   opacity: 0.65,
-  pointerEvents: 'none',
-  zIndex: 1
+  textAlign: 'center',
+  pointerEvents: 'none'
+};
+
+// Both captions meet in the middle of the page, the face's below its diagram and
+// the sphere's above its own, with the rule that divides the two views between
+// them. Each label is then against the view it names.
+const faceCaption: React.CSSProperties = {...captionText, flex: '0 0 auto', padding: '0 0 8px'};
+
+const sphereCaption: React.CSSProperties = {
+  ...captionText,
+  flex: '0 0 auto',
+  padding: '8px 0 0',
+  borderTop: '1px solid rgba(255,255,255,0.12)'
 };
 
 const App: React.FC = () => {
@@ -88,8 +96,7 @@ const App: React.FC = () => {
         background: 'linear-gradient(0, #000, #223)'
       }}
     >
-      <div style={{...viewStyle, borderBottom: '1px solid rgba(255,255,255,0.12)'}}>
-        <div style={labelStyle}>Dodecahedron face and its reflections — polar (ρ, γ)</div>
+      <div style={viewStyle}>
         <FaceView
           polar={polar}
           raster={faceRaster}
@@ -100,8 +107,9 @@ const App: React.FC = () => {
           onHover={setPolar}
         />
       </div>
+      <div style={faceCaption}>Dodecahedron face and its reflections — polar (ρ, γ)</div>
+      <div style={sphereCaption}>Sphere — spherical (θ, φ)</div>
       <div style={viewStyle}>
-        <div style={labelStyle}>Sphere — spherical (θ, φ)</div>
         <SphereView
           polar={polar}
           raster={sphereRaster}

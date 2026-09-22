@@ -858,16 +858,6 @@ export function radialMesh(
 
 const ZERO = () => 0;
 
-/** The face itself */
-export function faceMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
-  return radialMesh(ZERO, faceRadius, mode);
-}
-
-/** The reflected region: the five triangles mirrored across the face edges */
-export function beyondFaceMesh(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
-  return radialMesh(faceRadius, domainRadius, mode);
-}
-
 /**
  * Resolution of the mesh the raster is painted on. Finer than the flat-coloured
  * regions want: the texture is carried across each quad by a linear map, so the

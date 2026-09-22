@@ -180,39 +180,11 @@ function Legend({
   );
 }
 
-/** Edge length and straightness of the drawn cells, under the current projection */
-function EdgeStats({metrics}: {metrics: EdgeMetrics | null}) {
-  return (
-    <div style={section}>
-      <h3 style={heading}>Cell edges</h3>
-      {metrics ? (
-        <div style={{fontVariantNumeric: 'tabular-nums'}}>
-          <div style={{color: MUTED}}>{metrics.edges} cell edges, as curves</div>
-          <div>
-            {metrics.meanKm.toFixed(1)} km mean, spread ±{(100 * metrics.spread).toFixed(2)}%
-          </div>
-          <div style={{color: MUTED}}>
-            {metrics.minKm.toFixed(1)} – {metrics.maxKm.toFixed(1)} km
-          </div>
-          <div title="Greatest angular departure from the great circle through the edge's endpoints">
-            bowing {metrics.bowingMeanDeg.toFixed(4)}° mean, {metrics.bowingMaxDeg.toFixed(4)}° max
-          </div>
-          <div title="Total area between the cell edges and the great circles joining their vertices">
-            sag area {(100 * metrics.sagAreaFraction).toFixed(3)}% of the face
-          </div>
-        </div>
-      ) : (
-        <div style={{color: MUTED}}>measuring edges…</div>
-      )}
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // The Jacobian at the hovered point
 // ---------------------------------------------------------------------------
 
-const GAUGE_WIDTH = 64;
+const GAUGE_WIDTH = 58;
 const GAUGE_DOT = 8;
 
 /**
@@ -279,7 +251,7 @@ const LABELS = {
 const at = (x: number, y: number) => `${x.toFixed(4)},${(-y).toFixed(4)}`;
 
 const DIAGRAM_VIEW_BOX = '-0.42 -1.42 1.9 1.9';
-const DIAGRAM_SIZE = 96;
+const DIAGRAM_SIZE = 84;
 
 /**
  * A unit square and its image. The two diagrams share a scale, so the image's
@@ -389,24 +361,23 @@ function PatchPair({frame, source}: {frame: FrameJacobian; source: GridSource}) 
   );
 }
 
-/** A bracketed 2x2, whose entries may be numbers or the symbols standing for them */
-function Matrix2({
-  entries,
-  width = 46,
-  size = 13
-}: {
-  entries: [string, string, string, string];
-  width?: number;
-  size?: number;
-}) {
+/**
+ * A bracketed 2x2, whose entries may be numbers or the symbols standing for them.
+ *
+ * The columns size themselves to their contents and nothing is allowed to wrap: a
+ * fixed column width has to be wide enough for the longest entry any factor can
+ * produce, and anything narrower breaks a value across two lines.
+ */
+function Matrix2({entries, size = 12}: {entries: [string, string, string, string]; size?: number}) {
   return (
     <span
       style={{
         display: 'inline-grid',
-        gridTemplateColumns: `${width}px ${width}px`,
-        columnGap: '6px',
+        gridTemplateColumns: 'auto auto',
+        columnGap: '5px',
         rowGap: '3px',
-        padding: '4px 5px',
+        whiteSpace: 'nowrap',
+        padding: '4px 4px',
         borderLeft: '2px solid #888',
         borderRight: '2px solid #888',
         borderRadius: '3px',
@@ -472,7 +443,7 @@ function Factorisation({
   }[] = [
     {
       channel: 'rotation',
-      name: 'rot',
+      name: 'rotate',
       entries: ['cos α', '−sin α', 'sin α', 'cos α'],
       parameter: `α = ${fixed((rotation * 180) / Math.PI, 2)}°`,
       hint: 'Angle taking the radial axis onto its image'
@@ -504,7 +475,7 @@ function Factorisation({
 
   return (
     <>
-      <div style={{marginTop: '12px', textAlign: 'center', fontSize: '12px'}}>
+      <div style={{marginTop: '12px', textAlign: 'center', fontSize: '11px', lineHeight: 1.6}}>
         {LABELS.symbol} ={' '}
         {factors.map(({name}, index) => (
           <React.Fragment key={name}>
@@ -514,28 +485,38 @@ function Factorisation({
         ))}
       </div>
 
+      {/* All four factors share one grid rather than a flex row each, so that the
+          matrices and the gauges line up down the column however wide each matrix
+          comes out. Everything is nowrap: the gauge belongs beside its matrix, not
+          pushed onto a line beneath it */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'auto auto 1fr',
-          columnGap: '8px',
-          rowGap: '8px',
+          gridTemplateColumns: 'auto auto auto',
+          justifyContent: 'start',
+          alignItems: 'center',
+          columnGap: '4px',
+          rowGap: '10px',
           marginTop: '10px',
-          alignItems: 'center'
+          whiteSpace: 'nowrap'
         }}
       >
         {factors.map(({channel, name, entries, parameter, hint}) => (
           <React.Fragment key={name}>
             <span
               title={hint}
-              style={{color: channel === quantity ? '#000' : MUTED, fontWeight: channel === quantity ? 600 : 400}}
+              style={{
+                fontSize: '11px',
+                color: channel === quantity ? '#000' : MUTED,
+                fontWeight: channel === quantity ? 600 : 400
+              }}
             >
-              <Factor name={name} />
+              <Factor name={name} /> =
             </span>
-            <Matrix2 entries={entries} width={38} size={11} />
-            <span style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px'}}>
-              <span style={{fontFamily: MONO, fontSize: '11px', fontVariantNumeric: 'tabular-nums'}}>{parameter}</span>
+            <Matrix2 entries={entries} size={11} />
+            <span title={hint} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px'}}>
               <Gauge value={signed[channel]} range={extents?.[channel]} channel={channel} />
+              <span style={{fontFamily: MONO, fontSize: '11px', fontVariantNumeric: 'tabular-nums'}}>{parameter}</span>
             </span>
           </React.Fragment>
         ))}
@@ -594,10 +575,10 @@ export function ControlPanel({
         top: '20px',
         left: '20px',
         bottom: '20px',
-        width: '300px',
+        width: '250px',
         boxSizing: 'border-box',
         background: 'white',
-        padding: '12px',
+        padding: '10px',
         borderRadius: '4px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
         zIndex: 2,
@@ -639,24 +620,30 @@ export function ControlPanel({
         <h3 style={heading}>Cells</h3>
         <Select label="Resolution" value={cells} options={CELL_OPTIONS} onChange={onCellsChange} />
         {cells !== 'off' && (
-          <Check
-            label="Fill the sag"
-            checked={sag}
-            title="Fill the gap between each cell edge and the great circle joining its vertices, at true scale"
-            onChange={onSagChange}
-          />
+          <div style={field}>
+            <Check
+              label="Fill sag"
+              checked={sag}
+              title="Fill the gap between each cell edge and the great circle joining its vertices, at true scale"
+              onChange={onSagChange}
+            />
+            <span
+              style={{color: MUTED, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'}}
+              title="Total area between the cell edges and the great circles joining their vertices, as a fraction of the face"
+            >
+              {edges ? `sag area ${(100 * edges.sagAreaFraction).toFixed(3)}%` : 'measuring…'}
+            </span>
+          </div>
         )}
       </div>
-
-      {cells !== 'off' && <EdgeStats metrics={edges} />}
 
       <div style={section}>
         <h3 style={heading}>Jacobian at the cursor</h3>
         <div
-          style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}
+          style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', whiteSpace: 'nowrap'}}
           title={LABELS.definition}
         >
-          <span style={{fontFamily: MONO, fontSize: '13px'}}>{LABELS.symbol} =</span>
+          <span style={{fontFamily: MONO, fontSize: '12px'}}>{LABELS.symbol} =</span>
           <Matrix2 entries={entriesOf(frame)} />
         </div>
 

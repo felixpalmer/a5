@@ -12,7 +12,6 @@ import type {ProjectionMode} from 'a5/projections/projection-mode';
 import type {DeformationRaster} from './deformation';
 import type {GridSource, RayWeight} from './jacobian';
 import {
-  beyondFaceMesh,
   cartesianToPolar,
   cellOutline,
   cellSagGeometry,
@@ -21,7 +20,6 @@ import {
   domainRasterMesh,
   faceBoundary,
   faceCorners,
-  faceMesh,
   DOMAIN_CIRCUMRADIUS,
   gridLines,
   isInDomain,
@@ -31,8 +29,6 @@ import {
 } from './jacobian';
 
 export const COLORS = {
-  face: '#00aa55',
-  beyond: '#8866dd',
   grid: 'rgba(255, 255, 255, 0.2)',
   gridFaint: 'rgba(255, 255, 255, 0.08)',
   cusp: 'rgba(255, 255, 255, 0.5)',
@@ -42,7 +38,7 @@ export const COLORS = {
   outline: '#ffffff',
   domainOutline: 'rgba(255, 255, 255, 0.45)',
   cell: '#4dd0e1',
-  sag: '#ff0000',
+  sag: '#ff2d55',
   patch: '#ffb400',
   radial: '#d84315',
   azimuthal: '#1565c0'
@@ -59,6 +55,21 @@ const points = (corners: Face[], flipY: boolean) =>
 // ---------------------------------------------------------------------------
 
 const VIEW_EXTENT = 1.06 * DOMAIN_CIRCUMRADIUS;
+
+/**
+ * A quarter turn counterclockwise on screen, so a spike of the star points up
+ * rather than right. Both views take it, so that the two keep reading alike.
+ *
+ * The face view turns the drawing rather than the geometry, and SVG's y points
+ * down, so the angle it hands over is the negated one; its pointer is read back
+ * through that same group's screen matrix, so the inverse comes for free. The
+ * sphere turns the scene about z, the axis through the face centre, and has to
+ * undo that on its pointer by hand.
+ *
+ * The figure repeats every 72 degrees, so this is the same picture as 18.
+ */
+const VIEW_TURN_DEGREES = 90;
+const VIEW_TURN = (VIEW_TURN_DEGREES * Math.PI) / 180;
 
 export function FaceView({
   polar,
@@ -129,92 +140,87 @@ export function FaceView({
       onPointerMove={handlePointer}
       style={{width: '100%', height: '100%', display: 'block', touchAction: 'none'}}
     >
-      {raster && (
-        <>
-          <defs>
-            <clipPath id={clipId}>
-              <polygon points={clipOutline} />
-            </clipPath>
-          </defs>
-          <image
-            href={raster.url}
-            x={-DOMAIN_CIRCUMRADIUS}
-            y={-DOMAIN_CIRCUMRADIUS}
-            width={2 * DOMAIN_CIRCUMRADIUS}
-            height={2 * DOMAIN_CIRCUMRADIUS}
-            clipPath={`url(#${clipId})`}
-            preserveAspectRatio="none"
-          />
-        </>
-      )}
-
-      {/* SVG y points down, the face coordinate system points up */}
-      <g ref={frameRef} transform="scale(1, -1)">
-        {!raster && (
+      <g transform={`rotate(${-VIEW_TURN_DEGREES})`}>
+        {raster && (
           <>
-            <polygon points={domainOutline} fill={COLORS.beyond} fillOpacity={0.12} />
-            <polygon points={outline} fill={COLORS.face} fillOpacity={0.14} />
+            <defs>
+              <clipPath id={clipId}>
+                <polygon points={clipOutline} />
+              </clipPath>
+            </defs>
+            <image
+              href={raster.url}
+              x={-DOMAIN_CIRCUMRADIUS}
+              y={-DOMAIN_CIRCUMRADIUS}
+              width={2 * DOMAIN_CIRCUMRADIUS}
+              height={2 * DOMAIN_CIRCUMRADIUS}
+              clipPath={`url(#${clipId})`}
+              preserveAspectRatio="none"
+            />
           </>
         )}
 
-        {rings.map((path, index) => (
-          <path
-            key={`ring-${index}`}
-            d={path}
+        {/* SVG y points down, the face coordinate system points up */}
+        <g ref={frameRef} transform="scale(1, -1)">
+          {rings.map((path, index) => (
+            <path
+              key={`ring-${index}`}
+              d={path}
+              fill="none"
+              stroke={gridStroke}
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+          {rays.map(({weight, path}, index) => (
+            <path
+              key={`ray-${index}`}
+              d={path}
+              fill="none"
+              stroke={rayStroke[weight]}
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+
+          {cellPaths.map((path, index) => (
+            <path
+              key={`cell-${index}`}
+              d={path}
+              fill="none"
+              stroke={COLORS.cell}
+              strokeOpacity={0.85}
+              strokeWidth={1.2}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+
+          <polygon
+            points={domainOutline}
             fill="none"
-            stroke={gridStroke}
-            strokeWidth={1}
+            stroke={COLORS.domainOutline}
+            strokeWidth={1.5}
+            strokeDasharray="6 4"
             vectorEffect="non-scaling-stroke"
           />
-        ))}
-        {rays.map(({weight, path}, index) => (
-          <path
-            key={`ray-${index}`}
-            d={path}
+          <polygon
+            points={outline}
             fill="none"
-            stroke={rayStroke[weight]}
-            strokeWidth={1}
+            stroke={COLORS.outline}
+            strokeWidth={2}
             vectorEffect="non-scaling-stroke"
           />
-        ))}
 
-        {cellPaths.map((path, index) => (
           <path
-            key={`cell-${index}`}
-            d={path}
-            fill="none"
-            stroke={COLORS.cell}
-            strokeOpacity={0.85}
-            strokeWidth={1.2}
+            d={patch}
+            fill={COLORS.patch}
+            fillOpacity={0.35}
+            stroke={COLORS.patch}
+            strokeWidth={2}
             vectorEffect="non-scaling-stroke"
           />
-        ))}
-
-        <polygon
-          points={domainOutline}
-          fill="none"
-          stroke={COLORS.domainOutline}
-          strokeWidth={1.5}
-          strokeDasharray="6 4"
-          vectorEffect="non-scaling-stroke"
-        />
-        <polygon
-          points={outline}
-          fill="none"
-          stroke={COLORS.outline}
-          strokeWidth={2}
-          vectorEffect="non-scaling-stroke"
-        />
-
-        <path
-          d={patch}
-          fill={COLORS.patch}
-          fillOpacity={0.35}
-          stroke={COLORS.patch}
-          strokeWidth={2}
-          vectorEffect="non-scaling-stroke"
-        />
-        <circle cx={marker[0]} cy={marker[1]} r={0.011} fill={COLORS.patch} />
+          <circle cx={marker[0]} cy={marker[1]} r={0.011} fill={COLORS.patch} />
+        </g>
       </g>
     </svg>
   );
@@ -242,34 +248,6 @@ function lift(ring: Polar[], clearance: number, mode: ProjectionMode): [number, 
     out[i] = [point[0] * radius, point[1] * radius, point[2] * radius];
   }
   return out;
-}
-
-function ProjectedRegion({
-  build,
-  projection,
-  color,
-  opacity
-}: {
-  build: (mode: ProjectionMode) => {positions: Float32Array; indices: Uint32Array};
-  projection: ProjectionMode;
-  color: string;
-  opacity: number;
-}) {
-  const geometry = useMemo(() => {
-    const {positions, indices} = build(projection);
-    const geometry = new BufferGeometry();
-    geometry.setAttribute('position', new BufferAttribute(positions, 3));
-    geometry.setIndex(new BufferAttribute(indices, 1));
-    return geometry;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projection]);
-
-  // The meshes sample the unit sphere, so they are scaled here like everything else
-  return (
-    <mesh geometry={geometry} scale={SPHERE_RADIUS}>
-      <meshBasicMaterial color={color} transparent opacity={opacity} side={DoubleSide} depthWrite={false} />
-    </mesh>
-  );
 }
 
 const RAY_OPACITY: Record<RayWeight, number> = {cusp: 0.55, bisector: 0.25, minor: 0.1};
@@ -398,10 +376,12 @@ function ProjectedSag({cells, projection}: {cells: Face[][]; projection: Project
 
   if (!geometry.index?.count) return null;
   // Opaque, and drawn without the edges or the great circles beside it. A line has
-  // constant width however thin the band is, which makes the area impossible to judge
+  // constant width however thin the band is, which makes the area impossible to judge.
+  // Past the tone mapping too, which was pulling a saturated red down towards the
+  // grey of the sphere it has to be read against
   return (
     <mesh geometry={geometry}>
-      <meshBasicMaterial color={COLORS.sag} side={DoubleSide} />
+      <meshBasicMaterial color={COLORS.sag} side={DoubleSide} toneMapped={false} />
     </mesh>
   );
 }
@@ -452,9 +432,14 @@ function Scene({
 
   const handlePointer = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();
+    // The ray hits the scene where it is drawn, so the view turn has to come back
+    // out before the point can be read as a point of the projection
     const {x, y, z} = event.point;
-    const length = Math.hypot(x, y, z);
-    const hovered = cartesianToPolar([x / length, y / length, z / length] as Cartesian, projection);
+    const cos = Math.cos(VIEW_TURN);
+    const sin = Math.sin(VIEW_TURN);
+    const turned = [x * cos + y * sin, y * cos - x * sin, z];
+    const length = Math.hypot(turned[0], turned[1], turned[2]);
+    const hovered = cartesianToPolar(turned.map(v => v / length) as Cartesian, projection);
     if (isInDomain(hovered)) onHover(hovered);
   };
 
@@ -468,38 +453,39 @@ function Scene({
 
       <mesh onPointerMove={handlePointer}>
         <sphereGeometry args={[SPHERE_RADIUS * 0.995, 96, 64]} />
-        <meshPhysicalMaterial color="#8f9bad" roughness={0.55} metalness={0.05} />
+        <meshPhysicalMaterial color="#6e7a8c" roughness={0.55} metalness={0.05} />
       </mesh>
 
-      {/* The flat region colours would tint the ramp, so the raster replaces them */}
-      {raster ? (
-        <ProjectedRaster raster={raster} projection={projection} />
-      ) : (
-        <>
-          <ProjectedRegion build={faceMesh} projection={projection} color={COLORS.face} opacity={0.25} />
-          <ProjectedRegion build={beyondFaceMesh} projection={projection} color={COLORS.beyond} opacity={0.22} />
-        </>
-      )}
-      <ProjectedGrid projection={projection} ownFrame={ownFrame} source={source} overRaster={raster !== null} />
-      {showSag ? (
-        <ProjectedSag cells={cells} projection={projection} />
-      ) : (
-        <ProjectedCells cells={cells} projection={projection} />
-      )}
-      <Line points={outerBoundary} color={COLORS.domainOutline} lineWidth={1.5} dashed dashSize={0.03} gapSize={0.02} />
-      <Line points={boundary} color={COLORS.outline} lineWidth={2} />
-      <Line points={patch} color={COLORS.patch} lineWidth={2.5} />
-      <mesh position={marker}>
-        <sphereGeometry args={[0.011 * SPHERE_RADIUS, 16, 16]} />
-        <meshBasicMaterial color={COLORS.patch} />
-      </mesh>
+      {/* The face centre projects to the pole, so the axis through it is z, and a
+          turn about it spins the figure in view exactly as the face view's own
+          does. The lights stay outside, so the shading does not turn with it */}
+      <group rotation={[0, 0, VIEW_TURN]}>
+        {raster && <ProjectedRaster raster={raster} projection={projection} />}
+        <ProjectedGrid projection={projection} ownFrame={ownFrame} source={source} overRaster={raster !== null} />
+        {showSag ? (
+          <ProjectedSag cells={cells} projection={projection} />
+        ) : (
+          <ProjectedCells cells={cells} projection={projection} />
+        )}
+        <Line
+          points={outerBoundary}
+          color={COLORS.domainOutline}
+          lineWidth={1.5}
+          dashed
+          dashSize={0.03}
+          gapSize={0.02}
+        />
+        <Line points={boundary} color={COLORS.outline} lineWidth={2} />
+        <Line points={patch} color={COLORS.patch} lineWidth={2.5} />
+        <mesh position={marker}>
+          <sphereGeometry args={[0.011 * SPHERE_RADIUS, 16, 16]} />
+          <meshBasicMaterial color={COLORS.patch} />
+        </mesh>
+      </group>
 
-      <OrbitControls
-        enableDamping
-        enablePan={false}
-        minDistance={1.2 * SPHERE_RADIUS}
-        maxDistance={8 * SPHERE_RADIUS}
-      />
+      {/* Orbit only. With the dolly off the wheel scrolls the page rather than
+          the sphere, and the distance limits it used to need go with it */}
+      <OrbitControls enableDamping enablePan={false} enableZoom={false} />
     </>
   );
 }
