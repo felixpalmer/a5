@@ -3,8 +3,8 @@
 // Copyright (c) A5 contributors
 
 import {useEffect, useMemo, useState} from 'react';
-import {CELL_RESOLUTIONS, DEFORMATION_CHANNELS, cellEdgeMetrics, deformationField, sharedExtents} from './jacobian';
-import type {DeformationChannel, DeformationField, EdgeMetrics} from './jacobian';
+import {CELL_RESOLUTIONS, DEFORMATION_CHANNELS, cellEdgeMetrics, deformationField, sharedExtents} from './geometry';
+import type {DeformationChannel, DeformationField, EdgeMetrics} from './geometry';
 import type {Face} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from './projection';
 

@@ -16,8 +16,8 @@ import {
   useSharedExtents
 } from './deformation';
 import type {RasterQuantity} from './deformation';
-import type {GridSource} from './jacobian';
-import {computeJacobian, decompose, deformationValues, faceCells, toFrame} from './jacobian';
+import type {GridSource} from './geometry';
+import {computeJacobian, decompose, deformationValues, faceCells, toFrame} from './geometry';
 import {DEFAULT_PROJECTION_MODE} from './projection';
 import type {ProjectionMode} from './projection';
 

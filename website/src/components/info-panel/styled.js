@@ -5,8 +5,6 @@
 import styled from 'styled-components';
 import {isMobile} from '../common';
 
-const whenCollapsed = rules => props => (props.$collapsible && !props.$expanded ? rules : '');
-
 export const PanelContainer = styled.div`
   font-size: 14px;
   position: absolute;
@@ -24,10 +22,6 @@ export const PanelContainer = styled.div`
   outline: none;
   z-index: 1;
 
-  ${whenCollapsed(`
-    width: auto;
-  `)}
-
   ${isMobile} {
     width: auto;
     left: 0;
@@ -43,7 +37,7 @@ export const PanelContainer = styled.div`
 `;
 
 export const PanelExpander = styled.div`
-  display: ${props => (props.$collapsible ? 'block' : 'none')};
+  display: none;
   width: 16px;
   height: 16px;
   font-family: serif;
@@ -75,10 +69,8 @@ export const PanelTitle = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   font: bold 1.25em var(--ifm-font-family-base);
   margin: 8px 0;
-  cursor: ${props => (props.$collapsible ? 'pointer' : 'auto')};
   ${isMobile} {
     cursor: pointer;
     ${props =>
@@ -141,11 +133,6 @@ export const PanelContent = styled.div`
     margin-bottom: 12px;
     white-space: initial;
   }
-
-  ${whenCollapsed(`
-    display: none;
-  `)}
-
   ${isMobile} {
     display: ${props => (props.$expanded ? 'block' : 'none')};
   }
@@ -157,11 +144,6 @@ export const SourceLink = styled.a`
   margin-top: 8px;
   font: bold 12px/20px var(--ifm-font-family-base);
   color: var(--ifm-color-content-secondary);
-
-  ${whenCollapsed(`
-    display: none;
-  `)}
-
   ${isMobile} {
     display: ${props => (props.$expanded ? 'block' : 'none')};
   }

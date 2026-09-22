@@ -6,8 +6,8 @@ import React from 'react';
 import {COLORS} from './components';
 import {CELL_OPTIONS, CHANNEL_INFO, RASTER_QUANTITIES, rampCss, rampFraction, rampT} from './deformation';
 import type {Extents, RasterQuantity} from './deformation';
-import {GRID_SOURCES, PROJECTION_MODES, decompose, deformationValues} from './jacobian';
-import type {DeformationChannel, EdgeMetrics, FrameJacobian, GridSource} from './jacobian';
+import {GRID_SOURCES, PROJECTION_MODES, decompose, deformationValues} from './geometry';
+import type {DeformationChannel, EdgeMetrics, FrameJacobian, GridSource} from './geometry';
 import type {ProjectionMode} from './projection';
 
 // ---------------------------------------------------------------------------
@@ -24,17 +24,19 @@ const heading: React.CSSProperties = {margin: '0 0 8px', fontSize: '14px'};
 const field: React.CSSProperties = {display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'};
 const check: React.CSSProperties = {display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer'};
 
-/** A labelled dropdown, one per row */
+/** A labelled dropdown, one per row. `labels` is how an option reads, not what it is */
 function Select<T extends string>({
   label,
   value,
   options,
+  labels,
   titles,
   onChange
 }: {
   label: string;
   value: T;
   options: readonly T[];
+  labels?: Partial<Record<T, string>>;
   titles?: Partial<Record<T, string>>;
   onChange: (value: T) => void;
 }) {
@@ -50,7 +52,7 @@ function Select<T extends string>({
       >
         {options.map(option => (
           <option key={option} value={option} title={titles?.[option]}>
-            {option}
+            {labels?.[option] ?? option}
           </option>
         ))}
       </select>
@@ -76,6 +78,13 @@ function Check({
     </label>
   );
 }
+
+const PROJECTION_LABELS: Record<ProjectionMode, string> = {
+  dsea: 'DSEA',
+  isea: 'ISEA',
+  rtsea: 'RTSEA',
+  gnomonic: 'Gnomonic'
+};
 
 const PROJECTION_TITLES: Record<ProjectionMode, string> = {
   dsea: "Radiates from the dodecahedron face centre. A5's own projection",
@@ -588,11 +597,11 @@ export function ControlPanel({
         overflowY: 'auto'
       }}
     >
-      <h3 style={heading}>Projection</h3>
       <Select
-        label="Mode"
+        label="Projection"
         value={projection}
         options={PROJECTION_MODES}
+        labels={PROJECTION_LABELS}
         titles={PROJECTION_TITLES}
         onChange={onProjectionChange}
       />
@@ -605,8 +614,7 @@ export function ControlPanel({
       />
 
       <div style={section}>
-        <h3 style={heading}>Deformation raster</h3>
-        <Select label="Quantity" value={quantity} options={RASTER_QUANTITIES} onChange={onQuantityChange} />
+        <Select label="Raster" value={quantity} options={RASTER_QUANTITIES} onChange={onQuantityChange} />
         <Check
           label="Relative colour scale"
           checked={relativeScale}
@@ -617,8 +625,7 @@ export function ControlPanel({
       </div>
 
       <div style={section}>
-        <h3 style={heading}>Cells</h3>
-        <Select label="Resolution" value={cells} options={CELL_OPTIONS} onChange={onCellsChange} />
+        <Select label="Cells" value={cells} options={CELL_OPTIONS} onChange={onCellsChange} />
         {cells !== 'off' && (
           <div style={field}>
             <Check

@@ -10,7 +10,7 @@ import {toFace, toPolar} from 'a5/core/coordinate-transforms';
 import type {Cartesian, Face, Polar} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from './projection';
 import type {DeformationRaster} from './deformation';
-import type {GridSource, RayWeight} from './jacobian';
+import type {GridSource, RayWeight} from './geometry';
 import {
   cartesianToPolar,
   cellOutline,
@@ -26,7 +26,7 @@ import {
   patchOutline,
   polarToCartesian,
   SPHERE_RADIUS
-} from './jacobian';
+} from './geometry';
 
 export const COLORS = {
   grid: 'rgba(255, 255, 255, 0.2)',

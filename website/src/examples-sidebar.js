@@ -13,7 +13,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Technical',
-      items: ['pentagon', 'teohedron-dodecahedron', 'spherical-polygon', 'jacobian', 'lattice', 'hilbert', 'globe']
+      items: ['pentagon', 'teohedron-dodecahedron', 'spherical-polygon', 'projection', 'lattice', 'hilbert', 'globe']
     },
     {
       type: 'category',
