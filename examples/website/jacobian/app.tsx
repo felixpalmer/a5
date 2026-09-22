@@ -18,8 +18,8 @@ import {
 import type {RasterQuantity} from './deformation';
 import type {GridSource} from './jacobian';
 import {computeJacobian, decompose, deformationValues, faceCells, toFrame} from './jacobian';
-import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
-import type {ProjectionMode} from 'a5/projections/projection-mode';
+import {DEFAULT_PROJECTION_MODE} from './projection';
+import type {ProjectionMode} from './projection';
 
 // Off both a cusp and the face center, so the shear terms are visible on arrival
 const INITIAL_POLAR = [0.34, Math.PI / 9] as Polar;

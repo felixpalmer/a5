@@ -6,7 +6,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {CELL_RESOLUTIONS, DEFORMATION_CHANNELS, cellEdgeMetrics, deformationField, sharedExtents} from './jacobian';
 import type {DeformationChannel, DeformationField, EdgeMetrics} from './jacobian';
 import type {Face} from 'a5/core/coordinate-systems';
-import type {ProjectionMode} from 'a5/projections/projection-mode';
+import type {ProjectionMode} from './projection';
 
 /** Enough to resolve the cusps without making the one-off sample pass noticeable */
 const RASTER_SIZE = 384;

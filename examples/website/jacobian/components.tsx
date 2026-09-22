@@ -8,7 +8,7 @@ import {Line, OrbitControls} from '@react-three/drei';
 import {BufferAttribute, BufferGeometry, CanvasTexture, DoubleSide, SRGBColorSpace} from 'three';
 import {toFace, toPolar} from 'a5/core/coordinate-transforms';
 import type {Cartesian, Face, Polar} from 'a5/core/coordinate-systems';
-import type {ProjectionMode} from 'a5/projections/projection-mode';
+import type {ProjectionMode} from './projection';
 import type {DeformationRaster} from './deformation';
 import type {GridSource, RayWeight} from './jacobian';
 import {
@@ -109,7 +109,7 @@ export function FaceView({
     [cells]
   );
   const patch = useMemo(
-    () => toPath(patchOutline(polar, PATCH_SIZE, source, projection, ownFrame), true),
+    () => toPath(patchOutline(polar, PATCH_SIZE, source, projection), true),
     [polar, source, projection, ownFrame]
   );
   const marker = toFace(polar);
@@ -425,7 +425,7 @@ function Scene({
   const boundary = useMemo(() => lift(faceBoundary(), 1.002, projection), [projection]);
   const outerBoundary = useMemo(() => lift(domainBoundary(), 1.002, projection), [projection]);
   const patch = useMemo(
-    () => lift(patchOutline(polar, PATCH_SIZE, source, projection, ownFrame), 1.003, projection),
+    () => lift(patchOutline(polar, PATCH_SIZE, source, projection), 1.003, projection),
     [polar, source, projection, ownFrame]
   );
   const marker = useMemo(() => lift([polar], 1.004, projection)[0], [polar, projection]);

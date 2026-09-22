@@ -8,7 +8,7 @@ import {CELL_OPTIONS, CHANNEL_INFO, RASTER_QUANTITIES, rampCss, rampFraction, ra
 import type {Extents, RasterQuantity} from './deformation';
 import {GRID_SOURCES, PROJECTION_MODES, decompose, deformationValues} from './jacobian';
 import type {DeformationChannel, EdgeMetrics, FrameJacobian, GridSource} from './jacobian';
-import type {ProjectionMode} from 'a5/projections/projection-mode';
+import type {ProjectionMode} from './projection';
 
 // ---------------------------------------------------------------------------
 // Panel furniture, following the white control panel the other examples use

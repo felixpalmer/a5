@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {DodecahedronProjection} from 'a5/projections/dodecahedron';
-import {DEFAULT_PROJECTION_MODE} from 'a5/projections/projection-mode';
-import type {ProjectionMode} from 'a5/projections/projection-mode';
+import {DEFAULT_PROJECTION_MODE, ModalDodecahedronProjection} from './projection';
+import type {ProjectionMode} from './projection';
 import {radToDeg, toCartesian, toFace, toPolar, toSpherical} from 'a5/core/coordinate-transforms';
 import {AUTHALIC_RADIUS_EARTH, distanceToEdge, PI_OVER_5, TWO_PI, TWO_PI_OVER_5} from 'a5/core/constants';
 import * as vec3 from 'a5/math/vec3';
@@ -20,11 +19,11 @@ import {cellToChildren, getRes0Cells} from 'a5/index';
  * differ only in which vertex of each face triangle the equal-area map radiates
  * from: DSEA the face center, ISEA the dodecahedron corner.
  */
-const projections: Record<ProjectionMode, DodecahedronProjection> = {
-  dsea: new DodecahedronProjection('dsea'),
-  isea: new DodecahedronProjection('isea'),
-  rtsea: new DodecahedronProjection('rtsea'),
-  gnomonic: new DodecahedronProjection('gnomonic')
+const projections: Record<ProjectionMode, ModalDodecahedronProjection> = {
+  dsea: new ModalDodecahedronProjection('dsea'),
+  isea: new ModalDodecahedronProjection('isea'),
+  rtsea: new ModalDodecahedronProjection('rtsea'),
+  gnomonic: new ModalDodecahedronProjection('gnomonic')
 };
 
 export const PROJECTION_MODES: ProjectionMode[] = ['dsea', 'isea', 'rtsea', 'gnomonic'];
@@ -730,14 +729,19 @@ function planePatch(polar: Polar, size: number): Polar[] {
  * is the square one on the sphere and comes back bent — and kinked at every cusp
  * it crosses — in this chart.
  *
- * It is built in the frame the Jacobian is measured in, the point's own face when
- * that is what the frame follows, so the two describe the same thing. The side is
- * an arc length on the sphere the projection is equal-area onto, so this patch and
- * the plane one cover the same area and read against each other directly.
+ * The side is an arc length on the sphere the projection is equal-area onto, so
+ * this patch and the plane one cover the same area and read against each other
+ * directly.
+ *
+ * Measured in this face's spherical frame throughout, never the point's own. The
+ * frame the *Jacobian* is measured in switches at the face edge when the frame
+ * follows the point, and a patch built that way turns through the unfolding angle
+ * as the cursor crosses — a jump, where the plane patch, which lives in this
+ * face's chart alone, glides. Both are now single-chart, so the two sides of the
+ * grid source behave alike.
  */
-function spherePatch(polar: Polar, size: number, mode: ProjectionMode, ownFrame: boolean): Polar[] {
-  const {origin, polar: centre, local} = resolveOrigin(polar, mode, ownFrame);
-  const [theta, phi] = polarToSphericalIn(centre, mode, origin, local);
+function spherePatch(polar: Polar, size: number, mode: ProjectionMode): Polar[] {
+  const [theta, phi] = polarToSphericalIn(polar, mode, ORIGIN_ID, false);
 
   const angle = size / SPHERE_RADIUS;
   const dPhi = angle / 2;
@@ -758,7 +762,7 @@ function spherePatch(polar: Polar, size: number, mode: ProjectionMode, ownFrame:
     const [phiB, thetaB] = corners[(i + 1) % 4];
     for (let s = 0; s < SPHERE_PATCH_SEGMENTS; s++) {
       const t = s / SPHERE_PATCH_SEGMENTS;
-      const point = cartesianAbout(thetaA + (thetaB - thetaA) * t, phiA + (phiB - phiA) * t, origin);
+      const point = cartesianAbout(thetaA + (thetaB - thetaA) * t, phiA + (phiB - phiA) * t, ORIGIN_ID);
       // Clipped like the plane patch, for the same reason
       outline.push(clampToDomain(cartesianToPolar(point, mode)));
     }
@@ -771,14 +775,8 @@ function spherePatch(polar: Polar, size: number, mode: ProjectionMode, ownFrame:
  * The patch at the hovered point, squared off on whichever side the grid is drawn
  * from, so that it reads as the one cell of that grid it is.
  */
-export function patchOutline(
-  polar: Polar,
-  size: number,
-  source: GridSource,
-  mode: ProjectionMode,
-  ownFrame: boolean
-): Polar[] {
-  return source === 'sphere' ? spherePatch(polar, size, mode, ownFrame) : planePatch(polar, size);
+export function patchOutline(polar: Polar, size: number, source: GridSource, mode: ProjectionMode): Polar[] {
+  return source === 'sphere' ? spherePatch(polar, size, mode) : planePatch(polar, size);
 }
 
 /** A piece of the domain's image on the unit sphere, ready for a BufferGeometry */
