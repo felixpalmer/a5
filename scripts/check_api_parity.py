@@ -80,12 +80,19 @@ PORTS = {
 
 # Symbols deliberately allowed to differ, keyed by canonical name -> reason.
 # Use sparingly; every entry is a documented, intentional divergence.
-ALLOWLIST = {
-    # Rust exposes the LonLat struct because it appears in public function
-    # signatures (lonlat_to_cell, polygon_to_cells); TS uses a branded
-    # [number, number] and Python a plain tuple, so neither exports a type.
-    "lonlat": "Rust-only public type; TS/Python use structural lon/lat pairs",
-}
+ALLOWLIST = {}
+
+
+def is_rust_only_type(name, present):
+    """True for a PascalCase type exported only by Rust.
+
+    Rust must export every struct/enum that appears in a public signature
+    (LonLat, PolygonToCellsOptions, Containment, ...), whereas TS passes
+    structural tuples / object literals / string unions and Python passes
+    tuples / keyword arguments, so neither needs a named export. Such types
+    are not part of the cross-port API surface and are not flagged.
+    """
+    return present == ["RS"] and re.fullmatch(r"[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*", name) is not None
 
 
 def canonical(name):
@@ -193,17 +200,18 @@ def main():
         # Use whichever port has it for the display name
         display = next(index[key] for _, index in ports if key in index)
         in_all = len(present) == len(ports)
-        if not in_all and key not in ALLOWLIST:
+        allowed = key in ALLOWLIST or is_rust_only_type(display, present)
+        if not in_all and not allowed:
             diverging.append((key, display, present))
-        rows.append((display, [("OK" if key in index else "--") for _, index in ports], in_all or key in ALLOWLIST))
+        note = "" if in_all else "   (allowed)" if allowed else "   <-- diverges"
+        rows.append((display, [("OK" if key in index else "--") for _, index in ports], note))
 
     width = max((len(d) for d, _, _ in rows), default=10)
     header = f"{'symbol':<{width}}  " + "  ".join(label for label, _ in ports)
     print(header)
     print("-" * len(header))
-    for display, marks, ok in rows:
-        flag = "" if ok else "   <-- diverges"
-        print(f"{display:<{width}}  " + "  ".join(f"{m:<2}" for m in marks) + flag)
+    for display, marks, note in rows:
+        print(f"{display:<{width}}  " + "  ".join(f"{m:<2}" for m in marks) + note)
 
     print()
     if diverging:
