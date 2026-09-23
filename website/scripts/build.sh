@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# staging, prod or next
+# prod or next
 MODE=$1
 WEBSITE_DIR=`pwd`
 OUTPUT_DIR=build
@@ -18,9 +18,6 @@ docusaurus clear
 case $MODE in
   "prod")
     docusaurus build
-    ;;
-  "staging")
-    STAGING=true docusaurus build
     ;;
   # Maintainer preview of main, served from a5geo.org/next
   "next")

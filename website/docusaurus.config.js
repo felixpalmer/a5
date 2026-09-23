@@ -11,7 +11,7 @@ const {resolve} = require('path');
 // site: no version switcher and no links to or from the production site.
 const isNext = process.env.NEXT_SITE === 'true';
 
-const baseUrl = process.env.STAGING ? '/a5geo.org/' : isNext ? '/next/' : '/';
+const baseUrl = isNext ? '/next/' : '/';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -86,12 +86,11 @@ const config = {
               }
             },
             // Examples address the site's static files from the root
-            // ('/data/...', '/textures/...'). Point those at the base path when
-            // the site is not served from the root, so /next reads its own data
-            // rather than falling through to the production site's copy.
-            ...(baseUrl === '/'
-              ? []
-              : [
+            // ('/data/...', '/textures/...'). Point those at the base path on
+            // /next, so it reads its own data rather than falling through to
+            // the production site's copy.
+            ...(isNext
+              ? [
                   {
                     enforce: 'pre',
                     test: /\.[jt]sx?$/,
@@ -103,7 +102,8 @@ const config = {
                       }
                     ]
                   }
-                ])
+                ]
+              : [])
           ]
         }
       }

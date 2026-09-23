@@ -3,12 +3,12 @@
 //
 // The examples are plain React apps with no Docusaurus imports, so they address
 // the site's static files from the root — correct on a5geo.org, but not when the
-// same site is served under a base path (the /next preview, or a staging build),
-// where the request would fall through to whatever the production site has there.
+// same site is served under a base path (the /next preview), where the request
+// would fall through to whatever the production site has there.
 // Rewriting the literal at build time also means the URL is already right when it
 // is handed off to a worker, as the DuckDB example does.
 //
-// Configured in docusaurus.config.js; not applied at all when baseUrl is '/'.
+// Configured in docusaurus.config.js, where it is only added to the /next build.
 const STATIC_URL = /(['"`])\/((?:data|images|textures)\/)/g;
 
 // `import x from '/images/y.png'` is resolved by webpack against the static
