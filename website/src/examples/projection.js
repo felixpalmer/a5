@@ -15,15 +15,18 @@ class ProjectionDemo extends Component {
     return (
       <div>
         <p>
-          A5 uses the <a href="https://proj.org/en/stable/operations/projections/dsea.html#a5">DSEA</a> projection to map the planar coordinates from the dodecahedron face onto the sphere.
+          A5 uses the <a href="https://proj.org/en/stable/operations/projections/dsea.html#a5">DSEA</a> projection to
+          map the planar coordinates from the dodecahedron face onto the sphere.
         </p>
         <p>
-          The Jacobian describes how this mapping behaves locally, and can be decomposed into more intuitive rotation, scale, shear and squash matrices.
+          The Jacobian describes how this mapping behaves locally, and can be decomposed into more intuitive rotation,
+          scale, shear and squash matrices.
         </p>
         <p>
-          While there are a number of other similar projections, DSEA was chosen as it produces
-          minimal sag (deviation from great circles) in cell edges, compared to{' '}
-          <a href="https://proj.org/en/stable/operations/projections/isea.html#dual">ISEA</a> and RTSEA. It has minimal cusps (2°) and while ISEA is better here both are practicially inperceptible.
+          While there are a number of other similar projections, DSEA was chosen as it produces minimal sag (deviation
+          from great circles) in cell edges, compared to{' '}
+          <a href="https://proj.org/en/stable/operations/projections/isea.html#dual">ISEA</a> and RTSEA. It has minimal
+          cusps (2°) and while ISEA is better here both are practicially inperceptible.
         </p>
         <p>
           The remaining three{' '}
