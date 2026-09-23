@@ -6,12 +6,21 @@ const darkCodeTheme = prismThemes.nightOwl;
 
 const {resolve} = require('path');
 
+// The maintainer preview of `main`, served from a5geo.org/next (see
+// .github/workflows/website-next.yml). It is a standalone build of the same
+// site: no version switcher and no links to or from the production site.
+const isNext = process.env.NEXT_SITE === 'true';
+
+const baseUrl = process.env.STAGING ? '/a5geo.org/' : isNext ? '/next/' : '/';
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'A5',
   tagline: 'Global, equal-area, millimeter-accurate geospatial index',
   url: 'https://a5geo.org',
-  baseUrl: process.env.STAGING ? '/a5geo.org/' : '/',
+  baseUrl,
+  // /next is for maintainers testing trunk, so keep it out of search results
+  noIndex: isNext,
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: '/images/pentagon.svg',
@@ -38,12 +47,18 @@ const config = {
   ],
 
   plugins: [
-    [
-      'docusaurus-plugin-plausible',
-      {
-        domain: 'a5geo.org'
-      }
-    ],
+    // Analytics on the production site only — /next visits are maintainers
+    // testing their own changes and would skew a5geo.org's stats
+    ...(isNext
+      ? []
+      : [
+          [
+            'docusaurus-plugin-plausible',
+            {
+              domain: 'a5geo.org'
+            }
+          ]
+        ]),
     [
       './ocular-docusaurus-plugin',
       {
@@ -69,7 +84,26 @@ const config = {
               resolve: {
                 fullySpecified: false
               }
-            }
+            },
+            // Examples address the site's static files from the root
+            // ('/data/...', '/textures/...'). Point those at the base path when
+            // the site is not served from the root, so /next reads its own data
+            // rather than falling through to the production site's copy.
+            ...(baseUrl === '/'
+              ? []
+              : [
+                  {
+                    enforce: 'pre',
+                    test: /\.[jt]sx?$/,
+                    include: resolve('../examples/website'),
+                    use: [
+                      {
+                        loader: resolve('./scripts/rebase-static-urls-loader.js'),
+                        options: {baseUrl}
+                      }
+                    ]
+                  }
+                ])
           ]
         }
       }
@@ -91,7 +125,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'A5',
+        title: isNext ? 'A5 (next)' : 'A5',
         logo: {
           alt: 'A5 Logo',
           src: 'images/pentagon.svg',

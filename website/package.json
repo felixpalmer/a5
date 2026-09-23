@@ -8,6 +8,7 @@
     "start": "docusaurus start",
     "build": "./scripts/build.sh prod",
     "build-staging": "./scripts/build.sh staging",
+    "build-next": "./scripts/build.sh next",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve"
   },

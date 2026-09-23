@@ -8,6 +8,11 @@ on:
     branches:
       - '*-release'
 
+# Both site workflows push to `gh-pages`, so keep the deploys off each other's toes
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
 jobs:
   check_branch:
     runs-on: ubuntu-latest
@@ -54,3 +59,7 @@ jobs:
           branch: gh-pages
           folder: website/build
           clean: true
+          # The maintainer preview (website-next.yml) owns next/ — leaving it out
+          # of the source folder would otherwise make `clean` delete it
+          clean-exclude: |
+            /next
