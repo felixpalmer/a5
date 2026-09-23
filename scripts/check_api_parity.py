@@ -25,9 +25,17 @@ Usage:
     python3 scripts/check_api_parity.py --remote --local TS  # local TS vs published PY/RS
     python3 scripts/check_api_parity.py --remote --branch my-feature   # prefer same-named
         # branch on each repo (fall back to main) — validates a coordinated change pre-merge
+    python3 scripts/check_api_parity.py --remote --community  # also report community ports
+
+Community ports (`--community`): high-quality third-party bindings (R, DuckDB) are
+always fetched from GitHub at their own ref and checked for coverage of the core
+API — every function/constant exported by all three core ports. They may add extra
+language-specific helpers, and they are not expected to export types. Gaps are
+reported as warnings and never fail `--check`, since those repos are not ours.
 """
 
 import argparse
+import os
 import re
 import sys
 import urllib.error
@@ -38,7 +46,6 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 TS_ROOT = SCRIPT_DIR.parent
 
-GITHUB_ORG = "felixpalmer"
 RAW_URL = "https://raw.githubusercontent.com/{org}/{repo}/{ref}/{path}"
 
 
@@ -70,12 +77,35 @@ def parse_rust(text):
     return names
 
 
+def parse_r(text):
+    # NAMESPACE: export(a5_cell_to_parent)
+    return set(re.findall(r"^export\(([A-Za-z_.][A-Za-z0-9_.]*)\)", text, flags=re.MULTILINE))
+
+
+def parse_duckdb(text):
+    text = strip_line_comments(text)
+    # ScalarFunction("a5_x", ...), ScalarFunctionSet func_set("a5_x"), TableFunction(...), ...
+    return set(re.findall(r"(?:Scalar|Table|Aggregate)Function(?:Set)?\s*\w*\s*\(\s*\"(\w+)\"", text))
+
+
 # Per-port configuration: where to read the public entrypoint from, and how to parse it.
 # `repo`/`path` build the GitHub raw URL; `local` is the sibling-checkout path.
 PORTS = {
-    "TS": {"repo": "a5", "path": "modules/index.ts", "local": TS_ROOT / "modules" / "index.ts", "parser": parse_typescript},
-    "PY": {"repo": "a5-py", "path": "a5/__init__.py", "local": TS_ROOT.parent / "a5-py" / "a5" / "__init__.py", "parser": parse_python},
-    "RS": {"repo": "a5-rs", "path": "src/lib.rs", "local": TS_ROOT.parent / "a5-rs" / "src" / "lib.rs", "parser": parse_rust},
+    "TS": {"org": "felixpalmer", "repo": "a5", "path": "modules/index.ts", "local": TS_ROOT / "modules" / "index.ts", "parser": parse_typescript},
+    "PY": {"org": "felixpalmer", "repo": "a5-py", "path": "a5/__init__.py", "local": TS_ROOT.parent / "a5-py" / "a5" / "__init__.py", "parser": parse_python},
+    "RS": {"org": "felixpalmer", "repo": "a5-rs", "path": "src/lib.rs", "local": TS_ROOT.parent / "a5-rs" / "src" / "lib.rs", "parser": parse_rust},
+}
+
+# Community ports (--community): always remote, at their own `ref`. `prefix` is stripped
+# before canonicalising (a5_cell_to_parent -> celltoparent); `aliases` maps one of the
+# port's names onto the core names it covers.
+COMMUNITY_PORTS = {
+    "R": {"org": "belian-earth", "repo": "a5R", "ref": "main", "path": "NAMESPACE",
+          "parser": parse_r, "prefix": "a5_", "aliases": {}},
+    "DuckDB": {"org": "Query-farm", "repo": "a5", "ref": "main", "path": "src/a5_extension.cpp",
+               "parser": parse_duckdb, "prefix": "a5_",
+               # One SQL function handles any geometry type
+               "aliases": {"geometrytocells": ["polygontocells", "linestringtocells"]}},
 }
 
 # Symbols deliberately allowed to differ, keyed by canonical name -> reason.
@@ -92,7 +122,7 @@ def is_rust_only_type(name, present):
     tuples / keyword arguments, so neither needs a named export. Such types
     are not part of the cross-port API surface and are not flagged.
     """
-    return present == ["RS"] and re.fullmatch(r"[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*", name) is not None
+    return present == ["RS"] and is_type(name)
 
 
 def canonical(name):
@@ -140,7 +170,7 @@ def load_source(label, cfg, use_remote, refs):
     """
     if use_remote:
         for ref in refs:
-            url = RAW_URL.format(org=GITHUB_ORG, repo=cfg["repo"], ref=ref, path=cfg["path"])
+            url = RAW_URL.format(org=cfg["org"], repo=cfg["repo"], ref=ref, path=cfg["path"])
             try:
                 with urllib.request.urlopen(url, timeout=30) as resp:
                     return resp.read().decode("utf-8"), url
@@ -158,9 +188,20 @@ def load_source(label, cfg, use_remote, refs):
     return path.read_text(), str(path)
 
 
-def build_index(names):
+def build_index(names, prefix="", aliases=None):
     """Map canonical key -> original name for one port."""
-    return {canonical(name): name for name in names}
+    index = {}
+    for name in names:
+        key = canonical(name[len(prefix):] if prefix and name.startswith(prefix) else name)
+        index[key] = name
+        for alias in (aliases or {}).get(key, []):
+            index.setdefault(alias, name)
+    return index
+
+
+def is_type(name):
+    """PascalCase names are types (LonLat, A5Cell); camelCase/snake_case/SCREAMING_CASE are not."""
+    return re.fullmatch(r"[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*", name) is not None
 
 
 def main():
@@ -175,6 +216,8 @@ def main():
                              "(e.g. the PR branch, so a coordinated change validates pre-merge)")
     parser.add_argument("--local", action="append", default=[], metavar="PORT",
                         choices=list(PORTS), help="force a port (TS/PY/RS) to read locally even with --remote")
+    parser.add_argument("--community", action="store_true",
+                        help="also report coverage of the core API by community ports (R, DuckDB); never fails --check")
     args = parser.parse_args()
 
     # Try the branch first (if given), then the default ref; drop blanks/dupes, keep order.
@@ -187,6 +230,12 @@ def main():
         text, origin = load_source(label, cfg, use_remote, refs)
         print(f"  {label}: {origin}")
         ports.append((label, build_index(cfg["parser"](text))))
+    community = []
+    if args.community:
+        for label, cfg in COMMUNITY_PORTS.items():
+            text, origin = load_source(label, cfg, True, [cfg["ref"]])
+            print(f"  {label}: {origin}")
+            community.append((label, build_index(cfg["parser"](text), cfg["prefix"], cfg["aliases"])))
     print()
 
     all_keys = set()
@@ -204,14 +253,32 @@ def main():
         if not in_all and not allowed:
             diverging.append((key, display, present))
         note = "" if in_all else "   (allowed)" if allowed else "   <-- diverges"
-        rows.append((display, [("OK" if key in index else "--") for _, index in ports], note))
+        # Community ports only need the core functions/constants, not types
+        community_marks = [("OK" if key in index else "--" if in_all and not is_type(display) else "")
+                           for _, index in community]
+        rows.append((display, [("OK" if key in index else "--") for _, index in ports] + community_marks, note))
 
+    labels = [label for label, _ in ports + community]
     width = max((len(d) for d, _, _ in rows), default=10)
-    header = f"{'symbol':<{width}}  " + "  ".join(label for label, _ in ports)
+    header = f"{'symbol':<{width}}  " + "  ".join(labels)
     print(header)
     print("-" * len(header))
     for display, marks, note in rows:
-        print(f"{display:<{width}}  " + "  ".join(f"{m:<2}" for m in marks) + note)
+        print(f"{display:<{width}}  " + ("  ".join(f"{m:<{len(l)}}" for m, l in zip(marks, labels)) + note).rstrip())
+
+    if community:
+        print()
+        in_ci = bool(os.environ.get("GITHUB_ACTIONS"))
+        for label, index in community:
+            gaps = [display for display, marks, _ in rows if marks[labels.index(label)] == "--"]
+            extras = sorted(index[k] for k in index if k not in all_keys)
+            if gaps:
+                msg = f"{label} is missing {len(gaps)} core symbol(s): {', '.join(gaps)}"
+                print(f"::warning::{msg}" if in_ci else f"warning: {msg}")
+            else:
+                print(f"{label} covers the full core API.")
+            if extras:
+                print(f"  {label} extras (not checked): {', '.join(extras)}")
 
     print()
     if diverging:
