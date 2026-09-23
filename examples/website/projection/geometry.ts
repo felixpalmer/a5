@@ -15,18 +15,14 @@ import {deserialize} from 'a5/core/serialization';
 import {cellToChildren, getRes0Cells} from 'a5/index';
 
 /**
- * Both projections, so the two can be compared without rebuilding anything. They
- * differ only in which vertex of each face triangle the equal-area map radiates
- * from: DSEA the face center, ISEA the dodecahedron corner.
+ * Every mode built up front, so switching between them rebuilds nothing. They
+ * differ only in how one face triangle is cut: see `ProjectionMode`.
  */
-const projections: Record<ProjectionMode, ModalDodecahedronProjection> = {
-  dsea: new ModalDodecahedronProjection('dsea'),
-  isea: new ModalDodecahedronProjection('isea'),
-  rtsea: new ModalDodecahedronProjection('rtsea'),
-  gnomonic: new ModalDodecahedronProjection('gnomonic')
-};
+export const PROJECTION_MODES: ProjectionMode[] = ['dsea', 'isea', 'rtsea', 'dpea', 'ipea', 'rpea', 'gnomonic'];
 
-export const PROJECTION_MODES: ProjectionMode[] = ['dsea', 'isea', 'rtsea', 'gnomonic'];
+const projections = Object.fromEntries(
+  PROJECTION_MODES.map(mode => [mode, new ModalDodecahedronProjection(mode)])
+) as Record<ProjectionMode, ModalDodecahedronProjection>;
 
 /** Only the planar side of the projection is used here, and that is mode independent */
 const projection = projections[DEFAULT_PROJECTION_MODE];
@@ -511,16 +507,17 @@ export interface GridRay {
 }
 
 /**
- * Which side of the projection the grid is drawn from.
+ * Which way round the projection is read.
  *
- * `plane` takes the lines of constant rho and gamma, which are straight and
- * circular on the face and bent on the sphere. `sphere` takes the meridians and
- * parallels of constant theta and phi, which are the straight ones there and come
- * back kinked on the face. Same projection either way; the two put the distortion
- * in opposite windows.
+ * `forward` is face to sphere: the grid is the lines of constant rho and gamma,
+ * straight and circular on the face and bent on the sphere, and the raster is
+ * painted on the sphere. `reverse` is sphere to face: the grid is the meridians
+ * and parallels of constant theta and phi, straight there and kinked on the face,
+ * and the raster is on the face. Same projection either way; the direction picks
+ * which window the distortion shows up in.
  */
-export type GridSource = 'plane' | 'sphere';
-export const GRID_SOURCES: GridSource[] = ['plane', 'sphere'];
+export type Direction = 'forward' | 'reverse';
+export const DIRECTIONS: Direction[] = ['forward', 'reverse'];
 
 export interface Grid {
   rays: GridRay[];
@@ -597,13 +594,13 @@ function sphereGrid(ownFrame: boolean, mode: ProjectionMode): Grid {
 // once and kept; both views ask for the same one
 const gridCache = new Map<string, Grid>();
 
-export function gridLines(ownFrame: boolean, source: GridSource, mode: ProjectionMode): Grid {
-  const key = `${ownFrame}/${source}/${source === 'sphere' ? mode : 'any'}`;
+export function gridLines(ownFrame: boolean, direction: Direction, mode: ProjectionMode): Grid {
+  const key = `${ownFrame}/${direction}/${direction === 'reverse' ? mode : 'any'}`;
   const cached = gridCache.get(key);
   if (cached) return cached;
 
   const grid: Grid =
-    source === 'sphere' ? sphereGrid(ownFrame, mode) : {rays: gridRays(ownFrame), rings: gridRings(ownFrame)};
+    direction === 'reverse' ? sphereGrid(ownFrame, mode) : {rays: gridRays(ownFrame), rings: gridRings(ownFrame)};
   gridCache.set(key, grid);
   return grid;
 }
@@ -738,7 +735,7 @@ function planePatch(polar: Polar, size: number): Polar[] {
  * follows the point, and a patch built that way turns through the unfolding angle
  * as the cursor crosses — a jump, where the plane patch, which lives in this
  * face's chart alone, glides. Both are now single-chart, so the two sides of the
- * grid source behave alike.
+ * direction behave alike.
  */
 function spherePatch(polar: Polar, size: number, mode: ProjectionMode): Polar[] {
   const [theta, phi] = polarToSphericalIn(polar, mode, ORIGIN_ID, false);
@@ -772,11 +769,11 @@ function spherePatch(polar: Polar, size: number, mode: ProjectionMode): Polar[] 
 }
 
 /**
- * The patch at the hovered point, squared off on whichever side the grid is drawn
- * from, so that it reads as the one cell of that grid it is.
+ * The patch at the hovered point, squared off on whichever side the projection is
+ * read from, so that it reads as the one cell of that grid it is.
  */
-export function patchOutline(polar: Polar, size: number, source: GridSource, mode: ProjectionMode): Polar[] {
-  return source === 'sphere' ? spherePatch(polar, size, mode) : planePatch(polar, size);
+export function patchOutline(polar: Polar, size: number, direction: Direction, mode: ProjectionMode): Polar[] {
+  return direction === 'reverse' ? spherePatch(polar, size, mode) : planePatch(polar, size);
 }
 
 /** A piece of the domain's image on the unit sphere, ready for a BufferGeometry */

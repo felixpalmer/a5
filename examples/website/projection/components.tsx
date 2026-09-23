@@ -10,7 +10,7 @@ import {toFace, toPolar} from 'a5/core/coordinate-transforms';
 import type {Cartesian, Face, Polar} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from './projection';
 import type {DeformationRaster} from './deformation';
-import type {GridSource, RayWeight} from './geometry';
+import type {Direction, RayWeight} from './geometry';
 import {
   cartesianToPolar,
   cellOutline,
@@ -76,7 +76,8 @@ export function FaceView({
   raster,
   cells,
   ownFrame,
-  source,
+  direction,
+  showGrid,
   projection,
   onHover
 }: {
@@ -84,7 +85,8 @@ export function FaceView({
   raster: DeformationRaster | null;
   cells: Face[][];
   ownFrame: boolean;
-  source: GridSource;
+  direction: Direction;
+  showGrid: boolean;
   projection: ProjectionMode;
   onHover: (polar: Polar) => void;
 }) {
@@ -99,7 +101,7 @@ export function FaceView({
 
   // Straight here when the grid comes from the plane, kinked when it comes from
   // the sphere, so both families are drawn as paths
-  const grid = useMemo(() => gridLines(ownFrame, source, projection), [ownFrame, source, projection]);
+  const grid = useMemo(() => gridLines(ownFrame, direction, projection), [ownFrame, direction, projection]);
   const rings = useMemo(() => grid.rings.map(arc => toPath(arc, false)), [grid]);
   const rays = useMemo(() => grid.rays.map(({weight, points}) => ({weight, path: toPath(points, false)})), [grid]);
 
@@ -109,8 +111,8 @@ export function FaceView({
     [cells]
   );
   const patch = useMemo(
-    () => toPath(patchOutline(polar, PATCH_SIZE, source, projection), true),
-    [polar, source, projection, ownFrame]
+    () => toPath(patchOutline(polar, PATCH_SIZE, direction, projection), true),
+    [polar, direction, projection, ownFrame]
   );
   const marker = toFace(polar);
 
@@ -162,26 +164,28 @@ export function FaceView({
 
         {/* SVG y points down, the face coordinate system points up */}
         <g ref={frameRef} transform="scale(1, -1)">
-          {rings.map((path, index) => (
-            <path
-              key={`ring-${index}`}
-              d={path}
-              fill="none"
-              stroke={gridStroke}
-              strokeWidth={1}
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-          {rays.map(({weight, path}, index) => (
-            <path
-              key={`ray-${index}`}
-              d={path}
-              fill="none"
-              stroke={rayStroke[weight]}
-              strokeWidth={1}
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
+          {showGrid &&
+            rings.map((path, index) => (
+              <path
+                key={`ring-${index}`}
+                d={path}
+                fill="none"
+                stroke={gridStroke}
+                strokeWidth={1}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+          {showGrid &&
+            rays.map(({weight, path}, index) => (
+              <path
+                key={`ray-${index}`}
+                d={path}
+                fill="none"
+                stroke={rayStroke[weight]}
+                strokeWidth={1}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
 
           {cellPaths.map((path, index) => (
             <path
@@ -271,15 +275,15 @@ function segments(lines: [number, number, number][][]): [number, number, number]
 const ProjectedGrid = React.memo(function ProjectedGrid({
   projection,
   ownFrame,
-  source,
+  direction,
   overRaster
 }: {
   projection: ProjectionMode;
   ownFrame: boolean;
-  source: GridSource;
+  direction: Direction;
   overRaster: boolean;
 }) {
-  const grid = useMemo(() => gridLines(ownFrame, source, projection), [ownFrame, source, projection]);
+  const grid = useMemo(() => gridLines(ownFrame, direction, projection), [ownFrame, direction, projection]);
   // One line-segment soup per style rather than one line object per curve: with
   // every face drawing its own grid there are some three hundred of them
   const rings = useMemo(() => segments(grid.rings.map(arc => lift(arc, 1.001, projection))), [grid, projection]);
@@ -410,7 +414,8 @@ function Scene({
   cells,
   showSag,
   ownFrame,
-  source,
+  direction,
+  showGrid,
   onHover
 }: {
   polar: Polar;
@@ -419,14 +424,15 @@ function Scene({
   cells: Face[][];
   showSag: boolean;
   ownFrame: boolean;
-  source: GridSource;
+  direction: Direction;
+  showGrid: boolean;
   onHover: (polar: Polar) => void;
 }) {
   const boundary = useMemo(() => lift(faceBoundary(), 1.002, projection), [projection]);
   const outerBoundary = useMemo(() => lift(domainBoundary(), 1.002, projection), [projection]);
   const patch = useMemo(
-    () => lift(patchOutline(polar, PATCH_SIZE, source, projection), 1.003, projection),
-    [polar, source, projection, ownFrame]
+    () => lift(patchOutline(polar, PATCH_SIZE, direction, projection), 1.003, projection),
+    [polar, direction, projection, ownFrame]
   );
   const marker = useMemo(() => lift([polar], 1.004, projection)[0], [polar, projection]);
 
@@ -461,7 +467,14 @@ function Scene({
           does. The lights stay outside, so the shading does not turn with it */}
       <group rotation={[0, 0, VIEW_TURN]}>
         {raster && <ProjectedRaster raster={raster} projection={projection} />}
-        <ProjectedGrid projection={projection} ownFrame={ownFrame} source={source} overRaster={raster !== null} />
+        {showGrid && (
+          <ProjectedGrid
+            projection={projection}
+            ownFrame={ownFrame}
+            direction={direction}
+            overRaster={raster !== null}
+          />
+        )}
         {showSag ? (
           <ProjectedSag cells={cells} projection={projection} />
         ) : (
@@ -500,7 +513,8 @@ export function SphereView({
   cells,
   showSag,
   ownFrame,
-  source,
+  direction,
+  showGrid,
   onHover
 }: {
   polar: Polar;
@@ -509,7 +523,8 @@ export function SphereView({
   cells: Face[][];
   showSag: boolean;
   ownFrame: boolean;
-  source: GridSource;
+  direction: Direction;
+  showGrid: boolean;
   onHover: (polar: Polar) => void;
 }) {
   return (
@@ -530,7 +545,8 @@ export function SphereView({
           cells={cells}
           showSag={showSag}
           ownFrame={ownFrame}
-          source={source}
+          direction={direction}
+          showGrid={showGrid}
           onHover={onHover}
         />
       </Suspense>

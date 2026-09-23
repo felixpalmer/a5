@@ -16,7 +16,7 @@ import {
   useSharedExtents
 } from './deformation';
 import type {RasterQuantity} from './deformation';
-import type {GridSource} from './geometry';
+import type {Direction} from './geometry';
 import {computeJacobian, decompose, deformationValues, faceCells, toFrame} from './geometry';
 import {DEFAULT_PROJECTION_MODE} from './projection';
 import type {ProjectionMode} from './projection';
@@ -65,9 +65,10 @@ const App: React.FC = () => {
   // A5 projects every point from its own face, so that is the default; the single
   // face view is the opt-in, for looking at the seam
   const [singleFace, setSingleFace] = useState(false);
-  // Which side of the projection the grid is drawn from: the side it comes from is
-  // the straight one, the other shows the kinks
-  const [source, setSource] = useState<GridSource>('plane');
+  // Which way round the projection is read. Forward is face to sphere: the face is
+  // then the straight side and the sphere is where the kinks show
+  const [direction, setDirection] = useState<Direction>('forward');
+  const [showGrid, setShowGrid] = useState(true);
   const ownFrame = !singleFace;
   // Projection independent: the lattice lives in the plane, only its image moves
   const cells = useMemo(() => (cellOption === 'off' ? [] : faceCells(Number(cellOption))), [cellOption]);
@@ -77,11 +78,11 @@ const App: React.FC = () => {
   const shared = useSharedExtents(ownFrame);
   const extents = useMemo(() => resolveExtents(field, shared, relativeScale), [field, shared, relativeScale]);
   const raster = useDeformationRaster(field, quantity, extents);
-  // The grid source is the frame of reference the Jacobian is read from, and the
+  // The direction is the frame of reference the Jacobian is read from, and the
   // raster measures what the projection does to it — so it belongs on the far side
   // of the map, drawn on the image rather than on the domain
-  const faceRaster = source === 'sphere' ? raster : null;
-  const sphereRaster = source === 'plane' ? raster : null;
+  const faceRaster = direction === 'reverse' ? raster : null;
+  const sphereRaster = direction === 'forward' ? raster : null;
   // What the hovered point reads, so the legend can mark it on the ramp
   const hovered = useMemo(() => deformationValues(decompose(frame)), [frame]);
   const edges = useEdgeMetrics(cells, projection);
@@ -102,7 +103,8 @@ const App: React.FC = () => {
           raster={faceRaster}
           cells={cells}
           ownFrame={ownFrame}
-          source={source}
+          direction={direction}
+          showGrid={showGrid}
           projection={projection}
           onHover={setPolar}
         />
@@ -117,7 +119,8 @@ const App: React.FC = () => {
           cells={cells}
           showSag={showSag && cells.length > 0}
           ownFrame={ownFrame}
-          source={source}
+          direction={direction}
+          showGrid={showGrid}
           onHover={setPolar}
         />
       </div>
@@ -129,7 +132,7 @@ const App: React.FC = () => {
         extents={extents}
         relativeScale={relativeScale}
         singleFace={singleFace}
-        source={source}
+        direction={direction}
         cells={cellOption}
         sag={showSag}
         edges={edges}
@@ -140,7 +143,9 @@ const App: React.FC = () => {
         onSagChange={setShowSag}
         onRelativeScaleChange={setRelativeScale}
         onSingleFaceChange={setSingleFace}
-        onSourceChange={setSource}
+        onDirectionChange={setDirection}
+        showGrid={showGrid}
+        onShowGridChange={setShowGrid}
       />
     </div>
   );

@@ -14,14 +14,22 @@ class ProjectionDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
-        <p>A dodecahedron face and its image on the sphere.</p>
         <p>
-          Hover over either one to read the Jacobian of A5's equal-area projection there, split into a rotation, a shear
-          and two scalings.
+          A5 uses the <a href="https://proj.org/en/stable/operations/projections/dsea.html#a5">DSEA</a> projection
         </p>
         <p>
-          The panel colours the face by any one of those, draws A5 cells over it, and swaps DSEA for the other
-          projections in its family.
+          This example helps visualize warping introduced by a given projection. A jump in the Jacobian matrix is what
+          causes cusps to appear in the projection (kinks in projected lines).
+        </p>
+        <p>
+          There are a number of other similar projections, which were not chosen. DSEA produces minimal cusps (2°) and
+          minimal sag (deviation from great circles) in cell edges, compared to{' '}
+          <a href="https://proj.org/en/stable/operations/projections/isea.html#dual">ISEA</a> and RTSEA.
+        </p>
+        <p>
+          The remaining three{' '}
+          <a href="https://www.tandfonline.com/doi/abs/10.1559/152304006779500687">Parallel Small Circle projections</a>{' '}
+          have similar metrics to DSEA but no closed form inverse so are more computationally intensive.
         </p>
       </div>
     );

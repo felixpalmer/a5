@@ -26,35 +26,61 @@ import {EqualAreaProjection} from 'a5/projections/equal-area';
 import {getQuintantVertices} from 'a5/core/tiling';
 import {CRS} from 'a5/projections/crs';
 import type {OriginId} from 'a5/core/utils';
+import {ParallelSmallCircleProjection} from './parallel';
 
 /**
- * Which vertex of each face triangle the equal-area projection radiates from.
+ * The equal-area projections this example compares, and the gnomonic baseline.
  *
- * A face triangle has three vertices, so there are exactly three choices, and
- * they are the three cyclic rotations of the same ordering — never swaps, since
- * the closed-form equal-area projection depends on the winding. All three are
- * equal-area; they differ in where the cusps fall and in how shape is distorted.
+ * Each equal-area mode is one instance of the slice-and-dice method of van
+ * Leeuwen & Strebe (2006): sweep a family of curves across the spherical triangle
+ * and a matching family of lines across the plane one, pairing them so each cuts
+ * off the same fraction of its triangle's area, then slide the point along its
+ * line to cut its own slice in the same ratio. The family of curves is the only
+ * choice, and it is what separates the six.
  *
- * - `dsea` radiates from the dodecahedron face center. A5's projection.
- * - `isea` radiates from the corner, the face center of the dual icosahedron.
- * - `rtsea` radiates from the edge midpoint, which is a face centre of the
- *   rhombic triacontahedron. Included so the design space is closed rather than
- *   because anything uses it.
+ * The **great circle** family radiates from one vertex of the face triangle, and
+ * is the one A5 uses. The **parallel small circle** family runs parallel to one
+ * side instead, shrinking to a point at the opposite vertex. Either way there are
+ * three members, one per vertex, and they are the three cyclic rotations of the
+ * same ordering — never swaps, since the closed-form equal-area projection
+ * depends on the winding.
  *
- * Each is named for the solid whose face fan it radiates from, following the
- * precedent set by ISEA and RTSEA. All three decompose into the same 120 Mobius
- * triangles of the icosahedral symmetry group, differing only in which vertex of
- * each triangle leads.
+ * Each is named for the solid whose face fan its distinguished vertex is a centre
+ * of, following the precedent set by ISEA and RTSEA: the dodecahedron face
+ * centre, the corner (a face centre of the dual icosahedron), and the edge
+ * midpoint (a face centre of the rhombic triacontahedron). S is for Snyder, whose
+ * projection the great circle family reproduces; P is for parallel.
  *
- * `gnomonic` is not one of them and is not equal-area. It is the plain central
+ * - `dsea` / `dpea` lead with the dodecahedron face centre. `dsea` is A5's own.
+ * - `isea` / `ipea` lead with the corner.
+ * - `rtsea` / `rpea` lead with the edge midpoint.
+ *
+ * All six decompose into the same 120 Mobius triangles of the icosahedral
+ * symmetry group, differing only in what happens inside one.
+ *
+ * `gnomonic` is none of them and is not equal-area. It is the plain central
  * projection from the sphere onto the face plane, with no triangle decomposition
- * at all. It is included as the baseline the Snyder family is measured against:
- * it maps great circles to straight lines, so it has no cusps and no sag, and it
- * shows exactly what the equal-area property costs.
+ * at all. It is included as the baseline the equal-area modes are measured
+ * against: it maps great circles to straight lines, so it has no cusps and no
+ * sag, and it shows exactly what the equal-area property costs.
  */
-export type ProjectionMode = 'dsea' | 'isea' | 'rtsea' | 'gnomonic';
+export type ProjectionMode = 'dsea' | 'isea' | 'rtsea' | 'dpea' | 'ipea' | 'rpea' | 'gnomonic';
 
 export const DEFAULT_PROJECTION_MODE: ProjectionMode = 'dsea';
+
+/** Which vertex of the face triangle a mode leads with, and how it cuts */
+type LeadingVertex = 'centre' | 'corner' | 'midpoint';
+
+const LEADING_VERTEX: Record<Exclude<ProjectionMode, 'gnomonic'>, LeadingVertex> = {
+  dsea: 'centre',
+  isea: 'corner',
+  rtsea: 'midpoint',
+  dpea: 'centre',
+  ipea: 'corner',
+  rpea: 'midpoint'
+};
+
+const PARALLEL_MODES: ProjectionMode[] = ['dpea', 'ipea', 'rpea'];
 
 type FaceTriangleIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type FaceTriangle = [Face, Face, Face];
@@ -62,20 +88,17 @@ type FaceTriangle = [Face, Face, Face];
 const crs = new CRS();
 
 /**
- * The library's canonical face triangle, led by the vertex this mode radiates
- * from.
+ * The library's canonical face triangle, led by the given vertex.
  *
- * `getCanonicalTriangle` hands back [centre, midpoint, corner]; the other two
- * modes are its cyclic rotations. Rotations rather than swaps, because the closed
- * form in `EqualAreaProjection` bakes in the signed triple product and so depends
- * on the winding.
+ * `getCanonicalTriangle` hands back [centre, midpoint, corner]; the other two are
+ * its cyclic rotations. Rotations rather than swaps, because the closed form in
+ * `EqualAreaProjection` bakes in the signed triple product and so depends on the
+ * winding.
  */
-function canonicalTriangle(mode: ProjectionMode): SphericalTriangle {
+function canonicalTriangle(leading: LeadingVertex): SphericalTriangle {
   const [centre, midpoint, corner] = crs.getCanonicalTriangle();
-  if (mode === 'isea') return [corner, centre, midpoint] as SphericalTriangle;
-  if (mode === 'rtsea') return [midpoint, corner, centre] as SphericalTriangle;
-  // 'gnomonic' never reaches the equal-area projection; the DSEA ordering keeps
-  // the constants well formed
+  if (leading === 'corner') return [corner, centre, midpoint] as SphericalTriangle;
+  if (leading === 'midpoint') return [midpoint, corner, centre] as SphericalTriangle;
   return [centre, midpoint, corner] as SphericalTriangle;
 }
 
@@ -83,15 +106,19 @@ function canonicalTriangle(mode: ProjectionMode): SphericalTriangle {
 export class ModalDodecahedronProjection {
   private faceTriangles: FaceTriangle[] = [];
   private sphericalTriangles: SphericalTriangle[] = [];
-  private equalArea: EqualAreaProjection;
+  private equalArea: EqualAreaProjection | ParallelSmallCircleProjection;
   private gnomonic: GnomonicProjection;
   private mode: ProjectionMode;
+  private leading: LeadingVertex;
 
   constructor(mode: ProjectionMode = DEFAULT_PROJECTION_MODE) {
     this.mode = mode;
-    // The gnomonic baseline never reaches the equal-area projection, but the
-    // canonical triangle is still built so the field stays non-optional
-    this.equalArea = new EqualAreaProjection(canonicalTriangle(mode));
+    // Gnomonic reaches neither engine, but the field stays non-optional; its
+    // ordering is the one that keeps the great circle constants well formed
+    this.leading = mode === 'gnomonic' ? 'centre' : LEADING_VERTEX[mode];
+    this.equalArea = PARALLEL_MODES.includes(mode)
+      ? new ParallelSmallCircleProjection()
+      : new EqualAreaProjection(canonicalTriangle(this.leading));
     this.gnomonic = new GnomonicProjection();
   }
 
@@ -186,13 +213,13 @@ export class ModalDodecahedronProjection {
 
     // Note: center & midpoint compared to DGGAL implementation are swapped
     // as we are using a dodecahedron, rather than a icosahedron.
-    // The three modes are the three cyclic rotations of [centre, midpoint, corner],
-    // each leading with the vertex the projection radiates from. Rotations, never
-    // swaps, so the winding is preserved.
-    if (this.mode === 'isea') {
+    // The three orderings are the three cyclic rotations of [centre, midpoint,
+    // corner], each leading with the vertex the mode is built around. Rotations,
+    // never swaps, so the winding is preserved.
+    if (this.leading === 'corner') {
       return even ? [vCorner1, vCenter, vEdgeMidpoint] : [vCorner2, vEdgeMidpoint, vCenter];
     }
-    if (this.mode === 'rtsea') {
+    if (this.leading === 'midpoint') {
       return even ? [vEdgeMidpoint, vCorner1, vCenter] : [vEdgeMidpoint, vCenter, vCorner2];
     }
     return even ? [vCenter, vEdgeMidpoint, vCorner1] : [vCenter, vCorner2, vEdgeMidpoint];
@@ -210,7 +237,7 @@ export class ModalDodecahedronProjection {
     // Squashing instead yields the correct spherical triangle when unprojected.
     const step = squashed ? 1 + 1 / Math.cos(interhedralAngle) : 2;
 
-    if (this.mode === 'isea') {
+    if (this.leading === 'corner') {
       // [corner, centre, midpoint] (even) or [corner, midpoint, centre] (odd)
       const centre = even ? B : C;
       const midpoint = even ? C : B;
@@ -219,7 +246,7 @@ export class ModalDodecahedronProjection {
       return even ? ([A, midpoint, centre] as FaceTriangle) : ([A, centre, midpoint] as FaceTriangle);
     }
 
-    if (this.mode === 'rtsea') {
+    if (this.leading === 'midpoint') {
       // [midpoint, corner, centre] (even) or [midpoint, centre, corner] (odd).
       // A is the midpoint, so the centre moves in place and the order is unchanged.
       const centre = even ? C : B;
@@ -228,7 +255,7 @@ export class ModalDodecahedronProjection {
       return [A, B, C] as FaceTriangle;
     }
 
-    // DSEA: the centre leads, so it is A that moves
+    // The centre leads, so it is A that moves
     const midpoint = even ? B : C;
     vec2.negate(A, A);
     vec2.scaleAndAdd(A, A, midpoint, step);

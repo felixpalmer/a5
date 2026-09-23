@@ -6,8 +6,8 @@ import React from 'react';
 import {COLORS} from './components';
 import {CELL_OPTIONS, CHANNEL_INFO, RASTER_QUANTITIES, rampCss, rampFraction, rampT} from './deformation';
 import type {Extents, RasterQuantity} from './deformation';
-import {GRID_SOURCES, PROJECTION_MODES, decompose, deformationValues} from './geometry';
-import type {DeformationChannel, EdgeMetrics, FrameJacobian, GridSource} from './geometry';
+import {DIRECTIONS, PROJECTION_MODES, decompose, deformationValues} from './geometry';
+import type {DeformationChannel, EdgeMetrics, FrameJacobian, Direction} from './geometry';
 import type {ProjectionMode} from './projection';
 
 // ---------------------------------------------------------------------------
@@ -83,21 +83,29 @@ const PROJECTION_LABELS: Record<ProjectionMode, string> = {
   dsea: 'DSEA',
   isea: 'ISEA',
   rtsea: 'RTSEA',
+  dpea: 'DPEA',
+  ipea: 'IPEA',
+  rpea: 'RPEA',
   gnomonic: 'Gnomonic'
 };
 
 const PROJECTION_TITLES: Record<ProjectionMode, string> = {
-  dsea: "Radiates from the dodecahedron face centre. A5's own projection",
-  isea: 'Radiates from the dodecahedron corner, the dual icosahedron face centre',
-  rtsea: 'Radiates from the edge midpoint, a face centre of the rhombic triacontahedron',
+  dsea: "Great circles radiating from the dodecahedron face centre. A5's own projection",
+  isea: 'Great circles radiating from the corner, the dual icosahedron face centre',
+  rtsea: 'Great circles radiating from the edge midpoint, a face centre of the rhombic triacontahedron',
+  dpea: 'Small circles parallel to the dodecahedron edge, closing on the face centre. No closed-form inverse is known for the parallel family, so these three are inverted numerically and are slower',
+  ipea: 'Small circles parallel to the face centre to edge midpoint line, closing on the corner. Inverted numerically, like the other parallel modes',
+  rpea: 'Small circles parallel to the face centre to corner line, closing on the edge midpoint. Inverted numerically, like the other parallel modes',
   gnomonic: 'The plain central projection. Not equal-area, but maps great circles to straight lines'
 };
 
-const GRID_TITLES: Record<GridSource, string> = {
-  plane:
-    'Read the projection from the plane: the lines of constant rho and gamma, straight and circular on the face and bent on the sphere, with the raster painted on the sphere alongside them',
-  sphere:
-    'Read it from the sphere instead: the meridians and parallels of constant theta and phi, straight on the sphere and kinked on the face wherever the projection is, with the raster on the face. Same lines and the same field either way, it is which window the distortion shows up in that changes'
+const DIRECTION_LABELS: Record<Direction, string> = {forward: 'Forward', reverse: 'Reverse'};
+
+const DIRECTION_TITLES: Record<Direction, string> = {
+  forward:
+    'Face to sphere: the grid is the lines of constant rho and gamma, straight and circular on the face and bent on the sphere, with the raster painted on the sphere alongside them',
+  reverse:
+    'Sphere to face: the grid is the meridians and parallels of constant theta and phi, straight on the sphere and kinked on the face wherever the projection is, with the raster on the face. Same lines and the same field either way, it is which window the distortion shows up in that changes'
 };
 
 // ---------------------------------------------------------------------------
@@ -334,12 +342,12 @@ function Patch({
 /**
  * The unit patch and its image, with the map between them named.
  *
- * Which of the two is the square one is what the grid source sets: reading from
- * the plane, J carries the face's unit patch onto the sphere; reading from the
- * sphere it is the sphere's patch that is square and J's inverse that brings it
- * back, so the arrow turns around with it.
+ * Which of the two is the square one is what the direction sets: read forward, J
+ * carries the face's unit patch onto the sphere; read in reverse it is the
+ * sphere's patch that is square and J's inverse that brings it back, so the arrow
+ * turns around with it.
  */
-function PatchPair({frame, source}: {frame: FrameJacobian; source: GridSource}) {
+function PatchPair({frame, direction}: {frame: FrameJacobian; direction: Direction}) {
   const [[a, b], [c, d]] = frame.rows;
   const unit = {radial: [0, 1] as [number, number], azimuthal: [1, 0] as [number, number]};
   // Plot space is x across and y up, with the radial component vertical, so each
@@ -351,7 +359,7 @@ function PatchPair({frame, source}: {frame: FrameJacobian; source: GridSource}) 
     azimuthal: [a / det, -b / det] as [number, number]
   };
 
-  const fromPlane = source === 'plane';
+  const fromPlane = direction === 'forward';
   const face = fromPlane ? unit : backward;
   const sphere = fromPlane ? forward : unit;
 
@@ -545,7 +553,7 @@ export function ControlPanel({
   extents,
   relativeScale,
   singleFace,
-  source,
+  direction,
   cells,
   sag,
   edges,
@@ -556,7 +564,9 @@ export function ControlPanel({
   onSagChange,
   onRelativeScaleChange,
   onSingleFaceChange,
-  onSourceChange
+  onDirectionChange,
+  showGrid,
+  onShowGridChange
 }: {
   frame: FrameJacobian;
   projection: ProjectionMode;
@@ -564,7 +574,7 @@ export function ControlPanel({
   extents: Extents | null;
   relativeScale: boolean;
   singleFace: boolean;
-  source: GridSource;
+  direction: Direction;
   cells: string;
   sag: boolean;
   edges: EdgeMetrics | null;
@@ -575,7 +585,9 @@ export function ControlPanel({
   onSagChange: (sag: boolean) => void;
   onRelativeScaleChange: (relative: boolean) => void;
   onSingleFaceChange: (single: boolean) => void;
-  onSourceChange: (source: GridSource) => void;
+  onDirectionChange: (direction: Direction) => void;
+  showGrid: boolean;
+  onShowGridChange: (show: boolean) => void;
 }) {
   return (
     <div
@@ -605,7 +617,20 @@ export function ControlPanel({
         titles={PROJECTION_TITLES}
         onChange={onProjectionChange}
       />
-      <Select label="Grid from" value={source} options={GRID_SOURCES} titles={GRID_TITLES} onChange={onSourceChange} />
+      <Select
+        label="Direction"
+        value={direction}
+        options={DIRECTIONS}
+        labels={DIRECTION_LABELS}
+        titles={DIRECTION_TITLES}
+        onChange={onDirectionChange}
+      />
+      <Check
+        label="Show grid"
+        checked={showGrid}
+        title="Draw the grid lines of whichever side the projection is read from"
+        onChange={onShowGridChange}
+      />
       <Check
         label="Single face frame"
         checked={singleFace}
@@ -654,7 +679,7 @@ export function ControlPanel({
           <Matrix2 entries={entriesOf(frame)} />
         </div>
 
-        <PatchPair frame={frame} source={source} />
+        <PatchPair frame={frame} direction={direction} />
         <Factorisation frame={frame} extents={extents} quantity={quantity} />
       </div>
     </div>
