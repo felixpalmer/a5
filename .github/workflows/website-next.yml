@@ -1,0 +1,55 @@
+name: website-next
+
+# Maintainer preview of trunk at a5geo.org/next.
+#
+# The production site (website.yml) deploys the latest release branch into the
+# root of `gh-pages`; this deploys `main` into that branch's `next/` subfolder,
+# built with Docusaurus baseUrl '/next/'. The two sites are independent: neither
+# links to the other, there is no version switcher, and /next is not indexed.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Both site workflows push to `gh-pages`, so keep the deploys off each other's toes
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack (yarn 4)
+        run: corepack enable
+
+      - name: Build website
+        run: |
+          cd website
+          yarn install --immutable
+          yarn build-next
+
+      - name: Drop CNAME
+        # GitHub Pages only reads the CNAME at the root of gh-pages, which the
+        # production deploy owns — a second copy under next/ is dead weight
+        run: rm -f website/build/CNAME
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@dc18a3c6b46d56484cb63f291becd7ed4f0269b9 # v4.7.1
+        with:
+          branch: gh-pages
+          folder: website/build
+          target-folder: next
+          # rsync --delete runs against the target folder, so this prunes stale
+          # files from next/ and never touches the production build at the root
+          clean: true

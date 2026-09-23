@@ -77,6 +77,14 @@ git checkout 1.2-release
 git push origin 1.2-release
 ```
 
+Trunk is published separately: every push to `main` deploys to
+[a5geo.org/next](https://a5geo.org/next), so maintainers can preview the upcoming
+version. It is a plain build of the same site with `baseUrl: '/next/'` (`yarn build-next`
+in `website/`), deployed into the `next/` folder of `gh-pages`. The two sites are
+independent — neither links to the other, and `/next` is excluded from search engines
+and analytics. Examples keep their root-absolute asset paths (`/data/…`); a webpack loader
+rewrites them to the base path in that build, so `/next` reads its own data.
+
 
 ### Publishing to npm
 
