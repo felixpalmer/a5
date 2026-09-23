@@ -108,6 +108,66 @@ const DIRECTION_TITLES: Record<Direction, string> = {
     'Sphere to face: the grid is the meridians and parallels of constant theta and phi, straight on the sphere and kinked on the face wherever the projection is, with the raster on the face. Same lines and the same field either way, it is which window the distortion shows up in that changes'
 };
 
+/**
+ * The two figures that decided which projection A5 uses, per mode, so switching
+ * shows what each one costs.
+ *
+ * **Max cusp** is the largest turn a *cell boundary* actually takes where it
+ * crosses a seam, at resolution 5 — not the largest cusp the projection has. The
+ * two differ a lot: no cell edge ever crosses a quintant boundary, so DSEA's 19.4°
+ * turn there is never traversed by anything A5 draws.
+ *
+ * **Sag** is the area between the cell boundaries and the great circles joining
+ * their vertices, at resolution 4, as a fraction of the face — one number for what
+ * the projection costs in cell shape.
+ *
+ * Measured rather than computed here: the cusp needs a crossing analysis this
+ * example does not carry, and the sag a few hundred milliseconds per mode. See
+ * ISEA_v_DSEA.md for both methods.
+ */
+const PROJECTION_FIGURES: Record<ProjectionMode, {cusp: string; sag: string; note?: string; chosen?: boolean}> = {
+  dsea: {cusp: '2.03°', sag: '0.273%', note: "A5's choice", chosen: true},
+  isea: {cusp: '0.17°', sag: '0.479%'},
+  rtsea: {cusp: '7.33°', sag: '0.366%'},
+  dpea: {cusp: '2.65°', sag: '0.196%', note: 'no closed-form inverse'},
+  ipea: {cusp: '0.54°', sag: '0.201%', note: 'no closed-form inverse'},
+  rpea: {cusp: '4.21°', sag: '0.202%', note: 'no closed-form inverse'},
+  // Perfect on both, and disqualified anyway: cell area varies by a factor of two
+  // across one face. Without the note the figures would read as the best of the lot
+  gnomonic: {cusp: 'none', sag: '0.000%', note: 'not equal-area'}
+};
+
+const CUSP_TITLE =
+  "Largest turn an A5 cell boundary actually takes where it crosses a seam, at resolution 5. Not the projection's largest cusp: no cell edge ever crosses a quintant boundary, where the turns are far bigger";
+
+const SAG_TITLE =
+  'Area between the cell boundaries and the great circles joining their vertices, at resolution 4, as a fraction of the face. The region where a consumer drawing the cell as a great-circle polygon disagrees with the cell itself';
+
+/** The headline figures for the selected projection, under the selector */
+function ProjectionFigures({projection}: {projection: ProjectionMode}) {
+  const {cusp, sag, note, chosen} = PROJECTION_FIGURES[projection];
+  const row = (label: string, value: string, title: string) => (
+    <>
+      <span style={{color: MUTED}} title={title}>
+        {label}
+      </span>
+      <span style={{textAlign: 'right', fontFamily: MONO, fontVariantNumeric: 'tabular-nums'}} title={title}>
+        {value}
+      </span>
+    </>
+  );
+
+  return (
+    <div style={{marginTop: '-2px', marginBottom: '8px', fontSize: '11px'}}>
+      <div style={{display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: '10px', rowGap: '2px'}}>
+        {row('max realised cusp', cusp, CUSP_TITLE)}
+        {row('sag area, res 4', sag, SAG_TITLE)}
+      </div>
+      {note && <div style={{marginTop: '3px', fontWeight: 600, color: chosen ? '#2e7d32' : '#c62828'}}>{note}</div>}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // The ramp, and the quantities read off it
 // ---------------------------------------------------------------------------
@@ -617,6 +677,7 @@ export function ControlPanel({
         titles={PROJECTION_TITLES}
         onChange={onProjectionChange}
       />
+      <ProjectionFigures projection={projection} />
       <Select
         label="Direction"
         value={direction}

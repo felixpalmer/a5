@@ -5,7 +5,7 @@ import App from 'website-examples/projection/app';
 import {makeExample} from '../components';
 
 class ProjectionDemo extends Component {
-  static title = 'Projection';
+  static title = 'DSEA Projection';
 
   static code = `${GITHUB_TREE}/examples/website/projection`;
 
@@ -15,14 +15,13 @@ class ProjectionDemo extends Component {
     return (
       <div>
         <p>
-          A5 uses the <a href="https://proj.org/en/stable/operations/projections/dsea.html#a5">DSEA</a> projection
+          A5 uses the <a href="https://proj.org/en/stable/operations/projections/dsea.html#a5">DSEA</a> projection to map the planar coordinates from the dodecahedron face onto the sphere.
         </p>
         <p>
-          This example helps visualize warping introduced by a given projection. A jump in the Jacobian matrix is what
-          causes cusps to appear in the projection (kinks in projected lines).
+          The Jacobian describes how this mapping behaves locally, and can be decomposed into more intuitive rotation, shear and scale matrices.
         </p>
         <p>
-          There are a number of other similar projections, which were not chosen. DSEA produces minimal cusps (2°) and
+          While there are a number of other similar projections, DSEA was chosen as it produces minimal cusps (2°) and
           minimal sag (deviation from great circles) in cell edges, compared to{' '}
           <a href="https://proj.org/en/stable/operations/projections/isea.html#dual">ISEA</a> and RTSEA.
         </p>
