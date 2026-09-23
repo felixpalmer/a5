@@ -1,0 +1,2406 @@
+{
+  "a5": [
+    {
+      "location": "france/paris",
+      "max_listings_per_cell": 353.92,
+      "max_density_per_km2": 2793.92,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 1,
+      "listings_rank": 1
+    },
+    {
+      "location": "brazil/rio-de-janeiro",
+      "max_listings_per_cell": 308.3,
+      "max_density_per_km2": 2433.75,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 2,
+      "listings_rank": 2
+    },
+    {
+      "location": "italy/rome",
+      "max_listings_per_cell": 224.17,
+      "max_density_per_km2": 1769.62,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 3,
+      "listings_rank": 3
+    },
+    {
+      "location": "argentina/buenos-aires",
+      "max_listings_per_cell": 215.03,
+      "max_density_per_km2": 1697.45,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 4,
+      "listings_rank": 4
+    },
+    {
+      "location": "united-states/hawaii",
+      "max_listings_per_cell": 207.08,
+      "max_density_per_km2": 1634.7,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 5,
+      "listings_rank": 5
+    },
+    {
+      "location": "turkey/istanbul",
+      "max_listings_per_cell": 196.38,
+      "max_density_per_km2": 1550.23,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 6,
+      "listings_rank": 6
+    },
+    {
+      "location": "portugal/lisbon",
+      "max_listings_per_cell": 175.64,
+      "max_density_per_km2": 1386.53,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.5,
+      "num_cells": 75,
+      "density_rank": 7,
+      "listings_rank": 7
+    },
+    {
+      "location": "spain/madrid",
+      "max_listings_per_cell": 175.34,
+      "max_density_per_km2": 1384.14,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 8,
+      "listings_rank": 8
+    },
+    {
+      "location": "united-kingdom/london",
+      "max_listings_per_cell": 171.36,
+      "max_density_per_km2": 1352.73,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 9,
+      "listings_rank": 9
+    },
+    {
+      "location": "spain/barcelona",
+      "max_listings_per_cell": 157.62,
+      "max_density_per_km2": 1244.24,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 10,
+      "listings_rank": 10
+    },
+    {
+      "location": "italy/sicily",
+      "max_listings_per_cell": 156.28,
+      "max_density_per_km2": 1233.71,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 11,
+      "listings_rank": 11
+    },
+    {
+      "location": "denmark/copenhagen",
+      "max_listings_per_cell": 149.06,
+      "max_density_per_km2": 1176.73,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 12,
+      "listings_rank": 12
+    },
+    {
+      "location": "greece/athens",
+      "max_listings_per_cell": 148.42,
+      "max_density_per_km2": 1171.61,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 13,
+      "listings_rank": 13
+    },
+    {
+      "location": "italy/florence",
+      "max_listings_per_cell": 136.92,
+      "max_density_per_km2": 1080.89,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 14,
+      "listings_rank": 14
+    },
+    {
+      "location": "mexico/mexico-city",
+      "max_listings_per_cell": 132.86,
+      "max_density_per_km2": 1048.81,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 15,
+      "listings_rank": 15
+    },
+    {
+      "location": "portugal/porto",
+      "max_listings_per_cell": 132.33,
+      "max_density_per_km2": 1044.62,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 16,
+      "listings_rank": 16
+    },
+    {
+      "location": "hungary/budapest",
+      "max_listings_per_cell": 130.29,
+      "max_density_per_km2": 1028.57,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 17,
+      "listings_rank": 17
+    },
+    {
+      "location": "thailand/bangkok",
+      "max_listings_per_cell": 125.4,
+      "max_density_per_km2": 989.95,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 18,
+      "listings_rank": 18
+    },
+    {
+      "location": "south-africa/cape-town",
+      "max_listings_per_cell": 122.32,
+      "max_density_per_km2": 965.62,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 19,
+      "listings_rank": 19
+    },
+    {
+      "location": "italy/naples",
+      "max_listings_per_cell": 114.96,
+      "max_density_per_km2": 907.52,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 20,
+      "listings_rank": 20
+    },
+    {
+      "location": "australia/melbourne",
+      "max_listings_per_cell": 109.72,
+      "max_density_per_km2": 866.17,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 21,
+      "listings_rank": 21
+    },
+    {
+      "location": "italy/milan",
+      "max_listings_per_cell": 108.4,
+      "max_density_per_km2": 855.71,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 22,
+      "listings_rank": 22
+    },
+    {
+      "location": "italy/puglia",
+      "max_listings_per_cell": 108.04,
+      "max_density_per_km2": 852.87,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 23,
+      "listings_rank": 23
+    },
+    {
+      "location": "spain/malaga",
+      "max_listings_per_cell": 106.34,
+      "max_density_per_km2": 839.44,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 24,
+      "listings_rank": 24
+    },
+    {
+      "location": "united-states/new-york-city",
+      "max_listings_per_cell": 105.6,
+      "max_density_per_km2": 833.6,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 25,
+      "listings_rank": 25
+    },
+    {
+      "location": "greece/south-aegean",
+      "max_listings_per_cell": 100.03,
+      "max_density_per_km2": 789.63,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.25,
+      "num_cells": 73,
+      "density_rank": 26,
+      "listings_rank": 26
+    },
+    {
+      "location": "malta",
+      "max_listings_per_cell": 97.78,
+      "max_density_per_km2": 771.91,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 27,
+      "listings_rank": 27
+    },
+    {
+      "location": "italy/venice",
+      "max_listings_per_cell": 96.97,
+      "max_density_per_km2": 765.52,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.5,
+      "num_cells": 75,
+      "density_rank": 28,
+      "listings_rank": 28
+    },
+    {
+      "location": "chile/santiago",
+      "max_listings_per_cell": 95.86,
+      "max_density_per_km2": 756.72,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 29,
+      "listings_rank": 29
+    },
+    {
+      "location": "czech-republic/prague",
+      "max_listings_per_cell": 95.74,
+      "max_density_per_km2": 755.81,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 30,
+      "listings_rank": 30
+    },
+    {
+      "location": "spain/sevilla",
+      "max_listings_per_cell": 95.45,
+      "max_density_per_km2": 753.49,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 31,
+      "listings_rank": 31
+    },
+    {
+      "location": "canada/toronto",
+      "max_listings_per_cell": 95.04,
+      "max_density_per_km2": 750.25,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 32,
+      "listings_rank": 32
+    },
+    {
+      "location": "united-states/clark-county-nv",
+      "max_listings_per_cell": 94.77,
+      "max_density_per_km2": 748.12,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 33,
+      "listings_rank": 33
+    },
+    {
+      "location": "united-states/broward-county",
+      "max_listings_per_cell": 93.19,
+      "max_density_per_km2": 735.69,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 34,
+      "listings_rank": 34
+    },
+    {
+      "location": "japan/tokyo",
+      "max_listings_per_cell": 91.28,
+      "max_density_per_km2": 720.59,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 35,
+      "listings_rank": 35
+    },
+    {
+      "location": "norway/oslo",
+      "max_listings_per_cell": 87.35,
+      "max_density_per_km2": 689.52,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 36,
+      "listings_rank": 36
+    },
+    {
+      "location": "spain/girona",
+      "max_listings_per_cell": 80.53,
+      "max_density_per_km2": 635.68,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 37,
+      "listings_rank": 37
+    },
+    {
+      "location": "france/lyon",
+      "max_listings_per_cell": 80.29,
+      "max_density_per_km2": 633.79,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 38,
+      "listings_rank": 38
+    },
+    {
+      "location": "greece/crete",
+      "max_listings_per_cell": 76.22,
+      "max_density_per_km2": 601.72,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 39,
+      "listings_rank": 39
+    },
+    {
+      "location": "china/hong-kong",
+      "max_listings_per_cell": 71.24,
+      "max_density_per_km2": 562.41,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 40,
+      "listings_rank": 40
+    },
+    {
+      "location": "spain/valencia",
+      "max_listings_per_cell": 68.31,
+      "max_density_per_km2": 539.26,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 41,
+      "listings_rank": 41
+    },
+    {
+      "location": "austria/vienna",
+      "max_listings_per_cell": 65.5,
+      "max_density_per_km2": 517.07,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 42,
+      "listings_rank": 42
+    },
+    {
+      "location": "the-netherlands/amsterdam",
+      "max_listings_per_cell": 65.31,
+      "max_density_per_km2": 515.55,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 43,
+      "listings_rank": 43
+    },
+    {
+      "location": "united-states/los-angeles",
+      "max_listings_per_cell": 64.47,
+      "max_density_per_km2": 508.92,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 44,
+      "listings_rank": 44
+    },
+    {
+      "location": "united-states/san-diego",
+      "max_listings_per_cell": 64.44,
+      "max_density_per_km2": 508.73,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.12,
+      "num_cells": 72,
+      "density_rank": 45,
+      "listings_rank": 45
+    },
+    {
+      "location": "canada/montreal",
+      "max_listings_per_cell": 62.55,
+      "max_density_per_km2": 493.79,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 46,
+      "listings_rank": 46
+    },
+    {
+      "location": "france/bordeaux",
+      "max_listings_per_cell": 62.01,
+      "max_density_per_km2": 489.54,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 47,
+      "listings_rank": 47
+    },
+    {
+      "location": "taiwan/taipei",
+      "max_listings_per_cell": 56.51,
+      "max_density_per_km2": 446.07,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.25,
+      "num_cells": 73,
+      "density_rank": 48,
+      "listings_rank": 48
+    },
+    {
+      "location": "greece/thessaloniki",
+      "max_listings_per_cell": 56.22,
+      "max_density_per_km2": 443.83,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.12,
+      "num_cells": 72,
+      "density_rank": 49,
+      "listings_rank": 49
+    },
+    {
+      "location": "united-states/nashville",
+      "max_listings_per_cell": 54.31,
+      "max_density_per_km2": 428.74,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 50,
+      "listings_rank": 50
+    },
+    {
+      "location": "ireland",
+      "max_listings_per_cell": 53.92,
+      "max_density_per_km2": 425.65,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.5,
+      "num_cells": 75,
+      "density_rank": 51,
+      "listings_rank": 51
+    },
+    {
+      "location": "australia/sydney",
+      "max_listings_per_cell": 53.26,
+      "max_density_per_km2": 420.44,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 52,
+      "listings_rank": 52
+    },
+    {
+      "location": "new-zealand",
+      "max_listings_per_cell": 53.21,
+      "max_density_per_km2": 420.03,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 53,
+      "listings_rank": 53
+    },
+    {
+      "location": "united-states/new-orleans",
+      "max_listings_per_cell": 50.95,
+      "max_density_per_km2": 402.2,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 54,
+      "listings_rank": 54
+    },
+    {
+      "location": "germany/berlin",
+      "max_listings_per_cell": 49.77,
+      "max_density_per_km2": 392.88,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.74,
+      "num_cells": 69,
+      "density_rank": 55,
+      "listings_rank": 55
+    },
+    {
+      "location": "france/pays-basque",
+      "max_listings_per_cell": 49.47,
+      "max_density_per_km2": 390.5,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 56,
+      "listings_rank": 56
+    },
+    {
+      "location": "united-states/san-francisco",
+      "max_listings_per_cell": 47.37,
+      "max_density_per_km2": 373.94,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.25,
+      "num_cells": 73,
+      "density_rank": 57,
+      "listings_rank": 57
+    },
+    {
+      "location": "italy/bologna",
+      "max_listings_per_cell": 46.92,
+      "max_density_per_km2": 370.38,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 58,
+      "listings_rank": 58
+    },
+    {
+      "location": "united-states/austin",
+      "max_listings_per_cell": 44.68,
+      "max_density_per_km2": 352.71,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 59,
+      "listings_rank": 59
+    },
+    {
+      "location": "spain/euskadi",
+      "max_listings_per_cell": 41.13,
+      "max_density_per_km2": 324.69,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 60,
+      "listings_rank": 60
+    },
+    {
+      "location": "united-kingdom/edinburgh",
+      "max_listings_per_cell": 39.87,
+      "max_density_per_km2": 314.74,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 61,
+      "listings_rank": 61
+    },
+    {
+      "location": "belgium/brussels",
+      "max_listings_per_cell": 39.62,
+      "max_density_per_km2": 312.73,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 62,
+      "listings_rank": 62
+    },
+    {
+      "location": "australia/sunshine-coast",
+      "max_listings_per_cell": 37.64,
+      "max_density_per_km2": 297.14,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 63,
+      "listings_rank": 63
+    },
+    {
+      "location": "germany/munich",
+      "max_listings_per_cell": 36.1,
+      "max_density_per_km2": 285.01,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.49,
+      "num_cells": 67,
+      "density_rank": 64,
+      "listings_rank": 64
+    },
+    {
+      "location": "united-states/washington-dc",
+      "max_listings_per_cell": 35.63,
+      "max_density_per_km2": 281.27,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.25,
+      "num_cells": 73,
+      "density_rank": 65,
+      "listings_rank": 65
+    },
+    {
+      "location": "australia/brisbane",
+      "max_listings_per_cell": 35.13,
+      "max_density_per_km2": 277.33,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 66,
+      "listings_rank": 66
+    },
+    {
+      "location": "ireland/dublin",
+      "max_listings_per_cell": 34.05,
+      "max_density_per_km2": 268.81,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 67,
+      "listings_rank": 67
+    },
+    {
+      "location": "spain/mallorca",
+      "max_listings_per_cell": 33.97,
+      "max_density_per_km2": 268.2,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 68,
+      "listings_rank": 68
+    },
+    {
+      "location": "united-states/chicago",
+      "max_listings_per_cell": 33.5,
+      "max_density_per_km2": 264.45,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 69,
+      "listings_rank": 69
+    },
+    {
+      "location": "latvia/riga",
+      "max_listings_per_cell": 33.19,
+      "max_density_per_km2": 262.04,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 70,
+      "listings_rank": 70
+    },
+    {
+      "location": "australia/northern-rivers",
+      "max_listings_per_cell": 31.1,
+      "max_density_per_km2": 245.48,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.25,
+      "num_cells": 73,
+      "density_rank": 71,
+      "listings_rank": 71
+    },
+    {
+      "location": "united-states/seattle",
+      "max_listings_per_cell": 30.46,
+      "max_density_per_km2": 240.49,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.74,
+      "num_cells": 69,
+      "density_rank": 72,
+      "listings_rank": 72
+    },
+    {
+      "location": "canada/vancouver",
+      "max_listings_per_cell": 29.93,
+      "max_density_per_km2": 236.29,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 73,
+      "listings_rank": 73
+    },
+    {
+      "location": "united-kingdom/greater-manchester",
+      "max_listings_per_cell": 29.78,
+      "max_density_per_km2": 235.08,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 74,
+      "listings_rank": 74
+    },
+    {
+      "location": "spain/menorca",
+      "max_listings_per_cell": 29.7,
+      "max_density_per_km2": 234.47,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 75,
+      "listings_rank": 75
+    },
+    {
+      "location": "singapore/singapore",
+      "max_listings_per_cell": 29.68,
+      "max_density_per_km2": 234.27,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.99,
+      "num_cells": 71,
+      "density_rank": 76,
+      "listings_rank": 76
+    },
+    {
+      "location": "italy/trentino",
+      "max_listings_per_cell": 29.44,
+      "max_density_per_km2": 232.4,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.5,
+      "num_cells": 75,
+      "density_rank": 77,
+      "listings_rank": 77
+    },
+    {
+      "location": "united-states/boston",
+      "max_listings_per_cell": 29.14,
+      "max_density_per_km2": 230.0,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 78,
+      "listings_rank": 78
+    },
+    {
+      "location": "belgium/antwerp",
+      "max_listings_per_cell": 28.54,
+      "max_density_per_km2": 225.26,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.99,
+      "num_cells": 71,
+      "density_rank": 79,
+      "listings_rank": 79
+    },
+    {
+      "location": "united-states/dallas",
+      "max_listings_per_cell": 27.59,
+      "max_density_per_km2": 217.84,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 80,
+      "listings_rank": 80
+    },
+    {
+      "location": "sweden/stockholm",
+      "max_listings_per_cell": 27.32,
+      "max_density_per_km2": 215.7,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 81,
+      "listings_rank": 81
+    },
+    {
+      "location": "switzerland/zurich",
+      "max_listings_per_cell": 26.08,
+      "max_density_per_km2": 205.87,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 82,
+      "listings_rank": 82
+    },
+    {
+      "location": "united-states/rhode-island",
+      "max_listings_per_cell": 26.01,
+      "max_density_per_km2": 205.35,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 83,
+      "listings_rank": 83
+    },
+    {
+      "location": "canada/quebec-city",
+      "max_listings_per_cell": 25.76,
+      "max_density_per_km2": 203.36,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.49,
+      "num_cells": 67,
+      "density_rank": 84,
+      "listings_rank": 84
+    },
+    {
+      "location": "switzerland/geneva",
+      "max_listings_per_cell": 25.62,
+      "max_density_per_km2": 202.26,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 85,
+      "listings_rank": 85
+    },
+    {
+      "location": "australia/western-australia",
+      "max_listings_per_cell": 24.79,
+      "max_density_per_km2": 195.71,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.12,
+      "num_cells": 72,
+      "density_rank": 86,
+      "listings_rank": 86
+    },
+    {
+      "location": "switzerland/vaud",
+      "max_listings_per_cell": 23.57,
+      "max_density_per_km2": 186.08,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 87,
+      "listings_rank": 87
+    },
+    {
+      "location": "belize/belize",
+      "max_listings_per_cell": 23.14,
+      "max_density_per_km2": 182.69,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.87,
+      "num_cells": 70,
+      "density_rank": 88,
+      "listings_rank": 88
+    },
+    {
+      "location": "australia/mid-north-coast",
+      "max_listings_per_cell": 22.72,
+      "max_density_per_km2": 179.33,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.49,
+      "num_cells": 67,
+      "density_rank": 89,
+      "listings_rank": 89
+    },
+    {
+      "location": "australia/barwon-south-west-vic",
+      "max_listings_per_cell": 21.89,
+      "max_density_per_km2": 172.84,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.63,
+      "num_cells": 76,
+      "density_rank": 90,
+      "listings_rank": 90
+    },
+    {
+      "location": "united-states/denver",
+      "max_listings_per_cell": 21.31,
+      "max_density_per_km2": 168.24,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.11,
+      "num_cells": 64,
+      "density_rank": 91,
+      "listings_rank": 91
+    },
+    {
+      "location": "united-kingdom/bristol",
+      "max_listings_per_cell": 20.78,
+      "max_density_per_km2": 164.06,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.74,
+      "num_cells": 69,
+      "density_rank": 92,
+      "listings_rank": 92
+    },
+    {
+      "location": "italy/bergamo",
+      "max_listings_per_cell": 20.71,
+      "max_density_per_km2": 163.52,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.75,
+      "num_cells": 77,
+      "density_rank": 93,
+      "listings_rank": 93
+    },
+    {
+      "location": "united-states/columbus",
+      "max_listings_per_cell": 18.41,
+      "max_density_per_km2": 145.35,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 7.98,
+      "num_cells": 63,
+      "density_rank": 94,
+      "listings_rank": 94
+    },
+    {
+      "location": "united-states/jersey-city",
+      "max_listings_per_cell": 18.39,
+      "max_density_per_km2": 145.15,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.5,
+      "num_cells": 75,
+      "density_rank": 95,
+      "listings_rank": 95
+    },
+    {
+      "location": "united-states/portland",
+      "max_listings_per_cell": 17.74,
+      "max_density_per_km2": 140.07,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 96,
+      "listings_rank": 96
+    },
+    {
+      "location": "united-states/santa-clara-county",
+      "max_listings_per_cell": 17.58,
+      "max_density_per_km2": 138.76,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.99,
+      "num_cells": 71,
+      "density_rank": 97,
+      "listings_rank": 97
+    },
+    {
+      "location": "united-states/cambridge",
+      "max_listings_per_cell": 17.51,
+      "max_density_per_km2": 138.25,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 98,
+      "listings_rank": 98
+    },
+    {
+      "location": "australia/tasmania",
+      "max_listings_per_cell": 17.28,
+      "max_density_per_km2": 136.39,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.12,
+      "num_cells": 72,
+      "density_rank": 99,
+      "listings_rank": 99
+    },
+    {
+      "location": "canada/victoria",
+      "max_listings_per_cell": 16.03,
+      "max_density_per_km2": 126.58,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 7.35,
+      "num_cells": 58,
+      "density_rank": 100,
+      "listings_rank": 100
+    },
+    {
+      "location": "united-states/newark",
+      "max_listings_per_cell": 16.0,
+      "max_density_per_km2": 126.31,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.61,
+      "num_cells": 68,
+      "density_rank": 101,
+      "listings_rank": 101
+    },
+    {
+      "location": "australia/mornington-peninsula",
+      "max_listings_per_cell": 15.62,
+      "max_density_per_km2": 123.32,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 102,
+      "listings_rank": 102
+    },
+    {
+      "location": "the-netherlands/the-hague",
+      "max_listings_per_cell": 14.38,
+      "max_density_per_km2": 113.49,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.74,
+      "num_cells": 69,
+      "density_rank": 103,
+      "listings_rank": 103
+    },
+    {
+      "location": "united-states/san-mateo-county",
+      "max_listings_per_cell": 13.35,
+      "max_density_per_km2": 105.41,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.61,
+      "num_cells": 68,
+      "density_rank": 104,
+      "listings_rank": 104
+    },
+    {
+      "location": "belgium/ghent",
+      "max_listings_per_cell": 13.04,
+      "max_density_per_km2": 102.94,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.5,
+      "num_cells": 75,
+      "density_rank": 105,
+      "listings_rank": 105
+    },
+    {
+      "location": "united-states/twin-cities-msa",
+      "max_listings_per_cell": 12.78,
+      "max_density_per_km2": 100.91,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 7.6,
+      "num_cells": 60,
+      "density_rank": 106,
+      "listings_rank": 106
+    },
+    {
+      "location": "united-states/santa-cruz-county",
+      "max_listings_per_cell": 12.67,
+      "max_density_per_km2": 99.99,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.74,
+      "num_cells": 69,
+      "density_rank": 107,
+      "listings_rank": 107
+    },
+    {
+      "location": "united-states/asheville",
+      "max_listings_per_cell": 12.58,
+      "max_density_per_km2": 99.32,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.49,
+      "num_cells": 67,
+      "density_rank": 108,
+      "listings_rank": 108
+    },
+    {
+      "location": "canada/ottawa",
+      "max_listings_per_cell": 11.85,
+      "max_density_per_km2": 93.52,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 109,
+      "listings_rank": 109
+    },
+    {
+      "location": "the-netherlands/rotterdam",
+      "max_listings_per_cell": 11.65,
+      "max_density_per_km2": 92.0,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 110,
+      "listings_rank": 110
+    },
+    {
+      "location": "united-states/oakland",
+      "max_listings_per_cell": 11.05,
+      "max_density_per_km2": 87.22,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 7.85,
+      "num_cells": 62,
+      "density_rank": 111,
+      "listings_rank": 111
+    },
+    {
+      "location": "canada/new-brunswick",
+      "max_listings_per_cell": 10.66,
+      "max_density_per_km2": 84.17,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.61,
+      "num_cells": 68,
+      "density_rank": 112,
+      "listings_rank": 112
+    },
+    {
+      "location": "united-states/fort-worth",
+      "max_listings_per_cell": 10.02,
+      "max_density_per_km2": 79.08,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 7.22,
+      "num_cells": 57,
+      "density_rank": 113,
+      "listings_rank": 113
+    },
+    {
+      "location": "canada/winnipeg",
+      "max_listings_per_cell": 9.01,
+      "max_density_per_km2": 71.15,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.37,
+      "num_cells": 74,
+      "density_rank": 114,
+      "listings_rank": 114
+    },
+    {
+      "location": "united-states/rochester",
+      "max_listings_per_cell": 8.6,
+      "max_density_per_km2": 67.91,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.25,
+      "num_cells": 73,
+      "density_rank": 115,
+      "listings_rank": 115
+    },
+    {
+      "location": "united-states/bozeman",
+      "max_listings_per_cell": 7.03,
+      "max_density_per_km2": 55.51,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.11,
+      "num_cells": 64,
+      "density_rank": 116,
+      "listings_rank": 116
+    },
+    {
+      "location": "united-states/albany",
+      "max_listings_per_cell": 5.6,
+      "max_density_per_km2": 44.23,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 9.25,
+      "num_cells": 73,
+      "density_rank": 117,
+      "listings_rank": 117
+    },
+    {
+      "location": "united-states/pacific-grove",
+      "max_listings_per_cell": 5.56,
+      "max_density_per_km2": 43.86,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 6.84,
+      "num_cells": 54,
+      "density_rank": 118,
+      "listings_rank": 118
+    },
+    {
+      "location": "australia/barossa-valley",
+      "max_listings_per_cell": 3.31,
+      "max_density_per_km2": 26.09,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 7.47,
+      "num_cells": 59,
+      "density_rank": 119,
+      "listings_rank": 119
+    },
+    {
+      "location": "united-states/salem-or",
+      "max_listings_per_cell": 3.3,
+      "max_density_per_km2": 26.08,
+      "avg_cell_area_km2": 0.126676,
+      "total_area_km2": 8.74,
+      "num_cells": 69,
+      "density_rank": 120,
+      "listings_rank": 120
+    }
+  ],
+  "h3": [
+    {
+      "location": "france/paris",
+      "max_listings_per_cell": 267.74,
+      "max_density_per_km2": 2852.23,
+      "avg_cell_area_km2": 0.093869,
+      "total_area_km2": 9.95,
+      "num_cells": 106,
+      "density_rank": 1,
+      "listings_rank": 1
+    },
+    {
+      "location": "brazil/rio-de-janeiro",
+      "max_listings_per_cell": 264.89,
+      "max_density_per_km2": 2442.83,
+      "avg_cell_area_km2": 0.108442,
+      "total_area_km2": 9.98,
+      "num_cells": 92,
+      "density_rank": 2,
+      "listings_rank": 2
+    },
+    {
+      "location": "united-states/hawaii",
+      "max_listings_per_cell": 202.77,
+      "max_density_per_km2": 1671.56,
+      "avg_cell_area_km2": 0.121328,
+      "total_area_km2": 9.95,
+      "num_cells": 82,
+      "density_rank": 5,
+      "listings_rank": 3
+    },
+    {
+      "location": "italy/rome",
+      "max_listings_per_cell": 197.17,
+      "max_density_per_km2": 1751.63,
+      "avg_cell_area_km2": 0.112565,
+      "total_area_km2": 9.91,
+      "num_cells": 88,
+      "density_rank": 3,
+      "listings_rank": 4
+    },
+    {
+      "location": "turkey/istanbul",
+      "max_listings_per_cell": 179.44,
+      "max_density_per_km2": 1540.47,
+      "avg_cell_area_km2": 0.11648,
+      "total_area_km2": 9.9,
+      "num_cells": 85,
+      "density_rank": 6,
+      "listings_rank": 5
+    },
+    {
+      "location": "portugal/lisbon",
+      "max_listings_per_cell": 157.63,
+      "max_density_per_km2": 1358.59,
+      "avg_cell_area_km2": 0.116029,
+      "total_area_km2": 9.98,
+      "num_cells": 86,
+      "density_rank": 9,
+      "listings_rank": 6
+    },
+    {
+      "location": "spain/madrid",
+      "max_listings_per_cell": 149.2,
+      "max_density_per_km2": 1376.87,
+      "avg_cell_area_km2": 0.108351,
+      "total_area_km2": 9.97,
+      "num_cells": 92,
+      "density_rank": 8,
+      "listings_rank": 7
+    },
+    {
+      "location": "italy/sicily",
+      "max_listings_per_cell": 146.02,
+      "max_density_per_km2": 1230.49,
+      "avg_cell_area_km2": 0.118673,
+      "total_area_km2": 9.97,
+      "num_cells": 84,
+      "density_rank": 11,
+      "listings_rank": 8
+    },
+    {
+      "location": "greece/athens",
+      "max_listings_per_cell": 142.01,
+      "max_density_per_km2": 1168.01,
+      "avg_cell_area_km2": 0.121583,
+      "total_area_km2": 9.97,
+      "num_cells": 82,
+      "density_rank": 13,
+      "listings_rank": 9
+    },
+    {
+      "location": "united-kingdom/london",
+      "max_listings_per_cell": 133.1,
+      "max_density_per_km2": 1413.1,
+      "avg_cell_area_km2": 0.09419,
+      "total_area_km2": 9.98,
+      "num_cells": 106,
+      "density_rank": 7,
+      "listings_rank": 10
+    },
+    {
+      "location": "spain/barcelona",
+      "max_listings_per_cell": 127.97,
+      "max_density_per_km2": 1251.21,
+      "avg_cell_area_km2": 0.102274,
+      "total_area_km2": 9.92,
+      "num_cells": 97,
+      "density_rank": 10,
+      "listings_rank": 11
+    },
+    {
+      "location": "argentina/buenos-aires",
+      "max_listings_per_cell": 126.79,
+      "max_density_per_km2": 1731.15,
+      "avg_cell_area_km2": 0.073238,
+      "total_area_km2": 9.96,
+      "num_cells": 136,
+      "density_rank": 4,
+      "listings_rank": 12
+    },
+    {
+      "location": "mexico/mexico-city",
+      "max_listings_per_cell": 126.62,
+      "max_density_per_km2": 1041.27,
+      "avg_cell_area_km2": 0.121604,
+      "total_area_km2": 9.97,
+      "num_cells": 82,
+      "density_rank": 15,
+      "listings_rank": 13
+    },
+    {
+      "location": "thailand/bangkok",
+      "max_listings_per_cell": 124.94,
+      "max_density_per_km2": 998.19,
+      "avg_cell_area_km2": 0.125164,
+      "total_area_km2": 9.89,
+      "num_cells": 79,
+      "density_rank": 19,
+      "listings_rank": 14
+    },
+    {
+      "location": "portugal/porto",
+      "max_listings_per_cell": 117.08,
+      "max_density_per_km2": 1024.39,
+      "avg_cell_area_km2": 0.114296,
+      "total_area_km2": 9.94,
+      "num_cells": 87,
+      "density_rank": 17,
+      "listings_rank": 15
+    },
+    {
+      "location": "italy/florence",
+      "max_listings_per_cell": 116.7,
+      "max_density_per_km2": 1071.84,
+      "avg_cell_area_km2": 0.108876,
+      "total_area_km2": 9.91,
+      "num_cells": 91,
+      "density_rank": 14,
+      "listings_rank": 16
+    },
+    {
+      "location": "hungary/budapest",
+      "max_listings_per_cell": 109.2,
+      "max_density_per_km2": 1027.2,
+      "avg_cell_area_km2": 0.106309,
+      "total_area_km2": 9.99,
+      "num_cells": 94,
+      "density_rank": 16,
+      "listings_rank": 17
+    },
+    {
+      "location": "denmark/copenhagen",
+      "max_listings_per_cell": 104.86,
+      "max_density_per_km2": 1216.34,
+      "avg_cell_area_km2": 0.08621,
+      "total_area_km2": 9.91,
+      "num_cells": 115,
+      "density_rank": 12,
+      "listings_rank": 18
+    },
+    {
+      "location": "italy/naples",
+      "max_listings_per_cell": 104.85,
+      "max_density_per_km2": 910.05,
+      "avg_cell_area_km2": 0.11521,
+      "total_area_km2": 9.91,
+      "num_cells": 86,
+      "density_rank": 20,
+      "listings_rank": 19
+    },
+    {
+      "location": "australia/melbourne",
+      "max_listings_per_cell": 104.43,
+      "max_density_per_km2": 847.41,
+      "avg_cell_area_km2": 0.123239,
+      "total_area_km2": 9.98,
+      "num_cells": 81,
+      "density_rank": 24,
+      "listings_rank": 20
+    },
+    {
+      "location": "italy/puglia",
+      "max_listings_per_cell": 101.32,
+      "max_density_per_km2": 864.65,
+      "avg_cell_area_km2": 0.117217,
+      "total_area_km2": 9.96,
+      "num_cells": 85,
+      "density_rank": 23,
+      "listings_rank": 21
+    },
+    {
+      "location": "south-africa/cape-town",
+      "max_listings_per_cell": 99.72,
+      "max_density_per_km2": 1002.02,
+      "avg_cell_area_km2": 0.099514,
+      "total_area_km2": 9.95,
+      "num_cells": 100,
+      "density_rank": 18,
+      "listings_rank": 22
+    },
+    {
+      "location": "greece/south-aegean",
+      "max_listings_per_cell": 94.8,
+      "max_density_per_km2": 773.99,
+      "avg_cell_area_km2": 0.122481,
+      "total_area_km2": 9.92,
+      "num_cells": 81,
+      "density_rank": 28,
+      "listings_rank": 23
+    },
+    {
+      "location": "malta",
+      "max_listings_per_cell": 94.39,
+      "max_density_per_km2": 782.1,
+      "avg_cell_area_km2": 0.120674,
+      "total_area_km2": 9.9,
+      "num_cells": 82,
+      "density_rank": 27,
+      "listings_rank": 24
+    },
+    {
+      "location": "united-states/new-york-city",
+      "max_listings_per_cell": 92.1,
+      "max_density_per_km2": 869.84,
+      "avg_cell_area_km2": 0.105875,
+      "total_area_km2": 9.95,
+      "num_cells": 94,
+      "density_rank": 21,
+      "listings_rank": 25
+    },
+    {
+      "location": "spain/malaga",
+      "max_listings_per_cell": 91.49,
+      "max_density_per_km2": 830.21,
+      "avg_cell_area_km2": 0.110195,
+      "total_area_km2": 9.92,
+      "num_cells": 90,
+      "density_rank": 25,
+      "listings_rank": 26
+    },
+    {
+      "location": "italy/milan",
+      "max_listings_per_cell": 90.77,
+      "max_density_per_km2": 868.64,
+      "avg_cell_area_km2": 0.104495,
+      "total_area_km2": 9.93,
+      "num_cells": 95,
+      "density_rank": 22,
+      "listings_rank": 27
+    },
+    {
+      "location": "united-states/clark-county-nv",
+      "max_listings_per_cell": 88.87,
+      "max_density_per_km2": 756.5,
+      "avg_cell_area_km2": 0.117473,
+      "total_area_km2": 9.99,
+      "num_cells": 85,
+      "density_rank": 31,
+      "listings_rank": 28
+    },
+    {
+      "location": "canada/toronto",
+      "max_listings_per_cell": 84.28,
+      "max_density_per_km2": 756.24,
+      "avg_cell_area_km2": 0.111456,
+      "total_area_km2": 9.92,
+      "num_cells": 89,
+      "density_rank": 32,
+      "listings_rank": 29
+    },
+    {
+      "location": "spain/sevilla",
+      "max_listings_per_cell": 84.02,
+      "max_density_per_km2": 747.79,
+      "avg_cell_area_km2": 0.112357,
+      "total_area_km2": 10.0,
+      "num_cells": 89,
+      "density_rank": 34,
+      "listings_rank": 30
+    },
+    {
+      "location": "italy/venice",
+      "max_listings_per_cell": 79.12,
+      "max_density_per_km2": 739.7,
+      "avg_cell_area_km2": 0.106949,
+      "total_area_km2": 9.95,
+      "num_cells": 93,
+      "density_rank": 35,
+      "listings_rank": 31
+    },
+    {
+      "location": "czech-republic/prague",
+      "max_listings_per_cell": 75.56,
+      "max_density_per_km2": 760.01,
+      "avg_cell_area_km2": 0.099421,
+      "total_area_km2": 9.94,
+      "num_cells": 100,
+      "density_rank": 29,
+      "listings_rank": 32
+    },
+    {
+      "location": "greece/crete",
+      "max_listings_per_cell": 74.8,
+      "max_density_per_km2": 603.35,
+      "avg_cell_area_km2": 0.123978,
+      "total_area_km2": 9.92,
+      "num_cells": 80,
+      "density_rank": 39,
+      "listings_rank": 33
+    },
+    {
+      "location": "japan/tokyo",
+      "max_listings_per_cell": 72.5,
+      "max_density_per_km2": 748.89,
+      "avg_cell_area_km2": 0.096827,
+      "total_area_km2": 9.97,
+      "num_cells": 103,
+      "density_rank": 33,
+      "listings_rank": 34
+    },
+    {
+      "location": "chile/santiago",
+      "max_listings_per_cell": 72.03,
+      "max_density_per_km2": 790.53,
+      "avg_cell_area_km2": 0.091106,
+      "total_area_km2": 9.93,
+      "num_cells": 109,
+      "density_rank": 26,
+      "listings_rank": 35
+    },
+    {
+      "location": "united-states/broward-county",
+      "max_listings_per_cell": 71.02,
+      "max_density_per_km2": 758.39,
+      "avg_cell_area_km2": 0.093649,
+      "total_area_km2": 9.93,
+      "num_cells": 106,
+      "density_rank": 30,
+      "listings_rank": 36
+    },
+    {
+      "location": "spain/girona",
+      "max_listings_per_cell": 67.4,
+      "max_density_per_km2": 656.02,
+      "avg_cell_area_km2": 0.102755,
+      "total_area_km2": 9.97,
+      "num_cells": 97,
+      "density_rank": 37,
+      "listings_rank": 37
+    },
+    {
+      "location": "france/lyon",
+      "max_listings_per_cell": 63.51,
+      "max_density_per_km2": 636.53,
+      "avg_cell_area_km2": 0.099779,
+      "total_area_km2": 9.98,
+      "num_cells": 100,
+      "density_rank": 38,
+      "listings_rank": 38
+    },
+    {
+      "location": "united-states/los-angeles",
+      "max_listings_per_cell": 60.38,
+      "max_density_per_km2": 513.41,
+      "avg_cell_area_km2": 0.117601,
+      "total_area_km2": 10.0,
+      "num_cells": 85,
+      "density_rank": 44,
+      "listings_rank": 39
+    },
+    {
+      "location": "china/hong-kong",
+      "max_listings_per_cell": 58.63,
+      "max_density_per_km2": 569.87,
+      "avg_cell_area_km2": 0.102883,
+      "total_area_km2": 9.98,
+      "num_cells": 97,
+      "density_rank": 40,
+      "listings_rank": 40
+    },
+    {
+      "location": "united-states/san-diego",
+      "max_listings_per_cell": 58.47,
+      "max_density_per_km2": 488.52,
+      "avg_cell_area_km2": 0.119688,
+      "total_area_km2": 9.93,
+      "num_cells": 83,
+      "density_rank": 45,
+      "listings_rank": 41
+    },
+    {
+      "location": "australia/sydney",
+      "max_listings_per_cell": 57.04,
+      "max_density_per_km2": 450.09,
+      "avg_cell_area_km2": 0.126725,
+      "total_area_km2": 9.88,
+      "num_cells": 78,
+      "density_rank": 48,
+      "listings_rank": 42
+    },
+    {
+      "location": "spain/valencia",
+      "max_listings_per_cell": 56.22,
+      "max_density_per_km2": 542.52,
+      "avg_cell_area_km2": 0.103626,
+      "total_area_km2": 9.95,
+      "num_cells": 96,
+      "density_rank": 41,
+      "listings_rank": 43
+    },
+    {
+      "location": "canada/montreal",
+      "max_listings_per_cell": 55.67,
+      "max_density_per_km2": 486.56,
+      "avg_cell_area_km2": 0.114411,
+      "total_area_km2": 9.95,
+      "num_cells": 87,
+      "density_rank": 46,
+      "listings_rank": 44
+    },
+    {
+      "location": "austria/vienna",
+      "max_listings_per_cell": 55.04,
+      "max_density_per_km2": 528.92,
+      "avg_cell_area_km2": 0.104064,
+      "total_area_km2": 9.99,
+      "num_cells": 96,
+      "density_rank": 42,
+      "listings_rank": 45
+    },
+    {
+      "location": "norway/oslo",
+      "max_listings_per_cell": 54.27,
+      "max_density_per_km2": 719.73,
+      "avg_cell_area_km2": 0.075394,
+      "total_area_km2": 9.95,
+      "num_cells": 132,
+      "density_rank": 36,
+      "listings_rank": 46
+    },
+    {
+      "location": "france/bordeaux",
+      "max_listings_per_cell": 49.26,
+      "max_density_per_km2": 485.69,
+      "avg_cell_area_km2": 0.101411,
+      "total_area_km2": 9.94,
+      "num_cells": 98,
+      "density_rank": 47,
+      "listings_rank": 47
+    },
+    {
+      "location": "new-zealand",
+      "max_listings_per_cell": 48.98,
+      "max_density_per_km2": 435.48,
+      "avg_cell_area_km2": 0.112477,
+      "total_area_km2": 9.9,
+      "num_cells": 88,
+      "density_rank": 50,
+      "listings_rank": 48
+    },
+    {
+      "location": "greece/thessaloniki",
+      "max_listings_per_cell": 48.98,
+      "max_density_per_km2": 413.93,
+      "avg_cell_area_km2": 0.118329,
+      "total_area_km2": 9.94,
+      "num_cells": 84,
+      "density_rank": 53,
+      "listings_rank": 49
+    },
+    {
+      "location": "the-netherlands/amsterdam",
+      "max_listings_per_cell": 46.42,
+      "max_density_per_km2": 526.32,
+      "avg_cell_area_km2": 0.088207,
+      "total_area_km2": 9.97,
+      "num_cells": 113,
+      "density_rank": 43,
+      "listings_rank": 50
+    },
+    {
+      "location": "united-states/new-orleans",
+      "max_listings_per_cell": 45.47,
+      "max_density_per_km2": 409.25,
+      "avg_cell_area_km2": 0.111111,
+      "total_area_km2": 9.89,
+      "num_cells": 89,
+      "density_rank": 54,
+      "listings_rank": 51
+    },
+    {
+      "location": "united-states/nashville",
+      "max_listings_per_cell": 44.95,
+      "max_density_per_km2": 441.97,
+      "avg_cell_area_km2": 0.101705,
+      "total_area_km2": 9.97,
+      "num_cells": 98,
+      "density_rank": 49,
+      "listings_rank": 52
+    },
+    {
+      "location": "united-states/austin",
+      "max_listings_per_cell": 43.16,
+      "max_density_per_km2": 358.81,
+      "avg_cell_area_km2": 0.120276,
+      "total_area_km2": 9.98,
+      "num_cells": 83,
+      "density_rank": 59,
+      "listings_rank": 53
+    },
+    {
+      "location": "ireland",
+      "max_listings_per_cell": 41.71,
+      "max_density_per_km2": 422.65,
+      "avg_cell_area_km2": 0.098823,
+      "total_area_km2": 9.98,
+      "num_cells": 101,
+      "density_rank": 52,
+      "listings_rank": 54
+    },
+    {
+      "location": "france/pays-basque",
+      "max_listings_per_cell": 41.56,
+      "max_density_per_km2": 400.59,
+      "avg_cell_area_km2": 0.103759,
+      "total_area_km2": 9.96,
+      "num_cells": 96,
+      "density_rank": 56,
+      "listings_rank": 55
+    },
+    {
+      "location": "united-states/san-francisco",
+      "max_listings_per_cell": 40.76,
+      "max_density_per_km2": 372.59,
+      "avg_cell_area_km2": 0.109395,
+      "total_area_km2": 9.95,
+      "num_cells": 91,
+      "density_rank": 57,
+      "listings_rank": 56
+    },
+    {
+      "location": "taiwan/taipei",
+      "max_listings_per_cell": 39.63,
+      "max_density_per_km2": 428.3,
+      "avg_cell_area_km2": 0.092543,
+      "total_area_km2": 9.99,
+      "num_cells": 108,
+      "density_rank": 51,
+      "listings_rank": 57
+    },
+    {
+      "location": "italy/bologna",
+      "max_listings_per_cell": 38.95,
+      "max_density_per_km2": 361.23,
+      "avg_cell_area_km2": 0.107815,
+      "total_area_km2": 9.92,
+      "num_cells": 92,
+      "density_rank": 58,
+      "listings_rank": 58
+    },
+    {
+      "location": "germany/berlin",
+      "max_listings_per_cell": 38.17,
+      "max_density_per_km2": 407.12,
+      "avg_cell_area_km2": 0.093759,
+      "total_area_km2": 9.94,
+      "num_cells": 106,
+      "density_rank": 55,
+      "listings_rank": 59
+    },
+    {
+      "location": "australia/sunshine-coast",
+      "max_listings_per_cell": 37.35,
+      "max_density_per_km2": 302.42,
+      "avg_cell_area_km2": 0.123509,
+      "total_area_km2": 9.88,
+      "num_cells": 80,
+      "density_rank": 63,
+      "listings_rank": 60
+    },
+    {
+      "location": "spain/euskadi",
+      "max_listings_per_cell": 34.06,
+      "max_density_per_km2": 324.13,
+      "avg_cell_area_km2": 0.105183,
+      "total_area_km2": 9.99,
+      "num_cells": 95,
+      "density_rank": 60,
+      "listings_rank": 61
+    },
+    {
+      "location": "australia/brisbane",
+      "max_listings_per_cell": 33.5,
+      "max_density_per_km2": 269.56,
+      "avg_cell_area_km2": 0.124279,
+      "total_area_km2": 9.94,
+      "num_cells": 80,
+      "density_rank": 67,
+      "listings_rank": 62
+    },
+    {
+      "location": "australia/northern-rivers",
+      "max_listings_per_cell": 29.78,
+      "max_density_per_km2": 237.9,
+      "avg_cell_area_km2": 0.125171,
+      "total_area_km2": 9.89,
+      "num_cells": 79,
+      "density_rank": 77,
+      "listings_rank": 63
+    },
+    {
+      "location": "united-states/washington-dc",
+      "max_listings_per_cell": 29.57,
+      "max_density_per_km2": 288.99,
+      "avg_cell_area_km2": 0.10231,
+      "total_area_km2": 9.92,
+      "num_cells": 97,
+      "density_rank": 64,
+      "listings_rank": 64
+    },
+    {
+      "location": "belgium/brussels",
+      "max_listings_per_cell": 28.85,
+      "max_density_per_km2": 318.23,
+      "avg_cell_area_km2": 0.090648,
+      "total_area_km2": 9.97,
+      "num_cells": 110,
+      "density_rank": 61,
+      "listings_rank": 65
+    },
+    {
+      "location": "spain/mallorca",
+      "max_listings_per_cell": 28.85,
+      "max_density_per_km2": 274.3,
+      "avg_cell_area_km2": 0.105209,
+      "total_area_km2": 9.99,
+      "num_cells": 95,
+      "density_rank": 65,
+      "listings_rank": 66
+    },
+    {
+      "location": "united-kingdom/edinburgh",
+      "max_listings_per_cell": 28.76,
+      "max_density_per_km2": 316.25,
+      "avg_cell_area_km2": 0.090944,
+      "total_area_km2": 9.91,
+      "num_cells": 109,
+      "density_rank": 62,
+      "listings_rank": 67
+    },
+    {
+      "location": "united-states/chicago",
+      "max_listings_per_cell": 28.31,
+      "max_density_per_km2": 266.47,
+      "avg_cell_area_km2": 0.106237,
+      "total_area_km2": 9.99,
+      "num_cells": 94,
+      "density_rank": 69,
+      "listings_rank": 68
+    },
+    {
+      "location": "germany/munich",
+      "max_listings_per_cell": 27.77,
+      "max_density_per_km2": 273.24,
+      "avg_cell_area_km2": 0.101618,
+      "total_area_km2": 9.96,
+      "num_cells": 98,
+      "density_rank": 66,
+      "listings_rank": 69
+    },
+    {
+      "location": "ireland/dublin",
+      "max_listings_per_cell": 26.44,
+      "max_density_per_km2": 269.46,
+      "avg_cell_area_km2": 0.098105,
+      "total_area_km2": 9.91,
+      "num_cells": 101,
+      "density_rank": 68,
+      "listings_rank": 70
+    },
+    {
+      "location": "singapore/singapore",
+      "max_listings_per_cell": 26.12,
+      "max_density_per_km2": 218.45,
+      "avg_cell_area_km2": 0.119574,
+      "total_area_km2": 9.92,
+      "num_cells": 83,
+      "density_rank": 79,
+      "listings_rank": 71
+    },
+    {
+      "location": "united-states/boston",
+      "max_listings_per_cell": 25.87,
+      "max_density_per_km2": 238.54,
+      "avg_cell_area_km2": 0.10844,
+      "total_area_km2": 9.98,
+      "num_cells": 92,
+      "density_rank": 76,
+      "listings_rank": 72
+    },
+    {
+      "location": "spain/menorca",
+      "max_listings_per_cell": 25.51,
+      "max_density_per_km2": 240.15,
+      "avg_cell_area_km2": 0.106238,
+      "total_area_km2": 9.99,
+      "num_cells": 94,
+      "density_rank": 74,
+      "listings_rank": 73
+    },
+    {
+      "location": "italy/trentino",
+      "max_listings_per_cell": 25.4,
+      "max_density_per_km2": 242.19,
+      "avg_cell_area_km2": 0.104845,
+      "total_area_km2": 9.96,
+      "num_cells": 95,
+      "density_rank": 72,
+      "listings_rank": 74
+    },
+    {
+      "location": "united-states/dallas",
+      "max_listings_per_cell": 25.18,
+      "max_density_per_km2": 214.18,
+      "avg_cell_area_km2": 0.117543,
+      "total_area_km2": 9.99,
+      "num_cells": 85,
+      "density_rank": 81,
+      "listings_rank": 75
+    },
+    {
+      "location": "united-states/rhode-island",
+      "max_listings_per_cell": 23.11,
+      "max_density_per_km2": 216.03,
+      "avg_cell_area_km2": 0.107015,
+      "total_area_km2": 9.95,
+      "num_cells": 93,
+      "density_rank": 80,
+      "listings_rank": 76
+    },
+    {
+      "location": "united-kingdom/greater-manchester",
+      "max_listings_per_cell": 22.76,
+      "max_density_per_km2": 242.42,
+      "avg_cell_area_km2": 0.093903,
+      "total_area_km2": 9.95,
+      "num_cells": 106,
+      "density_rank": 71,
+      "listings_rank": 77
+    },
+    {
+      "location": "latvia/riga",
+      "max_listings_per_cell": 22.64,
+      "max_density_per_km2": 264.63,
+      "avg_cell_area_km2": 0.085542,
+      "total_area_km2": 9.92,
+      "num_cells": 116,
+      "density_rank": 70,
+      "listings_rank": 78
+    },
+    {
+      "location": "united-states/seattle",
+      "max_listings_per_cell": 22.36,
+      "max_density_per_km2": 240.54,
+      "avg_cell_area_km2": 0.09297,
+      "total_area_km2": 9.95,
+      "num_cells": 107,
+      "density_rank": 73,
+      "listings_rank": 79
+    },
+    {
+      "location": "australia/barwon-south-west-vic",
+      "max_listings_per_cell": 21.94,
+      "max_density_per_km2": 179.67,
+      "avg_cell_area_km2": 0.122093,
+      "total_area_km2": 9.89,
+      "num_cells": 81,
+      "density_rank": 88,
+      "listings_rank": 80
+    },
+    {
+      "location": "australia/mid-north-coast",
+      "max_listings_per_cell": 21.29,
+      "max_density_per_km2": 168.35,
+      "avg_cell_area_km2": 0.12644,
+      "total_area_km2": 9.99,
+      "num_cells": 79,
+      "density_rank": 90,
+      "listings_rank": 81
+    },
+    {
+      "location": "canada/vancouver",
+      "max_listings_per_cell": 21.24,
+      "max_density_per_km2": 238.74,
+      "avg_cell_area_km2": 0.088982,
+      "total_area_km2": 9.97,
+      "num_cells": 112,
+      "density_rank": 75,
+      "listings_rank": 82
+    },
+    {
+      "location": "switzerland/zurich",
+      "max_listings_per_cell": 21.14,
+      "max_density_per_km2": 209.95,
+      "avg_cell_area_km2": 0.100695,
+      "total_area_km2": 9.97,
+      "num_cells": 99,
+      "density_rank": 84,
+      "listings_rank": 83
+    },
+    {
+      "location": "canada/quebec-city",
+      "max_listings_per_cell": 21.07,
+      "max_density_per_km2": 181.62,
+      "avg_cell_area_km2": 0.116013,
+      "total_area_km2": 9.98,
+      "num_cells": 86,
+      "density_rank": 87,
+      "listings_rank": 84
+    },
+    {
+      "location": "switzerland/geneva",
+      "max_listings_per_cell": 20.01,
+      "max_density_per_km2": 199.22,
+      "avg_cell_area_km2": 0.100445,
+      "total_area_km2": 9.94,
+      "num_cells": 99,
+      "density_rank": 85,
+      "listings_rank": 85
+    },
+    {
+      "location": "switzerland/vaud",
+      "max_listings_per_cell": 19.13,
+      "max_density_per_km2": 189.98,
+      "avg_cell_area_km2": 0.100709,
+      "total_area_km2": 9.97,
+      "num_cells": 99,
+      "density_rank": 86,
+      "listings_rank": 86
+    },
+    {
+      "location": "belgium/antwerp",
+      "max_listings_per_cell": 19.02,
+      "max_density_per_km2": 211.34,
+      "avg_cell_area_km2": 0.089996,
+      "total_area_km2": 9.99,
+      "num_cells": 111,
+      "density_rank": 83,
+      "listings_rank": 87
+    },
+    {
+      "location": "belize/belize",
+      "max_listings_per_cell": 18.66,
+      "max_density_per_km2": 176.91,
+      "avg_cell_area_km2": 0.105513,
+      "total_area_km2": 9.92,
+      "num_cells": 94,
+      "density_rank": 89,
+      "listings_rank": 88
+    },
+    {
+      "location": "united-states/denver",
+      "max_listings_per_cell": 18.3,
+      "max_density_per_km2": 160.92,
+      "avg_cell_area_km2": 0.113716,
+      "total_area_km2": 9.89,
+      "num_cells": 87,
+      "density_rank": 92,
+      "listings_rank": 89
+    },
+    {
+      "location": "australia/western-australia",
+      "max_listings_per_cell": 17.89,
+      "max_density_per_km2": 212.62,
+      "avg_cell_area_km2": 0.084403,
+      "total_area_km2": 9.96,
+      "num_cells": 118,
+      "density_rank": 82,
+      "listings_rank": 90
+    },
+    {
+      "location": "sweden/stockholm",
+      "max_listings_per_cell": 17.42,
+      "max_density_per_km2": 219.98,
+      "avg_cell_area_km2": 0.079189,
+      "total_area_km2": 9.98,
+      "num_cells": 126,
+      "density_rank": 78,
+      "listings_rank": 91
+    },
+    {
+      "location": "italy/bergamo",
+      "max_listings_per_cell": 17.23,
+      "max_density_per_km2": 164.82,
+      "avg_cell_area_km2": 0.104548,
+      "total_area_km2": 9.93,
+      "num_cells": 95,
+      "density_rank": 91,
+      "listings_rank": 92
+    },
+    {
+      "location": "united-states/santa-clara-county",
+      "max_listings_per_cell": 16.16,
+      "max_density_per_km2": 146.36,
+      "avg_cell_area_km2": 0.110377,
+      "total_area_km2": 9.93,
+      "num_cells": 90,
+      "density_rank": 94,
+      "listings_rank": 93
+    },
+    {
+      "location": "australia/tasmania",
+      "max_listings_per_cell": 16.13,
+      "max_density_per_km2": 132.36,
+      "avg_cell_area_km2": 0.121935,
+      "total_area_km2": 10.0,
+      "num_cells": 82,
+      "density_rank": 98,
+      "listings_rank": 94
+    },
+    {
+      "location": "united-kingdom/bristol",
+      "max_listings_per_cell": 15.43,
+      "max_density_per_km2": 158.88,
+      "avg_cell_area_km2": 0.097126,
+      "total_area_km2": 9.91,
+      "num_cells": 102,
+      "density_rank": 93,
+      "listings_rank": 95
+    },
+    {
+      "location": "united-states/jersey-city",
+      "max_listings_per_cell": 15.37,
+      "max_density_per_km2": 145.22,
+      "avg_cell_area_km2": 0.105852,
+      "total_area_km2": 9.95,
+      "num_cells": 94,
+      "density_rank": 96,
+      "listings_rank": 96
+    },
+    {
+      "location": "australia/mornington-peninsula",
+      "max_listings_per_cell": 14.77,
+      "max_density_per_km2": 120.11,
+      "avg_cell_area_km2": 0.122931,
+      "total_area_km2": 9.96,
+      "num_cells": 81,
+      "density_rank": 101,
+      "listings_rank": 97
+    },
+    {
+      "location": "united-states/cambridge",
+      "max_listings_per_cell": 14.2,
+      "max_density_per_km2": 130.83,
+      "avg_cell_area_km2": 0.10851,
+      "total_area_km2": 9.98,
+      "num_cells": 92,
+      "density_rank": 99,
+      "listings_rank": 98
+    },
+    {
+      "location": "united-states/portland",
+      "max_listings_per_cell": 14.13,
+      "max_density_per_km2": 145.97,
+      "avg_cell_area_km2": 0.096774,
+      "total_area_km2": 9.97,
+      "num_cells": 103,
+      "density_rank": 95,
+      "listings_rank": 99
+    },
+    {
+      "location": "united-states/columbus",
+      "max_listings_per_cell": 13.98,
+      "max_density_per_km2": 134.56,
+      "avg_cell_area_km2": 0.103888,
+      "total_area_km2": 9.97,
+      "num_cells": 96,
+      "density_rank": 97,
+      "listings_rank": 100
+    },
+    {
+      "location": "united-states/newark",
+      "max_listings_per_cell": 13.26,
+      "max_density_per_km2": 125.19,
+      "avg_cell_area_km2": 0.105879,
+      "total_area_km2": 9.95,
+      "num_cells": 94,
+      "density_rank": 100,
+      "listings_rank": 101
+    },
+    {
+      "location": "united-states/san-mateo-county",
+      "max_listings_per_cell": 11.78,
+      "max_density_per_km2": 107.35,
+      "avg_cell_area_km2": 0.109709,
+      "total_area_km2": 9.98,
+      "num_cells": 91,
+      "density_rank": 104,
+      "listings_rank": 102
+    },
+    {
+      "location": "canada/ottawa",
+      "max_listings_per_cell": 10.8,
+      "max_density_per_km2": 94.43,
+      "avg_cell_area_km2": 0.114417,
+      "total_area_km2": 9.95,
+      "num_cells": 87,
+      "density_rank": 108,
+      "listings_rank": 103
+    },
+    {
+      "location": "united-states/twin-cities-msa",
+      "max_listings_per_cell": 10.47,
+      "max_density_per_km2": 96.07,
+      "avg_cell_area_km2": 0.108997,
+      "total_area_km2": 9.92,
+      "num_cells": 91,
+      "density_rank": 106,
+      "listings_rank": 104
+    },
+    {
+      "location": "united-states/santa-cruz-county",
+      "max_listings_per_cell": 10.47,
+      "max_density_per_km2": 94.38,
+      "avg_cell_area_km2": 0.110898,
+      "total_area_km2": 9.98,
+      "num_cells": 90,
+      "density_rank": 109,
+      "listings_rank": 105
+    },
+    {
+      "location": "canada/victoria",
+      "max_listings_per_cell": 10.05,
+      "max_density_per_km2": 111.27,
+      "avg_cell_area_km2": 0.090247,
+      "total_area_km2": 9.93,
+      "num_cells": 110,
+      "density_rank": 102,
+      "listings_rank": 106
+    },
+    {
+      "location": "the-netherlands/the-hague",
+      "max_listings_per_cell": 9.66,
+      "max_density_per_km2": 109.55,
+      "avg_cell_area_km2": 0.088219,
+      "total_area_km2": 9.97,
+      "num_cells": 113,
+      "density_rank": 103,
+      "listings_rank": 107
+    },
+    {
+      "location": "canada/new-brunswick",
+      "max_listings_per_cell": 9.57,
+      "max_density_per_km2": 84.9,
+      "avg_cell_area_km2": 0.112725,
+      "total_area_km2": 9.92,
+      "num_cells": 88,
+      "density_rank": 112,
+      "listings_rank": 108
+    },
+    {
+      "location": "united-states/oakland",
+      "max_listings_per_cell": 9.37,
+      "max_density_per_km2": 85.59,
+      "avg_cell_area_km2": 0.109514,
+      "total_area_km2": 9.97,
+      "num_cells": 91,
+      "density_rank": 111,
+      "listings_rank": 109
+    },
+    {
+      "location": "united-states/asheville",
+      "max_listings_per_cell": 9.07,
+      "max_density_per_km2": 95.22,
+      "avg_cell_area_km2": 0.095211,
+      "total_area_km2": 10.0,
+      "num_cells": 105,
+      "density_rank": 107,
+      "listings_rank": 110
+    },
+    {
+      "location": "belgium/ghent",
+      "max_listings_per_cell": 9.02,
+      "max_density_per_km2": 100.46,
+      "avg_cell_area_km2": 0.089762,
+      "total_area_km2": 9.96,
+      "num_cells": 111,
+      "density_rank": 105,
+      "listings_rank": 111
+    },
+    {
+      "location": "the-netherlands/rotterdam",
+      "max_listings_per_cell": 8.22,
+      "max_density_per_km2": 92.71,
+      "avg_cell_area_km2": 0.088697,
+      "total_area_km2": 9.93,
+      "num_cells": 112,
+      "density_rank": 110,
+      "listings_rank": 112
+    },
+    {
+      "location": "canada/winnipeg",
+      "max_listings_per_cell": 8.08,
+      "max_density_per_km2": 70.98,
+      "avg_cell_area_km2": 0.113831,
+      "total_area_km2": 9.9,
+      "num_cells": 87,
+      "density_rank": 113,
+      "listings_rank": 113
+    },
+    {
+      "location": "united-states/fort-worth",
+      "max_listings_per_cell": 7.96,
+      "max_density_per_km2": 67.43,
+      "avg_cell_area_km2": 0.118114,
+      "total_area_km2": 9.92,
+      "num_cells": 84,
+      "density_rank": 114,
+      "listings_rank": 114
+    },
+    {
+      "location": "united-states/rochester",
+      "max_listings_per_cell": 7.4,
+      "max_density_per_km2": 66.89,
+      "avg_cell_area_km2": 0.110638,
+      "total_area_km2": 9.96,
+      "num_cells": 90,
+      "density_rank": 115,
+      "listings_rank": 115
+    },
+    {
+      "location": "united-states/bozeman",
+      "max_listings_per_cell": 5.05,
+      "max_density_per_km2": 49.16,
+      "avg_cell_area_km2": 0.102743,
+      "total_area_km2": 9.97,
+      "num_cells": 97,
+      "density_rank": 116,
+      "listings_rank": 116
+    },
+    {
+      "location": "united-states/pacific-grove",
+      "max_listings_per_cell": 4.92,
+      "max_density_per_km2": 44.17,
+      "avg_cell_area_km2": 0.11135,
+      "total_area_km2": 6.79,
+      "num_cells": 61,
+      "density_rank": 117,
+      "listings_rank": 117
+    },
+    {
+      "location": "united-states/albany",
+      "max_listings_per_cell": 4.67,
+      "max_density_per_km2": 42.64,
+      "avg_cell_area_km2": 0.109521,
+      "total_area_km2": 9.97,
+      "num_cells": 91,
+      "density_rank": 118,
+      "listings_rank": 118
+    },
+    {
+      "location": "australia/barossa-valley",
+      "max_listings_per_cell": 2.63,
+      "max_density_per_km2": 22.26,
+      "avg_cell_area_km2": 0.118186,
+      "total_area_km2": 9.93,
+      "num_cells": 84,
+      "density_rank": 120,
+      "listings_rank": 119
+    },
+    {
+      "location": "united-states/salem-or",
+      "max_listings_per_cell": 2.49,
+      "max_density_per_km2": 25.53,
+      "avg_cell_area_km2": 0.097527,
+      "total_area_km2": 9.95,
+      "num_cells": 102,
+      "density_rank": 119,
+      "listings_rank": 120
+    }
+  ]
+}
