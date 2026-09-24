@@ -776,6 +776,203 @@ export function patchOutline(polar: Polar, size: number, direction: Direction, m
   return direction === 'reverse' ? spherePatch(polar, size, mode) : planePatch(polar, size);
 }
 
+// ---------------------------------------------------------------------------
+// Tissot's indicatrix
+// ---------------------------------------------------------------------------
+
+/**
+ * How many steps each edge of a face triangle is cut into. Four puts the centres
+ * a quarter of the apothem apart along the cusp ray to the edge midpoint, and a
+ * little closer and further along the other two edges.
+ */
+const TISSOT_DIVISIONS = 4;
+
+/** Radius of each circle, small enough that the ellipses stay clear of each other */
+const TISSOT_RADIUS = 0.0375 * FACE_APOTHEM;
+
+const TISSOT_SEGMENTS = 60;
+
+/**
+ * One-sided difference step. Forward differences are only first-order accurate,
+ * but at this step the truncation error is a millionth of the ellipse, far below
+ * anything drawn, and the rounding error is smaller still.
+ */
+const TISSOT_STEP = 1e-6;
+
+/**
+ * The same, on the unit sphere, for the inverse map. Coarser, because the parallel
+ * modes' numerical inverse loses digits near the point their small circles close
+ * on — the face centre for DPEA, the edge midpoint for RPEA — and at that point
+ * itself does not come back to it at all. At this step it has converged, and the
+ * forward-difference error is a ten-thousandth of the ellipse.
+ */
+const TISSOT_INVERSE_STEP = 1e-4;
+
+/**
+ * Tissot's indicatrices, as outlines on both sides of the projection.
+ *
+ * Each is the image of an infinitesimal circle: for every direction u around it,
+ * the one-sided directional derivative (f(p + h·u) - f(p)) / h, drawn out to the
+ * circle's radius. Where the map is smooth that is J·u, and the circle goes to an
+ * ellipse whose axes are J's singular values.
+ *
+ * On a seam it is not. A cusp ray or a face edge has a different Jacobian on each
+ * side, which agree along the seam but not across it, so the indicatrix is half of
+ * one ellipse joined to half of the other, and it kinks where the circle crosses
+ * the seam. That angle is the cusp's distortion, and taking one Jacobian for the
+ * whole circle would hide it. The face centre, where all ten cusps meet, is made
+ * of ten such pieces.
+ *
+ * Only the side the projection is read from is given circles; the other gets their
+ * images, through the map or its inverse. Both are taken in 3D rather than in
+ * either polar frame, so the single face option leaves them alone, as it should —
+ * the indicatrix is intrinsic to the map. Scaled to SPHERE_RADIUS, an equal-area
+ * mode gives every ellipse the circle's own area.
+ */
+export interface TissotIndicatrices {
+  face: Face[][];
+  /** On the unit sphere, to be scaled up at draw time */
+  sphere: Cartesian[][];
+}
+
+/**
+ * The triangles the projection is assembled from: the face's ten, each running
+ * centre, edge midpoint, corner, and their ten reflections across the face edge,
+ * which run from the mirrored centre instead. Every edge of every one is a seam.
+ */
+function projectionTriangles(): [Face, Face, Face][] {
+  const triangles: [Face, Face, Face][] = [];
+  const centre = [0, 0] as Face;
+  for (let i = 0; i < 5; i++) {
+    const angle = i * TWO_PI_OVER_5;
+    const midpoint = toFace([FACE_APOTHEM, angle] as Polar);
+    const mirrored = toFace([DOMAIN_CIRCUMRADIUS, angle] as Polar);
+    for (const side of [-1, 1]) {
+      const corner = toFace([FACE_CIRCUMRADIUS, angle + side * PI_OVER_5] as Polar);
+      triangles.push([centre, midpoint, corner], [mirrored, midpoint, corner]);
+    }
+  }
+  return triangles;
+}
+
+/**
+ * The centres, on a barycentric grid over each triangle, so that a row of them runs
+ * along every seam — where the indicatrices kink — and the rest fill the interiors
+ * at much the same spacing. The seams are shared between neighbouring triangles, so
+ * the points on them are kept once. Each triangle's third vertex is a face corner.
+ */
+function tissotCentres(): Face[] {
+  const n = TISSOT_DIVISIONS;
+  const seen = new Set<string>();
+  const centres: Face[] = [];
+  const triangles = projectionTriangles();
+  for (let t = 0; t < triangles.length; t++) {
+    const [a, b, c] = triangles[t];
+    for (let i = 0; i <= n; i++) {
+      for (let j = 0; i + j <= n; j++) {
+        const k = n - i - j;
+        // Not the corner itself: three faces meet there, 324 degrees of face
+        // rather than 360, so no flat chart has a whole neighbourhood of it and
+        // the circle has nothing to map through
+        if (k === n) continue;
+        const x = (i * a[0] + j * b[0] + k * c[0]) / n;
+        const y = (i * a[1] + j * b[1] + k * c[1]) / n;
+        const key = `${x.toFixed(9)},${y.toFixed(9)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        centres.push([x, y] as Face);
+      }
+    }
+  }
+  return centres;
+}
+
+export function tissotIndicatrices(mode: ProjectionMode, direction: Direction): TissotIndicatrices {
+  const face: Face[][] = [];
+  const sphere: Cartesian[][] = [];
+  const centres = tissotCentres();
+  for (let i = 0; i < centres.length; i++) {
+    const indicatrix = direction === 'forward' ? forwardTissot(centres[i], mode) : reverseTissot(centres[i], mode);
+    face.push(indicatrix.face);
+    sphere.push(indicatrix.sphere);
+  }
+  return {face, sphere};
+}
+
+/** A point `offset` away from `point` in its tangent plane, back on the unit sphere */
+function offsetOnSphere(point: Cartesian, offset: number[]): Cartesian {
+  const x = point[0] + offset[0];
+  const y = point[1] + offset[1];
+  const z = point[2] + offset[2];
+  const length = Math.hypot(x, y, z);
+  return [x / length, y / length, z / length] as Cartesian;
+}
+
+const faceToSphere = (x: number, y: number, mode: ProjectionMode) => polarToCartesian(toPolar([x, y] as Face), mode);
+
+/** A circle on the face, and its image on the sphere */
+function forwardTissot(centre: Face, mode: ProjectionMode): {face: Face[]; sphere: Cartesian[]} {
+  const h = TISSOT_STEP;
+  const point = faceToSphere(centre[0], centre[1], mode);
+  // Face units to unit-sphere units, on the sphere the projection is equal-area onto
+  const scale = TISSOT_RADIUS / h;
+  const face: Face[] = [];
+  const sphere: Cartesian[] = [];
+  for (let i = 0; i <= TISSOT_SEGMENTS; i++) {
+    const t = (TWO_PI * i) / TISSOT_SEGMENTS;
+    const u = Math.cos(t);
+    const v = Math.sin(t);
+    const stepped = faceToSphere(centre[0] + h * u, centre[1] + h * v, mode);
+    face.push([centre[0] + TISSOT_RADIUS * u, centre[1] + TISSOT_RADIUS * v] as Face);
+    sphere.push(
+      offsetOnSphere(point, [
+        (stepped[0] - point[0]) * scale,
+        (stepped[1] - point[1]) * scale,
+        (stepped[2] - point[2]) * scale
+      ])
+    );
+  }
+  return {face, sphere};
+}
+
+/** A circle on the sphere, about the image of `centre`, and its preimage on the face */
+function reverseTissot(centre: Face, mode: ProjectionMode): {face: Face[]; sphere: Cartesian[]} {
+  // Differenced against the centre rather than its round trip, which the parallel
+  // modes get wrong at their closing point: see TISSOT_INVERSE_STEP
+  const h = TISSOT_INVERSE_STEP;
+  const point = faceToSphere(centre[0], centre[1], mode);
+
+  // Any orthonormal basis of the tangent plane will do for a circle
+  const pole = Math.abs(point[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+  const U = [
+    pole[1] * point[2] - pole[2] * point[1],
+    pole[2] * point[0] - pole[0] * point[2],
+    pole[0] * point[1] - pole[1] * point[0]
+  ];
+  const length = Math.hypot(U[0], U[1], U[2]);
+  U[0] /= length;
+  U[1] /= length;
+  U[2] /= length;
+  const V = [point[1] * U[2] - point[2] * U[1], point[2] * U[0] - point[0] * U[2], point[0] * U[1] - point[1] * U[0]];
+
+  const radius = TISSOT_RADIUS / SPHERE_RADIUS;
+  const scale = radius / h;
+  const face: Face[] = [];
+  const sphere: Cartesian[] = [];
+  for (let i = 0; i <= TISSOT_SEGMENTS; i++) {
+    const t = (TWO_PI * i) / TISSOT_SEGMENTS;
+    const w = [
+      Math.cos(t) * U[0] + Math.sin(t) * V[0],
+      Math.cos(t) * U[1] + Math.sin(t) * V[1],
+      Math.cos(t) * U[2] + Math.sin(t) * V[2]
+    ];
+    const stepped = toFace(cartesianToPolar(offsetOnSphere(point, [h * w[0], h * w[1], h * w[2]]), mode));
+    sphere.push(offsetOnSphere(point, [radius * w[0], radius * w[1], radius * w[2]]));
+    face.push([centre[0] + (stepped[0] - centre[0]) * scale, centre[1] + (stepped[1] - centre[1]) * scale] as Face);
+  }
+  return {face, sphere};
+}
+
 /** A piece of the domain's image on the unit sphere, ready for a BufferGeometry */
 export interface DomainMesh {
   positions: Float32Array;
