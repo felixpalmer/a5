@@ -626,7 +626,9 @@ export function ControlPanel({
   onSingleFaceChange,
   onDirectionChange,
   showGrid,
-  onShowGridChange
+  onShowGridChange,
+  showTissot,
+  onShowTissotChange
 }: {
   frame: FrameJacobian;
   projection: ProjectionMode;
@@ -648,6 +650,8 @@ export function ControlPanel({
   onDirectionChange: (direction: Direction) => void;
   showGrid: boolean;
   onShowGridChange: (show: boolean) => void;
+  showTissot: boolean;
+  onShowTissotChange: (show: boolean) => void;
 }) {
   return (
     <div
@@ -691,6 +695,12 @@ export function ControlPanel({
         checked={showGrid}
         title="Draw the grid lines of whichever side the projection is read from"
         onChange={onShowGridChange}
+      />
+      <Check
+        label="Tissot indicatrix"
+        checked={showTissot}
+        title="A field of circles on the side the projection is read from, and their images under the Jacobian on the other. Each ellipse's axes are the local scale factors; under an equal-area projection every ellipse keeps the circle's area, and only its shape changes"
+        onChange={onShowTissotChange}
       />
       <Check
         label="Single face frame"

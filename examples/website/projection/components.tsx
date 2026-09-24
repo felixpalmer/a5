@@ -10,7 +10,7 @@ import {toFace, toPolar} from 'a5/core/coordinate-transforms';
 import type {Cartesian, Face, Polar} from 'a5/core/coordinate-systems';
 import type {ProjectionMode} from './projection';
 import type {DeformationRaster} from './deformation';
-import type {Direction, RayWeight} from './geometry';
+import type {Direction, RayWeight, TissotIndicatrices} from './geometry';
 import {
   cartesianToPolar,
   cellOutline,
@@ -39,6 +39,7 @@ export const COLORS = {
   domainOutline: 'rgba(255, 255, 255, 0.45)',
   cell: '#4dd0e1',
   sag: '#ff2d55',
+  tissot: '#ff3b30',
   patch: '#ffb400',
   radial: '#d84315',
   azimuthal: '#1565c0'
@@ -79,6 +80,7 @@ export function FaceView({
   direction,
   showGrid,
   projection,
+  tissot,
   onHover
 }: {
   polar: Polar;
@@ -88,6 +90,7 @@ export function FaceView({
   direction: Direction;
   showGrid: boolean;
   projection: ProjectionMode;
+  tissot: TissotIndicatrices | null;
   onHover: (polar: Polar) => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -109,6 +112,14 @@ export function FaceView({
   const cellPaths = useMemo(
     () => cells.map(cell => `M${cell.map(v => `${v[0].toFixed(5)},${v[1].toFixed(5)}`).join('L')}Z`),
     [cells]
+  );
+  // One path for the whole field, so it costs a single element
+  const tissotPath = useMemo(
+    () =>
+      tissot
+        ? tissot.face.map(ring => `M${ring.map(v => `${v[0].toFixed(5)},${v[1].toFixed(5)}`).join('L')}Z`).join('')
+        : null,
+    [tissot]
   );
   const patch = useMemo(
     () => toPath(patchOutline(polar, PATCH_SIZE, direction, projection), true),
@@ -198,6 +209,18 @@ export function FaceView({
               vectorEffect="non-scaling-stroke"
             />
           ))}
+
+          {tissotPath && (
+            <path
+              d={tissotPath}
+              fill={COLORS.tissot}
+              fillOpacity={0.18}
+              stroke={COLORS.tissot}
+              strokeOpacity={0.85}
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
 
           <polygon
             points={domainOutline}
@@ -390,6 +413,68 @@ function ProjectedSag({cells, projection}: {cells: Face[][]; projection: Project
   );
 }
 
+/**
+ * The indicatrices on the sphere, filled as triangle fans about each ring's mean
+ * and outlined, one draw for each
+ */
+function ProjectedTissot({tissot}: {tissot: TissotIndicatrices}) {
+  const {geometry, outline} = useMemo(() => {
+    const radius = SPHERE_RADIUS * 1.002;
+    const outline: [number, number, number][] = [];
+    let vertices = 0;
+    for (const ring of tissot.sphere) vertices += ring.length + 1;
+    const positions = new Float32Array(vertices * 3);
+    const indices: number[] = [];
+    let base = 0;
+    for (const ring of tissot.sphere) {
+      // The rings are closed, so the last point repeats the first
+      const count = ring.length - 1;
+      let cx = 0;
+      let cy = 0;
+      let cz = 0;
+      for (let i = 0; i < count; i++) {
+        cx += ring[i][0];
+        cy += ring[i][1];
+        cz += ring[i][2];
+      }
+      const length = Math.hypot(cx, cy, cz);
+      positions.set([(cx / length) * radius, (cy / length) * radius, (cz / length) * radius], base * 3);
+      for (let i = 0; i < ring.length; i++) {
+        const point: [number, number, number] = [ring[i][0] * radius, ring[i][1] * radius, ring[i][2] * radius];
+        positions.set(point, (base + 1 + i) * 3);
+        if (i > 0) {
+          indices.push(base, base + i, base + 1 + i);
+          outline.push([ring[i - 1][0] * radius, ring[i - 1][1] * radius, ring[i - 1][2] * radius], point);
+        }
+      }
+      base += ring.length + 1;
+    }
+    const built = new BufferGeometry();
+    built.setAttribute('position', new BufferAttribute(positions, 3));
+    built.setIndex(indices);
+    return {geometry: built, outline};
+  }, [tissot]);
+
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  if (!outline.length) return null;
+  return (
+    <>
+      <mesh geometry={geometry}>
+        <meshBasicMaterial
+          color={COLORS.tissot}
+          transparent
+          opacity={0.18}
+          side={DoubleSide}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+      <Line points={outline} segments color={COLORS.tissot} transparent opacity={0.85} lineWidth={1} />
+    </>
+  );
+}
+
 /** All cell edges as one line-segment soup, so the overlay costs a single draw */
 function ProjectedCells({cells, projection}: {cells: Face[][]; projection: ProjectionMode}) {
   const points = useMemo(() => {
@@ -416,6 +501,7 @@ function Scene({
   ownFrame,
   direction,
   showGrid,
+  tissot,
   onHover
 }: {
   polar: Polar;
@@ -426,6 +512,7 @@ function Scene({
   ownFrame: boolean;
   direction: Direction;
   showGrid: boolean;
+  tissot: TissotIndicatrices | null;
   onHover: (polar: Polar) => void;
 }) {
   const boundary = useMemo(() => lift(faceBoundary(), 1.002, projection), [projection]);
@@ -480,6 +567,7 @@ function Scene({
         ) : (
           <ProjectedCells cells={cells} projection={projection} />
         )}
+        {tissot && <ProjectedTissot tissot={tissot} />}
         <Line
           points={outerBoundary}
           color={COLORS.domainOutline}
@@ -515,6 +603,7 @@ export function SphereView({
   ownFrame,
   direction,
   showGrid,
+  tissot,
   onHover
 }: {
   polar: Polar;
@@ -525,6 +614,7 @@ export function SphereView({
   ownFrame: boolean;
   direction: Direction;
   showGrid: boolean;
+  tissot: TissotIndicatrices | null;
   onHover: (polar: Polar) => void;
 }) {
   return (
@@ -547,6 +637,7 @@ export function SphereView({
           ownFrame={ownFrame}
           direction={direction}
           showGrid={showGrid}
+          tissot={tissot}
           onHover={onHover}
         />
       </Suspense>

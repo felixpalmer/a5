@@ -17,7 +17,7 @@ import {
 } from './deformation';
 import type {RasterQuantity} from './deformation';
 import type {Direction} from './geometry';
-import {computeJacobian, decompose, deformationValues, faceCells, toFrame} from './geometry';
+import {computeJacobian, decompose, deformationValues, faceCells, tissotIndicatrices, toFrame} from './geometry';
 import {DEFAULT_PROJECTION_MODE} from './projection';
 import type {ProjectionMode} from './projection';
 
@@ -69,6 +69,7 @@ const App: React.FC = () => {
   // then the straight side and the sphere is where the kinks show
   const [direction, setDirection] = useState<Direction>('forward');
   const [showGrid, setShowGrid] = useState(true);
+  const [showTissot, setShowTissot] = useState(false);
   const ownFrame = !singleFace;
   // Projection independent: the lattice lives in the plane, only its image moves
   const cells = useMemo(() => (cellOption === 'off' ? [] : faceCells(Number(cellOption))), [cellOption]);
@@ -86,6 +87,11 @@ const App: React.FC = () => {
   // What the hovered point reads, so the legend can mark it on the ramp
   const hovered = useMemo(() => deformationValues(decompose(frame)), [frame]);
   const edges = useEdgeMetrics(cells, projection);
+  // Circles on the side the projection is read from, their images on the other
+  const tissot = useMemo(
+    () => (showTissot ? tissotIndicatrices(projection, direction) : null),
+    [showTissot, projection, direction]
+  );
 
   return (
     <div
@@ -106,6 +112,7 @@ const App: React.FC = () => {
           direction={direction}
           showGrid={showGrid}
           projection={projection}
+          tissot={tissot}
           onHover={setPolar}
         />
       </div>
@@ -121,6 +128,7 @@ const App: React.FC = () => {
           ownFrame={ownFrame}
           direction={direction}
           showGrid={showGrid}
+          tissot={tissot}
           onHover={setPolar}
         />
       </div>
@@ -146,6 +154,8 @@ const App: React.FC = () => {
         onDirectionChange={setDirection}
         showGrid={showGrid}
         onShowGridChange={setShowGrid}
+        showTissot={showTissot}
+        onShowTissotChange={setShowTissot}
       />
     </div>
   );
