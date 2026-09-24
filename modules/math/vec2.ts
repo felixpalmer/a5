@@ -13,6 +13,13 @@ export function create(): Vec2 {
   return new Float64Array(2);
 }
 
+/** Copy the values from one vec2 to another. */
+export function copy(out: Vec2, a: Vec2): Vec2 {
+  out[0] = a[0];
+  out[1] = a[1];
+  return out;
+}
+
 /** Creates a new vec2 initialized with values from an existing vector. */
 export function clone(a: Vec2): Vec2 {
   const out = new Float64Array(2);

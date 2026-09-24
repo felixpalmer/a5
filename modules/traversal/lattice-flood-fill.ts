@@ -6,7 +6,7 @@ import type {Orientation} from '../lattice';
 import {sToTriple, tripleToS} from '../lattice';
 import type {Origin} from '../core/utils';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
-import {segmentToQuintant} from '../core/origin';
+import {SEGMENT_TO_ORIENTATION} from '../core/origin';
 
 /** Per-quintant context needed to convert triples back to cell IDs. */
 interface QuintantCtx {
@@ -67,7 +67,7 @@ function cellToQuintantKey(
   yStride: number
 ): {quintantIdx: number; key: number; ctx: QuintantCtx} {
   const {origin, segment, S} = deserialize(cellId);
-  const {orientation} = segmentToQuintant(segment, origin);
+  const orientation = SEGMENT_TO_ORIENTATION[origin.id * 5 + segment];
   const triple = sToTriple(S, hilbertRes, orientation);
   const parity = triple.x + triple.y + triple.z; // 0 or 1
   return {

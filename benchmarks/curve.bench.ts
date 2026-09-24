@@ -3,7 +3,6 @@
 // Copyright (c) A5 contributors
 
 // Benchmarks for the space-filling curve: s -> cell decode, cell -> s encode,
-// and fractional-point location (IJToS).
 //
 // CI runs these same files against both the PR and its merge-base, so they
 // must run on either side of the L-system migration: the adapters below pick
@@ -104,20 +103,4 @@ describe('tripleToS', () => {
       BENCH_OPTS
     );
   }
-});
-
-describe('IJToS', () => {
-  const values = sampleS(15, N);
-  const ijs: IJ[] = new Array(N);
-  for (let i = 0; i < N; i++) {
-    ijs[i] = centroidIJ(tripleOf(values[i], 15, 'uv'));
-  }
-  let i = 0;
-  bench(
-    'IJToS res 15',
-    () => {
-      lattice.IJToS(ijs[i++ & (N - 1)], 15, 'uv');
-    },
-    BENCH_OPTS
-  );
 });

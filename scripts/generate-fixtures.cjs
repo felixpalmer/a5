@@ -26,7 +26,6 @@ require('./fixtures/core/compact.cjs');
 
 // Utils generators
 require('./fixtures/utils/great-circle.cjs');
-require('./fixtures/utils/spiral.cjs');
 
 // Region generators
 require('./fixtures/regions/polygon.cjs');
