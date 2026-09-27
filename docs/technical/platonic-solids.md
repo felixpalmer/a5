@@ -26,13 +26,15 @@ The *regular dodecahedron* is the **Platonic solid** that most closely approxima
 
 ## Resolution 1
 
-The next resolution level subdivides each *regular pentagon* **primitive** into 5 [*icosceles triangles*](https://en.wikipedia.org/wiki/Isosceles_triangle) - yielding a total of **60 quintants**. Together these form a **solid** [*pentakis dodecahedron*](https://en.wikipedia.org/wiki/Pentakis_dodecahedron). For clarity, the term **quintant** is used to refer to this primitive, as it forms a fifth of the pentagonal dodecahedron face.
+The next resolution level divides each *regular pentagon* face into 5 [*isosceles triangles*](https://en.wikipedia.org/wiki/Isosceles_triangle), yielding a total of **60 quintants**, which together form a [*pentakis dodecahedron*](https://en.wikipedia.org/wiki/Pentakis_dodecahedron). The term **quintant** is used as each forms a fifth of a dodecahedron face. The quintants are the units the cell index is organized by: every cell at resolution 1 and beyond belongs to exactly one quintant.
 
 <img src={SolidPentakis} style={{width: "100%", maxWidth: "360px"}}/>
 
+The cells themselves are pentagons, one per quintant. Each is the single cell of the [pentagon tiling](./the-pentagon-that-could) at its coarsest scale: anchored at the center of the dodecahedron face, it covers most of its quintant and reaches into the neighboring ones. Together the **60 cells** form a [*pentagonal hexecontahedron*](https://en.wikipedia.org/wiki/Pentagonal_hexecontahedron), whose faces are all congruent. As at every other resolution, each cell is a pentagon with 5 edge neighbors.
+
 ## Resolution 2
 
-For higher resolution levels it is necessary to sub-divide each **quintant** primitive into smaller cells. This is [achieved with a tiling](./the-pentagon-that-could) using an *irregular pentagon* as a **primitive**, where each additional resolution level **quadruples** the number of cells. Thus resolution **level 2** gives **240 cells**, **level 3** gives **960 cells** and so on.
+For higher resolution levels the quintant is tiled with ever smaller cells. This is [achieved with a tiling](./the-pentagon-that-could) using an *irregular pentagon* as a **primitive**, where each additional resolution level **quadruples** the number of cells. Thus resolution **level 2** gives **240 cells**, **level 3** gives **960 cells** and so on.
 
 These cells together form a **solid** (technically is it a partitioning of a sphere), which as far as the author is aware, has not yet been described and will be refered to as a *teohedron*.
 

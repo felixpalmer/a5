@@ -12,7 +12,14 @@ import {findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmen
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {A5Cell, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
-import {getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar, getQuintantVertices} from './tiling';
+import {
+  getFaceVertices,
+  getPentagonCenter,
+  getPentagonVertices,
+  getQuintantPolar,
+  getRes1PentagonCenter,
+  getRes1PentagonVertices
+} from './tiling';
 import {PI_OVER_5} from './constants';
 import {IJToS, sToCell} from '../lattice';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, WORLD_CELL} from './serialization';
@@ -58,9 +65,13 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
     return WORLD_CELL;
   }
 
-  if (resolution < FIRST_HILBERT_RESOLUTION) {
-    // For low resolutions there is no Hilbert curve, so we can just return as the result is exact
+  if (resolution === 0) {
+    // The dodecahedron face containing the point is exact
     return serialize(_sphericalToEstimate(spherical, resolution));
+  }
+
+  if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
+    return _sphericalToRes1Cell(spherical);
   }
 
   // Try the cached pentagon first — skips the full estimate pipeline when
@@ -122,6 +133,31 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   return cacheResult(deserialize(fallbackKey), fallbackKey, resolution);
 }
 
+/**
+ * Resolution 1 cells are pentagons that cover most of their quintant and
+ * reach into the neighboring quintants, so the containing cell is either the
+ * quintant the point lies in or one of that quintant's neighbors.
+ */
+function _sphericalToRes1Cell(spherical: Spherical): bigint {
+  const estimate = _sphericalToEstimate(spherical, 1);
+  const estimateKey = serialize(estimate);
+  let bestKey = estimateKey;
+  let bestDistance = a5cellContainsPoint(estimate, spherical);
+  if (bestDistance > 0) return estimateKey;
+
+  const neighbors = getGlobalCellNeighbors(estimateKey);
+  for (let n = 0; n < neighbors.length; n++) {
+    const distance = a5cellContainsPoint(deserialize(neighbors[n]), spherical);
+    if (distance > 0) return neighbors[n];
+    if (distance > bestDistance) {
+      bestDistance = distance;
+      bestKey = neighbors[n];
+    }
+  }
+  // Only reachable within floating-point error of a cell boundary
+  return bestKey;
+}
+
 // Spiral perturbation radius at hilbertResolution=1 (in radians of tangent
 // offset). For higher resolutions we scale by 1/2^hilbertResolution. Tuned
 // empirically (see SPIRAL_SAMPLE_COUNT in utils/spiral.ts).
@@ -176,8 +212,7 @@ function _faceToEstimate(dodecPoint: Face, origin: A5Cell['origin'], resolution:
 export function _getPentagon({S, segment, origin, resolution}: A5Cell): PentagonShape {
   const {quintant, orientation} = segmentToQuintant(segment, origin);
   if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
-    const out = getQuintantVertices(quintant);
-    return out;
+    return getRes1PentagonVertices(quintant);
   } else if (resolution === FIRST_HILBERT_RESOLUTION - 2) {
     return getFaceVertices();
   }
@@ -197,6 +232,10 @@ export function cellToSpherical(cell: bigint): Spherical {
     const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
     const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor);
     return dodecahedron.inverse(center as Face, origin.id);
+  }
+  if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
+    const {quintant} = segmentToQuintant(segment, origin);
+    return dodecahedron.inverse(getRes1PentagonCenter(quintant) as Face, origin.id);
   }
   const pentagon = _getPentagon({S, segment, origin, resolution});
   return dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);

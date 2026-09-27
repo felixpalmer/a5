@@ -30,43 +30,37 @@ function getRes0Neighbors(origin: Origin): bigint[] {
 }
 
 /**
- * Get neighbors of a resolution 1 cell (quintant).
+ * Get neighbors of a resolution 1 cell. Each quintant's cell is a pentagon of
+ * the pentagonal hexecontahedron (see `getRes1PentagonVertices`), so like
+ * every other resolution it has 5 edge neighbors, plus 2 that share only the
+ * 5-valent face-center vertex.
  */
 function getRes1Neighbors(origin: Origin, segment: number, edgeOnly: boolean): bigint[] {
   const {quintant} = segmentToQuintant(segment, origin);
   const neighborSet = new Set<bigint>();
 
-  // Left and right quintant on the same face (A, B)
+  // Left and right quintant on the same face
   const leftQ = (quintant - 1 + 5) % 5;
   const rightQ = (quintant + 1) % 5;
   neighborSet.add(serializeRes1(origin, leftQ));
   neighborSet.add(serializeRes1(origin, rightQ));
 
-  // Adjacent quintant on adjacent face (C)
+  // Across the dodecahedron edge (C), and C's neighbor on its face
   const [adjacentFaceId, adjacentQuintant] = FACE_ADJACENCY[origin.id][quintant];
   const adjacentOrigin = origins[adjacentFaceId];
   neighborSet.add(serializeRes1(adjacentOrigin, adjacentQuintant));
+  neighborSet.add(serializeRes1(adjacentOrigin, (adjacentQuintant - 1 + 5) % 5));
+
+  // Across the right quintant's dodecahedron edge: the third cell around the
+  // dodecahedron vertex this cell touches
+  const [rightAdjacentFaceId, rightAdjacentQuintant] = FACE_ADJACENCY[origin.id][rightQ];
+  neighborSet.add(serializeRes1(origins[rightAdjacentFaceId], rightAdjacentQuintant));
 
   if (edgeOnly) return Array.from(neighborSet).sort(compareBigint);
 
-  // Remaining neighbors on face
+  // Remaining quintants on the face, sharing only the face center
   neighborSet.add(serializeRes1(origin, (quintant - 2 + 5) % 5));
   neighborSet.add(serializeRes1(origin, (quintant + 2) % 5));
-
-  // Left & right quintant neighbors of C
-  neighborSet.add(serializeRes1(adjacentOrigin, (adjacentQuintant - 1 + 5) % 5));
-  neighborSet.add(serializeRes1(adjacentOrigin, (adjacentQuintant + 1) % 5));
-
-  // Two neighbors each from adjacent faces of A & B
-  const [leftAdjacentFaceId, leftAdjacentQuintant] = FACE_ADJACENCY[origin.id][leftQ];
-  const leftAdjacentOrigin = origins[leftAdjacentFaceId];
-  neighborSet.add(serializeRes1(leftAdjacentOrigin, leftAdjacentQuintant));
-  neighborSet.add(serializeRes1(leftAdjacentOrigin, (leftAdjacentQuintant - 1 + 5) % 5));
-
-  const [rightAdjacentFaceId, rightAdjacentQuintant] = FACE_ADJACENCY[origin.id][rightQ];
-  const rightAdjacentOrigin = origins[rightAdjacentFaceId];
-  neighborSet.add(serializeRes1(rightAdjacentOrigin, rightAdjacentQuintant));
-  neighborSet.add(serializeRes1(rightAdjacentOrigin, (rightAdjacentQuintant + 1) % 5));
 
   return Array.from(neighborSet).sort(compareBigint);
 }

@@ -12,7 +12,7 @@ const RESOLUTION = 2;
 // Create a cache for geometries
 const geometryCache = new Map<number, BufferGeometry>();
 
-// Create a merged geometry from all cells (triangles and pentagons)
+// Create a merged geometry from all cells (pentagons)
 function createMergedGeometry(resolution: number) {
   const cells = generateWireframe(resolution);
 
@@ -32,7 +32,7 @@ function createMergedGeometry(resolution: number) {
       return new Vector3(...cartesian);
     });
 
-    // Calculate normal for this cell (works for both triangles and pentagons)
+    // Calculate normal for this cell
     const v1 = vertices[1].clone().sub(vertices[0]);
     const v2 = vertices[2].clone().sub(vertices[0]);
     const normal = new Vector3().crossVectors(v1, v2).normalize();
