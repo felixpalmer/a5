@@ -5,14 +5,16 @@
 import styled from 'styled-components';
 import {isMobile} from '../common';
 
+// $underNavbar: pixels the banner extends up behind the (translucent) navbar
 export const Banner = styled.section`
   position: relative;
-  height: 30rem;
+  height: calc(30rem + ${props => props.$underNavbar ?? 0}px);
+  margin-top: -${props => props.$underNavbar ?? 0}px;
   background: var(--ifm-color-gray-400);
   color: var(--ifm-color-gray-200);
   z-index: 0;
   ${isMobile} {
-    height: 80vh;
+    height: calc(80vh + ${props => props.$underNavbar ?? 0}px);
   }
 `;
 
@@ -89,5 +91,38 @@ export const GetStartedLink = styled.a`
   &:hover {
     color: var(--ifm-color-white);
     background-color: var(--ifm-color-primary);
+  }
+`;
+
+// The banner's tagline on its own: large, vertically centered in the space
+// left of the hero example (below $top pixels covered by the navbar). The
+// example publishes where its logo starts as --hero-logo-left; the tagline
+// ends 2rem short of it, scaling its text down to fit (its longest line is
+// ~8.8em wide). Dropped along with the full navbar, where there's no room
+export const Tagline = styled.div`
+  position: absolute;
+  top: ${props => props.$top ?? 0}px;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: calc(var(--hero-logo-left, 38rem) - 2rem);
+  padding-left: 4rem;
+  pointer-events: none;
+
+  p {
+    margin: 0;
+    /* Three lines, around its longest word */
+    max-width: 10em;
+    font-size: min(2.1rem, calc((var(--hero-logo-left, 38rem) - 6rem) / 8.8));
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #ececf4;
+    text-wrap: balance;
+  }
+  @media screen and (max-width: 996px) {
+    display: none;
   }
 `;
