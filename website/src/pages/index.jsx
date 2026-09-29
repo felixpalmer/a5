@@ -389,6 +389,12 @@ const INSTALL = {
 
 // Same order as ECOSYSTEM
 const CODE = {
+  DuckDB: `INSTALL a5 FROM community;
+LOAD a5;
+
+SELECT a5_cell_to_boundary(
+  a5_cell_to_parent(a5_lonlat_to_cell(2.2945, 48.8584, 20), 10)
+);`,
   Python: `import a5
 
 cell = a5.lonlat_to_cell((2.2945, 48.8584), 20)
@@ -399,12 +405,6 @@ polygon = a5.cell_to_boundary(district)`,
 cell <- a5_lonlat_to_cell(2.2945, 48.8584, resolution = 20)
 district <- a5_cell_to_parent(cell, resolution = 10)
 polygon <- a5_cell_to_boundary(district)`,
-  DuckDB: `INSTALL a5 FROM community;
-LOAD a5;
-
-SELECT a5_cell_to_boundary(
-  a5_cell_to_parent(a5_lonlat_to_cell(2.2945, 48.8584, 20), 10)
-);`,
   JavaScript: `import {lonLatToCell, cellToParent, cellToBoundary} from 'a5-js';
 
 const cell = lonLatToCell([2.2945, 48.8584], 20);
@@ -419,9 +419,9 @@ let polygon = cell_to_boundary(district, None)?;`
 
 // Ordered by relevance to data science; logos live in static/images/logos
 const ECOSYSTEM = [
+  ['DuckDB', '/docs/quickstart/duckdb', 'duckdb.svg'],
   ['Python', '/docs/quickstart/python', 'python.svg'],
   ['R', 'https://belian-earth.github.io/a5R/', 'r.svg'],
-  ['DuckDB', '/docs/quickstart/duckdb', 'duckdb.svg'],
   ['TypeScript', '/docs/quickstart/javascript', 'typescript.svg'],
   ['GeoParquet', 'https://geoparquet.io/guide/partition/#by-a5-cells', 'apacheparquet.svg'],
   ['deck.gl', 'https://deck.gl/docs/api-reference/geo-layers/a5-layer', 'deckgl.svg'],
