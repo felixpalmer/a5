@@ -1,5 +1,4 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {createPortal} from 'react-dom';
 import {createRoot} from 'react-dom/client';
 import {
   AdditiveBlending,
@@ -134,79 +133,55 @@ const LOGO_TILES = 5000;
 // A chunk returns to the globe as soon as its center faces the camera
 const RETURN_FACING = 0.05;
 
-// Tunable animation parameters, see PARAMETER_CONTROLS for what each does
-const DEFAULT_PARAMETERS = {
+// Animation parameters
+const PARAMETERS = {
+  // Duration of one chunk's flight
   flightSeconds: 1.6,
+  // How far apart in time cells within a chunk set off (0: all together)
   stagger: 0.6,
+  // How far round the back of the globe a chunk's center must be before it
+  // leaves, in degrees past the limb, deep enough to leave out of sight
   leaveAngle: 30,
+  // Chunks only leave after being hidden this long, so turning the globe
+  // first shows cells arriving, then the far side peeling off
   leaveDelay: 1,
+  // Departing cells' initial velocity straight out from the surface
   launch: 1,
+  // Departing cells swing round a waypoint this far behind the globe...
   behind: 0.6,
+  // ...and this far out from its center, on the logo side (globe radii)
   wide: 1.3,
+  // Random scatter of each cell's path
   spread: 0.9,
+  // How far cells lift off the logo towards the camera as they leave it, as a
+  // fraction of the logo's distance. Arrivals come in from behind
   logoLift: 0.2,
+  // The logo's tiles each hold a stack of cells, one per pass of the cells
+  // over the tiles: the gap between these layers, in logo widths
   layerSpacing: 0.07,
+  // The logo is a mass on a damped spring along the line of sight. Departing
+  // cells push it back and arriving ones forwards, with an impulse of push
+  // times the share of the dataset's cells moving
   logoPush: 2.5,
   logoMass: 1,
   springStiffness: 40,
   springDamping: 4,
+  // The spring stiffens past this displacement (a fraction of the logo's
+  // distance), so small kicks register but big ones are reined in. 0 is linear
   springRange: 0.04,
+  // Glow around the brightest cells and stars
   bloom: 0.35,
+  // How far the glow spreads
   bloomRadius: 0.5,
+  // Brightness above which pixels glow: lower spreads it to more of the scene
   bloomThreshold: 0.35,
+  // Motion blur: how long the shutter is open, stretching cells in flight
   shutter: 0.01,
+  // Scales the stars' cores: smaller is sharper
   starSize: 1,
   starIntensity: 1
 };
-type Parameters = typeof DEFAULT_PARAMETERS;
 
-const PARAMETER_CONTROLS: {key: keyof Parameters; label: string; min: number; max: number; step: number}[] = [
-  // Duration of one chunk's flight
-  {key: 'flightSeconds', label: 'Flight time (s)', min: 0.3, max: 5, step: 0.1},
-  // How far apart in time cells within a chunk set off (0: all together)
-  {key: 'stagger', label: 'Stagger', min: 0, max: 0.95, step: 0.05},
-  // How far round the back of the globe a chunk's center must be before it
-  // leaves, in degrees past the limb, deep enough to leave out of sight
-  {key: 'leaveAngle', label: 'Leave angle (°)', min: 0, max: 80, step: 1},
-  // Chunks only leave after being hidden this long, so turning the globe
-  // first shows cells arriving, then the far side peeling off
-  {key: 'leaveDelay', label: 'Leave delay (s)', min: 0, max: 3, step: 0.1},
-  // Departing cells' initial velocity straight out from the surface
-  {key: 'launch', label: 'Launch', min: 0, max: 4, step: 0.1},
-  // Departing cells swing round a waypoint this far behind the globe...
-  {key: 'behind', label: 'Behind', min: 0, max: 3, step: 0.1},
-  // ...and this far out from its center, on the logo side (globe radii)
-  {key: 'wide', label: 'Wide', min: 1, max: 3, step: 0.05},
-  // Random scatter of each cell's path
-  {key: 'spread', label: 'Spread', min: 0, max: 2, step: 0.05},
-  // How far cells lift off the logo towards the camera as they leave it, as a
-  // fraction of the logo's distance. Arrivals come in from behind
-  {key: 'logoLift', label: 'Logo lift', min: 0, max: 0.9, step: 0.05},
-  // The logo's tiles each hold a stack of cells, one per pass of the cells
-  // over the tiles: the gap between these layers, in logo widths
-  {key: 'layerSpacing', label: 'Layer spacing', min: 0, max: 0.5, step: 0.005},
-  // The logo is a mass on a damped spring along the line of sight. Departing
-  // cells push it back and arriving ones forwards, with an impulse of push
-  // times the share of the dataset's cells moving
-  {key: 'logoPush', label: 'Push', min: 0, max: 3, step: 0.05},
-  {key: 'logoMass', label: 'Logo mass', min: 0.1, max: 5, step: 0.1},
-  {key: 'springStiffness', label: 'Spring stiffness', min: 0, max: 100, step: 1},
-  {key: 'springDamping', label: 'Spring damping', min: 0, max: 20, step: 0.1},
-  // The spring stiffens past this displacement (a fraction of the logo's
-  // distance), so small kicks register but big ones are reined in. 0 is linear
-  {key: 'springRange', label: 'Stiffen at', min: 0, max: 0.2, step: 0.005},
-  // Glow around the brightest cells and stars
-  {key: 'bloom', label: 'Bloom', min: 0, max: 2, step: 0.05},
-  // How far the glow spreads
-  {key: 'bloomRadius', label: 'Bloom radius', min: 0, max: 1, step: 0.05},
-  // Brightness above which pixels glow: lower spreads it to more of the scene
-  {key: 'bloomThreshold', label: 'Bloom threshold', min: 0, max: 1, step: 0.05},
-  // Motion blur: how long the shutter is open, stretching cells in flight
-  {key: 'shutter', label: 'Shutter (s)', min: 0, max: 0.05, step: 0.001},
-  // Scales the stars' cores: smaller is sharper
-  {key: 'starSize', label: 'Star size', min: 0.2, max: 3, step: 0.05},
-  {key: 'starIntensity', label: 'Star intensity', min: 0, max: 3, step: 0.05}
-];
 // Per-chunk flight progress lives in a float texture this wide
 const PROGRESS_TEXTURE_WIDTH = 256;
 
@@ -880,32 +855,14 @@ type AppProps = {
   // as the --hero-logo-left CSS variable on the hero section so the overlay
   // can size itself to fit
   besideTagline?: boolean;
-  // Show sliders for tuning the animation (collapsed until opened)
-  showControls?: boolean;
   // Pixels at the top of the view covered by a translucent navbar. The scene
   // is laid out below it but still drawn underneath
   insetTop?: number;
 };
 
-const App: React.FC<AppProps> = ({besideTagline = false, showControls = false, insetTop = 0}) => {
+const App: React.FC<AppProps> = ({besideTagline = false, insetTop = 0}) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  // The tuning panel renders into the page's hero section when there is one,
-  // so it sits above the banner text overlaid on the example
-  const [panelParent, setPanelParent] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    const container = containerRef.current!;
-    setPanelParent(container.closest('section') ?? container.parentElement);
-  }, []);
   const [status, setStatus] = useState<string | null>('Loading data…');
-  const [parameters, setParameters] = useState<Parameters>(DEFAULT_PARAMETERS);
-  // Read by the render loop every frame
-  const parametersRef = useRef(parameters);
-  parametersRef.current = parameters;
-  // Bloom via the effect composer; off renders the scene directly
-  const [postprocessing, setPostprocessing] = useState(true);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const postprocessingRef = useRef(postprocessing);
-  postprocessingRef.current = postprocessing;
   // Arrow buttons: shown only while a dataset is on the globe
   const [arrowsVisible, setArrowsVisible] = useState(false);
   // Logo's extent on screen in pixels. On portrait screens the globe sits
@@ -1265,7 +1222,7 @@ const App: React.FC<AppProps> = ({besideTagline = false, showControls = false, i
     // constant rate. A chunk always completes its flight, so nothing is left
     // hanging when the globe stops. Returns whether every chunk is in the logo
     const updateChunks = (state: Layer, dt: number, gather: boolean): boolean => {
-      const {flightSeconds, leaveAngle, leaveDelay, stagger} = parametersRef.current;
+      const {flightSeconds, leaveAngle, leaveDelay, stagger} = PARAMETERS;
       const step = dt / flightSeconds;
       // Share of a chunk's cells that have landed in the logo at progress p,
       // with cells' staggered starts (see flightTime) spread evenly
@@ -1367,7 +1324,7 @@ const App: React.FC<AppProps> = ({besideTagline = false, showControls = false, i
           setLegendRamp(DATASETS[active]);
           setLegendIndex(active);
           layer.mesh.geometry.setAttribute('fill', fills[active]!);
-          layer.hidden.fill(parametersRef.current.leaveDelay);
+          layer.hidden.fill(PARAMETERS.leaveDelay);
           setDrop(layer.logoOffset, direction * dropDistance);
           enter('gap');
         }
@@ -1429,7 +1386,7 @@ const App: React.FC<AppProps> = ({besideTagline = false, showControls = false, i
         bloomThreshold,
         starSize,
         starIntensity
-      } = parametersRef.current;
+      } = PARAMETERS;
       skyUniforms.starSize.value = starSize;
       skyUniforms.starIntensity.value = starIntensity;
       uniforms.flightSeconds.value = flightSeconds;
@@ -1451,7 +1408,7 @@ const App: React.FC<AppProps> = ({besideTagline = false, showControls = false, i
       // kicked by landing and leaving cells: soft for small displacements,
       // increasingly stiff past r. Integrated in small fixed steps so a stiff
       // spring stays stable through long frames
-      const {logoPush, logoMass, springStiffness, springDamping, springRange} = parametersRef.current;
+      const {logoPush, logoMass, springStiffness, springDamping, springRange} = PARAMETERS;
       logoVelocity += (logoImpulse * logoPush) / logoMass;
       logoImpulse = 0;
       const substeps = Math.ceil(dt / (1 / 240));
@@ -1464,8 +1421,7 @@ const App: React.FC<AppProps> = ({besideTagline = false, showControls = false, i
       }
       uniforms.logoDepth.value = logoDepth;
 
-      if (postprocessingRef.current) composer.render(dt);
-      else renderer.render(scene, camera);
+      composer.render(dt);
       frame = requestAnimationFrame(animate);
     });
 
@@ -1526,7 +1482,7 @@ const App: React.FC<AppProps> = ({besideTagline = false, showControls = false, i
       created.progress.fill(1);
       created.texels.fill(1);
       created.target.fill(1);
-      created.hidden.fill(parametersRef.current.leaveDelay);
+      created.hidden.fill(PARAMETERS.leaveDelay);
       direction = 1;
       setDrop(created.logoOffset, dropDistance);
       layer = created;
@@ -1626,76 +1582,6 @@ const App: React.FC<AppProps> = ({besideTagline = false, showControls = false, i
           />
         </>
       )}
-      {showControls &&
-        panelParent &&
-        createPortal(
-          <div
-            style={{
-              position: 'absolute',
-              top: `${insetTop + 12}px`,
-              left: '12px',
-              zIndex: 10,
-              padding: '6px 10px',
-              borderRadius: '6px',
-              background: 'rgba(10, 10, 20, 0.92)',
-              color: '#aab',
-              fontFamily: 'sans-serif',
-              fontSize: '11px'
-            }}
-          >
-            <button
-              onClick={() => setPanelOpen(open => !open)}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                color: 'inherit',
-                font: 'inherit',
-                cursor: 'pointer'
-              }}
-            >
-              {panelOpen ? '▾ Tuning' : '▸ Tuning'}
-            </button>
-            {panelOpen && (
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto auto 3em',
-                  alignItems: 'center',
-                  gap: '2px 8px',
-                  marginTop: '6px'
-                }}
-              >
-                {PARAMETER_CONTROLS.map(({key, label, min, max, step}) => (
-                  <React.Fragment key={key}>
-                    <span>{label}</span>
-                    <input
-                      type="range"
-                      min={min}
-                      max={max}
-                      step={step}
-                      value={parameters[key]}
-                      onChange={e => setParameters(p => ({...p, [key]: Number(e.target.value)}))}
-                      style={{width: '110px'}}
-                    />
-                    <span style={{textAlign: 'right'}}>{parameters[key]}</span>
-                  </React.Fragment>
-                ))}
-                <label style={{gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                  <input type="checkbox" checked={postprocessing} onChange={e => setPostprocessing(e.target.checked)} />
-                  Post-processing
-                </label>
-                <button
-                  onClick={() => setParameters(DEFAULT_PARAMETERS)}
-                  style={{gridColumn: '1 / -1', marginTop: '4px', fontSize: '11px', cursor: 'pointer'}}
-                >
-                  Reset
-                </button>
-              </div>
-            )}
-          </div>,
-          panelParent
-        )}
       {status && (
         <div
           style={{
