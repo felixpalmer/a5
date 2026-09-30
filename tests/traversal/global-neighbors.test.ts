@@ -45,9 +45,7 @@ describe('getGlobalCellNeighbors', () => {
         expect(getGlobalCellNeighbors(hexToU64(hex)).map(n => u64ToHex(n))).toContain(f.input.cellId);
       }
       for (const hex of f.output.edgeNeighbors) {
-        expect(getGlobalCellNeighbors(hexToU64(hex), {edgeOnly: true}).map(n => u64ToHex(n))).toContain(
-          f.input.cellId
-        );
+        expect(getGlobalCellNeighbors(hexToU64(hex), {edgeOnly: true}).map(n => u64ToHex(n))).toContain(f.input.cellId);
       }
     }
   });

@@ -310,7 +310,11 @@ export function sToCell(s: bigint, resolution: number, orientation: Orientation 
   const base = abToTriple(cell.a, cell.b);
   if (!rec.isB) return {triple: base, flavor: cell.flavor};
   const p = POW2[resolution];
-  return {triple: {x: base.x - p, y: base.y + p, z: base.z}, flavor: cell.flavor};
+  const triple = {x: base.x - p, y: base.y + p, z: base.z};
+  // At resolution 0 the leaf is the B axiom itself, whose flavor reflects the
+  // axiom rather than the cell. Every quintant holds the same single pentagon
+  // regardless of curve orientation, so its flavor is fixed.
+  return {triple, flavor: resolution === 0 ? 0 : cell.flavor};
 }
 
 /**

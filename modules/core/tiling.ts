@@ -89,27 +89,6 @@ export function getPentagonCenter(resolution: number, quintant: number, triple: 
   return vec2.transformMat2(out, out, QUINTANT_ROTATIONS[quintant]);
 }
 
-/**
- * The resolution 1 cell of a quintant: the single pentagon of the lattice at
- * hilbert resolution 0, anchored at the face center. The 60 of them form a
- * pentagonal hexecontahedron, so resolution 1 is pentagonal like every other
- * resolution.
- *
- * The flavor is fixed at 0 rather than decoded from the curve: at hilbert
- * resolution 0 the curve's single cell reports a reflected flavor for some
- * quintant orientations, which would mix the two mirror images of the tiling.
- */
-const RES1_TRIPLE: Triple = {x: 0, y: 0, z: 0};
-const RES1_FLAVOR = 0;
-
-export function getRes1PentagonVertices(quintant: number): PentagonShape {
-  return getPentagonVertices(0, quintant, RES1_TRIPLE, RES1_FLAVOR);
-}
-
-export function getRes1PentagonCenter(quintant: number): Vec2 {
-  return getPentagonCenter(0, quintant, RES1_TRIPLE, RES1_FLAVOR);
-}
-
 // TODO: memoize these two functions?
 export function getQuintantVertices(quintant: number): PentagonShape {
   const triangle = TRIANGLE.clone();

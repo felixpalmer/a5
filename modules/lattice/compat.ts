@@ -205,6 +205,10 @@ export function compatSToTriple(s: bigint, resolution: number, orientation: Orie
 export function compatSToCell(s: bigint, resolution: number, orientation: Orientation = 'uv'): Cell {
   const rec = COMPAT_ORIENT[orientation];
   const {triple, flips, q} = compatDescend(s, resolution, rec);
+  // Resolution 0 has no digits, so there is no leaf state to derive the
+  // flavor from. Every quintant holds the same single pentagon regardless of
+  // curve orientation, so its flavor is fixed.
+  if (resolution === 0) return {triple, flavor: 0};
   // As in the old engine's sToAnchor: invertJ flips the first component
   // (flipIJ leaves the flips untouched).
   if (rec.invertJ) {

@@ -30,10 +30,10 @@ function getRes0Neighbors(origin: Origin): bigint[] {
 }
 
 /**
- * Get neighbors of a resolution 1 cell. Each quintant's cell is a pentagon of
- * the pentagonal hexecontahedron (see `getRes1PentagonVertices`), so like
- * every other resolution it has 5 edge neighbors, plus 2 that share only the
- * 5-valent face-center vertex.
+ * Get neighbors of a resolution 1 cell. Each quintant's cell (the single curve
+ * cell at hilbert resolution 0) is a pentagon of the pentagonal
+ * hexecontahedron, so like every other resolution it has 5 edge neighbors,
+ * plus 2 that share only the 5-valent face-center vertex.
  */
 function getRes1Neighbors(origin: Origin, segment: number, edgeOnly: boolean): bigint[] {
   const {quintant} = segmentToQuintant(segment, origin);
