@@ -70,10 +70,6 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
     return serialize(_sphericalToEstimate(spherical, resolution));
   }
 
-  if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
-    return _sphericalToRes1Cell(spherical);
-  }
-
   // Try the cached pentagon first — skips the full estimate pipeline when
   // consecutive calls land in the same cell (common in dense-sample loops).
   if (_lastResult && _lastResult.resolution === resolution) {
@@ -131,31 +127,6 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   cells.sort((a, b) => b.distance - a.distance);
   const fallbackKey = cells[0].cellId;
   return cacheResult(deserialize(fallbackKey), fallbackKey, resolution);
-}
-
-/**
- * Resolution 1 cells are pentagons that cover most of their quintant and
- * reach into the neighboring quintants, so the containing cell is either the
- * quintant the point lies in or one of that quintant's neighbors.
- */
-function _sphericalToRes1Cell(spherical: Spherical): bigint {
-  const estimate = _sphericalToEstimate(spherical, 1);
-  const estimateKey = serialize(estimate);
-  let bestKey = estimateKey;
-  let bestDistance = a5cellContainsPoint(estimate, spherical);
-  if (bestDistance > 0) return estimateKey;
-
-  const neighbors = getGlobalCellNeighbors(estimateKey);
-  for (let n = 0; n < neighbors.length; n++) {
-    const distance = a5cellContainsPoint(deserialize(neighbors[n]), spherical);
-    if (distance > 0) return neighbors[n];
-    if (distance > bestDistance) {
-      bestDistance = distance;
-      bestKey = neighbors[n];
-    }
-  }
-  // Only reachable within floating-point error of a cell boundary
-  return bestKey;
 }
 
 // Spiral perturbation radius at hilbertResolution=1 (in radians of tangent
