@@ -174,11 +174,11 @@ function _faceToEstimate(dodecPoint: Face, origin: A5Cell['origin'], resolution:
 
 // TODO move into tiling.ts
 export function _getPentagon({S, segment, origin, resolution}: A5Cell): PentagonShape {
-  if (resolution === 0) {
+  const {quintant, orientation} = segmentToQuintant(segment, origin);
+  if (resolution === FIRST_HILBERT_RESOLUTION - 2) {
     return getFaceVertices();
   }
 
-  const {quintant, orientation} = segmentToQuintant(segment, origin);
   const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
   return getPentagonVertices(hilbertResolution, quintant, triple, flavor);
@@ -186,16 +186,17 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
 
 export function cellToSpherical(cell: bigint): Spherical {
   const {S, segment, origin, resolution} = deserialize(cell);
-  if (resolution === 0) {
-    return dodecahedron.inverse(getFaceVertices().getCenter() as Face, origin.id);
+  if (resolution >= FIRST_HILBERT_RESOLUTION - 1) {
+    // Fast path: the pentagon center is O(1) from (triple, flavor) — no need
+    // to construct the pentagon itself.
+    const {quintant, orientation} = segmentToQuintant(segment, origin);
+    const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
+    const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
+    const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor);
+    return dodecahedron.inverse(center as Face, origin.id);
   }
-  // The pentagon center is O(1) from (triple, flavor) — no need to construct
-  // the pentagon itself.
-  const {quintant, orientation} = segmentToQuintant(segment, origin);
-  const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
-  const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor);
-  return dodecahedron.inverse(center as Face, origin.id);
+  const pentagon = _getPentagon({S, segment, origin, resolution});
+  return dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);
 }
 
 export function cellToLonLat(cell: bigint): LonLat {
