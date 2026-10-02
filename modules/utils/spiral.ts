@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {vec3, quat, glMatrix} from 'gl-matrix';
-glMatrix.setMatrixArrayType(Float64Array as any);
-
+import * as vec3 from '../math/vec3';
+import * as quat from '../math/quat';
+import type {Vec3, Quat} from '../math/types';
 import type {Cartesian, Spherical} from '../core/coordinate-systems';
 import {toCartesian} from '../core/coordinate-transforms';
 
@@ -27,9 +27,9 @@ const ANGLE_STEP_RAD = 1.4;
 // (z=0). Each entry is the tangent direction of one sample. The pattern
 // is independent of resolution; per spiral the directions are rotated to
 // the input point's tangent plane via a single quaternion.
-const POLE: vec3 = vec3.fromValues(0, 0, 1);
-const SPIRAL_DIRECTIONS: vec3[] = (() => {
-  const out: vec3[] = [];
+const POLE: Vec3 = vec3.fromValues(0, 0, 1);
+const SPIRAL_DIRECTIONS: Vec3[] = (() => {
+  const out: Vec3[] = [];
   for (let i = 0; i < SPIRAL_SAMPLE_COUNT; i++) {
     const a = (i + 1) * ANGLE_STEP_RAD;
     out.push(vec3.fromValues(Math.cos(a), Math.sin(a), 0));
@@ -55,9 +55,9 @@ const SPIRAL_DIRECTIONS: vec3[] = (() => {
  */
 export class Spiral {
   private c0: Cartesian;
-  private q: quat;
+  private q: Quat;
   private scaleRad: number;
-  private scratch: vec3;
+  private scratch: Vec3;
 
   /**
    * Initialise a spiral around `center` on the unit sphere. The
@@ -68,7 +68,7 @@ export class Spiral {
   constructor(center: Spherical, scaleRad: number) {
     this.c0 = toCartesian(center);
     this.q = quat.create();
-    quat.rotationTo(this.q, POLE, this.c0 as unknown as vec3);
+    quat.rotationTo(this.q, POLE, this.c0 as unknown as Vec3);
     this.scaleRad = scaleRad;
     this.scratch = vec3.create();
   }
@@ -85,7 +85,7 @@ export class Spiral {
   sample(out: Cartesian, i: number): Cartesian {
     vec3.transformQuat(this.scratch, SPIRAL_DIRECTIONS[i], this.q);
     const R = ((i + 1) / (SPIRAL_SAMPLE_COUNT + 1)) * this.scaleRad;
-    vec3.scaleAndAdd(out as unknown as vec3, this.c0 as unknown as vec3, this.scratch, R);
+    vec3.scaleAndAdd(out as unknown as Vec3, this.c0 as unknown as Vec3, this.scratch, R);
     return out;
   }
 }
