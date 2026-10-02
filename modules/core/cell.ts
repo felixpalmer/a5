@@ -8,14 +8,7 @@ import * as vec3 from '../math/vec3';
 
 import type {Cartesian, Face, LonLat, Spherical} from './coordinate-systems';
 import {FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes} from './coordinate-transforms';
-import {
-  findNearestOrigin,
-  findNearestOriginCartesian,
-  QUINTANT_TO_ORIENTATION,
-  QUINTANT_TO_SEGMENT,
-  SEGMENT_TO_ORIENTATION,
-  SEGMENT_TO_QUINTANT
-} from './origin';
+import {findNearestOrigin, findNearestOriginCartesian, quintantToSegment, segmentToQuintant} from './origin';
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {A5Cell, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
@@ -158,9 +151,7 @@ function _cartesianToEstimate(cartesian: Cartesian, resolution: number): A5Cell 
 function _faceToEstimate(dodecPoint: Face, origin: A5Cell['origin'], resolution: number): A5Cell {
   const polar = toPolar(dodecPoint);
   const quintant = getQuintantPolar(polar);
-  const globalQuintant = origin.id * 5 + quintant;
-  const segment = QUINTANT_TO_SEGMENT[globalQuintant];
-  const orientation = QUINTANT_TO_ORIENTATION[globalQuintant];
+  const {segment, orientation} = quintantToSegment(quintant, origin);
   if (resolution < FIRST_HILBERT_RESOLUTION) {
     // For low resolutions there is no Hilbert curve
     return {S: 0n, segment, origin, resolution};
@@ -183,9 +174,7 @@ function _faceToEstimate(dodecPoint: Face, origin: A5Cell['origin'], resolution:
 
 // TODO move into tiling.ts
 export function _getPentagon({S, segment, origin, resolution}: A5Cell): PentagonShape {
-  const globalQuintant = origin.id * 5 + segment;
-  const quintant = SEGMENT_TO_QUINTANT[globalQuintant];
-  const orientation = SEGMENT_TO_ORIENTATION[globalQuintant];
+  const {quintant, orientation} = segmentToQuintant(segment, origin);
   if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
     const out = getQuintantVertices(quintant);
     return out;
@@ -203,9 +192,7 @@ export function cellToSpherical(cell: bigint): Spherical {
   if (resolution >= FIRST_HILBERT_RESOLUTION) {
     // Fast path: the pentagon center is O(1) from (triple, flavor) — no need
     // to construct the pentagon itself.
-    const globalQuintant = origin.id * 5 + segment;
-    const quintant = SEGMENT_TO_QUINTANT[globalQuintant];
-    const orientation = SEGMENT_TO_ORIENTATION[globalQuintant];
+    const {quintant, orientation} = segmentToQuintant(segment, origin);
     const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
     const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
     const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor);
