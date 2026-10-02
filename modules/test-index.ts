@@ -30,7 +30,7 @@ export {getPentagonVertices, getQuintantVertices, getFaceVertices, getQuintantPo
 export {NEIGHBOR_DELTAS} from './traversal/neighbors';
 
 // Export curve / lattice functions for testing
-export {roundToTriple, sToCell, sToTriple, tripleParity, tripleInBounds, tripleToS} from './lattice';
+export {IJToS, sToCell, sToTriple, tripleParity, tripleInBounds, tripleToS} from './lattice';
 export {compatSToCell, compatSToTriple, compatTripleToS, compatIJToS} from './lattice';
 export type {Cell, Triple} from './lattice';
 
@@ -41,6 +41,7 @@ export {
   sToTriple as lsystemSToTriple,
   tripleToSLattice as lsystemTripleToS
 } from './lattice/lsystem';
+export {IJToS as lsystemIJToS} from './lattice/curve';
 
 // Export neighbor functions for testing
 export {getCellNeighbors} from './traversal/quintant-neighbors';
@@ -51,6 +52,9 @@ export {metersToH, estimateCellRadius, pickCoarseResolution} from './traversal/c
 
 // Export great-circle helpers for testing
 export {greatCircleDistance, sampleGreatCircleArc} from './utils/great-circle';
+
+// Export spiral helper for testing
+export {Spiral, SPIRAL_SAMPLE_COUNT} from './utils/spiral';
 
 // Export lattice neighbor / flood-fill for testing
 export {getLatticeNeighbors} from './traversal/lattice-neighbors';
