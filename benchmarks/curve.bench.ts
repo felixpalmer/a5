@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-// Benchmarks for the space-filling curve: s -> cell decode, cell -> s encode,
-// and fractional-point location (IJToS).
+// Benchmarks for the space-filling curve: s -> cell decode and cell -> s encode.
 //
 // CI runs these same files against both the PR and its merge-base, so they
 // must run on either side of the L-system migration: the adapters below pick
@@ -15,7 +14,6 @@
 import {bench, describe} from 'vitest';
 import * as lattice from 'a5/lattice';
 import type {Orientation, Triple} from 'a5/lattice';
-import type {IJ} from 'a5/core/coordinate-systems';
 import {BENCH_OPTS, createRandom} from './utils';
 
 const N = 256;
@@ -55,12 +53,6 @@ function sampleS(resolution: number, n: number, seed = 42): bigint[] {
     values[i] = ((hi << 32n) | lo) % max;
   }
   return values;
-}
-
-/** The cell's centroid in IJ coordinates (parity 0: (x+y+1/3, -x+1/3), parity 1: (x+y-1/3, -x+2/3)). */
-function centroidIJ(t: Triple): IJ {
-  const parity = t.x + t.y + t.z;
-  return (parity === 0 ? [t.x + t.y + 1 / 3, -t.x + 1 / 3] : [t.x + t.y - 1 / 3, -t.x + 2 / 3]) as IJ;
 }
 
 describe('sToCell', () => {
@@ -104,20 +96,4 @@ describe('tripleToS', () => {
       BENCH_OPTS
     );
   }
-});
-
-describe('IJToS', () => {
-  const values = sampleS(15, N);
-  const ijs: IJ[] = new Array(N);
-  for (let i = 0; i < N; i++) {
-    ijs[i] = centroidIJ(tripleOf(values[i], 15, 'uv'));
-  }
-  let i = 0;
-  bench(
-    'IJToS res 15',
-    () => {
-      lattice.IJToS(ijs[i++ & (N - 1)], 15, 'uv');
-    },
-    BENCH_OPTS
-  );
 });

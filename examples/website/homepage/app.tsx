@@ -35,7 +35,7 @@ import {UnrealBloomPass} from 'three/examples/jsm/postprocessing/UnrealBloomPass
 import {computeGlobe} from './globe';
 import {getPentagonCenter, getPentagonVertices} from 'a5/core/tiling';
 import {FaceToIJ} from 'a5/core/coordinate-transforms';
-import {IJToS} from 'a5/lattice';
+import {roundToTriple, tripleToS} from 'a5/lattice';
 // Small parquet reader: reads just the columns asked for, with range requests
 import {asyncBufferFromUrl, parquetMetadata, parquetRead} from 'hyparquet';
 
@@ -353,7 +353,8 @@ function createLogoTiles(): LogoTiles {
         if (col < 0 || row < 0 || col >= width || row >= height) continue;
         if (pixels[(row * width + col) * 4 + 3] <= 127) continue;
         // Position on the A5 curve, from the cell's center (see lonLatToCell)
-        const order = Number(IJToS(FaceToIJ(center as any), LOGO_RESOLUTION));
+        const triple = roundToTriple(FaceToIJ(center as any), LOGO_RESOLUTION);
+        const order = Number(tripleToS(triple, LOGO_RESOLUTION));
         kept.push({x: u, y: v, flavor, order});
       }
     }
