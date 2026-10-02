@@ -5,7 +5,7 @@ import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {A5Layer} from '@deck.gl/geo-layers';
 import {Color} from '@deck.gl/core';
-import {cellToLonLat} from 'a5';
+import {cellToLonLat, migrate} from 'a5';
 import type {MapRef} from 'react-map-gl/maplibre';
 
 // Loaded at runtime from the CDN, which also serves the WASM binary and worker.
@@ -363,7 +363,8 @@ const App: React.FC = () => {
       const value = field ? toNumber(row[field]) : 1;
       if (value < minValue) minValue = value;
       if (value > maxValue) maxValue = value;
-      rows.push({cell: BigInt(row.cell), value});
+      // The data files and the DuckDB extension both use the v0 index
+      rows.push({cell: migrate(BigInt(row.cell)), value});
     }
     setResult({rows, minValue, maxValue, field, elapsedMs, autoPalette: autoPalette(field, sql)});
     setStatus(`${rows.length.toLocaleString()} cells · ${Math.round(elapsedMs)}ms`);

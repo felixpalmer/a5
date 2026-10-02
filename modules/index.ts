@@ -21,6 +21,9 @@ export {
 export {getNumCells, getNumChildren, cellArea, cellEdgeLengthAvg} from './core/cell-info';
 export {compact, uncompact} from './core/compact';
 
+// Migration
+export {migrate} from './core/migrate';
+
 // Traversal
 export {gridDisk, gridDiskVertex} from './traversal/grid-disk';
 export {sphericalCap} from './traversal/cap';

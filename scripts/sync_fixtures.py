@@ -50,6 +50,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/core/fixtures/tiling.json"),
         (RS_ROOT, "tests/fixtures/tiling.json"),
     ],
+    "tests/fixtures/migrate.json": [
+        (PY_ROOT, "tests/core/fixtures/migrate.json"),
+        (RS_ROOT, "tests/fixtures/migrate.json"),
+    ],
     "tests/fixtures/serialization.json": [
         (PY_ROOT, "tests/core/fixtures/serialization.json"),
         (RS_ROOT, "tests/fixtures/serialization.json"),

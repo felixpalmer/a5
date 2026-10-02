@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {A5Layer} from '@deck.gl/geo-layers';
-import {uncompact} from 'a5';
+import {migrate, uncompact} from 'a5';
 import {parquetRead} from 'hyparquet';
 
 // Generated using examples/cli/compact with:
@@ -37,8 +37,8 @@ const App: React.FC = () => {
           parquetRead({file: arrayBuffer, onComplete});
         });
 
-        // Extract cell IDs (first column)
-        const compacted = rows.map((row: any) => row[0]);
+        // Extract cell IDs (first column), migrating from the v0 index
+        const compacted = rows.map((row: any) => migrate(row[0]));
 
         // Set compacted cells and render them first
         setCompactedCells(compacted);

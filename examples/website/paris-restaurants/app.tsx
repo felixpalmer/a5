@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {A5Layer} from '@deck.gl/geo-layers';
+import {migrate} from 'a5';
 import {Color} from '@deck.gl/core';
 import {HyparquetLoader} from '../shared/hyparquet-loader';
 
@@ -19,7 +20,7 @@ const App: React.FC = () => {
     data: RESTAURANTS_DATA,
     id: 'cell-polygon',
     loaders: [HyparquetLoader],
-    getPentagon: (d: A5CellWithCount) => d.a5,
+    getPentagon: (d: A5CellWithCount) => migrate(d.a5), // data uses the v0 index
     getFillColor: (d: A5CellWithCount) => {
       const value = Math.min(d.count / MAX_COUNT, 1);
 

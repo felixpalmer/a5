@@ -36,6 +36,7 @@ import {computeGlobe} from './globe';
 import {getPentagonCenter, getPentagonVertices} from 'a5/core/tiling';
 import {FaceToIJ} from 'a5/core/coordinate-transforms';
 import {roundToTriple, tripleToS} from 'a5/lattice';
+import {migrate} from 'a5/core/migrate';
 // Small parquet reader: reads just the columns asked for, with range requests
 import {asyncBufferFromUrl, parquetMetadata, parquetRead} from 'hyparquet';
 
@@ -1469,8 +1470,9 @@ const App: React.FC<AppProps> = ({besideTagline = false, insetTop = 0}) => {
       const {cell, chunk, [first]: firstValues} = await firstColumnsPromise;
       if (cancelled) return;
 
-      // Start the globe geometry, the slow part, off the main thread
-      const globePromise = computeGlobeAsync(BigUint64Array.from(cell));
+      // Start the globe geometry, the slow part, off the main thread. The data
+      // file uses the v0 index, so migrate its cells first
+      const globePromise = computeGlobeAsync(BigUint64Array.from(cell, migrate));
 
       // Meanwhile show the first dataset as a dataset switch shows the next:
       // gathered in the logo, which springs in from above, then onto the
