@@ -39,8 +39,14 @@ The TypeScript, Python, and Rust libraries are maintained directly by the A5 pro
 ### GeoParquet
  🔗 [Website](https://geoparquet.io/) • 📖 [Docs](https://geoparquet.io/guide/partition/#by-a5-cells) • 🔗 [Source](https://github.com/geoparquet/geoparquet-io)
 
+### lonboard
+📖 [Docs](https://developmentseed.org/lonboard/latest/api/layers/a5-layer/) • 📦 [Package](https://pypi.org/project/lonboard/) • 🔗 [Source](https://github.com/developmentseed/lonboard/blob/main/lonboard/layer/_a5.py)
+
 ### PostgreSQL
 📖 [Quickstart](../quickstart/postgresql.md) • 📦 [Extension](https://github.com/decision-labs/a5pg) • 🔗 [Source](https://github.com/decision-labs/a5pg)
+
+### pydeck
+📖 [Docs](https://deckgl.readthedocs.io/en/latest/gallery/a5_layer.html) • 📦 [Package](https://pypi.org/project/pydeck/) • 🔗 [Source](https://github.com/visgl/deck.gl/blob/master/bindings/pydeck/examples/a5_layer.py)
 
 ### QGIS
 📖 [Guide](https://vgridtools.gishub.vn/) • 📦 [Plugin](https://plugins.qgis.org/plugins/vgridtools/) • 🔗 [Source](https://github.com/opengeoshub/vgridtools)

@@ -63,6 +63,7 @@ yarn bench hilbert     # Run benchmarks for a single file, here `hilbert.bench.t
 ## Website Examples
 - Render A5 cells with `A5Layer` from `@deck.gl/geo-layers` (`getPentagon: d => d.cell`, accepts bigint or hex string) instead of hand-rolling `cellToBoundary` + `PolygonLayer`. The layer imports `a5-js` internally, which `website/docusaurus.config.js` aliases to the local `/modules` source (same as the `a5` alias)
 - Website example data files go in `/website/static/data/` (NOT in `/examples/website/*/public/data/`)
+- Examples address those files from the site root (`fetch('/data/x.parquet')`) — keep them as plain root-absolute literals, no Docusaurus imports. The a5geo.org/next preview builds under a base path and rewrites the literals at build time (`website/scripts/rebase-static-urls-loader.js`, wired up in `docusaurus.config.js`)
 - `/website/static/data/` is covered by a broad `data/` gitignore rule — `git add -f` new data files or they will be invisible in `git status`
 - When regenerating data for examples, compare with deployed version at https://a5geo.org/examples/* to verify resolution
 - Use `getResolution()` to check the resolution of cells in existing data files

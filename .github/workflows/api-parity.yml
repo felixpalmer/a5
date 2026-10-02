@@ -30,10 +30,11 @@ jobs:
 
   # Scheduled / manual: check all three published repos against each other.
   # No divergence should exist on the default branches once a change is fully rolled out.
+  # Also reports core-API coverage of the community R and DuckDB ports (warnings only).
   parity-monitor:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-      - name: Check API parity (all three from GitHub)
-        run: python3 scripts/check_api_parity.py --check --remote
+      - name: Check API parity (all three from GitHub, plus community R/DuckDB coverage)
+        run: python3 scripts/check_api_parity.py --check --remote --community

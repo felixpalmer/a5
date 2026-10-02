@@ -8,6 +8,11 @@ on:
     branches:
       - '*-release'
 
+# Both site workflows push to `gh-pages`, so keep the deploys off each other's toes
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
 jobs:
   check_branch:
     runs-on: ubuntu-latest
@@ -35,13 +40,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
-      - name: Enable Volta
-        uses: volta-cli/action@5c175f92dea6f48441c436471e6479dbc192e194 # v4.2.1
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack (yarn 4)
+        run: corepack enable
 
       - name: Build website
         run: |
           cd website
-          yarn install
+          yarn install --immutable
           yarn build
 
       - name: Deploy
@@ -50,3 +59,7 @@ jobs:
           branch: gh-pages
           folder: website/build
           clean: true
+          # The maintainer preview (website-next.yml) owns next/ — leaving it out
+          # of the source folder would otherwise make `clean` delete it
+          clean-exclude: |
+            /next
