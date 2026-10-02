@@ -18,8 +18,8 @@ class TeohedronDodecahedronDemo extends Component {
         <h3>Resolution levels:</h3>
         <h4>0: Dodecahedron</h4>
         <p>12 regular pentagon primitives.</p>
-        <h4>1: Pentakis Dodecahedron</h4>
-        <p>60 isosceles triangle primitives (quintiles).</p>
+        <h4>1: Pentagonal Hexecontahedron</h4>
+        <p>60 congruent pentagon primitives, one per quintant of the pentakis dodecahedron.</p>
         <h4>2+: Teohedron</h4>
         <p>240+ irregular pentagon primitives.</p>
       </div>

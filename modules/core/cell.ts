@@ -18,16 +18,9 @@ import {
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {A5Cell, Origin, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
-import {
-  cellMarginScaled,
-  getFaceVertices,
-  getPentagonCenter,
-  getPentagonVertices,
-  getQuintantPolar,
-  getQuintantVertices
-} from './tiling';
+import {cellMarginScaled, getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar} from './tiling';
 import {PI_OVER_5} from './constants';
-import {roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
+import {LEVEL0_FLAVOR, roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
 import type {Triple} from '../lattice';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from './serialization';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
@@ -68,9 +61,8 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
     return WORLD_CELL;
   }
 
-  if (resolution < FIRST_HILBERT_RESOLUTION) {
-    // For low resolutions there is no Hilbert curve: the cell is determined by
-    // the face (and quintant) alone, so the lookup is exact.
+  if (resolution === 0) {
+    // The dodecahedron face containing the point is exact
     const origin = findNearestOrigin(spherical);
     const dodecPoint = dodecahedron.forward(spherical, origin.id);
     const quintant = getQuintantPolar(toPolar(dodecPoint));
@@ -153,7 +145,9 @@ function _lookupInQuintant(
 
   const base = roundToTriple(ij, hilbertResolution);
   let triple = base;
-  let flavor = tripleFlavor(base);
+  // The closed form gives the corner cell flavor 2 only once its y = maxRow is
+  // odd; the single resolution 1 cell is that corner cell too (see LEVEL0_FLAVOR)
+  let flavor = hilbertResolution === 0 ? LEVEL0_FLAVOR : tripleFlavor(base);
   let margin = cellMarginScaled(px, py, base.x, base.y, flavor);
   if (margin <= 0) {
     // All deltas are relative to the ROUNDED triple (the containing pentagon
@@ -247,10 +241,7 @@ function _sphericalToCellBoundary(
 // TODO move into tiling.ts
 export function _getPentagon({S, segment, origin, resolution}: A5Cell): PentagonShape {
   const {quintant, orientation} = segmentToQuintant(segment, origin);
-  if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
-    const out = getQuintantVertices(quintant);
-    return out;
-  } else if (resolution === FIRST_HILBERT_RESOLUTION - 2) {
+  if (resolution === FIRST_HILBERT_RESOLUTION - 2) {
     return getFaceVertices();
   }
 
@@ -261,7 +252,7 @@ export function _getPentagon({S, segment, origin, resolution}: A5Cell): Pentagon
 
 export function cellToSpherical(cell: bigint): Spherical {
   const {S, segment, origin, resolution} = deserialize(cell);
-  if (resolution >= FIRST_HILBERT_RESOLUTION) {
+  if (resolution >= FIRST_HILBERT_RESOLUTION - 1) {
     // Fast path: the pentagon center is O(1) from (triple, flavor) — no need
     // to construct the pentagon itself.
     const {quintant, orientation} = segmentToQuintant(segment, origin);

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl} from 'react-map-gl/maplibre';
@@ -6,26 +6,150 @@ import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PathLayer, PolygonLayer} from '@deck.gl/layers';
 import {generateWireframe, LonLat, A5Pentagon} from 'a5-internal/wireframe';
 import {colorBins} from '@deck.gl/carto';
-import {vec2} from 'gl-matrix';
 import {DataFilterExtension} from '@deck.gl/extensions';
 import RangeInput from './range-input';
 
 const INITIAL_VIEW_STATE = {longitude: 0, latitude: 60, zoom: 1.5};
-const RESOLUTION = 4;
-const CELLS_PER_SEGMENT = Math.pow(4, RESOLUTION);
-const CELLS_PER_FACE = 5 * CELLS_PER_SEGMENT;
+const MAX_RESOLUTION = 5;
 
-const DATA = generateWireframe(RESOLUTION + 1);
+// Wireframes are generated on first use and kept, so revisiting a resolution is instant.
+// The globe draws each segment as a straight chord, so the long edges of the
+// coarse resolutions are split into more points to follow the surface
+const WIREFRAMES: LonLat[][][] = [];
+function getWireframe(resolution: number): LonLat[][] {
+  WIREFRAMES[resolution] ??= generateWireframe(resolution, {segments: Math.max(1, 2 ** (4 - resolution))});
+  return WIREFRAMES[resolution];
+}
 
-// End of high-density region in final resolution level
-const HD_CUTOFF = (DATA.length * (32 + 8 + 2 + 0.5)) / 60;
+type Vec3 = [number, number, number];
+const DEG = Math.PI / 180;
+// Keep points a little off the poles, where longitude is undefined
+const MAX_LATITUDE = 89.99;
+
+function toVector([lon, lat]: LonLat): Vec3 {
+  return [Math.cos(lat * DEG) * Math.cos(lon * DEG), Math.cos(lat * DEG) * Math.sin(lon * DEG), Math.sin(lat * DEG)];
+}
+
+function toLonLat([x, y, z]: Vec3): LonLat {
+  const lat = Math.atan2(z, Math.hypot(x, y)) / DEG;
+  return [Math.atan2(y, x) / DEG, Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, lat))] as LonLat;
+}
+
+// Cell center as the normalized mean of its boundary on the sphere (averaging
+// lon/lat directly breaks for the cells around the poles)
+function cellCenter(ring: LonLat[]): Vec3 {
+  const sum: Vec3 = [0, 0, 0];
+  for (const p of ring) {
+    const v = toVector(p);
+    sum[0] += v[0];
+    sum[1] += v[1];
+    sum[2] += v[2];
+  }
+  const length = Math.hypot(...sum);
+  return [sum[0] / length, sum[1] / length, sum[2] / length];
+}
+
+// Great circle from a to b, with a point every ~2 degrees and longitudes kept
+// continuous so the path never jumps across the antimeridian
+function greatCircle(a: Vec3, b: Vec3): LonLat[] {
+  const angle = Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])));
+  const steps = Math.max(1, Math.ceil(angle / (2 * DEG)));
+  const path: LonLat[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const wa = angle === 0 ? 1 - t : Math.sin((1 - t) * angle) / Math.sin(angle);
+    const wb = angle === 0 ? t : Math.sin(t * angle) / Math.sin(angle);
+    const point = toLonLat([wa * a[0] + wb * b[0], wa * a[1] + wb * b[1], wa * a[2] + wb * b[2]]);
+    if (path.length) {
+      const previous = path[path.length - 1][0];
+      point[0] += 360 * Math.round((previous - point[0]) / 360);
+    }
+    path.push(point);
+  }
+  // A pole has no longitude of its own: give an endpoint there its neighbor's,
+  // so the path arrives along the meridian instead of curling around the pole
+  const last = path.length - 1;
+  if (Math.abs(path[0][1]) >= MAX_LATITUDE) path[0][0] = path[1][0];
+  if (Math.abs(path[last][1]) >= MAX_LATITUDE) path[last][0] = path[last - 1][0];
+  return path;
+}
+
+// Defined outside App so its inputs keep their identity (and a slider drag)
+// across the re-renders each change triggers
+const Controls: React.FC<{
+  layerVisibility: {path: boolean; polygons: boolean};
+  setLayerVisibility: (vis: {path: boolean; polygons: boolean}) => void;
+  resolution: number;
+  setResolution: (resolution: number) => void;
+}> = ({layerVisibility, setLayerVisibility, resolution, setResolution}) => {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        background: 'white',
+        padding: '10px',
+        borderRadius: '4px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        zIndex: 1
+      }}
+    >
+      <div style={{marginBottom: '10px'}}>
+        <label>
+          <input
+            type="checkbox"
+            checked={layerVisibility.path}
+            onChange={e => setLayerVisibility({...layerVisibility, path: e.target.checked})}
+          />{' '}
+          Show Path
+        </label>
+      </div>
+      <div style={{marginBottom: '10px'}}>
+        <label>
+          <input
+            type="checkbox"
+            checked={layerVisibility.polygons}
+            onChange={e => setLayerVisibility({...layerVisibility, polygons: e.target.checked})}
+          />{' '}
+          Show Polygons
+        </label>
+      </div>
+      <div>
+        <label>
+          Resolution: {resolution}
+          <br />
+          <input
+            type="range"
+            min={0}
+            max={MAX_RESOLUTION}
+            step={1}
+            value={resolution}
+            onChange={e => setResolution(Number(e.target.value))}
+          />
+        </label>
+      </div>
+    </div>
+  );
+};
 
 const App: React.FC = () => {
+  const [resolution, setResolution] = useState(MAX_RESOLUTION);
+  const DATA = useMemo(() => getWireframe(resolution), [resolution]);
+  const CELLS_PER_FACE = DATA.length / 12;
+  // End of high-density region along the curve
+  const HD_CUTOFF = (DATA.length * (32 + 8 + 2 + 0.5)) / 60;
+
   const [filterRange, setFilterRange] = useState<[number, number]>([0, DATA.length - 1]);
   const [layerVisibility, setLayerVisibility] = useState({
     path: true,
     polygons: false
   });
+
+  const changeResolution = (newResolution: number) => {
+    setResolution(newResolution);
+    setFilterRange([0, getWireframe(newResolution).length - 1]);
+  };
 
   // Common layer props
   const commonLayerProps = {
@@ -40,25 +164,14 @@ const App: React.FC = () => {
     ...commonLayerProps,
     id: 'hilbert',
     dataTransform: ((data: LonLat[][]) => {
-      const centers = data.map(c => {
-        const average = c.slice(0, 5).reduce((sum, p) => vec2.add(sum, sum, p), vec2.create());
-        vec2.scale(average, average, 1 / 5);
-        return [average[0], average[1] * 1];
-      }) as LonLat[];
+      const centers = data.map(cellCenter);
       const segments = centers.slice(0, -1).map((center, i) => ({
-        path: [center, centers[i + 1]],
+        path: greatCircle(center, centers[i + 1]),
         properties: {index: i}
       }));
       return segments;
     }) as any,
-    getPath: d => {
-      // If the path crosses the antimeridian, wrap it
-      if (Math.abs(d.path[0][0] - d.path[1][0]) > 180) {
-        const sign = d.path[0][0] > d.path[1][0] ? 1 : -1;
-        return [d.path[0], [d.path[1][0] + sign * 360, d.path[1][1]]];
-      }
-      return d.path;
-    },
+    getPath: d => d.path,
     igetColor: [235, 235, 255],
     getColor: colorBins({
       attr: d => Math.floor(d.properties.index / CELLS_PER_FACE),
@@ -79,55 +192,13 @@ const App: React.FC = () => {
     id: 'polygons',
     visible: layerVisibility.polygons,
     getPolygon: d => d,
-    opacity: 0.2,
-    getLineColor: [0, 0, 0],
+    opacity: 0.6,
+    getLineColor: [255, 255, 255],
     lineWidthMinPixels: 1,
     filled: false,
     stroked: true,
     pickable: false
   });
-
-  // Add Controls component
-  const Controls: React.FC<{
-    layerVisibility: {path: boolean; polygons: boolean};
-    setLayerVisibility: (vis: {path: boolean; polygons: boolean}) => void;
-  }> = ({layerVisibility, setLayerVisibility}) => {
-    return (
-      <div
-        style={{
-          position: 'absolute',
-          top: '20px',
-          left: '20px',
-          background: 'white',
-          padding: '10px',
-          borderRadius: '4px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          zIndex: 1
-        }}
-      >
-        <div style={{marginBottom: '10px'}}>
-          <label>
-            <input
-              type="checkbox"
-              checked={layerVisibility.path}
-              onChange={e => setLayerVisibility({...layerVisibility, path: e.target.checked})}
-            />{' '}
-            Show Path
-          </label>
-        </div>
-        <div style={{marginBottom: '10px'}}>
-          <label>
-            <input
-              type="checkbox"
-              checked={layerVisibility.polygons}
-              onChange={e => setLayerVisibility({...layerVisibility, polygons: e.target.checked})}
-            />{' '}
-            Show Polygons
-          </label>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div
@@ -150,7 +221,12 @@ const App: React.FC = () => {
       >
         <DeckGLOverlay layers={[layer, cellLayer]} interleaved />
       </Map>
-      <Controls layerVisibility={layerVisibility} setLayerVisibility={setLayerVisibility} />
+      <Controls
+        layerVisibility={layerVisibility}
+        setLayerVisibility={setLayerVisibility}
+        resolution={resolution}
+        setResolution={changeResolution}
+      />
       <RangeInput
         min={0}
         max={DATA.length - 1}

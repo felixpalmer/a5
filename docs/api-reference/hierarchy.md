@@ -6,6 +6,12 @@ The cells are arranged in a logical hierarchy, with each cell having an integer 
 
 Naturally the 12 resolution 0 cells, representing the dodecahedron faces, have no parent and similarly leaf cells no children.
 
+### Parent and child cells overlap, they do not nest
+
+The hierarchy is a logical grouping rather than an exact geometric containment. Pentagons cannot be subdivided into smaller pentagons, so a child cell overlaps its parent without lying entirely inside it: on average about 63% of a child's area falls within its parent, and at least about 7%, so no child ever lies entirely outside its parent. Treat `cellToParent`, `cellToChildren` and [compaction](./compaction) as a way of grouping nearby cells, not as an exact containment test.
+
+The relationship is loosest between resolutions 1 and 2. Each resolution 1 cell is the single pentagon of its [quintant](../technical/platonic-solids#resolution-1), anchored at the center and a corner of the dodecahedron face and reaching into the neighboring quintants, while its four children are the resolution 2 cells that tile the quintant itself. On average about 58% of a child falls within its parent, rather than 63%, while the least-covered child still has about 7%, as at every other resolution. This is the price of keeping every cell a pentagon: the alternative, triangular resolution 1 cells, nests more closely but breaks the single cell shape and gives resolution 1 cells many awkward vertex-only neighbors.
+
 ### getResolution
 
 Returns the resolution of an A5 cell

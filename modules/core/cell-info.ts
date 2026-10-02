@@ -50,11 +50,10 @@ export function cellArea(resolution: number): number {
 }
 
 // Mean cell edge length divided by sqrt(cellArea), measured exhaustively from the
-// cell boundaries. Resolution 0 cells (dodecahedron faces) and resolution 1 cells
-// (triangular quintants) have their own geometry; from resolution 2 the pentagonal
-// tiling refines self-similarly and the ratio converges to ~0.8211, so a constant
-// serves all higher resolutions.
-const EDGE_LENGTH_RATIOS = [0.7131, 1.4818, 0.8164, 0.8198, 0.8208, 0.821];
+// cell boundaries. Resolution 0 cells (dodecahedron faces) have their own
+// geometry; from resolution 1 the pentagonal tiling refines self-similarly and
+// the ratio converges to ~0.8211, so a constant serves all higher resolutions.
+const EDGE_LENGTH_RATIOS = [0.7131, 0.8037, 0.8164, 0.8198, 0.8208, 0.821];
 const EDGE_LENGTH_RATIO = 0.8211;
 
 /**

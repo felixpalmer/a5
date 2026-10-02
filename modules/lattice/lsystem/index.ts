@@ -201,11 +201,22 @@ const ORIENT: Record<Orientation, OrientRecipe> = {
 };
 
 /**
+ * The flavor of the single cell at resolution 0. There the leaf is the axiom
+ * itself, whose flavor reflects the axiom rather than the cell, so it is fixed
+ * instead. The single cell is the quintant's corner cell [-maxRow, maxRow, 0],
+ * which touches a dodecahedron vertex and is flavor 2 at every resolution, so
+ * the corner cells keep one orientation all the way down. This orientation is
+ * also the one where none of its 4 children lies entirely outside it.
+ */
+export const LEVEL0_FLAVOR = 2;
+
+/**
  * The A5 curve position `s` -> cell (triple coordinate + pentagon flavor), for
  * a given resolution and orientation. The triple is bijective with
  * {@link tripleToSLattice}.
  */
 export function sToCell(s: bigint, resolution: number, orientation: Orientation = 'uv'): Cell {
+  if (resolution === 0) return {triple: {x: 0, y: 0, z: 0}, flavor: LEVEL0_FLAVOR};
   const N = 1n << BigInt(2 * resolution);
   const rec = ORIENT[orientation];
   const sAxiom = rec.reverse ? N - 1n - s : s;

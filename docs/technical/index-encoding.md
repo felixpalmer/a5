@@ -9,7 +9,7 @@ A5 uses a 64-bit unsigned integer to uniquely identify each cell on Earth. This 
 Generally the term **cell** is used to describe the pentagonal region that the A5 grid is made up of, but in addition cells at resolutions 0 and 1 have special names as they are stored differently in the index:
 
 - Resolution 0 cells are also called **origins**
-- Resolution 1 cells are also called **quintants**
+- Resolution 1 cells correspond to **quintants**, one cell per fifth of a dodecahedron face
 - Resolution 2+ cells are just **cells**
 - There is a **World Cell** which can be thought of as having Resolution -1, see [below for more details](#special-case-world-cell)
 
