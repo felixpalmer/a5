@@ -297,28 +297,28 @@
       "lon": -155.5,
       "lat": 19.9,
       "name": "Hawaii Big Island",
-      "hex": "e03790b496a45f5e",
+      "hex": "e03790b496a45f56",
       "resolution": 29
     },
     {
       "lon": -157.8,
       "lat": 21.3,
       "name": "Oahu",
-      "hex": "e03e81fbe717b192",
+      "hex": "e03e81fbe717b1ba",
       "resolution": 29
     },
     {
       "lon": 0,
       "lat": -85,
       "name": "Antarctica Weddell Sea",
-      "hex": "b80ec051ba648c86",
+      "hex": "b80ec051ba648c8a",
       "resolution": 29
     },
     {
       "lon": 90,
       "lat": -80,
       "name": "Antarctica East",
-      "hex": "b79a4bf19b09d5aa",
+      "hex": "b79a4bf19b09d5a6",
       "resolution": 29
     },
     {
@@ -332,7 +332,7 @@
       "lon": 180,
       "lat": -75,
       "name": "Antarctica Ross",
-      "hex": "c52e3cf2bc48b972",
+      "hex": "c52e3cf2bc48b906",
       "resolution": 29
     },
     {
