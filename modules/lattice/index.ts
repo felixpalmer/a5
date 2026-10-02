@@ -11,7 +11,7 @@
 export type {Orientation} from './types';
 
 export {roundToTriple} from './curve';
-export {sToCell, sToTriple} from './lsystem';
+export {sToCell, sToTriple, LEVEL0_FLAVOR} from './lsystem';
 export type {Cell} from './lsystem';
 
 export type {Triple} from './triple';

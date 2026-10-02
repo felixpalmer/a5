@@ -170,29 +170,25 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
     }
   }
 
-  // Base-left corner [-maxRow, maxRow, 0]: 3 dodecahedron faces meet at each base
-  // vertex of the quintant, and this cell touches one of them. From resolution 2
-  // it is a flavor 2 cell touching the vertex shared with the previous quintant;
-  // the single resolution 1 cell (maxRow 0) is flavor 0 and touches the one shared
-  // with the next. The other vertex is implicitly covered: its cross-quintant and
+  // Base-left corner [-maxRow, maxRow, 0]: 3 dodecahedron faces meet at this vertex.
+  // The symmetric base-right corner is implicitly covered: its cross-quintant and
   // cross-face paths land on the [-maxRow, maxRow, 0] cell of neighboring quintants.
   if (!skipCorners && triple.x === -maxRow && triple.y === maxRow && triple.z === 0) {
-    const side = maxRow === 0 ? 1 : -1;
-    // Vertex neighbor 1: across the side quintant's base edge
-    const sideQuintant = (sourceQuintant + side + 5) % 5;
-    const [sideAdjFaceId, sideAdjQuintant] = FACE_ADJACENCY[origin.id][sideQuintant];
-    const sideAdjOrigin = origins[sideAdjFaceId];
-    const {segment: sideAdjSegment, orientation: sideAdjOrientation} = quintantToSegment(
-      sideAdjQuintant,
-      sideAdjOrigin
+    // Vertex neighbor 1: across the previous quintant's base edge
+    const prevQuintant = (sourceQuintant - 1 + 5) % 5;
+    const [prevAdjFaceId, prevAdjQuintant] = FACE_ADJACENCY[origin.id][prevQuintant];
+    const prevAdjOrigin = origins[prevAdjFaceId];
+    const {segment: prevAdjSegment, orientation: prevAdjOrientation} = quintantToSegment(
+      prevAdjQuintant,
+      prevAdjOrigin
     );
-    pushTriple(out, triple, sideAdjOrientation, sideAdjOrigin, sideAdjSegment, ctx);
+    pushTriple(out, triple, prevAdjOrientation, prevAdjOrigin, prevAdjSegment, ctx);
 
     // Vertex neighbor 2: adjacent quintant on the primary cross-face
     const [crossFaceId, crossQuintant] = FACE_ADJACENCY[origin.id][sourceQuintant];
     const crossOrigin = origins[crossFaceId];
-    const crossSideQuintant = (crossQuintant - side + 5) % 5;
-    const {segment: crossSegment, orientation: crossOrientation} = quintantToSegment(crossSideQuintant, crossOrigin);
+    const nextCrossQuintant = (crossQuintant + 1) % 5;
+    const {segment: crossSegment, orientation: crossOrientation} = quintantToSegment(nextCrossQuintant, crossOrigin);
     pushTriple(out, triple, crossOrientation, crossOrigin, crossSegment, ctx);
   }
 

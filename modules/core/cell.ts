@@ -18,15 +18,9 @@ import {
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {A5Cell, Origin, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
-import {
-  cellMarginScaled,
-  getFaceVertices,
-  getPentagonCenter,
-  getPentagonVertices,
-  getQuintantPolar
-} from './tiling';
+import {cellMarginScaled, getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar} from './tiling';
 import {PI_OVER_5} from './constants';
-import {roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
+import {LEVEL0_FLAVOR, roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
 import type {Triple} from '../lattice';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from './serialization';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
@@ -151,7 +145,9 @@ function _lookupInQuintant(
 
   const base = roundToTriple(ij, hilbertResolution);
   let triple = base;
-  let flavor = tripleFlavor(base);
+  // The closed form covers the lattice from resolution 2; the single resolution
+  // 1 cell has its own fixed flavor (see LEVEL0_FLAVOR)
+  let flavor = hilbertResolution === 0 ? LEVEL0_FLAVOR : tripleFlavor(base);
   let margin = cellMarginScaled(px, py, base.x, base.y, flavor);
   if (margin <= 0) {
     // All deltas are relative to the ROUNDED triple (the containing pentagon
