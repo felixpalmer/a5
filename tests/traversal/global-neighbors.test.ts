@@ -34,9 +34,10 @@ describe('getGlobalCellNeighbors', () => {
   });
 
   it('should find symmetric neighbors at resolution 1', () => {
-    // Resolution 1 neighbors come from a hand-derived rule over face
-    // adjacency (not the lattice), so check it is self-consistent: every
-    // neighbor relation is mutual, with 5 edge and 2 vertex-only neighbors
+    // At resolution 1 the single cell of each quintant is every lattice
+    // boundary case at once (apex, edges, corner), so check the boundary rules
+    // stay self-consistent there: every neighbor relation is mutual, with 5
+    // edge and 2 vertex-only neighbors
     for (const f of fixtures as Fixture[]) {
       const cellId = hexToU64(f.input.cellId);
       if (getResolution(cellId) !== 1) continue;

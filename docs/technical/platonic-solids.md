@@ -30,7 +30,7 @@ The next resolution level divides each *regular pentagon* face into 5 [*isoscele
 
 <img src={SolidPentakis} style={{width: "100%", maxWidth: "360px"}}/>
 
-The cells themselves are pentagons, one per quintant. Each is the single cell of the [pentagon tiling](./the-pentagon-that-could) at its coarsest scale: anchored at the center of the dodecahedron face, it covers most of its quintant and reaches into the neighboring ones. Together the **60 cells** form a [*pentagonal hexecontahedron*](https://en.wikipedia.org/wiki/Pentagonal_hexecontahedron), whose faces are all congruent. As at every other resolution, each cell is a pentagon with 5 edge neighbors.
+The cells themselves are pentagons, one per quintant. Each is the single cell of the [pentagon tiling](./the-pentagon-that-could) at its coarsest scale: anchored at the center of the dodecahedron face, it covers most of its quintant and reaches into the neighboring ones. Together the **60 cells** form a [*pentagonal hexecontahedron*](https://en.wikipedia.org/wiki/Pentagonal_hexecontahedron), whose faces are all congruent. As at every other resolution, each cell is a pentagon with 5 edge neighbors. Note that because the cell reaches beyond its quintant, while its children tile the quintant, the [parent-child relationship](../api-reference/hierarchy#parent-and-child-cells-overlap-they-do-not-nest) is loosest at this level.
 
 ## Resolution 2
 
