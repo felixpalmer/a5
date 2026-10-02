@@ -6,6 +6,7 @@ import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {SolidPolygonLayer} from '@deck.gl/layers';
 import {cellToBoundary} from 'a5/core/cell';
 import {uncompact} from 'a5/core/compact';
+import {migrate} from 'a5/core/migrate';
 import {parquetRead} from 'hyparquet';
 import type {LonLat} from 'a5/core/coordinate-systems';
 
@@ -306,9 +307,9 @@ const App: React.FC = () => {
         const parsed: any[] = await new Promise(onComplete => {
           parquetRead({file: arrayBuffer, onComplete});
         });
-        // Each row is [cell_id, color].
+        // Each row is [cell_id, color], with cell_id in the v0 index.
         const typed: Row[] = parsed.map(row => ({
-          id: BigInt.asUintN(64, row[0]),
+          id: migrate(BigInt.asUintN(64, row[0])),
           color: row[1]
         }));
         setRows(typed);

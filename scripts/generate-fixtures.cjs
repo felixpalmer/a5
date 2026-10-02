@@ -9,6 +9,7 @@ require('./fixtures/core/tiling.cjs');
 require('./fixtures/core/constants.cjs');
 require('./fixtures/core/dodecahedron-quaternions.cjs');
 require('./fixtures/core/cell-to-lonlat.cjs');
+require('./fixtures/core/migrate.cjs');
 // Lattice generators
 require('./fixtures/lattice/curve.cjs');
 require('./fixtures/lattice/compat.cjs');
