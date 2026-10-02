@@ -203,8 +203,10 @@ const ORIENT: Record<Orientation, OrientRecipe> = {
 /**
  * The flavor of the single cell at resolution 0. There the leaf is the axiom
  * itself, whose flavor reflects the axiom rather than the cell, so it is fixed
- * instead: every quintant holds the same single pentagon, oriented so that none
- * of its 4 children at the next resolution lies entirely outside it.
+ * instead. The single cell is the quintant's corner cell [-maxRow, maxRow, 0],
+ * which touches a dodecahedron vertex and is flavor 2 at every resolution, so
+ * the corner cells keep one orientation all the way down. This orientation is
+ * also the one where none of its 4 children lies entirely outside it.
  */
 export const LEVEL0_FLAVOR = 2;
 

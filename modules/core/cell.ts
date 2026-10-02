@@ -145,8 +145,8 @@ function _lookupInQuintant(
 
   const base = roundToTriple(ij, hilbertResolution);
   let triple = base;
-  // The closed form covers the lattice from resolution 2; the single resolution
-  // 1 cell has its own fixed flavor (see LEVEL0_FLAVOR)
+  // The closed form gives the corner cell flavor 2 only once its y = maxRow is
+  // odd; the single resolution 1 cell is that corner cell too (see LEVEL0_FLAVOR)
   let flavor = hilbertResolution === 0 ? LEVEL0_FLAVOR : tripleFlavor(base);
   let margin = cellMarginScaled(px, py, base.x, base.y, flavor);
   if (margin <= 0) {
