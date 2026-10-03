@@ -51,7 +51,7 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
   const [longitude, latitude] = location;
 
   return (
-    <div style={{marginBottom: '20px'}}>
+    <div>
       <div
         style={{
           backgroundColor: 'white',
