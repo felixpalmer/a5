@@ -5,6 +5,7 @@
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {Map} from 'react-map-gl/maplibre';
+import {hideLabels} from '../shared/hide-labels';
 import DeckGL from '@deck.gl/react';
 import {HeatmapLayer} from '@deck.gl/aggregation-layers';
 
@@ -22,7 +23,7 @@ const INITIAL_VIEW_STATE: MapViewState = {
   bearing: 0
 };
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/dark';
 
 type DataPoint = [longitude: number, latitude: number, count: number];
 
@@ -54,7 +55,7 @@ export default function App({
 
   return (
     <DeckGL initialViewState={INITIAL_VIEW_STATE} controller={true} layers={layers}>
-      <Map mapStyle={mapStyle} />
+      <Map mapStyle={mapStyle} onStyleData={hideLabels} />
     </DeckGL>
   );
 }

@@ -172,7 +172,7 @@ The app will then be accessible in a web broswer at `http://localhost:8000`.
     // Create the deck.gl visualization
     const deckgl = new DeckGL({
       controller: true,
-      mapStyle: 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json',
+      mapStyle: 'https://tiles.openfreemap.org/styles/positron',
       initialViewState: { longitude: 2.35, latitude: 48.85, zoom: 10 },
       layers: [restaurants],
       getTooltip: ({object}) => object && `${object.count} restaurants`

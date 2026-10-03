@@ -462,7 +462,7 @@ const App: React.FC = () => {
         ref={mapRef}
         initialViewState={INITIAL_VIEW_STATE}
         projection="globe"
-        mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        mapStyle="https://tiles.openfreemap.org/styles/dark"
         dragRotate={false}
         maxPitch={0}
       >

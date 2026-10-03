@@ -2,6 +2,7 @@ import React, {useMemo, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl} from 'react-map-gl/maplibre';
+import {hideLabels} from '../shared/hide-labels';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {PathLayer, PolygonLayer} from '@deck.gl/layers';
 import {generateWireframe, LonLat, A5Pentagon} from 'a5-internal/wireframe';
@@ -215,7 +216,8 @@ const App: React.FC = () => {
         projection="globe"
         id="map"
         initialViewState={INITIAL_VIEW_STATE}
-        mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json"
+        mapStyle="https://tiles.openfreemap.org/styles/dark"
+        onStyleData={hideLabels}
         dragRotate={false}
         maxPitch={0}
       >

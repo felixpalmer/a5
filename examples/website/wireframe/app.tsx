@@ -15,7 +15,7 @@ const INITIAL_VIEW_STATE = {
   maxZoom: 5
 };
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 
 const A5_GREEN = [0, 170, 85] as [number, number, number];
 

@@ -56,11 +56,7 @@ const App: React.FC = () => {
         background: 'linear-gradient(0, #000, #223)'
       }}
     >
-      <Maplibre
-        id="map"
-        initialViewState={INITIAL_VIEW_STATE}
-        mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
-      >
+      <Maplibre id="map" initialViewState={INITIAL_VIEW_STATE} mapStyle="https://tiles.openfreemap.org/styles/dark">
         <DeckGLOverlay layers={[cellLayer]} interleaved={true} />
       </Maplibre>
     </div>

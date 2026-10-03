@@ -6,6 +6,7 @@ import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {A5Layer} from '@deck.gl/geo-layers';
 import {migrate} from 'a5';
 import {Color} from '@deck.gl/core';
+import {hideLabels} from '../shared/hide-labels';
 import {HyparquetLoader} from '../shared/hyparquet-loader';
 
 const RESTAURANTS_DATA = '/data/restaurants_paris_aggregated.parquet';
@@ -51,7 +52,8 @@ const App: React.FC = () => {
       <Maplibre
         id="map"
         initialViewState={INITIAL_VIEW_STATE}
-        mapStyle="https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json"
+        mapStyle="https://tiles.openfreemap.org/styles/positron"
+        onStyleData={hideLabels}
       >
         <DeckGLOverlay
           layers={[cellLayer]}
