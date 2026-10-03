@@ -9,8 +9,9 @@ import {generateWireframe, LonLat, A5Pentagon} from 'a5-internal/wireframe';
 import {colorBins} from '@deck.gl/carto';
 import {DataFilterExtension} from '@deck.gl/extensions';
 import RangeInput from './range-input';
+import NetView from './net-view';
 
-const INITIAL_VIEW_STATE = {longitude: 0, latitude: 60, zoom: 1.5};
+const INITIAL_VIEW_STATE = {longitude: 0, latitude: 40, zoom: 1.1};
 const MAX_RESOLUTION = 5;
 
 // Wireframes are generated on first use and kept, so revisiting a resolution is instant.
@@ -75,11 +76,13 @@ function greatCircle(a: Vec3, b: Vec3): LonLat[] {
   return path;
 }
 
+type LayerVisibility = {path: boolean; polygons: boolean};
+
 // Defined outside App so its inputs keep their identity (and a slider drag)
 // across the re-renders each change triggers
 const Controls: React.FC<{
-  layerVisibility: {path: boolean; polygons: boolean};
-  setLayerVisibility: (vis: {path: boolean; polygons: boolean}) => void;
+  layerVisibility: LayerVisibility;
+  setLayerVisibility: (vis: LayerVisibility) => void;
   resolution: number;
   setResolution: (resolution: number) => void;
 }> = ({layerVisibility, setLayerVisibility, resolution, setResolution}) => {
@@ -113,7 +116,7 @@ const Controls: React.FC<{
             checked={layerVisibility.polygons}
             onChange={e => setLayerVisibility({...layerVisibility, polygons: e.target.checked})}
           />{' '}
-          Show Polygons
+          Show Cells
         </label>
       </div>
       <div>
@@ -135,21 +138,25 @@ const Controls: React.FC<{
 };
 
 const App: React.FC = () => {
-  const [resolution, setResolution] = useState(MAX_RESOLUTION);
+  const [resolution, setResolution] = useState(1);
   const DATA = useMemo(() => getWireframe(resolution), [resolution]);
   const CELLS_PER_FACE = DATA.length / 12;
   // End of high-density region along the curve
   const HD_CUTOFF = (DATA.length * (32 + 8 + 2 + 0.5)) / 60;
 
   const [filterRange, setFilterRange] = useState<[number, number]>([0, DATA.length - 1]);
-  const [layerVisibility, setLayerVisibility] = useState({
+  const [layerVisibility, setLayerVisibility] = useState<LayerVisibility>({
     path: true,
     polygons: false
   });
 
+  // Keep the same stretch of the curve across resolutions: positions along it
+  // scale with the number of cells
   const changeResolution = (newResolution: number) => {
+    const scale = getWireframe(newResolution).length / DATA.length;
+    const [lo, hi] = filterRange;
     setResolution(newResolution);
-    setFilterRange([0, getWireframe(newResolution).length - 1]);
+    setFilterRange([Math.floor(lo * scale), Math.ceil((hi + 1) * scale) - 1]);
   };
 
   // Common layer props
@@ -209,34 +216,43 @@ const App: React.FC = () => {
         width: '100%',
         top: 0,
         left: 0,
-        background: 'linear-gradient(0, #000, #223)'
+        background: 'linear-gradient(0, #000, #223)',
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
-      <Map
-        projection="globe"
-        id="map"
-        initialViewState={INITIAL_VIEW_STATE}
-        mapStyle="https://tiles.openfreemap.org/styles/dark"
-        onStyleData={hideLabels}
-        dragRotate={false}
-        maxPitch={0}
-      >
-        <DeckGLOverlay layers={[layer, cellLayer]} interleaved />
-      </Map>
-      <Controls
-        layerVisibility={layerVisibility}
-        setLayerVisibility={setLayerVisibility}
-        resolution={resolution}
-        setResolution={changeResolution}
-      />
-      <RangeInput
-        min={0}
-        max={DATA.length - 1}
-        value={filterRange}
-        animationSpeed={1}
-        onChange={setFilterRange}
-        formatLabel={value => value.toString()}
-      />
+      {/* Globe in the top half, the same curve on the unfolded net below */}
+      <div style={{position: 'relative', flex: '1 1 0', minHeight: 0}}>
+        <Map
+          projection="globe"
+          id="map"
+          initialViewState={INITIAL_VIEW_STATE}
+          mapStyle="https://tiles.openfreemap.org/styles/dark"
+          onStyleData={hideLabels}
+          dragRotate={false}
+          maxPitch={0}
+        >
+          <DeckGLOverlay layers={[layer, cellLayer]} interleaved />
+        </Map>
+        <Controls
+          layerVisibility={layerVisibility}
+          setLayerVisibility={setLayerVisibility}
+          resolution={resolution}
+          setResolution={changeResolution}
+        />
+      </div>
+      <div style={{position: 'relative', flex: '1 1 0', minHeight: 0, borderTop: '1px solid rgba(255,255,255,0.12)'}}>
+        <NetView
+          resolution={resolution}
+          filterRange={filterRange}
+          showPath={layerVisibility.path}
+          showCells={layerVisibility.polygons}
+        />
+      </div>
+      {/* The range slider sits on the line between the two views, as it drives both */}
+      <div style={{position: 'absolute', left: 0, right: 0, top: '50%', height: 0, zIndex: 1}}>
+        <RangeInput min={0} max={DATA.length - 1} value={filterRange} animationSpeed={1} onChange={setFilterRange} />
+      </div>
     </div>
   );
 };

@@ -13,11 +13,11 @@
     ],
     "angle": 0,
     "orientation": [
-      "vu",
+      "wu",
       "uw",
       "vw",
-      "vw",
-      "vw"
+      "vu",
+      "uw"
     ],
     "firstQuintant": 4
   },
@@ -57,13 +57,13 @@
     ],
     "angle": 0.6283185307179586,
     "orientation": [
-      "wu",
+      "vu",
       "uv",
       "wv",
       "wu",
       "uw"
     ],
-    "firstQuintant": 3
+    "firstQuintant": 2
   },
   {
     "id": 3,
@@ -79,7 +79,7 @@
     ],
     "angle": 0.6283185307179586,
     "orientation": [
-      "wu",
+      "vu",
       "uv",
       "wv",
       "wu",
@@ -149,7 +149,7 @@
       "uw",
       "vw",
       "vu",
-      "uw"
+      "uv"
     ],
     "firstQuintant": 2
   },
@@ -173,7 +173,7 @@
       "vu",
       "uw"
     ],
-    "firstQuintant": 2
+    "firstQuintant": 1
   },
   {
     "id": 8,
@@ -189,7 +189,7 @@
     ],
     "angle": 0.6283185307179586,
     "orientation": [
-      "wu",
+      "vu",
       "uv",
       "wv",
       "wu",
@@ -259,7 +259,7 @@
       "uw",
       "vw",
       "vu",
-      "uw"
+      "uv"
     ],
     "firstQuintant": 0
   }
