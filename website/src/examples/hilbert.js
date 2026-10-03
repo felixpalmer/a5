@@ -20,11 +20,6 @@ class HilbertDemo extends Component {
           curves are stitched together to complete a closed circuit.
         </p>
         <p>The ordering of the curve is carefully chosen to place the land masses first, followed by the oceans.</p>
-        <p>
-          Below the globe, the same curve on the dodecahedron unfolded along the order in which the curve visits its
-          faces. Each face threads its five quintants with the jump (counterclockwise or clockwise) or the clockwise
-          step.
-        </p>
         <p>Thus 99.9% of the world's population is contained in the first two thirds of the curve.</p>
       </div>
     );
