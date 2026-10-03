@@ -167,7 +167,7 @@ const MapView: React.FC<{
         scrollZoom={false}
         minPitch={initialViewState.pitch}
         maxPitch={initialViewState.pitch}
-        mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        mapStyle="https://tiles.openfreemap.org/styles/dark"
       >
         <DeckGLOverlay
           layers={[cellLayer, scatterplotLayer, heatmapLayer, centerPointLayer, labelLayer]}

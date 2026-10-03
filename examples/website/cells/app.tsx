@@ -69,7 +69,7 @@ const App: React.FC = () => {
       <Map
         id="map"
         initialViewState={INITIAL_VIEW_STATE}
-        mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        mapStyle="https://tiles.openfreemap.org/styles/dark"
         renderWorldCopies={true}
         onMove={handleViewStateChange}
       >

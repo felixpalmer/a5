@@ -13,7 +13,7 @@ const MAX_RESOLUTION = 30;
 
 const INITIAL_VIEW_STATE = {longitude: -0.1276, latitude: 51.50735, zoom: 10, minZoom: 2, maxZoom: 27};
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/dark';
 
 const A5GREEN = [0, 170, 85] as [number, number, number];
 const A5GREEN_DARK = [0, 128, 64] as [number, number, number];
