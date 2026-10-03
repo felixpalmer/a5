@@ -206,11 +206,12 @@ function bruteForcePolygonToCells(rings, resolution, insidePoint) {
  * its holes, so a cell overlaps it when it overlaps the outer ring and is not
  * entirely swallowed by a single hole.
  */
-function ringsOverlap(cellRing, cellVecs, polyRing) {
+function ringsOverlap(cellRing, cellVecs, polyRing, insidePoint) {
   const polyVecs = polyRing.map(toVec3);
   // Any cell vertex inside the polygon ring, or vice versa.
   for (const v of cellRing) {
-    if (pointInPolygonSpherical(v, polyRing)) return true;
+    const inside = insidePoint ? pointInPolygonFromInside(v, polyRing, insidePoint) : pointInPolygonSpherical(v, polyRing);
+    if (inside) return true;
   }
   for (const v of polyRing) {
     if (pointInPolygonSpherical(v, cellRing)) return true;
@@ -246,10 +247,10 @@ function cellInsideHole(cellRing, cellVecs, holeRing) {
   return true;
 }
 
-function cellOverlapsPolygon(cellId, rings) {
+function cellOverlapsPolygon(cellId, rings, insidePoint) {
   const cellRing = cellToBoundary(cellId, {closedRing: false});
   const cellVecs = cellRing.map(toVec3);
-  if (!ringsOverlap(cellRing, cellVecs, rings[0])) return false;
+  if (!ringsOverlap(cellRing, cellVecs, rings[0], insidePoint)) return false;
   for (let r = 1; r < rings.length; r++) {
     if (cellInsideHole(cellRing, cellVecs, rings[r])) return false;
   }
@@ -260,11 +261,14 @@ function cellOverlapsPolygon(cellId, rings) {
  * Brute-force full-coverage oracle: every candidate cell whose region overlaps
  * the polygon region. Used to validate `containment: 'overlapping'`.
  */
-function bruteForceOverlappingCells(rings, resolution) {
-  const candidateCells = getCandidateCells(rings, resolution, false);
+function bruteForceOverlappingCells(rings, resolution, insidePoint) {
+  // As in bruteForcePolygonToCells: past a hemisphere, test every cell
+  const candidateCells = insidePoint
+    ? uncompact(getRes0Cells(), resolution)
+    : getCandidateCells(rings, resolution, false);
   const result = [];
   for (const cellId of candidateCells) {
-    if (cellOverlapsPolygon(cellId, rings)) {
+    if (cellOverlapsPolygon(cellId, rings, insidePoint)) {
       result.push(cellId);
     }
   }
@@ -400,7 +404,7 @@ for (const tc of polygonCases) {
   }
 
   // Compare against the geometric overlap oracle.
-  const oracle = bruteForceOverlappingCells(rings, tc.resolution);
+  const oracle = bruteForceOverlappingCells(rings, tc.resolution, tc.inside);
   const oracleSet = new Set(oracle.map(c => c.toString()));
   const missed = oracle.filter(c => !overlapSet.has(c.toString()));
   const extra = overlapSorted.filter(c => !oracleSet.has(c.toString()));

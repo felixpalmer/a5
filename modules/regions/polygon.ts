@@ -249,6 +249,9 @@ function swallowedQuintants(
   resolution: number,
   prep: PreparedPolygon
 ): bigint[] {
+  // A swallowed quintant lies inside the polygon's bounding cap, so the cap
+  // must have at least a quintant's area (4π/60: cells are equal-area)
+  if (2 * Math.PI * (1 - prep.cap.minDot) < (4 * Math.PI) / 60) return [];
   const level = Math.min(resolution, FIRST_HILBERT_RESOLUTION - 1);
   const touched = new Set<bigint>();
   for (const cells of [boundaryCells, shellCells]) {
