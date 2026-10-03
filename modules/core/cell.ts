@@ -20,7 +20,7 @@ import {A5Cell, Origin, OriginId} from './utils';
 import {PentagonShape} from '../geometry/pentagon';
 import {cellMarginScaled, getFaceVertices, getPentagonCenter, getPentagonVertices, getQuintantPolar} from './tiling';
 import {PI_OVER_5} from './constants';
-import {LEVEL0_FLAVOR, roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
+import {roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
 import type {Triple} from '../lattice';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from './serialization';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
@@ -145,20 +145,18 @@ function _lookupInQuintant(
 
   const base = roundToTriple(ij, hilbertResolution);
   let triple = base;
-  // The closed form gives the corner cell flavor 2 only once its y = maxRow is
-  // odd; the single resolution 1 cell is that corner cell too (see LEVEL0_FLAVOR)
-  let flavor = hilbertResolution === 0 ? LEVEL0_FLAVOR : tripleFlavor(base);
+  const maxRow = scale - 1;
+  let flavor = tripleFlavor(base, maxRow);
   let margin = cellMarginScaled(px, py, base.x, base.y, flavor);
   if (margin <= 0) {
     // All deltas are relative to the ROUNDED triple (the containing pentagon
     // is always among its fixed neighbors), not to intermediate best cells.
     const deltas = NEIGHBOR_DELTAS[flavor].all;
-    const maxRow = scale - 1;
     for (let i = 0; i < deltas.length; i++) {
       const d = deltas[i];
       const neighbor = {x: base.x + d.x, y: base.y + d.y, z: base.z + d.z};
       if (!tripleInBounds(neighbor, maxRow)) continue;
-      const neighborFlavor = tripleFlavor(neighbor);
+      const neighborFlavor = tripleFlavor(neighbor, maxRow);
       const neighborMargin = cellMarginScaled(px, py, neighbor.x, neighbor.y, neighborFlavor);
       if (neighborMargin > margin) {
         triple = neighbor;
