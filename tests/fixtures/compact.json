@@ -67,11 +67,11 @@
       "description": "Cells at different resolutions with no sibling relationships",
       "input": [
         "1458000000000000",
-        "342a000000000000"
+        "382a000000000000"
       ],
       "expectedOutput": [
         "1458000000000000",
-        "342a000000000000"
+        "382a000000000000"
       ]
     },
     {
@@ -227,7 +227,7 @@
       "description": "Cells at resolutions 3 and 4 both expand to resolution 5",
       "input": [
         "24a0000000000000",
-        "3858000000000000"
+        "2858000000000000"
       ],
       "targetResolution": 5,
       "expectedCount": 20
@@ -405,12 +405,12 @@
       "initialCells": [
         "480000000000000",
         "2428000000000000",
-        "3816000000000000"
+        "2816000000000000"
       ],
       "afterCompact": [
         "480000000000000",
         "2428000000000000",
-        "3816000000000000"
+        "2816000000000000"
       ],
       "targetResolution": 5,
       "expectedCount": 69

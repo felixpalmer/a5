@@ -5,7 +5,7 @@
 // Re-export public API
 export * from './index';
 
-export {origins, segmentToQuintant, quintantToSegment, haversine} from './core/origin';
+export {origins, segmentToQuintant, quintantToSegment, faceStep, haversine} from './core/origin';
 export {cellToSpherical} from './core/cell';
 export {serialize, deserialize, WORLD_CELL, FIRST_HILBERT_RESOLUTION} from './core/serialization';
 export {quaternions} from './core/dodecahedron-quaternions';

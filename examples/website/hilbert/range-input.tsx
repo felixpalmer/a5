@@ -13,7 +13,9 @@ import PauseIcon from '@material-ui/icons/Pause';
 const PositionContainer = styled('div')({
   position: 'absolute',
   zIndex: 1,
-  bottom: '40px',
+  // Centered on the top edge of its container
+  top: 0,
+  transform: 'translateY(-50%)',
   width: '100%',
   display: 'flex',
   justifyContent: 'center',
@@ -24,29 +26,27 @@ const SliderInput = withStyles({
   root: {
     marginLeft: 12,
     width: '40%'
-  },
-  valueLabel: {
-    '& span': {
-      background: 'none',
-      color: '#000'
-    }
   }
 })(Slider);
+
+// The play button, light on the dark views and dimmed (not black) when disabled
+const PlayButton = withStyles({
+  root: {color: '#e8e5de'},
+  disabled: {color: 'rgba(232, 229, 222, 0.35) !important'}
+})(Button);
 
 export default function RangeInput({
   min,
   max,
   value,
   animationSpeed,
-  onChange,
-  formatLabel
+  onChange
 }: {
   min: number;
   max: number;
   value: [start: number, end: number];
   animationSpeed: number;
   onChange: (value: [start: number, end: number]) => void;
-  formatLabel: (value: number) => string;
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [animation] = useState<{
@@ -74,22 +74,14 @@ export default function RangeInput({
 
   return (
     <PositionContainer>
-      <Button
-        color="primary"
+      <PlayButton
         disabled={!isButtonEnabled}
         onClick={() => setIsPlaying(!isPlaying)}
         title={isPlaying ? 'Stop' : 'Animate'}
       >
         {isPlaying ? <PauseIcon /> : <PlayIcon />}
-      </Button>
-      <SliderInput
-        min={min}
-        max={max}
-        value={value}
-        onChange={(_, newValue: [number, number]) => onChange(newValue)}
-        valueLabelDisplay="auto"
-        valueLabelFormat={formatLabel}
-      />
+      </PlayButton>
+      <SliderInput min={min} max={max} value={value} onChange={(_, newValue: [number, number]) => onChange(newValue)} />
     </PositionContainer>
   );
 }

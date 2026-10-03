@@ -10,32 +10,39 @@ import type {Orientation} from '../lattice';
 import type {Origin, OriginId} from './utils';
 import {quaternions} from './dodecahedron-quaternions';
 
-// Quintant layouts (clockwise & counterclockwise)
-export const clockwiseFan = ['vu', 'uw', 'vw', 'vw', 'vw'] as Orientation[];
-export const clockwiseStep = ['wu', 'uw', 'vw', 'vu', 'uw'] as Orientation[];
-export const counterStep = ['wu', 'uv', 'wv', 'wu', 'uw'] as Orientation[];
+// Quintant layouts. Every face threads its quintants with one of two patterns,
+// entering at the vertex shared by its first two quintants and passing through
+// the face center twice. In orientation terms u is the quintant's apex (the
+// face center), v and w its outer vertices, so 'vu' runs from v to the apex.
+// - jump: exits two vertices against the winding from where it entered
+// - step: exits one vertex against the winding
+// Clockwise faces use the mirror image (v <-> w) of the counterclockwise
+// pattern. Every counterclockwise face is threaded with the jump, so the step
+// only occurs clockwise: three layouts in all.
 export const counterJump = ['vu', 'uv', 'wv', 'wu', 'uw'] as Orientation[];
+export const clockwiseJump = ['wu', 'uw', 'vw', 'vu', 'uv'] as Orientation[];
+export const clockwiseStep = ['wu', 'uw', 'vw', 'vu', 'uw'] as Orientation[];
 
 const QUINTANT_ORIENTATIONS: Orientation[][] = [
-  clockwiseFan, // 0 Arctic
+  clockwiseStep, // 0 Arctic
   counterJump, // 1 North America
-  counterStep, // 2 South America
+  counterJump, // 2 South America
 
   clockwiseStep, // 3 North Atlantic & Western Europe & Africa
-  counterStep, // 4 South Atlantic & Africa
+  counterJump, // 4 South Atlantic & Africa
   counterJump, // 5 Europe, Middle East & CentralAfrica
 
-  counterStep, // 6 Indian Ocean
-  clockwiseStep, // 7 Asia
+  counterJump, // 6 Indian Ocean
+  clockwiseJump, // 7 Asia
   clockwiseStep, // 8 Australia
 
-  clockwiseStep, // 9 North Pacific
+  clockwiseJump, // 9 North Pacific
   counterJump, // 10 South Pacific
   counterJump // 11 Antarctic
 ];
 
 // Within each face, these are the indices of the first quintant
-const QUINTANT_FIRST = [4, 2, 3, 2, 0, 4, 3, 2, 2, 0, 3, 0];
+const QUINTANT_FIRST = [4, 2, 2, 2, 0, 4, 3, 2, 1, 0, 3, 0];
 
 // Placements of dodecahedron faces along the Hilbert curve
 const ORIGIN_ORDER = [0, 1, 2, 4, 3, 5, 7, 8, 6, 11, 10, 9];
@@ -84,10 +91,16 @@ origins.forEach((origin, i) => (origin.id = i as OriginId));
 
 export {origins};
 
+/** Direction of travel around a face: 1 for counterclockwise faces, -1 for clockwise */
+export function faceStep(origin: Origin): number {
+  const layout = origin.orientation;
+  return layout === clockwiseJump || layout === clockwiseStep ? -1 : 1;
+}
+
 export function quintantToSegment(quintant: number, origin: Origin): {segment: number; orientation: Orientation} {
   // Lookup winding direction of this face
   const layout = origin.orientation;
-  const step = layout === clockwiseFan || layout === clockwiseStep ? -1 : 1;
+  const step = faceStep(origin);
 
   // Find (CCW) delta from first quintant of this face
   const delta = (quintant - origin.firstQuintant + 5) % 5;
@@ -103,7 +116,7 @@ export function quintantToSegment(quintant: number, origin: Origin): {segment: n
 export function segmentToQuintant(segment: number, origin: Origin): {quintant: number; orientation: Orientation} {
   // Lookup winding direction of this face
   const layout = origin.orientation;
-  const step = layout === clockwiseFan || layout === clockwiseStep ? -1 : 1;
+  const step = faceStep(origin);
 
   const faceRelativeQuintant = (segment - origin.firstQuintant + 5) % 5;
   const orientation = layout[faceRelativeQuintant];

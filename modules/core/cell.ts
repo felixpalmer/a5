@@ -8,7 +8,7 @@ import * as vec2 from '../math/vec2';
 import type {Face, LonLat, Spherical} from './coordinate-systems';
 import {FaceToIJ, fromLonLat, toLonLat, toPolar, normalizeLongitudes} from './coordinate-transforms';
 import {
-  clockwiseFan,
+  clockwiseJump,
   clockwiseStep,
   findNearestOrigin,
   findNearestOrigins,
@@ -116,7 +116,7 @@ function _lookupInQuintant(
 ): CellCandidate | null {
   // Inlined quintantToSegment (see origin.ts)
   const layout = origin.orientation;
-  const step = layout === clockwiseFan || layout === clockwiseStep ? -1 : 1;
+  const step = layout === clockwiseJump || layout === clockwiseStep ? -1 : 1;
   const delta = (quintant - origin.firstQuintant + 5) % 5;
   const faceRelativeQuintant = (step * delta + 5) % 5;
   const orientation = layout[faceRelativeQuintant];
