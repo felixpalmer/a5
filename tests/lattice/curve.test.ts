@@ -91,12 +91,15 @@ describe('tripleInBounds', () => {
 
 describe('tripleFlavor', () => {
   it('matches the descent flavor for every cell (closed form)', () => {
-    // The pentagon flavor depends only on (parity, y mod 2); pin the closed
-    // form against the descent over all cells at res 6, two orientations.
+    // Pin the closed form against the descent over all cells at res 0-6
+    // (res 0 included: its single corner cell is flavor 2), two orientations.
     for (const orientation of ['uv', 'wu'] as const) {
-      for (let s = 0n; s < 1n << 12n; s++) {
-        const cell = sToCell(s, 6, orientation);
-        expect(tripleFlavor(cell.triple)).toBe(cell.flavor);
+      for (let res = 0; res <= 6; res++) {
+        const maxRow = (1 << res) - 1;
+        for (let s = 0n; s < 1n << BigInt(2 * res); s++) {
+          const cell = sToCell(s, res, orientation);
+          expect(tripleFlavor(cell.triple, maxRow)).toBe(cell.flavor);
+        }
       }
     }
   });

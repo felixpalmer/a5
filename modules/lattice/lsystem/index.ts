@@ -206,7 +206,8 @@ const ORIENT: Record<Orientation, OrientRecipe> = {
  * instead. The single cell is the quintant's corner cell [-maxRow, maxRow, 0],
  * which touches a dodecahedron vertex and is flavor 2 at every resolution, so
  * the corner cells keep one orientation all the way down. This orientation is
- * also the one where none of its 4 children lies entirely outside it.
+ * also the one where none of its 4 children lies entirely outside it, and the
+ * one tripleFlavor gives it (see triple.ts).
  */
 export const LEVEL0_FLAVOR = 2;
 
