@@ -76,7 +76,9 @@ export function tripleSpaceFloodFill(
   const toIds = (cells: number[]): bigint[] => {
     const ids: bigint[] = [];
     for (let c = 0; c < cells.length; c += 5) {
-      ids.push(tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], hilbertRes, resolution));
+      ids.push(
+        tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], hilbertRes, resolution)
+      );
     }
     return ids;
   };

@@ -1,11 +1,32 @@
 const fs = require('fs');
 const path = require('path');
-const {tripleSpaceFloodFill, cellIdsToTriples, getLatticeNeighbors, lonLatToCell, u64ToHex} = require('../../a5-test.cjs');
+const {
+  tripleSpaceFloodFill,
+  cellIdsToTriples,
+  forEachLatticeNeighbor,
+  tripleCellToId,
+  getResolution,
+  FIRST_HILBERT_RESOLUTION,
+  lonLatToCell,
+  u64ToHex
+} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'lattice-flood-fill.json');
 
 const sortHex = a => [...a].map(u64ToHex).sort();
+
+/** The lattice neighbors of a cell — the flood fill's connectivity — as cell IDs. */
+function latticeNeighbors(cell) {
+  const resolution = getResolution(cell);
+  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const [originId, quintant, x, y, z] = cellIdsToTriples([cell]);
+  const out = [];
+  forEachLatticeNeighbor(originId, quintant, x, y, z, (1 << hilbertRes) - 1, (o, q, nx, ny, nz) => {
+    out.push(tripleCellToId(o, q, nx, ny, nz, hilbertRes, resolution));
+  });
+  return out;
+}
 
 /**
  * Build a firewall ring around a center cell at edge-only distance `ringRadius`.
@@ -17,7 +38,7 @@ function buildRingFirewall(center, ringRadius) {
   for (let r = 0; r < ringRadius; r++) {
     const next = [];
     for (const cell of layers[r]) {
-      for (const n of getLatticeNeighbors(cell)) {
+      for (const n of latticeNeighbors(cell)) {
         if (visited.has(n)) continue;
         visited.add(n);
         next.push(n);

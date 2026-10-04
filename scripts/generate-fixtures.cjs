@@ -21,7 +21,6 @@ require('./fixtures/traversal/global-neighbors.cjs');
 require('./fixtures/traversal/grid-disk.cjs');
 require('./fixtures/traversal/cap.cjs');
 require('./fixtures/traversal/line.cjs');
-require('./fixtures/traversal/lattice-neighbors.cjs');
 require('./fixtures/traversal/lattice-flood-fill.cjs');
 require('./fixtures/core/compact.cjs');
 

@@ -53,9 +53,8 @@ export {metersToH, estimateCellRadius, pickCoarseResolution} from './traversal/c
 export {greatCircleDistance, sampleGreatCircleArc} from './utils/great-circle';
 
 // Export lattice neighbor / flood-fill for testing
-export {getLatticeNeighbors} from './traversal/lattice-neighbors';
 export {tripleSpaceFloodFill} from './traversal/lattice-flood-fill';
-export {cellIdsToTriples} from './traversal/triple-cells';
+export {cellIdsToTriples, forEachLatticeNeighbor, tripleCellToId} from './traversal/triple-cells';
 
 // Export spherical-polygon free functions for testing
 export {pointInSphericalPolygon, ringWindingSign, ringSegmentNormals} from './geometry/spherical-polygon';

@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {sToTriple} from '../lattice';
 import {compact} from '../core/compact';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
-import {origins, segmentToQuintant} from '../core/origin';
+import {origins} from '../core/origin';
+import {walkFaces} from '../core/face-adjacency';
 import type {TripleCellVisitor} from './triple-cells';
-import {forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
-import {FACE_ADJACENCY} from '../core/face-adjacency';
+import {cellIdsToTriples, forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
 
 /** One BFS ring: its dedup keys, and its cells as flat (originId, quintant, x, y, z). */
 interface Ring {
@@ -40,19 +39,6 @@ function pushCellIds(out: bigint[], cells: number[], hilbertRes: number, resolut
   }
 }
 
-/** Resolution 0: the cells are the 12 dodecahedron faces, adjacent across their edges. */
-function _gridDiskFaces(originId: number, k: number): BigUint64Array {
-  const disk = new Set<number>([originId]);
-  for (let ring = 0; ring < k && disk.size < 12; ring++) {
-    for (const id of [...disk]) {
-      for (let q = 0; q < 5; q++) disk.add(FACE_ADJACENCY[id][q][0]);
-    }
-  }
-  const cells: bigint[] = [];
-  for (const id of disk) cells.push(serialize({origin: origins[id], segment: 0, S: 0n, resolution: 0}));
-  return compact(cells);
-}
-
 /**
  * BFS grid disk in triple space, with progressive compaction.
  *
@@ -67,18 +53,21 @@ function _gridDiskFaces(originId: number, k: number): BigUint64Array {
  */
 function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array {
   if (k === 0) return new BigUint64Array([cellId]);
-  const {origin, segment, S, resolution} = deserialize(cellId);
-  if (resolution === 0) return _gridDiskFaces(origin.id, k);
+  const {origin, resolution} = deserialize(cellId);
+  if (resolution === 0) {
+    // The cells are the 12 dodecahedron faces
+    const faces = walkFaces([origin.id], () => true, k);
+    return compact(faces.map(face => serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0})));
+  }
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
-  const {quintant, orientation} = segmentToQuintant(segment, origin);
-  const seed = sToTriple(S, hilbertRes, orientation);
+  const [originId, quintant, x, y, z] = cellIdsToTriples([cellId]);
 
   // The seed is `cellId` already, so it goes straight to the output
   let interior: bigint[] = [cellId];
   let prevFrontier: Ring = {keys: new Set(), cells: []};
   let frontier: Ring = {keys: new Set(), cells: []};
-  addCell(frontier, prevFrontier, prevFrontier, origin.id, quintant, seed.x, seed.y, seed.z);
+  addCell(frontier, prevFrontier, prevFrontier, originId, quintant, x, y, z);
 
   for (let ring = 1; ring <= k; ring++) {
     const nextFrontier: Ring = {keys: new Set(), cells: []};

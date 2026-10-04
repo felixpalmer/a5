@@ -8,48 +8,6 @@ import {compareBigint} from '../utils/bigint';
 import {NEIGHBOR_DELTAS} from './neighbors';
 
 /**
- * Find within-quintant neighbors via the cell's pentagon flavor.
- *
- * A cell's neighbors sit at fixed triple deltas determined by its flavor
- * (NEIGHBOR_DELTAS — 5 edge-sharing + 2 vertex-only), so no per-candidate
- * validation is needed: each in-bounds delta is a neighbor.
- *
- * @param sourceTriple - Triple coordinates of the source cell
- * @param sourceFlavor - Pentagon flavor of the source cell (0-3)
- * @param sourceS - Source s-value to exclude from results
- * @param resolution - Resolution level
- * @param orientation - Curve orientation
- * @param edgeOnly - If true, only the 5 edge-sharing neighbors
- * @returns Array of neighbor s-values (unsorted)
- */
-export function findQuintantNeighborS(
-  sourceTriple: Triple,
-  sourceFlavor: number,
-  sourceS: bigint,
-  resolution: number,
-  orientation: Orientation,
-  edgeOnly: boolean
-): bigint[] {
-  const maxS = 4n ** BigInt(resolution);
-  const maxRow = (1 << resolution) - 1;
-  const deltas = NEIGHBOR_DELTAS[sourceFlavor];
-  const neighbors: bigint[] = [];
-
-  const list = edgeOnly ? deltas.edge : deltas.all;
-  for (let i = 0; i < list.length; i++) {
-    const d = list[i];
-    const neighborTriple: Triple = {x: sourceTriple.x + d.x, y: sourceTriple.y + d.y, z: sourceTriple.z + d.z};
-    if (!tripleInBounds(neighborTriple, maxRow)) continue;
-    const neighborS = tripleToS(neighborTriple, resolution, orientation);
-    if (neighborS !== null && neighborS >= 0n && neighborS < maxS && neighborS !== sourceS) {
-      neighbors.push(neighborS);
-    }
-  }
-
-  return neighbors;
-}
-
-/**
  * Neighbor finding via triple coordinates and pentagon flavor.
  *
  * Triple coordinates are orientation-independent — the same geometric cell
@@ -71,7 +29,13 @@ export function getCellNeighbors(
   options?: {edgeOnly?: boolean}
 ): bigint[] {
   const {triple, flavor} = sToCell(s, resolution, orientation);
-  return findQuintantNeighborS(triple, flavor, s, resolution, orientation, options?.edgeOnly ?? false).sort(
-    compareBigint
-  );
+  const maxRow = (1 << resolution) - 1;
+  const deltas = options?.edgeOnly ? NEIGHBOR_DELTAS[flavor].edge : NEIGHBOR_DELTAS[flavor].all;
+  const neighbors: bigint[] = [];
+  for (let i = 0; i < deltas.length; i++) {
+    const d = deltas[i];
+    const neighbor: Triple = {x: triple.x + d.x, y: triple.y + d.y, z: triple.z + d.z};
+    if (tripleInBounds(neighbor, maxRow)) neighbors.push(tripleToS(neighbor, resolution, orientation)!);
+  }
+  return neighbors.sort(compareBigint);
 }

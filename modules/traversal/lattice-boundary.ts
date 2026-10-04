@@ -3,10 +3,8 @@
 // Copyright (c) A5 contributors
 
 import type {Triple} from '../lattice';
-import {tripleToS, tripleInBounds} from '../lattice';
+import {tripleInBounds} from '../lattice';
 import type {Origin} from '../core/utils';
-import {serialize} from '../core/serialization';
-import {quintantToSegment, origins} from '../core/origin';
 import {FACE_ADJACENCY} from '../core/face-adjacency';
 
 /** Neighbor delta: [dx, dy, dz, isEdgeSharing] */
@@ -46,20 +44,14 @@ export const CROSS_FACE_DELTAS: NeighborDelta[][] = [
   /* parity=1 */ [[0, 0, -1, true], [0, 0, 0, false]]
 ];
 
-/** Source-cell context shared by all boundary-neighbor cases. */
-export interface BoundaryContext {
+/** The source cell of a boundary-neighbor lookup. */
+export interface BoundaryTripleContext {
   triple: Triple;
   parity: number;
   sourceQuintant: number;
   origin: Origin;
-  hilbertRes: number;
-  maxS: bigint;
   maxRow: number;
-  resolution: number;
 }
-
-/** Source-cell fields the boundary-triple walk needs (no encoding state). */
-export type BoundaryTripleContext = Pick<BoundaryContext, 'triple' | 'parity' | 'sourceQuintant' | 'origin' | 'maxRow'>;
 
 /** If the triple is a valid cell, append it to `out` as (originId, quintant, x, y, z). */
 function pushTriple(
@@ -181,25 +173,4 @@ export function getBoundaryNeighborTriples(
     const [crossFaceId, crossQuintant] = FACE_ADJACENCY[origin.id][sourceQuintant];
     pushTriple(out, triple.x, triple.y, triple.z, crossFaceId, (crossQuintant + 1) % 5, maxRow);
   }
-}
-
-/**
- * The neighbors outside the source cell's quintant (see
- * `getBoundaryNeighborTriples`), as cell IDs.
- *
- * The result may contain duplicates and the order is not stable; callers
- * deduplicate (via Set) or accept duplicates if their downstream pipeline tolerates them.
- */
-export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, skipCorners = false): bigint[] {
-  const triples: number[] = [];
-  getBoundaryNeighborTriples(ctx, edgeOnly, skipCorners, triples);
-  const out: bigint[] = [];
-  for (let i = 0; i < triples.length; i += 5) {
-    const origin = origins[triples[i]];
-    const {segment, orientation} = quintantToSegment(triples[i + 1], origin);
-    const s = tripleToS({x: triples[i + 2], y: triples[i + 3], z: triples[i + 4]}, ctx.hilbertRes, orientation);
-    if (s === null || s < 0n || s >= ctx.maxS) continue;
-    out.push(serialize({origin, segment, S: s, resolution: ctx.resolution}));
-  }
-  return out;
 }

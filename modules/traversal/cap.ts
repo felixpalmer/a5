@@ -4,7 +4,6 @@
 
 import type {Spherical} from '../core/coordinate-systems';
 import type {OriginId} from '../core/utils';
-import {sToTriple} from '../lattice';
 import {
   getResolution,
   cellToParent,
@@ -16,9 +15,9 @@ import {
 import {cellToSpherical} from '../core/cell';
 import {cellArea} from '../core/cell-info';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
-import {FACE_ADJACENCY} from '../core/face-adjacency';
-import {haversine, origins, segmentToQuintant} from '../core/origin';
-import {forEachTripleNeighbor, tripleCellCenter, tripleCellKey, tripleCellToId} from './triple-cells';
+import {walkFaces} from '../core/face-adjacency';
+import {haversine, origins} from '../core/origin';
+import {cellIdsToTriples, forEachTripleNeighbor, tripleCellCenter, tripleCellKey, tripleCellToId} from './triple-cells';
 
 /** Safety factor applied to equal-area circle radius to get conservative circumradius estimate */
 const CELL_RADIUS_SAFETY_FACTOR = 2.0;
@@ -88,34 +87,20 @@ export function pickCoarseResolution(radius: number, targetRes: number): number 
  * from its triple, so no cell is decoded and each is encoded once.
  */
 function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number): bigint[] {
-  const {origin, segment, S, resolution} = deserialize(startCell);
+  const {origin, resolution} = deserialize(startCell);
+  const faceCell = (face: OriginId) => serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0});
   if (resolution === 0) {
-    // The cells are the 12 dodecahedron faces, adjacent across their edges
-    const visited = new Set<OriginId>([origin.id]);
-    let frontier: OriginId[] = [origin.id];
-    while (frontier.length > 0) {
-      const next: OriginId[] = [];
-      for (const id of frontier) {
-        for (let q = 0; q < 5; q++) {
-          const face = FACE_ADJACENCY[id][q][0];
-          if (visited.has(face)) continue;
-          visited.add(face);
-          const cell = serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0});
-          if (haversine(center, cellToSpherical(cell)) <= hExpanded) next.push(face);
-        }
-      }
-      frontier = next;
-    }
-    return [...visited].map(id => serialize({origin: origins[id], segment: 0, S: 0n, resolution: 0}));
+    // The cells are the 12 dodecahedron faces
+    return walkFaces([origin.id], face => haversine(center, cellToSpherical(faceCell(face))) <= hExpanded).map(
+      faceCell
+    );
   }
 
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
-  const {quintant, orientation} = segmentToQuintant(segment, origin);
-  const seed = sToTriple(S, hilbertRes, orientation);
-  const visited = new Set<number>([tripleCellKey(origin.id, quintant, seed.x, seed.y, seed.z)]);
+  let frontier = cellIdsToTriples([startCell]);
+  const visited = new Set<number>([tripleCellKey(frontier[0], frontier[1], frontier[2], frontier[3], frontier[4])]);
   const cells: bigint[] = [startCell];
-  let frontier: number[] = [origin.id, quintant, seed.x, seed.y, seed.z];
 
   while (frontier.length > 0) {
     const next: number[] = [];
