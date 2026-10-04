@@ -4,7 +4,7 @@
 
 import type {LonLat, Face} from '../core/coordinate-systems';
 import type {Triple} from '../lattice';
-import {sToCell, tripleFlavor, tripleInBounds} from '../lattice';
+import {sToCell, tripleFlavor} from '../lattice';
 import {lonLatToCell, cellIntersectsSegment} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical, toLonLat} from '../core/coordinate-transforms';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
@@ -15,9 +15,7 @@ import {getPentagonVertices} from '../core/tiling';
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {estimateCellRadius} from './cap';
 import {sampleGreatCircleArc} from '../utils/great-circle';
-import {getBoundaryNeighborTriples} from './lattice-boundary';
-import {NEIGHBOR_DELTAS} from './neighbors';
-import {tripleCellKey, tripleCellToId} from './triple-cells';
+import {forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
 
 const dodecahedron = new DodecahedronProjection();
 
@@ -97,7 +95,6 @@ export function lineStringToCells(waypoints: LonLat[], resolution: number): bigi
     return pentagon.intersectsSegment(faceA[originId]!, faceB[originId]!);
   };
 
-  const boundary: number[] = [];
   for (let i = 0; i < waypoints.length - 1; i++) {
     const start = waypoints[i];
     const end = waypoints[i + 1];
@@ -174,30 +171,8 @@ export function lineStringToCells(waypoints: LonLat[], resolution: number): bigi
           }
         };
         for (let c = 0; c < frontier.length; c += 5) {
-          const originId = frontier[c];
-          const q = frontier[c + 1];
-          const x = frontier[c + 2];
-          const y = frontier[c + 3];
-          const z = frontier[c + 4];
-          const triple: Triple = {x, y, z};
-
-          // Within the quintant: the fixed per-flavor deltas (edge and vertex neighbors)
-          const deltas = NEIGHBOR_DELTAS[tripleFlavor(triple, maxRow)].all;
-          for (let i = 0; i < deltas.length; i++) {
-            const d = deltas[i];
-            const neighbor = {x: x + d.x, y: y + d.y, z: z + d.z};
-            if (tripleInBounds(neighbor, maxRow)) visit(originId, q, neighbor.x, neighbor.y, neighbor.z);
-          }
-
-          // Across a quintant edge: the boundary delta tables
-          if (x === 0 || z === 0 || y === maxRow) {
-            boundary.length = 0;
-            const ctx = {triple, parity: x + y + z, sourceQuintant: q, origin: origins[originId], maxRow};
-            getBoundaryNeighborTriples(ctx, false, false, boundary);
-            for (let i = 0; i < boundary.length; i += 5) {
-              visit(boundary[i], boundary[i + 1], boundary[i + 2], boundary[i + 3], boundary[i + 4]);
-            }
-          }
+          const f = frontier;
+          forEachTripleNeighbor(f[c], f[c + 1], f[c + 2], f[c + 3], f[c + 4], maxRow, false, visit);
         }
         frontier = next;
       }

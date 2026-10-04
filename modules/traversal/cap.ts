@@ -4,8 +4,7 @@
 
 import type {Face, Spherical} from '../core/coordinate-systems';
 import type {OriginId} from '../core/utils';
-import type {Triple} from '../lattice';
-import {sToTriple, tripleFlavor, tripleInBounds} from '../lattice';
+import {sToTriple, tripleFlavor} from '../lattice';
 import {
   getResolution,
   cellToParent,
@@ -21,9 +20,7 @@ import {FACE_ADJACENCY} from '../core/face-adjacency';
 import {getPentagonCenter} from '../core/tiling';
 import {haversine, origins, segmentToQuintant} from '../core/origin';
 import {DodecahedronProjection} from '../projections/dodecahedron';
-import {getBoundaryNeighborTriples} from './lattice-boundary';
-import {NEIGHBOR_DELTAS} from './neighbors';
-import {tripleCellKey, tripleCellToId} from './triple-cells';
+import {forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
 
 const dodecahedron = new DodecahedronProjection();
 
@@ -123,7 +120,6 @@ function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number)
   const visited = new Set<number>([tripleCellKey(origin.id, quintant, seed.x, seed.y, seed.z)]);
   const cells: bigint[] = [startCell];
   let frontier: number[] = [origin.id, quintant, seed.x, seed.y, seed.z];
-  const boundary: number[] = [];
 
   while (frontier.length > 0) {
     const next: number[] = [];
@@ -139,30 +135,8 @@ function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number)
       }
     };
     for (let c = 0; c < frontier.length; c += 5) {
-      const originId = frontier[c];
-      const q = frontier[c + 1];
-      const x = frontier[c + 2];
-      const y = frontier[c + 3];
-      const z = frontier[c + 4];
-      const triple: Triple = {x, y, z};
-
-      // Within the quintant: the fixed per-flavor deltas (edge and vertex neighbors)
-      const deltas = NEIGHBOR_DELTAS[tripleFlavor(triple, maxRow)].all;
-      for (let i = 0; i < deltas.length; i++) {
-        const d = deltas[i];
-        const neighbor = {x: x + d.x, y: y + d.y, z: z + d.z};
-        if (tripleInBounds(neighbor, maxRow)) visit(originId, q, neighbor.x, neighbor.y, neighbor.z);
-      }
-
-      // Across a quintant edge: the boundary delta tables
-      if (x === 0 || z === 0 || y === maxRow) {
-        boundary.length = 0;
-        const ctx = {triple, parity: x + y + z, sourceQuintant: q, origin: origins[originId], maxRow};
-        getBoundaryNeighborTriples(ctx, false, false, boundary);
-        for (let i = 0; i < boundary.length; i += 5) {
-          visit(boundary[i], boundary[i + 1], boundary[i + 2], boundary[i + 3], boundary[i + 4]);
-        }
-      }
+      const f = frontier;
+      forEachTripleNeighbor(f[c], f[c + 1], f[c + 2], f[c + 3], f[c + 4], maxRow, false, visit);
     }
     frontier = next;
   }
