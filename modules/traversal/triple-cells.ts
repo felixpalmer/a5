@@ -6,12 +6,18 @@
 // traversal algorithms that walk many neighboring cells: they key and dedup
 // cells as plain integers and encode a cell to its ID only when it is output.
 
+import type {Face, Spherical} from '../core/coordinate-systems';
+import type {OriginId} from '../core/utils';
 import type {Orientation, Triple} from '../lattice';
-import {tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
-import {serialize} from '../core/serialization';
-import {origins, quintantToSegment} from '../core/origin';
+import {sToTriple, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
+import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
+import {getPentagonCenter} from '../core/tiling';
+import {DodecahedronProjection} from '../projections/dodecahedron';
 import {getBoundaryNeighborTriples} from './lattice-boundary';
 import {NEIGHBOR_DELTAS} from './neighbors';
+
+const dodecahedron = new DodecahedronProjection();
 
 // A cell's key packs the quintant (origin.id * 5 + quintant, < 60), parity,
 // and the low KEY_BITS bits of -x and -z (y follows) into 51 bits, exact as a
@@ -65,6 +71,35 @@ export function tripleCellToId(
   return serialize({origin: origins[originId], segment: QUINTANT_SEGMENT[q], S: s, resolution});
 }
 
+/**
+ * Decode cell IDs (each at resolution 1 or above) into triple space, appending
+ * them to `out` as flat (originId, quintant, x, y, z).
+ */
+export function cellIdsToTriples(cellIds: Iterable<bigint>, out: number[] = []): number[] {
+  for (const cellId of cellIds) {
+    const {origin, segment, S, resolution} = deserialize(cellId);
+    const {quintant, orientation} = segmentToQuintant(segment, origin);
+    const t = sToTriple(S, resolution - FIRST_HILBERT_RESOLUTION + 1, orientation);
+    out.push(origin.id, quintant, t.x, t.y, t.z);
+  }
+  return out;
+}
+
+/** The center of a cell given in triple space, on the sphere. */
+export function tripleCellCenter(
+  originId: number,
+  quintant: number,
+  x: number,
+  y: number,
+  z: number,
+  hilbertRes: number,
+  maxRow: number
+): Spherical {
+  const triple = {x, y, z};
+  const face = getPentagonCenter(hilbertRes, quintant, triple, tripleFlavor(triple, maxRow));
+  return dodecahedron.inverse(face as Face, originId as OriginId);
+}
+
 /** Receives a cell given in triple space. */
 export type TripleCellVisitor = (originId: number, quintant: number, x: number, y: number, z: number) => void;
 
@@ -100,12 +135,56 @@ export function forEachTripleNeighbor(
   }
 
   // Across a quintant edge: the boundary delta tables
-  if (x === 0 || z === 0 || y === maxRow) {
-    boundary.length = 0;
-    const ctx = {triple, parity: x + y + z, sourceQuintant: quintant, origin: origins[originId], maxRow};
-    getBoundaryNeighborTriples(ctx, edgeOnly, false, boundary);
-    for (let i = 0; i < boundary.length; i += 5) {
-      visit(boundary[i], boundary[i + 1], boundary[i + 2], boundary[i + 3], boundary[i + 4]);
-    }
+  if (x === 0 || z === 0 || y === maxRow) visitBoundary(originId, quintant, triple, maxRow, edgeOnly, false, visit);
+}
+
+/**
+ * Visit every lattice neighbor of a cell given in triple space: the 3
+ * parity-valid single-axis moves within its quintant (the connectivity
+ * `tripleSpaceFloodFill` floods by), and, for a cell on a quintant edge, its
+ * edge-sharing boundary neighbors — but not the vertex corner, which the
+ * lattice moves don't traverse either. A neighbor may be visited more than
+ * once; visitors deduplicate.
+ */
+export function forEachLatticeNeighbor(
+  originId: number,
+  quintant: number,
+  x: number,
+  y: number,
+  z: number,
+  maxRow: number,
+  visit: TripleCellVisitor
+): void {
+  // Within the quintant: +1 on one axis from a parity 0 triple, -1 from parity 1
+  const step = x + y + z === 0 ? 1 : -1;
+  if (tripleInBounds({x: x + step, y, z}, maxRow)) visit(originId, quintant, x + step, y, z);
+  if (tripleInBounds({x, y: y + step, z}, maxRow)) visit(originId, quintant, x, y + step, z);
+  if (tripleInBounds({x, y, z: z + step}, maxRow)) visit(originId, quintant, x, y, z + step);
+
+  // Across a quintant edge: the boundary delta tables
+  if (x === 0 || z === 0 || y === maxRow) visitBoundary(originId, quintant, {x, y, z}, maxRow, true, true, visit);
+}
+
+/** Visit the neighbors of a cell on a quintant edge that lie across it. */
+function visitBoundary(
+  originId: number,
+  quintant: number,
+  triple: Triple,
+  maxRow: number,
+  edgeOnly: boolean,
+  skipCorners: boolean,
+  visit: TripleCellVisitor
+): void {
+  boundary.length = 0;
+  const ctx = {
+    triple,
+    parity: triple.x + triple.y + triple.z,
+    sourceQuintant: quintant,
+    origin: origins[originId],
+    maxRow
+  };
+  getBoundaryNeighborTriples(ctx, edgeOnly, skipCorners, boundary);
+  for (let i = 0; i < boundary.length; i += 5) {
+    visit(boundary[i], boundary[i + 1], boundary[i + 2], boundary[i + 3], boundary[i + 4]);
   }
 }

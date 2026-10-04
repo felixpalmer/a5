@@ -8,6 +8,7 @@ import {fromLonLat, toCartesian, toSpherical} from '../core/coordinate-transform
 import {
   cellToParent,
   cellToChildren,
+  getResolution,
   deserialize,
   serialize,
   FIRST_HILBERT_RESOLUTION,
@@ -20,8 +21,14 @@ import type {PreparedPolygon} from '../geometry/prepared-polygon';
 import {preparePolygon, pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {estimateCellRadius} from '../traversal/cap';
 import {sampleGreatCircleArc} from '../utils/great-circle';
-import {getLatticeNeighbors} from '../traversal/lattice-neighbors';
 import {tripleSpaceFloodFill} from '../traversal/lattice-flood-fill';
+import {
+  cellIdsToTriples,
+  forEachLatticeNeighbor,
+  tripleCellCenter,
+  tripleCellKey,
+  tripleCellToId
+} from '../traversal/triple-cells';
 
 /**
  * Maps each boundary cell to the indices of the ring segments that produced it.
@@ -131,23 +138,28 @@ function filterBoundaryCells(
 }
 
 /**
- * Buffer the boundary by one cell using 3-edge lattice neighbors. The shell
- * matches the connectivity of `tripleSpaceFloodFill` so the firewall (boundary
- * + exterior shell) is a tight topological barrier for the subsequent flood.
+ * Buffer the boundary by one cell using lattice neighbors, in triple space
+ * (cells as flat (originId, quintant, x, y, z)). The shell matches the
+ * connectivity of `tripleSpaceFloodFill` so the firewall (boundary + exterior
+ * shell) is a tight topological barrier for the subsequent flood.
  */
-function expandShell(boundaryCells: bigint[], boundarySet: Set<bigint>): bigint[] {
-  const shellCells: bigint[] = [];
-  const shellSet = new Set<bigint>();
-  for (const cell of boundaryCells) {
-    for (const neighbor of getLatticeNeighbors(cell)) {
-      if (boundarySet.has(neighbor)) continue;
-      if (!shellSet.has(neighbor)) {
-        shellSet.add(neighbor);
-        shellCells.push(neighbor);
-      }
-    }
+function expandShell(boundary: number[], maxRow: number): number[] {
+  const seen = new Set<number>();
+  for (let c = 0; c < boundary.length; c += 5) {
+    seen.add(tripleCellKey(boundary[c], boundary[c + 1], boundary[c + 2], boundary[c + 3], boundary[c + 4]));
   }
-  return shellCells;
+  const shell: number[] = [];
+  const visit = (originId: number, quintant: number, x: number, y: number, z: number) => {
+    const key = tripleCellKey(originId, quintant, x, y, z);
+    if (seen.has(key)) return;
+    seen.add(key);
+    shell.push(originId, quintant, x, y, z);
+  };
+  for (let c = 0; c < boundary.length; c += 5) {
+    const b = boundary;
+    forEachLatticeNeighbor(b[c], b[c + 1], b[c + 2], b[c + 3], b[c + 4], maxRow, visit);
+  }
+  return shell;
 }
 
 /**
@@ -155,35 +167,53 @@ function expandShell(boundaryCells: bigint[], boundarySet: Set<bigint>): bigint[
  * to clear the boundary, then a coarse-resolution BFS through the bulk, then
  * resumes fine BFS to fill gaps near the boundary. The coarse phase is skipped
  * when the polygon is too small to amortize its setup overhead.
+ *
+ * The seeds, boundary and exterior shell come in triple space (cells as flat
+ * (originId, quintant, x, y, z)); the boundary also as cell IDs.
  */
 function floodInterior(
-  interiorSeeds: bigint[],
-  visited: Set<bigint>,
-  boundarySize: number,
+  seeds: number[],
+  boundaryCells: bigint[],
+  boundary: number[],
+  exteriorShell: number[],
   resolution: number
 ): bigint[] {
-  for (const cell of interiorSeeds) visited.add(cell);
+  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const seedIds: bigint[] = [];
+  for (let c = 0; c < seeds.length; c += 5) {
+    seedIds.push(
+      tripleCellToId(seeds[c], seeds[c + 1], seeds[c + 2], seeds[c + 3], seeds[c + 4], hilbertRes, resolution)
+    );
+  }
+  const firewall = boundary.concat(exteriorShell);
 
   // Isoperimetric bound: B² / (4π) is the max interior for B boundary cells.
-  const maxInterior = (boundarySize * boundarySize) / (4 * Math.PI);
+  const maxInterior = (boundaryCells.length * boundaryCells.length) / (4 * Math.PI);
   // res 30 has a different encoding the parent-emit optimization can't use.
   const useCoarsePhase = resolution > FIRST_HILBERT_RESOLUTION && resolution < MAX_RESOLUTION && maxInterior > 1000;
 
   if (!useCoarsePhase) {
-    const result = tripleSpaceFloodFill(visited, interiorSeeds, resolution);
-    return [...interiorSeeds, ...result.interiorCells];
+    const result = tripleSpaceFloodFill(firewall, seeds, resolution);
+    return [...seedIds, ...result.interiorCells];
   }
 
   const parentRes = resolution - 1;
   const coarseFirewall = new Set<bigint>();
-  for (const cell of visited) coarseFirewall.add(cellToParent(cell, parentRes));
+  for (const cell of boundaryCells) coarseFirewall.add(cellToParent(cell, parentRes));
+  for (let c = 0; c < exteriorShell.length; c += 5) {
+    const e = exteriorShell;
+    coarseFirewall.add(
+      cellToParent(tripleCellToId(e[c], e[c + 1], e[c + 2], e[c + 3], e[c + 4], hilbertRes, resolution), parentRes)
+    );
+  }
+  for (const cell of seedIds) coarseFirewall.add(cellToParent(cell, parentRes));
 
   // Phase 1: short fine BFS to move the frontier off the boundary.
-  const phase1 = tripleSpaceFloodFill(visited, interiorSeeds, resolution, 3);
+  const phase1 = tripleSpaceFloodFill(firewall, seeds, resolution, 3);
 
   // Phase 2: coarse BFS through the bulk interior.
   let coarseInteriorSet: Set<bigint> | null = null;
-  const phase3Delta: bigint[] = [];
+  const phase3Delta: number[] = [];
   const coarseInteriorCells: bigint[] = [];
   if (phase1.frontierCellIds.length > 0) {
     const coarseSeeds = new Set<bigint>();
@@ -195,30 +225,27 @@ function floodInterior(
     if (coarseSeeds.size > 0) {
       const coarseVisited = new Set(coarseFirewall);
       for (const seed of coarseSeeds) coarseVisited.add(seed);
-      const coarseResult = tripleSpaceFloodFill(coarseVisited, [...coarseSeeds], parentRes);
+      const coarseResult = tripleSpaceFloodFill(
+        cellIdsToTriples(coarseVisited),
+        cellIdsToTriples(coarseSeeds),
+        parentRes
+      );
       const coarseInterior = [...coarseSeeds, ...coarseResult.interiorCells];
       coarseInteriorSet = new Set(coarseInterior);
       coarseInteriorCells.push(...coarseInterior);
 
       // Children become firewall for phase 3; the coarse parent represents
       // them in the output, so we don't emit them individually.
-      for (const coarseCell of coarseInterior) {
-        for (const child of cellToChildren(coarseCell, resolution)) {
-          if (!visited.has(child)) {
-            visited.add(child);
-            phase3Delta.push(child);
-          }
-        }
-      }
+      for (const coarseCell of coarseInterior) cellIdsToTriples(cellToChildren(coarseCell, resolution), phase3Delta);
     }
   }
 
   // Emit fine cells only when not already covered by a coarse parent.
   const interiorCells: bigint[] = [];
   if (coarseInteriorSet === null) {
-    interiorCells.push(...interiorSeeds, ...phase1.interiorCells);
+    interiorCells.push(...seedIds, ...phase1.interiorCells);
   } else {
-    for (const cell of interiorSeeds) {
+    for (const cell of seedIds) {
       if (!coarseInteriorSet.has(cellToParent(cell, parentRes))) interiorCells.push(cell);
     }
     for (const cell of phase1.interiorCells) {
@@ -227,8 +254,8 @@ function floodInterior(
     interiorCells.push(...coarseInteriorCells);
   }
 
-  // Phase 3: resume fine BFS, reusing phase 1's packed state.
-  const phase3 = tripleSpaceFloodFill({state: phase1.state, delta: phase3Delta}, phase1.frontierCellIds, resolution);
+  // Phase 3: resume fine BFS, reusing phase 1's state.
+  const phase3 = tripleSpaceFloodFill({state: phase1.state, delta: phase3Delta}, phase1.frontier, resolution);
   interiorCells.push(...phase3.interiorCells);
 
   return interiorCells;
@@ -243,29 +270,24 @@ function floodInterior(
  * quintants are emitted as their resolution 1 cell (resolution 0 when that is
  * the target), which `compact` merges with the rest of the output.
  */
-function swallowedQuintants(
-  boundaryCells: bigint[],
-  shellCells: bigint[],
-  resolution: number,
-  prep: PreparedPolygon
-): bigint[] {
+function swallowedQuintants(boundary: number[], shell: number[], resolution: number, prep: PreparedPolygon): bigint[] {
   // A swallowed quintant lies inside the polygon's bounding cap, so the cap
   // must have at least a quintant's area (4π/60: cells are equal-area)
   if (2 * Math.PI * (1 - prep.cap.minDot) < (4 * Math.PI) / 60) return [];
-  const level = Math.min(resolution, FIRST_HILBERT_RESOLUTION - 1);
-  const touched = new Set<bigint>();
-  for (const cells of [boundaryCells, shellCells]) {
-    for (let i = 0; i < cells.length; i++) {
-      touched.add(resolution === level ? cells[i] : cellToParent(cells[i], level));
-    }
+  // Quintants by origin.id * 5 + quintant, as the triples carry them
+  const touched = new Set<number>();
+  for (const cells of [boundary, shell]) {
+    for (let c = 0; c < cells.length; c += 5) touched.add(cells[c] * 5 + cells[c + 1]);
   }
 
   const out: bigint[] = [];
-  for (const quintant of cellToChildren(WORLD_CELL, level)) {
-    if (touched.has(quintant)) continue;
+  const quintantCells = cellToChildren(WORLD_CELL, FIRST_HILBERT_RESOLUTION - 1);
+  const quintants = cellIdsToTriples(quintantCells);
+  for (let i = 0; i < quintantCells.length; i++) {
+    if (touched.has(quintants[i * 5] * 5 + quintants[i * 5 + 1])) continue;
     // Any cell of the quintant at the target resolution will do
-    const probe = resolution === level ? quintant : serialize({...deserialize(quintant), S: 0n, resolution});
-    if (pointInPreparedPolygon(toCartesian(cellToSpherical(probe)), prep)) out.push(quintant);
+    const probe = serialize({...deserialize(quintantCells[i]), S: 0n, resolution});
+    if (pointInPreparedPolygon(toCartesian(cellToSpherical(probe)), prep)) out.push(quintantCells[i]);
   }
   return out;
 }
@@ -341,6 +363,13 @@ export function polygonToCells(
 
   const {boundaryCells, boundarySet, segmentMap} = denseSampleBoundary(rings, ringVecsList, resolution);
 
+  // Res 30 covers only quintants 0-41 (elsewhere A5 answers at res 29, see
+  // serialize), so a polygon reaching past them is filled at res 29: mixing the
+  // two lattices would leave the fill without a consistent grid.
+  if (resolution === MAX_RESOLUTION && boundaryCells.some(cell => getResolution(cell) !== resolution)) {
+    return polygonToCells(polygon, resolution - 1, {containment});
+  }
+
   // The boundary contribution to the output. In 'overlapping' mode every
   // densely-sampled boundary cell contains a point on the polygon boundary, so
   // it overlaps the polygon — keep them all, unfiltered. In 'center' mode we
@@ -365,23 +394,41 @@ export function polygonToCells(
     boundaryOut = filterBoundaryCells(boundaryCells, segmentMap, segNormals, segSigns, prep);
   }
 
-  // Dense sampling can leave gaps; the shell catches them, classifying each cell.
-  const shellCells = expandShell(boundaryCells, boundarySet);
-  const swallowed = swallowedQuintants(boundaryCells, shellCells, resolution, prep);
-  if (shellCells.length === 0) return compact([...boundaryOut, ...swallowed]);
-
-  const interiorSeeds: bigint[] = [];
-  const visited = new Set(boundarySet);
-  for (const cell of shellCells) {
-    if (pointInPreparedPolygon(toCartesian(cellToSpherical(cell)), prep)) {
-      interiorSeeds.push(cell);
-    } else {
-      visited.add(cell); // exterior shell (and hole interiors) join the firewall
+  // Resolutions 0 and 1 have no lattice to flood (a quintant is a single
+  // cell): every cell off the boundary is in or out by its center, and there
+  // are at most 60 of them.
+  if (resolution < FIRST_HILBERT_RESOLUTION) {
+    const out = [...boundaryOut];
+    for (const cell of cellToChildren(WORLD_CELL, resolution)) {
+      if (!boundarySet.has(cell) && pointInPreparedPolygon(toCartesian(cellToSpherical(cell)), prep)) out.push(cell);
     }
+    return compact(out);
   }
-  if (interiorSeeds.length === 0) return compact([...boundaryOut, ...swallowed]);
 
-  const interiorCells = floodInterior(interiorSeeds, visited, boundarySet.size, resolution);
+  // The rest runs in triple space: cells as flat (originId, quintant, x, y, z)
+  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const maxRow = (1 << hilbertRes) - 1;
+  const boundary = cellIdsToTriples(boundaryCells);
+
+  // Dense sampling can leave gaps; the shell catches them, classifying each cell.
+  const shell = expandShell(boundary, maxRow);
+  const swallowed = swallowedQuintants(boundary, shell, resolution, prep);
+  if (shell.length === 0) return compact([...boundaryOut, ...swallowed]);
+
+  const seeds: number[] = [];
+  const exteriorShell: number[] = []; // exterior shell (and hole interiors) join the firewall
+  for (let c = 0; c < shell.length; c += 5) {
+    const originId = shell[c];
+    const quintant = shell[c + 1];
+    const x = shell[c + 2];
+    const y = shell[c + 3];
+    const z = shell[c + 4];
+    const center = tripleCellCenter(originId, quintant, x, y, z, hilbertRes, maxRow);
+    (pointInPreparedPolygon(toCartesian(center), prep) ? seeds : exteriorShell).push(originId, quintant, x, y, z);
+  }
+  if (seeds.length === 0) return compact([...boundaryOut, ...swallowed]);
+
+  const interiorCells = floodInterior(seeds, boundaryCells, boundary, exteriorShell, resolution);
 
   return compact([...boundaryOut, ...interiorCells, ...swallowed]);
 }

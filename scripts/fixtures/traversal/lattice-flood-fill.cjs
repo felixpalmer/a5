@@ -1,11 +1,32 @@
 const fs = require('fs');
 const path = require('path');
-const {tripleSpaceFloodFill, getLatticeNeighbors, lonLatToCell, u64ToHex} = require('../../a5-test.cjs');
+const {
+  tripleSpaceFloodFill,
+  cellIdsToTriples,
+  forEachLatticeNeighbor,
+  tripleCellToId,
+  getResolution,
+  FIRST_HILBERT_RESOLUTION,
+  lonLatToCell,
+  u64ToHex
+} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'lattice-flood-fill.json');
 
 const sortHex = a => [...a].map(u64ToHex).sort();
+
+/** The lattice neighbors of a cell — the flood fill's connectivity — as cell IDs. */
+function latticeNeighbors(cell) {
+  const resolution = getResolution(cell);
+  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const [originId, quintant, x, y, z] = cellIdsToTriples([cell]);
+  const out = [];
+  forEachLatticeNeighbor(originId, quintant, x, y, z, (1 << hilbertRes) - 1, (o, q, nx, ny, nz) => {
+    out.push(tripleCellToId(o, q, nx, ny, nz, hilbertRes, resolution));
+  });
+  return out;
+}
 
 /**
  * Build a firewall ring around a center cell at edge-only distance `ringRadius`.
@@ -17,7 +38,7 @@ function buildRingFirewall(center, ringRadius) {
   for (let r = 0; r < ringRadius; r++) {
     const next = [];
     for (const cell of layers[r]) {
-      for (const n of getLatticeNeighbors(cell)) {
+      for (const n of latticeNeighbors(cell)) {
         if (visited.has(n)) continue;
         visited.add(n);
         next.push(n);
@@ -36,13 +57,12 @@ const cases = [];
   const resolution = 5;
   const center = lonLatToCell([10, 50], resolution);
   const firewall = buildRingFirewall(center, 3);
-  const firewallSnapshot = new Set(firewall);
-  const result = tripleSpaceFloodFill(firewall, [center], resolution);
+  const result = tripleSpaceFloodFill(cellIdsToTriples(firewall), cellIdsToTriples([center]), resolution);
   cases.push({
     name: 'contained_ring_radius3',
     resolution,
     seedCells: [u64ToHex(center)],
-    firewallCells: sortHex(firewallSnapshot),
+    firewallCells: sortHex(firewall),
     interiorCells: sortHex(result.interiorCells),
     frontierCells: sortHex(result.frontierCellIds)
   });
@@ -53,14 +73,13 @@ const cases = [];
   const resolution = 5;
   const center = lonLatToCell([10, 50], resolution);
   const firewall = buildRingFirewall(center, 6);
-  const firewallSnapshot = new Set(firewall);
   const maxLayers = 2;
-  const result = tripleSpaceFloodFill(firewall, [center], resolution, maxLayers);
+  const result = tripleSpaceFloodFill(cellIdsToTriples(firewall), cellIdsToTriples([center]), resolution, maxLayers);
   cases.push({
     name: 'layer_limited_2',
     resolution,
     seedCells: [u64ToHex(center)],
-    firewallCells: sortHex(firewallSnapshot),
+    firewallCells: sortHex(firewall),
     maxLayers,
     interiorCells: sortHex(result.interiorCells),
     frontierCells: sortHex(result.frontierCellIds)
@@ -80,13 +99,12 @@ const cases = [];
   for (const seed of seeds) {
     for (const ring of buildRingFirewall(seed, 2)) firewall.add(ring);
   }
-  const firewallSnapshot = new Set(firewall);
-  const result = tripleSpaceFloodFill(firewall, seeds, resolution);
+  const result = tripleSpaceFloodFill(cellIdsToTriples(firewall), cellIdsToTriples(seeds), resolution);
   cases.push({
     name: 'multi_seed_cluster',
     resolution,
     seedCells: seeds.map(u64ToHex),
-    firewallCells: sortHex(firewallSnapshot),
+    firewallCells: sortHex(firewall),
     interiorCells: sortHex(result.interiorCells),
     frontierCells: sortHex(result.frontierCellIds)
   });
@@ -97,13 +115,12 @@ const cases = [];
   const resolution = 3;
   const center = lonLatToCell([0, 0], resolution);
   const firewall = buildRingFirewall(center, 2);
-  const firewallSnapshot = new Set(firewall);
-  const result = tripleSpaceFloodFill(firewall, [center], resolution);
+  const result = tripleSpaceFloodFill(cellIdsToTriples(firewall), cellIdsToTriples([center]), resolution);
   cases.push({
     name: 'res3_small_ring',
     resolution,
     seedCells: [u64ToHex(center)],
-    firewallCells: sortHex(firewallSnapshot),
+    firewallCells: sortHex(firewall),
     interiorCells: sortHex(result.interiorCells),
     frontierCells: sortHex(result.frontierCellIds)
   });

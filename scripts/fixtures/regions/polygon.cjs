@@ -324,6 +324,8 @@ const polygonCases = [
   // Resolution 30 micro polygon — exercises the MAX_RESOLUTION fallback in
   // floodInterior (skips the coarse phase for res 30's special encoding).
   {name: 'res30_micro', ring: [[10, 50], [10.0000001, 50], [10.0000001, 50.0000001], [10, 50.0000001]], resolution: 30},
+  // Big enough to flood at res 28, where packed lattice keys need more than 53 bits.
+  {name: 'res28_flood', ring: [[-0.1276, 51.5072], [-0.1276, 51.507205], [-0.127593, 51.507205], [-0.127593, 51.5072]], resolution: 28},
   // Polygons with holes (GeoJSON-style: outer ring + hole rings)
   {name: 'donut', ring: [[-5, 54], [15, 54], [15, 44], [-5, 44]], holes: [[[2, 51], [8, 51], [8, 47], [2, 47]]], resolution: 6},
   {name: 'two_holes', ring: [[-10, 58], [20, 58], [20, 40], [-10, 40]], holes: [[[-4, 53], [2, 53], [2, 48], [-4, 48]], [[8, 52], [14, 52], [14, 46], [8, 46]]], resolution: 5},

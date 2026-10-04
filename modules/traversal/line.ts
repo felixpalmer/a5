@@ -4,18 +4,18 @@
 
 import type {LonLat, Face} from '../core/coordinate-systems';
 import type {Triple} from '../lattice';
-import {sToCell, tripleFlavor} from '../lattice';
+import {tripleFlavor} from '../lattice';
 import {lonLatToCell, cellIntersectsSegment} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical, toLonLat} from '../core/coordinate-transforms';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
-import {FACE_ADJACENCY} from '../core/face-adjacency';
-import {origins, segmentToQuintant} from '../core/origin';
+import {walkFaces} from '../core/face-adjacency';
+import {origins} from '../core/origin';
 import type {OriginId} from '../core/utils';
 import {getPentagonVertices} from '../core/tiling';
 import {DodecahedronProjection} from '../projections/dodecahedron';
 import {estimateCellRadius} from './cap';
 import {sampleGreatCircleArc} from '../utils/great-circle';
-import {forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
+import {cellIdsToTriples, forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
 
 const dodecahedron = new DodecahedronProjection();
 
@@ -24,25 +24,12 @@ const dodecahedron = new DodecahedronProjection();
  * dodecahedron faces, adjacent across their edges.
  */
 function traceFaces(cellA: bigint, cellB: bigint, a: LonLat, b: LonLat, addCell: (cell: bigint) => void): void {
-  const visited = new Set<number>();
-  let frontier = [deserialize(cellA).origin.id, deserialize(cellB).origin.id];
-  for (const id of frontier) visited.add(id);
-  while (frontier.length > 0) {
-    const next: OriginId[] = [];
-    for (const id of frontier) {
-      for (let q = 0; q < 5; q++) {
-        const face = FACE_ADJACENCY[id][q][0];
-        if (visited.has(face)) continue;
-        visited.add(face);
-        const cell = serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0});
-        if (cellIntersectsSegment(cell, a, b)) {
-          addCell(cell);
-          next.push(face);
-        }
-      }
-    }
-    frontier = next;
-  }
+  walkFaces([deserialize(cellA).origin.id, deserialize(cellB).origin.id], face => {
+    const cell = serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0});
+    if (!cellIntersectsSegment(cell, a, b)) return false;
+    addCell(cell);
+    return true;
+  });
 }
 
 /**
@@ -113,20 +100,8 @@ export function lineStringToCells(waypoints: LonLat[], resolution: number): bigi
     }
     // Each sample's cell, as its ID and in triple space as flat (originId, quintant, x, y, z)
     const sampleCells: bigint[] = new Array(samples.length);
-    const sampleTriples: number[] = new Array(samples.length * 5);
-    for (let j = 0; j < samples.length; j++) {
-      const cellId = lonLatToCell(samples[j], resolution);
-      sampleCells[j] = cellId;
-      if (resolution === 0) continue;
-      const {origin, segment, S} = deserialize(cellId);
-      const {quintant, orientation} = segmentToQuintant(segment, origin);
-      const {triple} = sToCell(S, hilbertRes, orientation);
-      sampleTriples[j * 5] = origin.id;
-      sampleTriples[j * 5 + 1] = quintant;
-      sampleTriples[j * 5 + 2] = triple.x;
-      sampleTriples[j * 5 + 3] = triple.y;
-      sampleTriples[j * 5 + 4] = triple.z;
-    }
+    for (let j = 0; j < samples.length; j++) sampleCells[j] = lonLatToCell(samples[j], resolution);
+    const sampleTriples = resolution === 0 ? [] : cellIdsToTriples(sampleCells);
 
     // Walk pairwise. Each (P_j, P_{j+1}) sub-segment is short enough that its
     // projection onto any nearby cell's Face is essentially straight, so we

@@ -94,10 +94,6 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/traversal/fixtures/lattice-flood-fill.json"),
         (RS_ROOT, "tests/fixtures/traversal/lattice-flood-fill.json"),
     ],
-    "tests/fixtures/traversal/lattice-neighbors.json": [
-        (PY_ROOT, "tests/traversal/fixtures/lattice-neighbors.json"),
-        (RS_ROOT, "tests/fixtures/traversal/lattice-neighbors.json"),
-    ],
     "tests/fixtures/traversal/line.json": [
         (PY_ROOT, "tests/traversal/fixtures/line.json"),
         (RS_ROOT, "tests/fixtures/traversal/line.json"),

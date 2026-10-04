@@ -29,3 +29,33 @@ export const FACE_ADJACENCY: [OriginId, number][][] = [
   [[2, 4], [1, 4], [11, 4], [7, 4], [9, 3]], // origin 10
   [[1, 3], [0, 4], [6, 4], [7, 0], [10, 2]] // origin 11
 ];
+
+/**
+ * Breadth-first walk over the 12 dodecahedron faces (the resolution 0 cells),
+ * adjacent across their edges. Starts from `seeds`, which are always expanded;
+ * every other face is visited once and expanded only if `expand(face)` is true.
+ * Stops after `maxRings` rings.
+ *
+ * @returns Every face reached, seeds first
+ */
+export function walkFaces(
+  seeds: OriginId[],
+  expand: (face: OriginId) => boolean,
+  maxRings: number = Infinity
+): OriginId[] {
+  const reached: OriginId[] = [...new Set(seeds)];
+  let frontier = reached.slice();
+  for (let ring = 0; ring < maxRings && frontier.length > 0; ring++) {
+    const next: OriginId[] = [];
+    for (const id of frontier) {
+      for (let q = 0; q < 5; q++) {
+        const face = FACE_ADJACENCY[id][q][0];
+        if (reached.includes(face)) continue;
+        reached.push(face);
+        if (expand(face)) next.push(face);
+      }
+    }
+    frontier = next;
+  }
+  return reached;
+}
