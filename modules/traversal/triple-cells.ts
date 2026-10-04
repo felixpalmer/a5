@@ -6,10 +6,12 @@
 // traversal algorithms that walk many neighboring cells: they key and dedup
 // cells as plain integers and encode a cell to its ID only when it is output.
 
-import type {Orientation} from '../lattice';
-import {tripleToS} from '../lattice';
+import type {Orientation, Triple} from '../lattice';
+import {tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
 import {serialize} from '../core/serialization';
 import {origins, quintantToSegment} from '../core/origin';
+import {getBoundaryNeighborTriples} from './lattice-boundary';
+import {NEIGHBOR_DELTAS} from './neighbors';
 
 // A cell's key packs the quintant (origin.id * 5 + quintant, < 60), parity,
 // and the low KEY_BITS bits of -x and -z (y follows) into 51 bits, exact as a
@@ -61,4 +63,49 @@ export function tripleCellToId(
   const q = originId * 5 + quintant;
   const s = tripleToS({x, y, z}, hilbertRes, QUINTANT_ORIENTATION[q])!;
   return serialize({origin: origins[originId], segment: QUINTANT_SEGMENT[q], S: s, resolution});
+}
+
+/** Receives a cell given in triple space. */
+export type TripleCellVisitor = (originId: number, quintant: number, x: number, y: number, z: number) => void;
+
+// Scratch for the boundary neighbors of one cell (visitors never re-enter)
+const boundary: number[] = [];
+
+/**
+ * Visit every neighbor of a cell given in triple space: within its quintant the
+ * fixed per-flavor triple deltas, and, for a cell on a quintant edge (x = 0,
+ * z = 0 or y = maxRow), the boundary delta tables. `edgeOnly` restricts to the
+ * 5 edge-sharing neighbors; otherwise the vertex-only neighbors come too. A
+ * neighbor may be visited more than once; visitors deduplicate.
+ */
+export function forEachTripleNeighbor(
+  originId: number,
+  quintant: number,
+  x: number,
+  y: number,
+  z: number,
+  maxRow: number,
+  edgeOnly: boolean,
+  visit: TripleCellVisitor
+): void {
+  const triple: Triple = {x, y, z};
+
+  // Within the quintant: the fixed per-flavor deltas
+  const flavor = tripleFlavor(triple, maxRow);
+  const deltas = edgeOnly ? NEIGHBOR_DELTAS[flavor].edge : NEIGHBOR_DELTAS[flavor].all;
+  for (let i = 0; i < deltas.length; i++) {
+    const d = deltas[i];
+    const neighbor = {x: x + d.x, y: y + d.y, z: z + d.z};
+    if (tripleInBounds(neighbor, maxRow)) visit(originId, quintant, neighbor.x, neighbor.y, neighbor.z);
+  }
+
+  // Across a quintant edge: the boundary delta tables
+  if (x === 0 || z === 0 || y === maxRow) {
+    boundary.length = 0;
+    const ctx = {triple, parity: x + y + z, sourceQuintant: quintant, origin: origins[originId], maxRow};
+    getBoundaryNeighborTriples(ctx, edgeOnly, false, boundary);
+    for (let i = 0; i < boundary.length; i += 5) {
+      visit(boundary[i], boundary[i + 1], boundary[i + 2], boundary[i + 3], boundary[i + 4]);
+    }
+  }
 }

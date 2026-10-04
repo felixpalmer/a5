@@ -2,12 +2,27 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {getResolution, cellToParent, cellToChildren, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import type {Face, Spherical} from '../core/coordinate-systems';
+import type {OriginId} from '../core/utils';
+import {sToTriple, tripleFlavor} from '../lattice';
+import {
+  getResolution,
+  cellToParent,
+  cellToChildren,
+  deserialize,
+  serialize,
+  FIRST_HILBERT_RESOLUTION
+} from '../core/serialization';
 import {cellToSpherical} from '../core/cell';
 import {cellArea} from '../core/cell-info';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
-import {getGlobalCellNeighbors} from './global-neighbors';
-import {haversine} from '../core/origin';
+import {FACE_ADJACENCY} from '../core/face-adjacency';
+import {getPentagonCenter} from '../core/tiling';
+import {haversine, origins, segmentToQuintant} from '../core/origin';
+import {DodecahedronProjection} from '../projections/dodecahedron';
+import {forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
+
+const dodecahedron = new DodecahedronProjection();
 
 /** Safety factor applied to equal-area circle radius to get conservative circumradius estimate */
 const CELL_RADIUS_SAFETY_FACTOR = 2.0;
@@ -68,6 +83,67 @@ export function pickCoarseResolution(radius: number, targetRes: number): number 
 }
 
 /**
+ * BFS at the cap's coarse resolution from `startCell` through every cell whose
+ * center lies within `hExpanded` of `center`, returning every cell reached: the
+ * cells within, plus the ring just outside (the subdivision classifies them).
+ *
+ * Runs in triple space: neighbors (edge and vertex) come from the per-flavor
+ * triple deltas plus the boundary delta tables, and a cell's center straight
+ * from its triple, so no cell is decoded and each is encoded once.
+ */
+function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number): bigint[] {
+  const {origin, segment, S, resolution} = deserialize(startCell);
+  if (resolution === 0) {
+    // The cells are the 12 dodecahedron faces, adjacent across their edges
+    const visited = new Set<OriginId>([origin.id]);
+    let frontier: OriginId[] = [origin.id];
+    while (frontier.length > 0) {
+      const next: OriginId[] = [];
+      for (const id of frontier) {
+        for (let q = 0; q < 5; q++) {
+          const face = FACE_ADJACENCY[id][q][0];
+          if (visited.has(face)) continue;
+          visited.add(face);
+          const cell = serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0});
+          if (haversine(center, cellToSpherical(cell)) <= hExpanded) next.push(face);
+        }
+      }
+      frontier = next;
+    }
+    return [...visited].map(id => serialize({origin: origins[id], segment: 0, S: 0n, resolution: 0}));
+  }
+
+  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const maxRow = (1 << hilbertRes) - 1;
+  const {quintant, orientation} = segmentToQuintant(segment, origin);
+  const seed = sToTriple(S, hilbertRes, orientation);
+  const visited = new Set<number>([tripleCellKey(origin.id, quintant, seed.x, seed.y, seed.z)]);
+  const cells: bigint[] = [startCell];
+  let frontier: number[] = [origin.id, quintant, seed.x, seed.y, seed.z];
+
+  while (frontier.length > 0) {
+    const next: number[] = [];
+    const visit = (originId: number, q: number, x: number, y: number, z: number) => {
+      const key = tripleCellKey(originId, q, x, y, z);
+      if (visited.has(key)) return;
+      visited.add(key);
+      cells.push(tripleCellToId(originId, q, x, y, z, hilbertRes, resolution));
+      const triple = {x, y, z};
+      const face = getPentagonCenter(hilbertRes, q, triple, tripleFlavor(triple, maxRow));
+      if (haversine(center, dodecahedron.inverse(face as Face, originId as OriginId)) <= hExpanded) {
+        next.push(originId, q, x, y, z);
+      }
+    };
+    for (let c = 0; c < frontier.length; c += 5) {
+      const f = frontier;
+      forEachTripleNeighbor(f[c], f[c + 1], f[c + 2], f[c + 3], f[c + 4], maxRow, false, visit);
+    }
+    frontier = next;
+  }
+  return cells;
+}
+
+/**
  * Compute all cells within a great-circle radius, returning a naturally
  * compacted result (mix of resolutions) as a BigUint64Array.
  *
@@ -100,22 +176,7 @@ export function sphericalCap(cellId: bigint, radius: number): BigUint64Array {
   const startCell = coarseRes < targetRes ? cellToParent(cellId, coarseRes) : cellId;
   const coarseCellRadius = estimateCellRadius(coarseRes);
   const hExpanded = metersToH(radius + coarseCellRadius);
-  const coarseVisited = new Set<bigint>([startCell]);
-  let coarseFrontier = new Set<bigint>([startCell]);
-
-  while (coarseFrontier.size > 0) {
-    const nextFrontier = new Set<bigint>();
-    for (const id of coarseFrontier) {
-      for (const neighbor of getGlobalCellNeighbors(id)) {
-        if (coarseVisited.has(neighbor)) continue;
-        coarseVisited.add(neighbor);
-        if (haversine(center, cellToSpherical(neighbor)) <= hExpanded) {
-          nextFrontier.add(neighbor);
-        }
-      }
-    }
-    coarseFrontier = nextFrontier;
-  }
+  const coarseCells = coarseCapCells(startCell, center, hExpanded);
 
   // Recursive subdivision from coarseRes to targetRes.
   //
@@ -125,7 +186,7 @@ export function sphericalCap(cellId: bigint, radius: number): BigUint64Array {
   // - Outside  (h > hOuter): discard, no descendants inside
   // - Boundary: subdivide children to next level
   const result: bigint[] = [];
-  let boundary = Array.from(coarseVisited);
+  let boundary = coarseCells;
 
   for (let res = coarseRes; res < targetRes; res++) {
     const cellRadius = estimateCellRadius(res);

@@ -2,14 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type {Triple} from '../lattice';
-import {sToTriple, tripleFlavor, tripleInBounds} from '../lattice';
-import {getBoundaryNeighborTriples} from './lattice-boundary';
-import {NEIGHBOR_DELTAS} from './neighbors';
+import {sToTriple} from '../lattice';
 import {compact} from '../core/compact';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {origins, segmentToQuintant} from '../core/origin';
-import {tripleCellKey, tripleCellToId} from './triple-cells';
+import type {TripleCellVisitor} from './triple-cells';
+import {forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
 import {FACE_ADJACENCY} from '../core/face-adjacency';
 
 /** One BFS ring: its dedup keys, and its cells as flat (originId, quintant, x, y, z). */
@@ -81,39 +79,14 @@ function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array
   let prevFrontier: Ring = {keys: new Set(), cells: []};
   let frontier: Ring = {keys: new Set(), cells: []};
   addCell(frontier, prevFrontier, prevFrontier, origin.id, quintant, seed.x, seed.y, seed.z);
-  const boundary: number[] = [];
 
   for (let ring = 1; ring <= k; ring++) {
     const nextFrontier: Ring = {keys: new Set(), cells: []};
+    const visit: TripleCellVisitor = (originId, q, x, y, z) =>
+      addCell(nextFrontier, prevFrontier, frontier, originId, q, x, y, z);
     const cells = frontier.cells;
     for (let c = 0; c < cells.length; c += 5) {
-      const originId = cells[c];
-      const q = cells[c + 1];
-      const x = cells[c + 2];
-      const y = cells[c + 3];
-      const z = cells[c + 4];
-      const triple: Triple = {x, y, z};
-
-      // Within the quintant: the fixed per-flavor deltas
-      const flavor = tripleFlavor(triple, maxRow);
-      const deltas = edgeOnly ? NEIGHBOR_DELTAS[flavor].edge : NEIGHBOR_DELTAS[flavor].all;
-      for (let i = 0; i < deltas.length; i++) {
-        const d = deltas[i];
-        const neighbor = {x: x + d.x, y: y + d.y, z: z + d.z};
-        if (!tripleInBounds(neighbor, maxRow)) continue;
-        addCell(nextFrontier, prevFrontier, frontier, originId, q, neighbor.x, neighbor.y, neighbor.z);
-      }
-
-      // Across a quintant edge: the boundary delta tables
-      if (x === 0 || z === 0 || y === maxRow) {
-        boundary.length = 0;
-        const ctx = {triple, parity: x + y + z, sourceQuintant: q, origin: origins[originId], maxRow};
-        getBoundaryNeighborTriples(ctx, edgeOnly, false, boundary);
-        for (let i = 0; i < boundary.length; i += 5) {
-          const b = boundary;
-          addCell(nextFrontier, prevFrontier, frontier, b[i], b[i + 1], b[i + 2], b[i + 3], b[i + 4]);
-        }
-      }
+      forEachTripleNeighbor(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], maxRow, edgeOnly, visit);
     }
 
     // The seed ring is expanded; drop its cell so it isn't encoded again (its key stays)
