@@ -54,7 +54,7 @@ export {greatCircleDistance, sampleGreatCircleArc} from './utils/great-circle';
 
 // Export lattice neighbor / flood-fill for testing
 export {tripleSpaceFloodFill} from './traversal/lattice-flood-fill';
-export {cellIdsToTriples, forEachLatticeNeighbor, tripleCellToId} from './traversal/triple-cells';
+export {cellIdsToTriples, forEachLatticeNeighbor, tripleCellToId, tripleCellsToIds} from './traversal/triple-cells';
 
 // Export spherical-polygon free functions for testing
 export {pointInSphericalPolygon, ringWindingSign, ringSegmentNormals} from './geometry/spherical-polygon';

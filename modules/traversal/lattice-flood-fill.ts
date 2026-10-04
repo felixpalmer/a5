@@ -4,7 +4,7 @@
 
 import {tripleInBounds} from '../lattice';
 import {FIRST_HILBERT_RESOLUTION} from '../core/serialization';
-import {tripleCellKey, tripleCellToId} from './triple-cells';
+import {tripleCellKey} from './triple-cells';
 
 /** Flood state, reusable across calls at one resolution: the keys of every cell visited so far. */
 export interface FloodState {
@@ -23,16 +23,15 @@ export interface FloodState {
  * @param seeds       BFS seeds. Always added to the frontier, even if already
  *                    visited — reusing state with the same seeds restarts BFS.
  * @param maxLayers   Max BFS layers; undefined = run to convergence.
- * @returns The cells discovered by this call (seeds excluded) and the final
- *          frontier, both as cell IDs (the frontier also in triple space), and
- *          the state for a follow-up call.
+ * @returns The cells discovered by this call (seeds excluded), the final
+ *          frontier, and the state for a follow-up call.
  */
 export function tripleSpaceFloodFill(
   firewall: number[] | {state: FloodState; delta: number[]},
   seeds: number[],
   resolution: number,
   maxLayers?: number
-): {interiorCells: bigint[]; frontierCellIds: bigint[]; frontier: number[]; state: FloodState} {
+): {interior: number[]; frontier: number[]; state: FloodState} {
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
 
@@ -73,14 +72,5 @@ export function tripleSpaceFloodFill(
     frontier = next;
   }
 
-  const toIds = (cells: number[]): bigint[] => {
-    const ids: bigint[] = [];
-    for (let c = 0; c < cells.length; c += 5) {
-      ids.push(
-        tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], hilbertRes, resolution)
-      );
-    }
-    return ids;
-  };
-  return {interiorCells: toIds(discovered), frontierCellIds: toIds(frontier), frontier, state};
+  return {interior: discovered, frontier, state};
 }

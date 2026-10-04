@@ -4,20 +4,20 @@
 
 import type {Spherical} from '../core/coordinate-systems';
 import type {OriginId} from '../core/utils';
-import {
-  getResolution,
-  cellToParent,
-  cellToChildren,
-  deserialize,
-  serialize,
-  FIRST_HILBERT_RESOLUTION
-} from '../core/serialization';
+import {getResolution, cellToParent, deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {cellToSpherical} from '../core/cell';
 import {cellArea} from '../core/cell-info';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
 import {walkFaces} from '../core/face-adjacency';
 import {haversine, origins} from '../core/origin';
-import {cellIdsToTriples, forEachTripleNeighbor, tripleCellCenter, tripleCellKey, tripleCellToId} from './triple-cells';
+import {
+  cellIdsToTriples,
+  forEachTripleNeighbor,
+  tripleCellCenter,
+  tripleCellKey,
+  tripleCellToId,
+  tripleChildren
+} from './triple-cells';
 
 /** Safety factor applied to equal-area circle radius to get conservative circumradius estimate */
 const CELL_RADIUS_SAFETY_FACTOR = 2.0;
@@ -78,37 +78,28 @@ export function pickCoarseResolution(radius: number, targetRes: number): number 
 }
 
 /**
- * BFS at the cap's coarse resolution from `startCell` through every cell whose
- * center lies within `hExpanded` of `center`, returning every cell reached: the
- * cells within, plus the ring just outside (the subdivision classifies them).
+ * BFS at the cap's coarse resolution (1 or above) from `startCell` through every
+ * cell whose center lies within `hExpanded` of `center`, returning every cell
+ * reached: the cells within, plus the ring just outside (the subdivision
+ * classifies them).
  *
- * Runs in triple space: neighbors (edge and vertex) come from the per-flavor
- * triple deltas plus the boundary delta tables, and a cell's center straight
- * from its triple, so no cell is decoded and each is encoded once.
+ * Runs in triple space (cells as flat (originId, quintant, x, y, z)): neighbors
+ * (edge and vertex) come from the per-flavor triple deltas plus the boundary
+ * delta tables, and a cell's center straight from its triple.
  */
-function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number): bigint[] {
-  const {origin, resolution} = deserialize(startCell);
-  const faceCell = (face: OriginId) => serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0});
-  if (resolution === 0) {
-    // The cells are the 12 dodecahedron faces
-    return walkFaces([origin.id], face => haversine(center, cellToSpherical(faceCell(face))) <= hExpanded).map(
-      faceCell
-    );
-  }
-
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number): number[] {
+  const hilbertRes = getResolution(startCell) - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
-  let frontier = cellIdsToTriples([startCell]);
-  const visited = new Set<number>([tripleCellKey(frontier[0], frontier[1], frontier[2], frontier[3], frontier[4])]);
-  const cells: bigint[] = [startCell];
-
+  const cells = cellIdsToTriples([startCell]);
+  const visited = new Set<number>([tripleCellKey(cells[0], cells[1], cells[2], cells[3], cells[4])]);
+  let frontier = cells.slice();
   while (frontier.length > 0) {
     const next: number[] = [];
     const visit = (originId: number, q: number, x: number, y: number, z: number) => {
       const key = tripleCellKey(originId, q, x, y, z);
       if (visited.has(key)) return;
       visited.add(key);
-      cells.push(tripleCellToId(originId, q, x, y, z, hilbertRes, resolution));
+      cells.push(originId, q, x, y, z);
       if (haversine(center, tripleCellCenter(originId, q, x, y, z, hilbertRes, maxRow)) <= hExpanded) {
         next.push(originId, q, x, y, z);
       }
@@ -148,51 +139,49 @@ export function sphericalCap(cellId: bigint, radius: number): BigUint64Array {
   const coarseRes = pickCoarseResolution(radius, targetRes);
   const center = cellToSpherical(cellId);
 
-  // Pre-compute haversine threshold for the exact radius
+  // Pre-compute haversine thresholds: the exact radius, and the radius expanded
+  // so the coarse BFS captures every overlapping cell
   const hRadius = metersToH(radius);
-
-  // BFS at coarse resolution with expanded radius to capture all overlapping cells.
+  const hExpanded = metersToH(radius + estimateCellRadius(coarseRes));
   const startCell = coarseRes < targetRes ? cellToParent(cellId, coarseRes) : cellId;
-  const coarseCellRadius = estimateCellRadius(coarseRes);
-  const hExpanded = metersToH(radius + coarseCellRadius);
-  const coarseCells = coarseCapCells(startCell, center, hExpanded);
-
-  // Recursive subdivision from coarseRes to targetRes.
-  //
-  // Each cell is classified by comparing haversine(center, cell) against
-  // pre-computed h thresholds:
-  // - Interior (h ≤ hInner): keep compacted, all descendants inside
-  // - Outside  (h > hOuter): discard, no descendants inside
-  // - Boundary: subdivide children to next level
   const result: bigint[] = [];
-  let boundary = coarseCells;
 
-  for (let res = coarseRes; res < targetRes; res++) {
-    const cellRadius = estimateCellRadius(res);
-    const hInner = radius > cellRadius ? metersToH(radius - cellRadius) : -1;
-    const hOuter = metersToH(radius + cellRadius);
-    const nextBoundary: bigint[] = [];
-
-    for (const cell of boundary) {
-      const h = haversine(center, cellToSpherical(cell));
-      if (h <= hInner) {
-        result.push(cell);
-      } else if (h > hOuter) {
-        // Cell's entire extent is outside the cap — discard
-      } else {
-        for (const child of cellToChildren(cell, res + 1)) {
-          nextBoundary.push(child);
-        }
-      }
+  if (coarseRes === 0) {
+    // The target is resolution 0: the cells are the 12 dodecahedron faces
+    const faceCell = (face: OriginId) => serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0});
+    const near = (face: OriginId, h: number) => haversine(center, cellToSpherical(faceCell(face))) <= h;
+    for (const face of walkFaces([deserialize(startCell).origin.id], face => near(face, hExpanded))) {
+      if (near(face, hRadius)) result.push(faceCell(face));
     }
-
-    boundary = nextBoundary;
-  }
-
-  // Final target resolution: strict haversine check
-  for (const cell of boundary) {
-    if (haversine(center, cellToSpherical(cell)) <= hRadius) {
-      result.push(cell);
+  } else {
+    // Recursive subdivision from coarseRes to targetRes, in triple space.
+    //
+    // Each cell is classified by comparing haversine(center, cell) against
+    // pre-computed h thresholds:
+    // - Interior (h ≤ hInner): keep compacted, all descendants inside
+    // - Outside  (h > hOuter): discard, no descendants inside
+    // - Boundary: subdivide children to next level
+    // At the target resolution both thresholds are the exact radius.
+    let cells = coarseCapCells(startCell, center, hExpanded);
+    for (let res = coarseRes; res <= targetRes; res++) {
+      const hilbertRes = res - FIRST_HILBERT_RESOLUTION + 1;
+      const maxRow = (1 << hilbertRes) - 1;
+      const cellRadius = estimateCellRadius(res);
+      const last = res === targetRes;
+      const hInner = last ? hRadius : radius > cellRadius ? metersToH(radius - cellRadius) : -1;
+      const hOuter = last ? hRadius : metersToH(radius + cellRadius);
+      const children: number[] = [];
+      for (let c = 0; c < cells.length; c += 5) {
+        const originId = cells[c];
+        const q = cells[c + 1];
+        const x = cells[c + 2];
+        const y = cells[c + 3];
+        const z = cells[c + 4];
+        const h = haversine(center, tripleCellCenter(originId, q, x, y, z, hilbertRes, maxRow));
+        if (h <= hInner) result.push(tripleCellToId(originId, q, x, y, z, hilbertRes, res));
+        else if (h <= hOuter) tripleChildren(originId, q, x, y, z, maxRow, children);
+      }
+      cells = children;
     }
   }
 

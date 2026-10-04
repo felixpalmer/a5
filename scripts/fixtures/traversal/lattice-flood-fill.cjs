@@ -5,6 +5,7 @@ const {
   cellIdsToTriples,
   forEachLatticeNeighbor,
   tripleCellToId,
+  tripleCellsToIds,
   getResolution,
   FIRST_HILBERT_RESOLUTION,
   lonLatToCell,
@@ -15,6 +16,9 @@ const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'lattice-flood-fill.json');
 
 const sortHex = a => [...a].map(u64ToHex).sort();
+
+/** Encode flood-fill cells (triple space) at `resolution` as cell IDs. */
+const ids = (cells, resolution) => tripleCellsToIds(cells, resolution - FIRST_HILBERT_RESOLUTION + 1, resolution);
 
 /** The lattice neighbors of a cell — the flood fill's connectivity — as cell IDs. */
 function latticeNeighbors(cell) {
@@ -63,8 +67,8 @@ const cases = [];
     resolution,
     seedCells: [u64ToHex(center)],
     firewallCells: sortHex(firewall),
-    interiorCells: sortHex(result.interiorCells),
-    frontierCells: sortHex(result.frontierCellIds)
+    interiorCells: sortHex(ids(result.interior, resolution)),
+    frontierCells: sortHex(ids(result.frontier, resolution))
   });
 }
 
@@ -81,8 +85,8 @@ const cases = [];
     seedCells: [u64ToHex(center)],
     firewallCells: sortHex(firewall),
     maxLayers,
-    interiorCells: sortHex(result.interiorCells),
-    frontierCells: sortHex(result.frontierCellIds)
+    interiorCells: sortHex(ids(result.interior, resolution)),
+    frontierCells: sortHex(ids(result.frontier, resolution))
   });
 }
 
@@ -105,8 +109,8 @@ const cases = [];
     resolution,
     seedCells: seeds.map(u64ToHex),
     firewallCells: sortHex(firewall),
-    interiorCells: sortHex(result.interiorCells),
-    frontierCells: sortHex(result.frontierCellIds)
+    interiorCells: sortHex(ids(result.interior, resolution)),
+    frontierCells: sortHex(ids(result.frontier, resolution))
   });
 }
 
@@ -121,8 +125,8 @@ const cases = [];
     resolution,
     seedCells: [u64ToHex(center)],
     firewallCells: sortHex(firewall),
-    interiorCells: sortHex(result.interiorCells),
-    frontierCells: sortHex(result.frontierCellIds)
+    interiorCells: sortHex(ids(result.interior, resolution)),
+    frontierCells: sortHex(ids(result.frontier, resolution))
   });
 }
 
