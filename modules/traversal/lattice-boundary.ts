@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type {Orientation, Triple} from '../lattice';
+import type {Triple} from '../lattice';
 import {tripleToS, tripleInBounds} from '../lattice';
 import type {Origin} from '../core/utils';
 import {serialize} from '../core/serialization';
@@ -58,54 +58,60 @@ export interface BoundaryContext {
   resolution: number;
 }
 
-/** If the triple maps to a valid cell, append its cell ID to `out`. */
+/** Source-cell fields the boundary-triple walk needs (no encoding state). */
+export type BoundaryTripleContext = Pick<BoundaryContext, 'triple' | 'parity' | 'sourceQuintant' | 'origin' | 'maxRow'>;
+
+/** If the triple is a valid cell, append it to `out` as (originId, quintant, x, y, z). */
 function pushTriple(
-  out: bigint[],
-  triple: Triple,
-  orientation: Orientation,
-  origin: Origin,
-  segment: number,
-  ctx: BoundaryContext
+  out: number[],
+  x: number,
+  y: number,
+  z: number,
+  originId: number,
+  quintant: number,
+  maxRow: number
 ): void {
-  if (!tripleInBounds(triple, ctx.maxRow)) return;
-  const s = tripleToS(triple, ctx.hilbertRes, orientation);
-  if (s === null || s < 0n || s >= ctx.maxS) return;
-  out.push(serialize({origin, segment, S: s, resolution: ctx.resolution}));
+  if (!tripleInBounds({x, y, z}, maxRow)) return;
+  out.push(originId, quintant, x, y, z);
 }
 
 /** Apply a delta table to a base triple, appending each valid cell. */
 function pushDeltas(
-  out: bigint[],
+  out: number[],
   base: Triple,
   deltas: NeighborDelta[],
   edgeOnly: boolean,
-  orientation: Orientation,
-  origin: Origin,
-  segment: number,
-  ctx: BoundaryContext
+  originId: number,
+  quintant: number,
+  maxRow: number
 ): void {
   for (const [dx, dy, dz, isEdge] of deltas) {
     if (edgeOnly && !isEdge) continue;
-    pushTriple(out, {x: base.x + dx, y: base.y + dy, z: base.z + dz}, orientation, origin, segment, ctx);
+    pushTriple(out, base.x + dx, base.y + dy, base.z + dz, originId, quintant, maxRow);
   }
 }
 
 /**
- * Return every neighbor that lies outside the source cell's quintant: cross-quintant
- * lateral edges, cross-face base edge, apex (face center), and (when not `skipCorners`)
- * the `[-maxRow, maxRow, 0]` vertex corner. The within-quintant ±1 candidates are NOT
- * covered here — callers generate those directly.
+ * Every neighbor that lies outside the source cell's quintant, appended to
+ * `out` as flat (originId, quintant, x, y, z) quintuples: cross-quintant
+ * lateral edges, cross-face base edge, apex (face center), and (when not
+ * `skipCorners`) the `[-maxRow, maxRow, 0]` vertex corner. The within-quintant
+ * ±1 candidates are NOT covered here — callers generate those directly.
  *
- * The result may contain duplicates and the order is not stable; callers
- * deduplicate (via Set) or accept duplicates if their downstream pipeline tolerates them.
+ * Only cells on a quintant edge (x = 0, z = 0 or y = maxRow) have any. The
+ * result may contain duplicates; callers deduplicate.
  *
  * @param ctx         source-cell context
  * @param edgeOnly    drop apex non-adjacent quintants and other vertex-only neighbors
  * @param skipCorners drop the `[-maxRow, maxRow, 0]` corner — used when the caller's
  *                    connectivity (e.g. lattice ±1 moves) doesn't traverse that vertex
  */
-export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, skipCorners = false): bigint[] {
-  const out: bigint[] = [];
+export function getBoundaryNeighborTriples(
+  ctx: BoundaryTripleContext,
+  edgeOnly: boolean,
+  skipCorners: boolean,
+  out: number[]
+): void {
   const {triple, parity, sourceQuintant, origin, maxRow} = ctx;
   const yOdd = triple.y % 2 !== 0;
   const deltaIndex = parity * 2 + (yOdd ? 1 : 0);
@@ -113,49 +119,42 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
   // Left edge (z=0): neighbor in previous quintant at swapped [0, y, x]
   if (triple.z === 0) {
     const targetQuintant = (sourceQuintant - 1 + 5) % 5;
-    const {segment, orientation} = quintantToSegment(targetQuintant, origin);
     pushDeltas(
       out,
       {x: 0, y: triple.y, z: triple.x},
       LEFT_EDGE_DELTAS[deltaIndex],
       edgeOnly,
-      orientation,
-      origin,
-      segment,
-      ctx
+      origin.id,
+      targetQuintant,
+      maxRow
     );
   }
 
   // Right edge (x=0): neighbor in next quintant at swapped [z, y, 0]
   if (triple.x === 0) {
     const targetQuintant = (sourceQuintant + 1) % 5;
-    const {segment, orientation} = quintantToSegment(targetQuintant, origin);
     pushDeltas(
       out,
       {x: triple.z, y: triple.y, z: 0},
       RIGHT_EDGE_DELTAS[deltaIndex],
       edgeOnly,
-      orientation,
-      origin,
-      segment,
-      ctx
+      origin.id,
+      targetQuintant,
+      maxRow
     );
   }
 
   // Base edge (y=maxRow): neighbor on adjacent face at mirrored [z, maxRow, x]
   if (triple.y === maxRow) {
     const [adjFaceId, adjQuintant] = FACE_ADJACENCY[origin.id][sourceQuintant];
-    const adjOrigin = origins[adjFaceId];
-    const {segment, orientation} = quintantToSegment(adjQuintant, adjOrigin);
     pushDeltas(
       out,
       {x: triple.z, y: maxRow, z: triple.x},
       CROSS_FACE_DELTAS[parity],
       edgeOnly,
-      orientation,
-      adjOrigin,
-      segment,
-      ctx
+      adjFaceId,
+      adjQuintant,
+      maxRow
     );
   }
 
@@ -165,8 +164,7 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
       if (q === sourceQuintant) continue;
       const distance = Math.min((q - sourceQuintant + 5) % 5, (sourceQuintant - q + 5) % 5);
       if (edgeOnly && distance !== 1) continue;
-      const {segment, orientation} = quintantToSegment(q, origin);
-      pushTriple(out, triple, orientation, origin, segment, ctx);
+      pushTriple(out, 0, 0, 0, origin.id, q, maxRow);
     }
   }
 
@@ -177,20 +175,31 @@ export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, sk
     // Vertex neighbor 1: across the previous quintant's base edge
     const prevQuintant = (sourceQuintant - 1 + 5) % 5;
     const [prevAdjFaceId, prevAdjQuintant] = FACE_ADJACENCY[origin.id][prevQuintant];
-    const prevAdjOrigin = origins[prevAdjFaceId];
-    const {segment: prevAdjSegment, orientation: prevAdjOrientation} = quintantToSegment(
-      prevAdjQuintant,
-      prevAdjOrigin
-    );
-    pushTriple(out, triple, prevAdjOrientation, prevAdjOrigin, prevAdjSegment, ctx);
+    pushTriple(out, triple.x, triple.y, triple.z, prevAdjFaceId, prevAdjQuintant, maxRow);
 
     // Vertex neighbor 2: adjacent quintant on the primary cross-face
     const [crossFaceId, crossQuintant] = FACE_ADJACENCY[origin.id][sourceQuintant];
-    const crossOrigin = origins[crossFaceId];
-    const nextCrossQuintant = (crossQuintant + 1) % 5;
-    const {segment: crossSegment, orientation: crossOrientation} = quintantToSegment(nextCrossQuintant, crossOrigin);
-    pushTriple(out, triple, crossOrientation, crossOrigin, crossSegment, ctx);
+    pushTriple(out, triple.x, triple.y, triple.z, crossFaceId, (crossQuintant + 1) % 5, maxRow);
   }
+}
 
+/**
+ * The neighbors outside the source cell's quintant (see
+ * `getBoundaryNeighborTriples`), as cell IDs.
+ *
+ * The result may contain duplicates and the order is not stable; callers
+ * deduplicate (via Set) or accept duplicates if their downstream pipeline tolerates them.
+ */
+export function getBoundaryNeighbors(ctx: BoundaryContext, edgeOnly: boolean, skipCorners = false): bigint[] {
+  const triples: number[] = [];
+  getBoundaryNeighborTriples(ctx, edgeOnly, skipCorners, triples);
+  const out: bigint[] = [];
+  for (let i = 0; i < triples.length; i += 5) {
+    const origin = origins[triples[i]];
+    const {segment, orientation} = quintantToSegment(triples[i + 1], origin);
+    const s = tripleToS({x: triples[i + 2], y: triples[i + 3], z: triples[i + 4]}, ctx.hilbertRes, orientation);
+    if (s === null || s < 0n || s >= ctx.maxS) continue;
+    out.push(serialize({origin, segment, S: s, resolution: ctx.resolution}));
+  }
   return out;
 }

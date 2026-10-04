@@ -87,7 +87,10 @@ export function abToTriple(sumA: number, sumB: number): Triple {
     const x = (e + parity) / 3;
     const r = parity - x; // = y + z
     if ((r + yz) % 2 !== 0) continue;
-    return {x, y: (r + yz) / 2, z: (r - yz) / 2};
+    // The quotients are exact integers, but V8 keeps division results as
+    // doubles; `| 0` hands callers small integers, which keeps the arrays and
+    // objects they flow into on V8's fast integer representation
+    return {x: x | 0, y: ((r + yz) / 2) | 0, z: ((r - yz) / 2) | 0};
   }
   throw new Error(`abToTriple: no integer triple for (${sumA},${sumB})`);
 }
