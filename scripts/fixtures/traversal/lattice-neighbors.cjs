@@ -30,13 +30,10 @@ const cases = [];
 for (const resolution of [2, 4, 6]) {
   const cells = pickTestCells(resolution);
   for (const cell of cells) {
-    const edge = getLatticeNeighbors(cell, true);
-    const superset = getLatticeNeighbors(cell, false);
     cases.push({
       cell: u64ToHex(cell),
       resolution,
-      edgeOnlyNeighbors: sortHex(edge),
-      supersetNeighbors: sortHex(superset)
+      neighbors: sortHex(getLatticeNeighbors(cell))
     });
   }
 }

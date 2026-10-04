@@ -17,7 +17,7 @@ function buildRingFirewall(center, ringRadius) {
   for (let r = 0; r < ringRadius; r++) {
     const next = [];
     for (const cell of layers[r]) {
-      for (const n of getLatticeNeighbors(cell, true)) {
+      for (const n of getLatticeNeighbors(cell)) {
         if (visited.has(n)) continue;
         visited.add(n);
         next.push(n);
