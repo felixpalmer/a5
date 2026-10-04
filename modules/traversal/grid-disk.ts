@@ -4,18 +4,23 @@
 
 import type {Orientation, Triple} from '../lattice';
 import {sToTriple, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
-import {getGlobalCellNeighbors} from './global-neighbors';
 import {getBoundaryNeighborTriples} from './lattice-boundary';
 import {NEIGHBOR_DELTAS} from './neighbors';
 import {compact} from '../core/compact';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
+import {FACE_ADJACENCY} from '../core/face-adjacency';
 
-// The triple-space BFS deduplicates cells by one integer key: the quintant
-// (origin.id * 5 + quintant, < 60) and the triple (x, z, parity; y follows).
-// The key stays below 2^53 — exact as a JS number — up to Hilbert resolution 23.
-// Keys are only built, never decoded (division and modulo on doubles are slow).
-const MAX_PACKED_HILBERT_RESOLUTION = 23;
+// Cells are deduplicated by one integer key: the quintant (origin.id * 5 +
+// quintant, < 60), parity, and the low KEY_BITS bits of -x and -z (y follows).
+// That fits in 51 bits, exact as a JS number. Up to Hilbert resolution 21 the
+// coordinates fit whole; above it, two cells of one quintant share a key only
+// if they are 2^22 rows apart, and a disk holding both would need k ≈ 2^21
+// (~10^12 cells) — far past what fits in memory. Keys are only built, never
+// decoded (division and modulo on doubles are slow).
+const KEY_BITS = 22;
+const KEY_MASK = (1 << KEY_BITS) - 1;
+const KEY_SIDE = 2 ** KEY_BITS;
 
 // Segment and curve orientation of each of the 60 quintants, by origin.id * 5 +
 // quintant. Filled on first use: calling quintantToSegment at module load
@@ -47,10 +52,14 @@ function addCell(
   quintant: number,
   x: number,
   y: number,
-  z: number,
-  side: number
+  z: number
 ): void {
-  const key = ((0 - x) * side - z) * 2 + x + y + z + (originId * 5 + quintant) * 2 * side * side;
+  const key =
+    (((0 - x) & KEY_MASK) * KEY_SIDE + ((0 - z) & KEY_MASK)) * 2 +
+    x +
+    y +
+    z +
+    (originId * 5 + quintant) * 2 * KEY_SIDE * KEY_SIDE;
   if (prev.keys.has(key) || current.keys.has(key) || next.keys.has(key)) return;
   next.keys.add(key);
   next.cells.push(originId, quintant, x, y, z);
@@ -65,20 +74,38 @@ function pushCellIds(out: bigint[], cells: number[], hilbertRes: number, resolut
   }
 }
 
+/** Resolution 0: the cells are the 12 dodecahedron faces, adjacent across their edges. */
+function _gridDiskFaces(originId: number, k: number): BigUint64Array {
+  const disk = new Set<number>([originId]);
+  for (let ring = 0; ring < k && disk.size < 12; ring++) {
+    for (const id of [...disk]) {
+      for (let q = 0; q < 5; q++) disk.add(FACE_ADJACENCY[id][q][0]);
+    }
+  }
+  const cells: bigint[] = [];
+  for (const id of disk) cells.push(serialize({origin: origins[id], segment: 0, S: 0n, resolution: 0}));
+  return compact(cells);
+}
+
 /**
- * BFS grid disk in triple space: the same sliding-window BFS as
- * `_gridDiskBFS`, over triples instead of cell IDs. Neighbors come from the
- * per-flavor triple deltas, plus the boundary delta tables for cells on a
- * quintant edge, so no cell is decoded and each is encoded exactly once, when
- * it leaves the window. Returns null when the resolution can't be keyed.
+ * BFS grid disk in triple space, with progressive compaction.
+ *
+ * Neighbors come from the per-flavor triple deltas, plus the boundary delta
+ * tables for cells on a quintant edge, so no cell is decoded and each is
+ * encoded exactly once, when it leaves the window.
+ *
+ * Uses a sliding-window dedup approach: only the previous and current frontier
+ * rings are kept in memory for deduplication (BFS guarantees cells ≥2 rings
+ * behind the frontier can never be re-discovered). Evicted interior cells are
+ * periodically compacted to reduce memory pressure.
  */
-function _gridDiskTriples(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array | null {
+function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array {
+  if (k === 0) return new BigUint64Array([cellId]);
   const {origin, segment, S, resolution} = deserialize(cellId);
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  if (resolution === 0 || hilbertRes > MAX_PACKED_HILBERT_RESOLUTION) return null;
+  if (resolution === 0) return _gridDiskFaces(origin.id, k);
   if (QUINTANT_SEGMENT.length === 0) fillQuintantSegments();
+  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
-  const side = maxRow + 1;
   const {quintant, orientation} = segmentToQuintant(segment, origin);
   const seed = sToTriple(S, hilbertRes, orientation);
 
@@ -86,7 +113,7 @@ function _gridDiskTriples(cellId: bigint, k: number, edgeOnly: boolean): BigUint
   let interior: bigint[] = [cellId];
   let prevFrontier: Ring = {keys: new Set(), cells: []};
   let frontier: Ring = {keys: new Set(), cells: []};
-  addCell(frontier, prevFrontier, prevFrontier, origin.id, quintant, seed.x, seed.y, seed.z, side);
+  addCell(frontier, prevFrontier, prevFrontier, origin.id, quintant, seed.x, seed.y, seed.z);
   const boundary: number[] = [];
 
   for (let ring = 1; ring <= k; ring++) {
@@ -107,7 +134,7 @@ function _gridDiskTriples(cellId: bigint, k: number, edgeOnly: boolean): BigUint
         const d = deltas[i];
         const neighbor = {x: x + d.x, y: y + d.y, z: z + d.z};
         if (!tripleInBounds(neighbor, maxRow)) continue;
-        addCell(nextFrontier, prevFrontier, frontier, originId, q, neighbor.x, neighbor.y, neighbor.z, side);
+        addCell(nextFrontier, prevFrontier, frontier, originId, q, neighbor.x, neighbor.y, neighbor.z);
       }
 
       // Across a quintant edge: the boundary delta tables
@@ -116,17 +143,8 @@ function _gridDiskTriples(cellId: bigint, k: number, edgeOnly: boolean): BigUint
         const ctx = {triple, parity: x + y + z, sourceQuintant: q, origin: origins[originId], maxRow};
         getBoundaryNeighborTriples(ctx, edgeOnly, false, boundary);
         for (let i = 0; i < boundary.length; i += 5) {
-          addCell(
-            nextFrontier,
-            prevFrontier,
-            frontier,
-            boundary[i],
-            boundary[i + 1],
-            boundary[i + 2],
-            boundary[i + 3],
-            boundary[i + 4],
-            side
-          );
+          const b = boundary;
+          addCell(nextFrontier, prevFrontier, frontier, b[i], b[i + 1], b[i + 2], b[i + 3], b[i + 4]);
         }
       }
     }
@@ -155,58 +173,6 @@ function _gridDiskTriples(cellId: bigint, k: number, edgeOnly: boolean): BigUint
 }
 
 /**
- * BFS grid disk with progressive compaction.
- *
- * Uses a sliding-window dedup approach: only the previous and current frontier
- * rings are kept in memory for deduplication (BFS guarantees cells ≥2 rings
- * behind the frontier can never be re-discovered). Evicted interior cells are
- * periodically compacted to reduce memory pressure.
- */
-function _gridDiskBFS(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array {
-  if (k === 0) {
-    return new BigUint64Array([cellId]);
-  }
-  const packed = _gridDiskTriples(cellId, k, edgeOnly);
-  if (packed) return packed;
-
-  let interior: bigint[] = [];
-  let prevFrontier = new Set<bigint>();
-  let frontier = new Set<bigint>([cellId]);
-  const neighborOpts = edgeOnly ? {edgeOnly: true as const} : undefined;
-
-  for (let ring = 1; ring <= k; ring++) {
-    const nextFrontier = new Set<bigint>();
-    for (const id of frontier) {
-      for (const neighbor of getGlobalCellNeighbors(id, neighborOpts)) {
-        if (!prevFrontier.has(neighbor) && !frontier.has(neighbor) && !nextFrontier.has(neighbor)) {
-          nextFrontier.add(neighbor);
-        }
-      }
-    }
-
-    // Evict prevFrontier — these cells are ≥2 rings behind the new frontier
-    // and can never be re-discovered by BFS
-    for (const id of prevFrontier) {
-      interior.push(id);
-    }
-
-    // Progressively compact interior to reduce memory pressure
-    if (interior.length > 100) {
-      interior = Array.from(compact(interior));
-    }
-
-    prevFrontier = frontier;
-    frontier = nextFrontier;
-  }
-
-  // Merge remaining boundary rings with compacted interior
-  for (const id of prevFrontier) interior.push(id);
-  for (const id of frontier) interior.push(id);
-
-  return compact(interior);
-}
-
-/**
  * Compute the grid disk of edge-sharing neighbors within k hops.
  * Returns a sorted, compacted BigUint64Array of cell IDs including
  * the center cell.
@@ -221,7 +187,7 @@ function _gridDiskBFS(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Ar
  * @returns Sorted BigUint64Array of compacted cell IDs in the disk
  */
 export function gridDisk(cellId: bigint, k: number): BigUint64Array {
-  return _gridDiskBFS(cellId, k, true);
+  return _gridDisk(cellId, k, true);
 }
 
 /**
@@ -239,5 +205,5 @@ export function gridDisk(cellId: bigint, k: number): BigUint64Array {
  * @returns Sorted BigUint64Array of compacted cell IDs in the disk
  */
 export function gridDiskVertex(cellId: bigint, k: number): BigUint64Array {
-  return _gridDiskBFS(cellId, k, false);
+  return _gridDisk(cellId, k, false);
 }
