@@ -210,7 +210,9 @@ function ringsOverlap(cellRing, cellVecs, polyRing, insidePoint) {
   const polyVecs = polyRing.map(toVec3);
   // Any cell vertex inside the polygon ring, or vice versa.
   for (const v of cellRing) {
-    const inside = insidePoint ? pointInPolygonFromInside(v, polyRing, insidePoint) : pointInPolygonSpherical(v, polyRing);
+    const inside = insidePoint
+      ? pointInPolygonFromInside(v, polyRing, insidePoint)
+      : pointInPolygonSpherical(v, polyRing);
     if (inside) return true;
   }
   for (const v of polyRing) {
