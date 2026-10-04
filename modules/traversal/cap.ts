@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type {Face, Spherical} from '../core/coordinate-systems';
+import type {Spherical} from '../core/coordinate-systems';
 import type {OriginId} from '../core/utils';
-import {sToTriple, tripleFlavor} from '../lattice';
+import {sToTriple} from '../lattice';
 import {
   getResolution,
   cellToParent,
@@ -17,12 +17,8 @@ import {cellToSpherical} from '../core/cell';
 import {cellArea} from '../core/cell-info';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
 import {FACE_ADJACENCY} from '../core/face-adjacency';
-import {getPentagonCenter} from '../core/tiling';
 import {haversine, origins, segmentToQuintant} from '../core/origin';
-import {DodecahedronProjection} from '../projections/dodecahedron';
-import {forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
-
-const dodecahedron = new DodecahedronProjection();
+import {forEachTripleNeighbor, tripleCellCenter, tripleCellKey, tripleCellToId} from './triple-cells';
 
 /** Safety factor applied to equal-area circle radius to get conservative circumradius estimate */
 const CELL_RADIUS_SAFETY_FACTOR = 2.0;
@@ -128,9 +124,7 @@ function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number)
       if (visited.has(key)) return;
       visited.add(key);
       cells.push(tripleCellToId(originId, q, x, y, z, hilbertRes, resolution));
-      const triple = {x, y, z};
-      const face = getPentagonCenter(hilbertRes, q, triple, tripleFlavor(triple, maxRow));
-      if (haversine(center, dodecahedron.inverse(face as Face, originId as OriginId)) <= hExpanded) {
+      if (haversine(center, tripleCellCenter(originId, q, x, y, z, hilbertRes, maxRow)) <= hExpanded) {
         next.push(originId, q, x, y, z);
       }
     };
