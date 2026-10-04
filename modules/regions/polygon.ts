@@ -139,7 +139,7 @@ function expandShell(boundaryCells: bigint[], boundarySet: Set<bigint>): bigint[
   const shellCells: bigint[] = [];
   const shellSet = new Set<bigint>();
   for (const cell of boundaryCells) {
-    for (const neighbor of getLatticeNeighbors(cell, true)) {
+    for (const neighbor of getLatticeNeighbors(cell)) {
       if (boundarySet.has(neighbor)) continue;
       if (!shellSet.has(neighbor)) {
         shellSet.add(neighbor);

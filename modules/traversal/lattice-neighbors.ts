@@ -63,20 +63,6 @@ function boundaryContext(src: LatticeSource): BoundaryContext {
 
 type Delta = readonly [number, number, number];
 
-/** All 26 non-zero ±1 moves in 3D — vertex- and edge-sharing within-quintant candidates. */
-const SUPERSET_DELTAS: readonly Delta[] = (() => {
-  const out: Delta[] = [];
-  for (let dx = -1; dx <= 1; dx++) {
-    for (let dy = -1; dy <= 1; dy++) {
-      for (let dz = -1; dz <= 1; dz++) {
-        if (dx === 0 && dy === 0 && dz === 0) continue;
-        out.push([dx, dy, dz]);
-      }
-    }
-  }
-  return out;
-})();
-
 /** The 3 parity-valid single-axis moves (strict triple-lattice edge connectivity). */
 // prettier-ignore
 const PARITY_EVEN_DELTAS: readonly Delta[] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
@@ -84,20 +70,17 @@ const PARITY_EVEN_DELTAS: readonly Delta[] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
 const PARITY_ODD_DELTAS: readonly Delta[] = [[-1, 0, 0], [0, -1, 0], [0, 0, -1]];
 
 /**
- * Fast lattice-based neighbor finding over triple-space deltas; falls back to
+ * Fast lattice-based neighbor finding over triple-space deltas: the 3
+ * parity-valid moves — strict triple-lattice edge connectivity, the
+ * connectivity `tripleSpaceFloodFill` uses. Falls back to
  * `getGlobalCellNeighbors` below res 2.
- *
- * - `edgeOnly=false`: 26-cube ±1 superset (may include vertex-only touchers).
- *   For BFS that re-validates candidates downstream (e.g. line tracing).
- * - `edgeOnly=true`: 3 parity-valid moves — strict triple-lattice edge
- *   connectivity.
  */
-export function getLatticeNeighbors(cellId: bigint, edgeOnly: boolean): bigint[] {
+export function getLatticeNeighbors(cellId: bigint): bigint[] {
   const src = decodeSource(cellId);
-  if (!src) return getGlobalCellNeighbors(cellId, {edgeOnly});
+  if (!src) return getGlobalCellNeighbors(cellId, {edgeOnly: true});
 
   const {origin, segment, S, resolution, hilbertRes, orientation, triple, maxS, maxRow} = src;
-  const deltas = edgeOnly ? (tripleParity(triple) === 0 ? PARITY_EVEN_DELTAS : PARITY_ODD_DELTAS) : SUPERSET_DELTAS;
+  const deltas = tripleParity(triple) === 0 ? PARITY_EVEN_DELTAS : PARITY_ODD_DELTAS;
   const result: bigint[] = [];
 
   for (const [dx, dy, dz] of deltas) {
@@ -109,8 +92,8 @@ export function getLatticeNeighbors(cellId: bigint, edgeOnly: boolean): bigint[]
     }
   }
 
-  // Strict lattice connectivity (edgeOnly) doesn't traverse the [-maxRow, maxRow, 0]
-  // vertex corner, so we skip it there too — keeping the firewall topology tight.
-  for (const c of getBoundaryNeighbors(boundaryContext(src), edgeOnly, edgeOnly)) result.push(c);
+  // Strict lattice connectivity doesn't traverse the [-maxRow, maxRow, 0] vertex
+  // corner, so we skip it there too — keeping the firewall topology tight.
+  for (const c of getBoundaryNeighbors(boundaryContext(src), true, true)) result.push(c);
   return result;
 }

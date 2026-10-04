@@ -2,40 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type {Orientation, Triple} from '../lattice';
-import {sToTriple, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
+import type {Triple} from '../lattice';
+import {sToTriple, tripleFlavor, tripleInBounds} from '../lattice';
 import {getBoundaryNeighborTriples} from './lattice-boundary';
 import {NEIGHBOR_DELTAS} from './neighbors';
 import {compact} from '../core/compact';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
-import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
+import {origins, segmentToQuintant} from '../core/origin';
+import {tripleCellKey, tripleCellToId} from './triple-cells';
 import {FACE_ADJACENCY} from '../core/face-adjacency';
-
-// Cells are deduplicated by one integer key: the quintant (origin.id * 5 +
-// quintant, < 60), parity, and the low KEY_BITS bits of -x and -z (y follows).
-// That fits in 51 bits, exact as a JS number. Up to Hilbert resolution 21 the
-// coordinates fit whole; above it, two cells of one quintant share a key only
-// if they are 2^22 rows apart, and a disk holding both would need k ≈ 2^21
-// (~10^12 cells) — far past what fits in memory. Keys are only built, never
-// decoded (division and modulo on doubles are slow).
-const KEY_BITS = 22;
-const KEY_MASK = (1 << KEY_BITS) - 1;
-const KEY_SIDE = 2 ** KEY_BITS;
-
-// Segment and curve orientation of each of the 60 quintants, by origin.id * 5 +
-// quintant. Filled on first use: calling quintantToSegment at module load
-// leaves V8 type feedback that slows serialize everywhere (uncompact 2x).
-const QUINTANT_SEGMENT: number[] = [];
-const QUINTANT_ORIENTATION: Orientation[] = [];
-function fillQuintantSegments(): void {
-  for (const origin of origins) {
-    for (let q = 0; q < 5; q++) {
-      const {segment, orientation} = quintantToSegment(q, origin);
-      QUINTANT_SEGMENT.push(segment);
-      QUINTANT_ORIENTATION.push(orientation);
-    }
-  }
-}
 
 /** One BFS ring: its dedup keys, and its cells as flat (originId, quintant, x, y, z). */
 interface Ring {
@@ -54,12 +29,7 @@ function addCell(
   y: number,
   z: number
 ): void {
-  const key =
-    (((0 - x) & KEY_MASK) * KEY_SIDE + ((0 - z) & KEY_MASK)) * 2 +
-    x +
-    y +
-    z +
-    (originId * 5 + quintant) * 2 * KEY_SIDE * KEY_SIDE;
+  const key = tripleCellKey(originId, quintant, x, y, z);
   if (prev.keys.has(key) || current.keys.has(key) || next.keys.has(key)) return;
   next.keys.add(key);
   next.cells.push(originId, quintant, x, y, z);
@@ -68,9 +38,7 @@ function addCell(
 /** Encode a ring's cells as cell IDs, appending them to `out`. */
 function pushCellIds(out: bigint[], cells: number[], hilbertRes: number, resolution: number): void {
   for (let c = 0; c < cells.length; c += 5) {
-    const q = cells[c] * 5 + cells[c + 1];
-    const s = tripleToS({x: cells[c + 2], y: cells[c + 3], z: cells[c + 4]}, hilbertRes, QUINTANT_ORIENTATION[q])!;
-    out.push(serialize({origin: origins[cells[c]], segment: QUINTANT_SEGMENT[q], S: s, resolution}));
+    out.push(tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], hilbertRes, resolution));
   }
 }
 
@@ -103,7 +71,6 @@ function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array
   if (k === 0) return new BigUint64Array([cellId]);
   const {origin, segment, S, resolution} = deserialize(cellId);
   if (resolution === 0) return _gridDiskFaces(origin.id, k);
-  if (QUINTANT_SEGMENT.length === 0) fillQuintantSegments();
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
   const {quintant, orientation} = segmentToQuintant(segment, origin);
