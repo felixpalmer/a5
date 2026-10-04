@@ -98,14 +98,46 @@ function pointInPolygonSpherical(point, ring) {
   return Math.abs(angleSum) > Math.PI;
 }
 
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const angle3 = (a, b) => Math.atan2(Math.hypot(...cross3(a, b)), dot3(a, b));
+/** Is x (on the great circle through a and b) on their minor arc? */
+const onMinorArc = (x, a, b) => Math.abs(angle3(a, x) + angle3(x, b) - angle3(a, b)) < 1e-9;
+
+/**
+ * Spherical point-in-polygon by crossing parity against a point known to be
+ * inside. The winding test above only answers containment for polygons within
+ * a hemisphere (it asks whether the ring separates the point from its own
+ * antipode), so polygons larger than that name an inside point instead.
+ */
+function pointInPolygonFromInside(point, ring, insidePoint) {
+  const p = toVec3(point);
+  const s = toVec3(insidePoint);
+  const arcPlane = cross3(p, s);
+  let crossings = 0;
+  for (let i = 0; i < ring.length; i++) {
+    const a = toVec3(ring[i]);
+    const b = toVec3(ring[(i + 1) % ring.length]);
+    const line = cross3(arcPlane, cross3(a, b));
+    const len = Math.hypot(...line);
+    if (len < 1e-12) continue;
+    for (const sign of [1, -1]) {
+      const x = line.map(c => (sign * c) / len);
+      if (onMinorArc(x, p, s) && onMinorArc(x, a, b)) crossings++;
+    }
+  }
+  return crossings % 2 === 0;
+}
+
 /**
  * Brute-force: test if a cell should be in the polygon.
  * A cell is included if and only if its center is inside the outer ring
  * and outside every hole ring.
  * This ensures non-overlapping coverage for adjacent polygons.
  */
-function cellInPolygonBruteForce(cellId, rings) {
+function cellInPolygonBruteForce(cellId, rings, insidePoint) {
   const center = cellToLonLat(cellId);
+  if (insidePoint) return pointInPolygonFromInside(center, rings[0], insidePoint);
   if (!pointInPolygonSpherical(center, rings[0])) return false;
   for (let r = 1; r < rings.length; r++) {
     if (pointInPolygonSpherical(center, rings[r])) return false;
@@ -152,11 +184,15 @@ function getCandidateCells(rings, resolution, logLabel) {
  * Brute-force polygonToCells (center containment) using a spherical cap to
  * limit candidate cells. `rings` is GeoJSON-style: [outer, ...holes].
  */
-function bruteForcePolygonToCells(rings, resolution) {
-  const candidateCells = getCandidateCells(rings, resolution, true);
+function bruteForcePolygonToCells(rings, resolution, insidePoint) {
+  // A polygon reaching past a hemisphere can't be bounded by a cap around its
+  // vertex centroid, so test every cell.
+  const candidateCells = insidePoint
+    ? uncompact(getRes0Cells(), resolution)
+    : getCandidateCells(rings, resolution, true);
   const result = [];
   for (const cellId of candidateCells) {
-    if (cellInPolygonBruteForce(cellId, rings)) {
+    if (cellInPolygonBruteForce(cellId, rings, insidePoint)) {
       result.push(cellId);
     }
   }
@@ -170,11 +206,14 @@ function bruteForcePolygonToCells(rings, resolution) {
  * its holes, so a cell overlaps it when it overlaps the outer ring and is not
  * entirely swallowed by a single hole.
  */
-function ringsOverlap(cellRing, cellVecs, polyRing) {
+function ringsOverlap(cellRing, cellVecs, polyRing, insidePoint) {
   const polyVecs = polyRing.map(toVec3);
   // Any cell vertex inside the polygon ring, or vice versa.
   for (const v of cellRing) {
-    if (pointInPolygonSpherical(v, polyRing)) return true;
+    const inside = insidePoint
+      ? pointInPolygonFromInside(v, polyRing, insidePoint)
+      : pointInPolygonSpherical(v, polyRing);
+    if (inside) return true;
   }
   for (const v of polyRing) {
     if (pointInPolygonSpherical(v, cellRing)) return true;
@@ -210,10 +249,10 @@ function cellInsideHole(cellRing, cellVecs, holeRing) {
   return true;
 }
 
-function cellOverlapsPolygon(cellId, rings) {
+function cellOverlapsPolygon(cellId, rings, insidePoint) {
   const cellRing = cellToBoundary(cellId, {closedRing: false});
   const cellVecs = cellRing.map(toVec3);
-  if (!ringsOverlap(cellRing, cellVecs, rings[0])) return false;
+  if (!ringsOverlap(cellRing, cellVecs, rings[0], insidePoint)) return false;
   for (let r = 1; r < rings.length; r++) {
     if (cellInsideHole(cellRing, cellVecs, rings[r])) return false;
   }
@@ -224,11 +263,14 @@ function cellOverlapsPolygon(cellId, rings) {
  * Brute-force full-coverage oracle: every candidate cell whose region overlaps
  * the polygon region. Used to validate `containment: 'overlapping'`.
  */
-function bruteForceOverlappingCells(rings, resolution) {
-  const candidateCells = getCandidateCells(rings, resolution, false);
+function bruteForceOverlappingCells(rings, resolution, insidePoint) {
+  // As in bruteForcePolygonToCells: past a hemisphere, test every cell
+  const candidateCells = insidePoint
+    ? uncompact(getRes0Cells(), resolution)
+    : getCandidateCells(rings, resolution, false);
   const result = [];
   for (const cellId of candidateCells) {
-    if (cellOverlapsPolygon(cellId, rings)) {
+    if (cellOverlapsPolygon(cellId, rings, insidePoint)) {
       result.push(cellId);
     }
   }
@@ -294,7 +336,13 @@ const polygonCases = [
   // Big enough interior to trigger the hierarchical coarse flood phase with a hole present.
   {name: 'donut_coarse_phase', ring: [[-10, 55], [15, 55], [15, 40], [-10, 40]], holes: [[[-2, 50], [7, 50], [7, 45], [-2, 45]]], resolution: 7},
   // GeoJSON-style closed rings (first vertex repeated) — must match `donut` exactly.
-  {name: 'closed_ring_donut', ring: [[-5, 54], [15, 54], [15, 44], [-5, 44], [-5, 54]], holes: [[[2, 51], [8, 51], [8, 47], [2, 47], [2, 51]]], resolution: 6}
+  {name: 'closed_ring_donut', ring: [[-5, 54], [15, 54], [15, 44], [-5, 44], [-5, 54]], holes: [[[2, 51], [8, 51], [8, 47], [2, 47], [2, 51]]], resolution: 6},
+  // Polygons reaching past a hemisphere. They swallow whole quintants, which the
+  // per-quintant flood fill can't reach, and need the crossing-parity
+  // containment test. `inside` is a point known to be inside, for the oracle.
+  {name: 'huge_europe_africa', ring: [[-40, 63], [57, 62], [72, 22], [78, -15], [-25, -33]], inside: [20, 15], resolution: 3},
+  {name: 'huge_pacific', ring: [[140, -50], [-80, -50], [-80, 55], [140, 55]], inside: [-150, 0], resolution: 3},
+  {name: 'huge_southern_band', ring: [[-179, -10], [-60, -10], [60, -10], [179, -10], [179, -70], [60, -70], [-60, -70], [-179, -70]], inside: [0, -40], resolution: 2}
 ];
 
 console.log('\nPolygon fixtures:');
@@ -302,7 +350,7 @@ const polygonFixtures = [];
 for (const tc of polygonCases) {
   console.log(`  ${tc.name} (res ${tc.resolution})...`);
   const rings = [tc.ring, ...(tc.holes || [])];
-  const expected = bruteForcePolygonToCells(rings, tc.resolution);
+  const expected = bruteForcePolygonToCells(rings, tc.resolution, tc.inside);
   const actualCompact = polygonToCells(rings, tc.resolution);
   const actual = uncompact(actualCompact, tc.resolution);
   const actualSorted = [...actual].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
@@ -358,7 +406,7 @@ for (const tc of polygonCases) {
   }
 
   // Compare against the geometric overlap oracle.
-  const oracle = bruteForceOverlappingCells(rings, tc.resolution);
+  const oracle = bruteForceOverlappingCells(rings, tc.resolution, tc.inside);
   const oracleSet = new Set(oracle.map(c => c.toString()));
   const missed = oracle.filter(c => !overlapSet.has(c.toString()));
   const extra = overlapSorted.filter(c => !oracleSet.has(c.toString()));

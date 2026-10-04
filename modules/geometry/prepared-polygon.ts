@@ -8,7 +8,7 @@
 
 import * as vec3 from '../math/vec3';
 import type {Cartesian} from '../core/coordinate-systems';
-import {pointInSphericalPolygon, ringSegmentNormals} from './spherical-polygon';
+import {pointInSphericalPolygon, ringSegmentNormals, ringWindingSign} from './spherical-polygon';
 
 const Z_AXIS = vec3.fromValues(0, 0, 1) as Cartesian;
 const X_AXIS = vec3.fromValues(1, 0, 0) as Cartesian;
@@ -81,6 +81,11 @@ export interface PreparedPolygon {
   cap: BoundingCap;
   ref: Cartesian;
   useFast: boolean;
+  /**
+   * Reference points known to be INSIDE the polygon, for polygons whose
+   * bounding cap reaches a hemisphere; empty otherwise (see `interiorRefs`).
+   */
+  insideRefs: Cartesian[];
 }
 export function preparePolygon(ringVecsList: Cartesian[][]): PreparedPolygon {
   const cap = boundingCap(ringVecsList);
@@ -96,7 +101,45 @@ export function preparePolygon(ringVecsList: Cartesian[][]): PreparedPolygon {
   const ref = vec3.create() as Cartesian;
   vec3.scale(ref, c, cosT);
   vec3.scaleAndAdd(ref, ref, perp, sinT);
-  return {ringVecsList, ringNormals, cap, ref, useFast};
+  const insideRefs = capAngle >= Math.PI / 2 ? interiorRefs(ringVecsList[0], ringNormals[0]) : [];
+  return {ringVecsList, ringNormals, cap, ref, useFast, insideRefs};
+}
+
+// How far the interior reference points sit from the ring edge, in radians.
+// Far above CROSSING_EPS so crossing tests against the edge stay well
+// conditioned, far below any cell size so they can't clip another edge.
+const INTERIOR_REF_OFFSET = 1e-7;
+const INTERIOR_REF_COUNT = 3;
+
+/**
+ * Points just inside the midpoints of the outer ring's longest edges.
+ *
+ * The winding-number test answers "is the point in the region that does not
+ * contain the point's own antipode", which is only containment when the
+ * polygon lies within a hemisphere. For larger polygons a crossing test is
+ * needed, and that needs a reference point whose containment is known. The
+ * interior side of each edge follows the ring's winding (`ringWindingSign`),
+ * the same convention the boundary-cell filter uses. Several are kept in case
+ * a probe falls near-degenerately against one.
+ */
+function interiorRefs(ring: Cartesian[], normals: Cartesian[]): Cartesian[] {
+  const side = ringWindingSign(ring);
+  const edges = ring.map((v, i) => ({i, length: vec3.angle(v, ring[(i + 1) % ring.length])}));
+  edges.sort((a, b) => b.length - a.length);
+  const refs: Cartesian[] = [];
+  for (let k = 0; k < Math.min(INTERIOR_REF_COUNT, edges.length); k++) {
+    const i = edges[k].i;
+    const mid = vec3.create() as Cartesian;
+    vec3.add(mid, ring[i], ring[(i + 1) % ring.length]);
+    vec3.normalize(mid, mid);
+    // For a counter-clockwise ring, each edge's normal points to its interior side
+    const inward = vec3.normalize(vec3.create(), normals[i]) as Cartesian;
+    const refPoint = vec3.create() as Cartesian;
+    vec3.scaleAndAdd(refPoint, mid, inward, side * INTERIOR_REF_OFFSET);
+    vec3.normalize(refPoint, refPoint);
+    refs.push(refPoint);
+  }
+  return refs;
 }
 
 const CROSSING_EPS = 1e-14;
@@ -114,8 +157,7 @@ const CROSSING_EPS = 1e-14;
  * codebase, so V8 keeps them polymorphic here (+17% on country-scale
  * polygonToCells, measured with both Float64Array and plain-array scratch).
  */
-function crossingParity(p: Cartesian, prep: PreparedPolygon): boolean | undefined {
-  const r = prep.ref;
+function crossingParity(p: Cartesian, prep: PreparedPolygon, r: Cartesian = prep.ref): boolean | undefined {
   // normal of the probe->ref arc plane
   const abx = p[1] * r[2] - p[2] * r[1];
   const aby = p[2] * r[0] - p[0] * r[2];
@@ -157,6 +199,12 @@ function crossingParity(p: Cartesian, prep: PreparedPolygon): boolean | undefine
 export function pointInPreparedPolygon(p: Cartesian, prep: PreparedPolygon): boolean {
   const cap = prep.cap;
   if (p[0] * cap.center[0] + p[1] * cap.center[1] + p[2] * cap.center[2] < cap.minDot) return false;
+  // Polygons reaching a hemisphere: crossing parity against a point known to
+  // be inside (even parity = same side = inside)
+  for (let i = 0; i < prep.insideRefs.length; i++) {
+    const result = crossingParity(p, prep, prep.insideRefs[i]);
+    if (result !== undefined) return !result;
+  }
   if (prep.useFast) {
     const result = crossingParity(p, prep);
     if (result !== undefined) return result;

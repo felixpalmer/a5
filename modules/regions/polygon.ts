@@ -5,7 +5,15 @@
 import type {LonLat, Cartesian} from '../core/coordinate-systems';
 import {lonLatToCell, sphericalToCell, cellToSpherical} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical} from '../core/coordinate-transforms';
-import {cellToParent, cellToChildren, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION} from '../core/serialization';
+import {
+  cellToParent,
+  cellToChildren,
+  deserialize,
+  serialize,
+  FIRST_HILBERT_RESOLUTION,
+  MAX_RESOLUTION,
+  WORLD_CELL
+} from '../core/serialization';
 import {compact} from '../core/compact';
 import {ringWindingSign} from '../geometry/spherical-polygon';
 import type {PreparedPolygon} from '../geometry/prepared-polygon';
@@ -227,6 +235,42 @@ function floodInterior(
 }
 
 /**
+ * Quintants the polygon swallows whole. The flood fill never crosses a
+ * quintant edge, so such a quintant gets no seeds from the boundary shell and
+ * would be left empty. A quintant holding none of the boundary or shell cells
+ * has none of the polygon's edge passing through it: its cells lie wholly
+ * inside or wholly outside, and a single probe cell decides which. Inside
+ * quintants are emitted as their resolution 1 cell (resolution 0 when that is
+ * the target), which `compact` merges with the rest of the output.
+ */
+function swallowedQuintants(
+  boundaryCells: bigint[],
+  shellCells: bigint[],
+  resolution: number,
+  prep: PreparedPolygon
+): bigint[] {
+  // A swallowed quintant lies inside the polygon's bounding cap, so the cap
+  // must have at least a quintant's area (4π/60: cells are equal-area)
+  if (2 * Math.PI * (1 - prep.cap.minDot) < (4 * Math.PI) / 60) return [];
+  const level = Math.min(resolution, FIRST_HILBERT_RESOLUTION - 1);
+  const touched = new Set<bigint>();
+  for (const cells of [boundaryCells, shellCells]) {
+    for (let i = 0; i < cells.length; i++) {
+      touched.add(resolution === level ? cells[i] : cellToParent(cells[i], level));
+    }
+  }
+
+  const out: bigint[] = [];
+  for (const quintant of cellToChildren(WORLD_CELL, level)) {
+    if (touched.has(quintant)) continue;
+    // Any cell of the quintant at the target resolution will do
+    const probe = resolution === level ? quintant : serialize({...deserialize(quintant), S: 0n, resolution});
+    if (pointInPreparedPolygon(toCartesian(cellToSpherical(probe)), prep)) out.push(quintant);
+  }
+  return out;
+}
+
+/**
  * How a cell is judged to belong to the polygon.
  * - `'center'`: a cell is included iff its center lies inside the polygon.
  * - `'overlapping'`: additionally include every cell that overlaps the polygon
@@ -323,7 +367,8 @@ export function polygonToCells(
 
   // Dense sampling can leave gaps; the shell catches them, classifying each cell.
   const shellCells = expandShell(boundaryCells, boundarySet);
-  if (shellCells.length === 0) return compact(boundaryOut);
+  const swallowed = swallowedQuintants(boundaryCells, shellCells, resolution, prep);
+  if (shellCells.length === 0) return compact([...boundaryOut, ...swallowed]);
 
   const interiorSeeds: bigint[] = [];
   const visited = new Set(boundarySet);
@@ -334,9 +379,9 @@ export function polygonToCells(
       visited.add(cell); // exterior shell (and hole interiors) join the firewall
     }
   }
-  if (interiorSeeds.length === 0) return compact(boundaryOut);
+  if (interiorSeeds.length === 0) return compact([...boundaryOut, ...swallowed]);
 
   const interiorCells = floodInterior(interiorSeeds, visited, boundarySet.size, resolution);
 
-  return compact([...boundaryOut, ...interiorCells]);
+  return compact([...boundaryOut, ...interiorCells, ...swallowed]);
 }
