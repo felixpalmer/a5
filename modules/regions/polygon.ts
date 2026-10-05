@@ -6,9 +6,11 @@ import type {LonLat, Cartesian} from '../core/coordinate-systems';
 import {lonLatToCell, sphericalToCell, cellToSpherical} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical} from '../core/coordinate-transforms';
 import {
-  cellToParent,
   cellToChildren,
+  cellToParent,
   getResolution,
+  getStride,
+  isFirstChild,
   deserialize,
   serialize,
   FIRST_HILBERT_RESOLUTION,
@@ -21,19 +23,17 @@ import type {PreparedPolygon} from '../geometry/prepared-polygon';
 import {preparePolygon, pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {estimateCellRadius} from '../traversal/cap';
 import {sampleGreatCircleArc} from '../utils/great-circle';
-import {tripleSpaceFloodFill} from '../traversal/lattice-flood-fill';
-import {
-  cellIdsToTriples,
-  forEachLatticeNeighbor,
-  tripleCellCenter,
-  tripleCellKey,
-  tripleCellToId
-} from '../traversal/triple-cells';
+import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
+import type {Orientation} from '../lattice';
+import {sToTriple, tripleFlavor, tripleToS} from '../lattice';
+import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
+import {cellIdsToTriples, forEachTripleNeighbor, tripleCellCenter, tripleCellKey} from '../traversal/triple-cells';
 
 /**
  * Maps each boundary cell to the indices of the ring segments that produced it.
  * Segment indices are global across rings (outer ring first, then holes).
- * Used by `filterBoundaryCells` to short-circuit PIP via segment-side dot products.
+ * Used by `classifyBoundaryCells` to short-circuit PIP via segment-side dot
+ * products, and to classify ring cells locally.
  */
 type SegmentMap = Map<bigint, number[]>;
 
@@ -93,26 +93,43 @@ function denseSampleBoundary(
 }
 
 /**
- * Filter boundary cells to those whose center is inside the polygon.
+ * Whether `p` lies in the lune of the segment a->b (normal `n` = a × b): its
+ * projection onto the great circle falls between a and b.
+ */
+function projectsOntoSegment(p: Cartesian, a: Cartesian, b: Cartesian, n: Cartesian): boolean {
+  // n × a points along the arc from a towards b, b × n from b back towards a
+  const fromA =
+    p[0] * (n[1] * a[2] - n[2] * a[1]) + p[1] * (n[2] * a[0] - n[0] * a[2]) + p[2] * (n[0] * a[1] - n[1] * a[0]);
+  const fromB =
+    p[0] * (b[1] * n[2] - b[2] * n[1]) + p[1] * (b[2] * n[0] - b[0] * n[2]) + p[2] * (b[0] * n[1] - b[1] * n[0]);
+  return fromA > 0 && fromB > 0;
+}
+
+/**
+ * Classify boundary cells by whether their center is inside the polygon.
  *
  * For each cell we know which ring segment(s) sampled it. When all of those
- * segments place the cell on the interior side (cheap signed-dot test), we
- * accept immediately. When they disagree (vertex / concave corner) or the
- * cell wasn't recorded, fall back to full PIP.
+ * segments place the cell on the same side (cheap signed-dot test), that
+ * decides it. When they disagree (vertex / concave corner) or the cell wasn't
+ * recorded, fall back to full PIP. Returns the centers too, for reuse.
  */
-function filterBoundaryCells(
+function classifyBoundaryCells(
   boundaryCells: bigint[],
   segmentMap: SegmentMap,
+  segStarts: Cartesian[],
+  segEnds: Cartesian[],
   segNormals: Cartesian[],
   segSigns: number[],
   prep: PreparedPolygon
-): bigint[] {
-  const out: bigint[] = [];
-  for (const cell of boundaryCells) {
-    const cv = toCartesian(cellToSpherical(cell));
-    const segments = segmentMap.get(cell);
+): {inside: Uint8Array; centers: Cartesian[]} {
+  const inside = new Uint8Array(boundaryCells.length);
+  const centers: Cartesian[] = new Array(boundaryCells.length);
+  for (let c = 0; c < boundaryCells.length; c++) {
+    const cv = toCartesian(cellToSpherical(boundaryCells[c]));
+    centers[c] = cv;
+    const segments = segmentMap.get(boundaryCells[c]);
     if (!segments) {
-      if (pointInPreparedPolygon(cv, prep)) out.push(cell);
+      inside[c] = pointInPreparedPolygon(cv, prep) ? 1 : 0;
       continue;
     }
     let allInside = true;
@@ -125,171 +142,205 @@ function filterBoundaryCells(
         ambiguous = true;
         break;
       } // on segment within float epsilon
+      // The side of the segment's great circle only decides when the center
+      // projects onto the segment itself, not beyond one of its endpoints
+      if (!projectsOntoSegment(cv, segStarts[segIdx], segEnds[segIdx], n)) {
+        ambiguous = true;
+        break;
+      }
       if (dot * segSigns[segIdx] > 0) anyInside = true;
       else allInside = false;
     }
     if (ambiguous || (anyInside && !allInside)) {
-      if (pointInPreparedPolygon(cv, prep)) out.push(cell);
-    } else if (allInside) {
-      out.push(cell);
+      inside[c] = pointInPreparedPolygon(cv, prep) ? 1 : 0;
+    } else {
+      inside[c] = allInside ? 1 : 0;
     }
   }
-  return out;
+  return {inside, centers};
+}
+
+const CROSSING_EPS = 1e-14;
+
+/**
+ * Parity of the crossings of the short arc p->q with the given ring segments
+ * (proper crossings, by the signs of four triple products), or undefined on a
+ * near-degenerate sign.
+ */
+function arcCrossingParity(
+  p: Cartesian,
+  q: Cartesian,
+  segments: number[],
+  segStarts: Cartesian[],
+  segEnds: Cartesian[],
+  segNormals: Cartesian[]
+): boolean | undefined {
+  const abx = p[1] * q[2] - p[2] * q[1];
+  const aby = p[2] * q[0] - p[0] * q[2];
+  const abz = p[0] * q[1] - p[1] * q[0];
+  let odd = false;
+  for (let k = 0; k < segments.length; k++) {
+    const seg = segments[k];
+    const c = segStarts[seg];
+    const d = segEnds[seg];
+    const acb = -(abx * c[0] + aby * c[1] + abz * c[2]);
+    const bda = abx * d[0] + aby * d[1] + abz * d[2];
+    if (Math.abs(acb) < CROSSING_EPS || Math.abs(bda) < CROSSING_EPS) return undefined;
+    if (acb * bda < 0) continue;
+    const cd = segNormals[seg];
+    const cbd = -(cd[0] * q[0] + cd[1] * q[1] + cd[2] * q[2]);
+    const dac = cd[0] * p[0] + cd[1] * p[1] + cd[2] * p[2];
+    if (Math.abs(cbd) < CROSSING_EPS || Math.abs(dac) < CROSSING_EPS) return undefined;
+    if (acb * cbd > 0 && acb * dac > 0) odd = !odd;
+  }
+  return odd;
+}
+
+// Cells are ordered on the curve by a 64-bit key: the 6-bit quintant (as in
+// the ID's top bits) then S, left-aligned below it. Below resolution 30 that is
+// the cell ID without its resolution marker; at resolution 30 S fills all 58
+// bits. A cell at resolution r < 30 is its aligned key plus the marker.
+const QUINTANT_SHIFT = 58n;
+const S_MASK = (1n << QUINTANT_SHIFT) - 1n;
+
+// Curve orientation of each quintant by its 6-bit key prefix, and the key
+// prefix and orientation by triple quintant (origin.id * 5 + quintant).
+// Filled on first use: calling quintantToSegment at module load leaves V8
+// type feedback that slows serialize everywhere (see tripleCellToId).
+const PREFIX_ORIENTATION: Orientation[] = [];
+const TRIPLE_PREFIX: bigint[] = [];
+const TRIPLE_ORIENTATION: Orientation[] = [];
+function fillQuintantTables(): void {
+  for (let q = 0; q < 60; q++) {
+    const origin = origins[Math.floor(q / 5)];
+    PREFIX_ORIENTATION.push(segmentToQuintant((q + origin.firstQuintant) % 5, origin).orientation);
+  }
+  for (const origin of origins) {
+    for (let quintant = 0; quintant < 5; quintant++) {
+      const {segment, orientation} = quintantToSegment(quintant, origin);
+      const q = 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5);
+      TRIPLE_PREFIX.push(BigInt(q) << QUINTANT_SHIFT);
+      TRIPLE_ORIENTATION.push(orientation);
+    }
+  }
+}
+
+/** The key of a cell given in triple space. */
+function tripleKey(
+  originId: number,
+  quintant: number,
+  x: number,
+  y: number,
+  z: number,
+  hilbertRes: number,
+  unitShift: bigint
+): bigint {
+  const i = originId * 5 + quintant;
+  return TRIPLE_PREFIX[i] | (tripleToS({x, y, z}, hilbertRes, TRIPLE_ORIENTATION[i])! << unitShift);
+}
+
+function markerBit(resolution: number): bigint {
+  return resolution === 1 ? 1n << 56n : 1n << BigInt(59 - 2 * resolution);
+}
+
+function cellToKey(cell: bigint, resolution: number): bigint {
+  if (resolution < MAX_RESOLUTION) return cell - markerBit(resolution);
+  const {origin, segment, S} = deserialize(cell);
+  const q = 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5);
+  return (BigInt(q) << QUINTANT_SHIFT) | S;
+}
+
+function keyToCell(key: bigint, resolution: number): bigint {
+  if (resolution < MAX_RESOLUTION) return key + markerBit(resolution);
+  const q = Number(key >> QUINTANT_SHIFT);
+  const origin = origins[Math.floor(q / 5)];
+  return serialize({origin, segment: (q + origin.firstQuintant) % 5, S: key & S_MASK, resolution});
 }
 
 /**
- * Buffer the boundary by one cell using lattice neighbors, in triple space
- * (cells as flat (originId, quintant, x, y, z)). The shell matches the
- * connectivity of `tripleSpaceFloodFill` so the firewall (boundary + exterior
- * shell) is a tight topological barrier for the subsequent flood.
+ * Append the cells covering the key range [lo, hi) at `resolution`, as the
+ * coarsest aligned blocks (a block of 4^k cells is their resolution - k parent).
  */
-function expandShell(boundary: number[], maxRow: number): number[] {
+function emitRange(lo: bigint, hi: bigint, resolution: number, out: bigint[]): void {
+  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const unitShift = 58 - 2 * hilbertRes;
+  while (lo < hi) {
+    let k = 0;
+    while (k < hilbertRes) {
+      const size = 1n << BigInt(unitShift + 2 * (k + 1));
+      if ((lo & (size - 1n)) !== 0n || lo + size > hi) break;
+      k++;
+    }
+    out.push(keyToCell(lo, resolution - k));
+    lo += 1n << BigInt(unitShift + 2 * k);
+  }
+}
+
+/**
+ * The ring of neighbors (edge and vertex, across quintant edges too) around
+ * the boundary cells (flat triples). Each ring cell records a boundary cell
+ * next to it (`parents`, an index into the boundary): one it shares an edge
+ * with when there is one, as edge neighbors are visited first. The arc between
+ * their centers then crosses no other cell holding boundary samples: a ring
+ * cell found by a vertex has no boundary cell across any of its edges, which
+ * covers every other cell around that vertex.
+ */
+function growRing(boundary: number[], maxRow: number): {ring: number[]; parents: number[]} {
   const seen = new Set<number>();
   for (let c = 0; c < boundary.length; c += 5) {
     seen.add(tripleCellKey(boundary[c], boundary[c + 1], boundary[c + 2], boundary[c + 3], boundary[c + 4]));
   }
-  const shell: number[] = [];
+  const ring: number[] = [];
+  const parents: number[] = [];
+  let parent = 0;
   const visit = (originId: number, quintant: number, x: number, y: number, z: number) => {
     const key = tripleCellKey(originId, quintant, x, y, z);
     if (seen.has(key)) return;
     seen.add(key);
-    shell.push(originId, quintant, x, y, z);
+    ring.push(originId, quintant, x, y, z);
+    parents.push(parent);
   };
-  for (let c = 0; c < boundary.length; c += 5) {
-    const b = boundary;
-    forEachLatticeNeighbor(b[c], b[c + 1], b[c + 2], b[c + 3], b[c + 4], maxRow, visit);
+  for (const edgeOnly of [true, false]) {
+    for (let c = 0; c < boundary.length; c += 5) {
+      const b = boundary;
+      parent = c / 5;
+      forEachTripleNeighbor(b[c], b[c + 1], b[c + 2], b[c + 3], b[c + 4], maxRow, edgeOnly, visit);
+    }
   }
-  return shell;
+  return {ring, parents};
 }
 
 /**
- * Hierarchical flood fill from interior seed cells. Runs a few fine BFS layers
- * to clear the boundary, then a coarse-resolution BFS through the bulk, then
- * resumes fine BFS to fill gaps near the boundary. The coarse phase is skipped
- * when the polygon is too small to amortize its setup overhead.
- *
- * The seeds, boundary and exterior shell come in triple space (cells as flat
- * (originId, quintant, x, y, z)); the boundary also as cell IDs.
+ * Compact cells that are already sorted and disjoint, in one pass: a stack
+ * whose top is merged into its parent whenever it ends in a full sibling group.
  */
-function floodInterior(
-  seeds: number[],
-  boundaryCells: bigint[],
-  boundary: number[],
-  exteriorShell: number[],
-  resolution: number
-): bigint[] {
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const seedIds: bigint[] = [];
-  for (let c = 0; c < seeds.length; c += 5) {
-    seedIds.push(
-      tripleCellToId(seeds[c], seeds[c + 1], seeds[c + 2], seeds[c + 3], seeds[c + 4], hilbertRes, resolution)
-    );
-  }
-  const firewall = boundary.concat(exteriorShell);
-
-  // Isoperimetric bound: B² / (4π) is the max interior for B boundary cells.
-  const maxInterior = (boundaryCells.length * boundaryCells.length) / (4 * Math.PI);
-  // res 30 has a different encoding the parent-emit optimization can't use.
-  const useCoarsePhase = resolution > FIRST_HILBERT_RESOLUTION && resolution < MAX_RESOLUTION && maxInterior > 1000;
-
-  if (!useCoarsePhase) {
-    const result = tripleSpaceFloodFill(firewall, seeds, resolution);
-    return [...seedIds, ...result.interiorCells];
-  }
-
-  const parentRes = resolution - 1;
-  const coarseFirewall = new Set<bigint>();
-  for (const cell of boundaryCells) coarseFirewall.add(cellToParent(cell, parentRes));
-  for (let c = 0; c < exteriorShell.length; c += 5) {
-    const e = exteriorShell;
-    coarseFirewall.add(
-      cellToParent(tripleCellToId(e[c], e[c + 1], e[c + 2], e[c + 3], e[c + 4], hilbertRes, resolution), parentRes)
-    );
-  }
-  for (const cell of seedIds) coarseFirewall.add(cellToParent(cell, parentRes));
-
-  // Phase 1: short fine BFS to move the frontier off the boundary.
-  const phase1 = tripleSpaceFloodFill(firewall, seeds, resolution, 3);
-
-  // Phase 2: coarse BFS through the bulk interior.
-  let coarseInteriorSet: Set<bigint> | null = null;
-  const phase3Delta: number[] = [];
-  const coarseInteriorCells: bigint[] = [];
-  if (phase1.frontierCellIds.length > 0) {
-    const coarseSeeds = new Set<bigint>();
-    for (const cell of phase1.frontierCellIds) {
-      const parent = cellToParent(cell, parentRes);
-      if (!coarseFirewall.has(parent)) coarseSeeds.add(parent);
-    }
-
-    if (coarseSeeds.size > 0) {
-      const coarseVisited = new Set(coarseFirewall);
-      for (const seed of coarseSeeds) coarseVisited.add(seed);
-      const coarseResult = tripleSpaceFloodFill(
-        cellIdsToTriples(coarseVisited),
-        cellIdsToTriples(coarseSeeds),
-        parentRes
-      );
-      const coarseInterior = [...coarseSeeds, ...coarseResult.interiorCells];
-      coarseInteriorSet = new Set(coarseInterior);
-      coarseInteriorCells.push(...coarseInterior);
-
-      // Children become firewall for phase 3; the coarse parent represents
-      // them in the output, so we don't emit them individually.
-      for (const coarseCell of coarseInterior) cellIdsToTriples(cellToChildren(coarseCell, resolution), phase3Delta);
+function compactSorted(cells: bigint[]): BigUint64Array {
+  const stack: bigint[] = [];
+  for (let i = 0; i < cells.length; i++) {
+    stack.push(cells[i]);
+    for (;;) {
+      const top = stack.length - 1;
+      const resolution = getResolution(stack[top]);
+      if (resolution < 0) break;
+      const n = resolution >= FIRST_HILBERT_RESOLUTION ? 4 : resolution === 0 ? 12 : 5;
+      if (stack.length < n) break;
+      const first = stack[top - n + 1];
+      if (!isFirstChild(first, resolution)) break;
+      const stride = getStride(resolution);
+      if (stack[top] !== first + BigInt(n - 1) * stride) break;
+      let complete = true;
+      for (let j = 1; j < n - 1; j++) {
+        if (stack[top - n + 1 + j] !== first + BigInt(j) * stride) {
+          complete = false;
+          break;
+        }
+      }
+      if (!complete) break;
+      stack.length -= n;
+      stack.push(cellToParent(first));
     }
   }
-
-  // Emit fine cells only when not already covered by a coarse parent.
-  const interiorCells: bigint[] = [];
-  if (coarseInteriorSet === null) {
-    interiorCells.push(...seedIds, ...phase1.interiorCells);
-  } else {
-    for (const cell of seedIds) {
-      if (!coarseInteriorSet.has(cellToParent(cell, parentRes))) interiorCells.push(cell);
-    }
-    for (const cell of phase1.interiorCells) {
-      if (!coarseInteriorSet.has(cellToParent(cell, parentRes))) interiorCells.push(cell);
-    }
-    interiorCells.push(...coarseInteriorCells);
-  }
-
-  // Phase 3: resume fine BFS, reusing phase 1's state.
-  const phase3 = tripleSpaceFloodFill({state: phase1.state, delta: phase3Delta}, phase1.frontier, resolution);
-  interiorCells.push(...phase3.interiorCells);
-
-  return interiorCells;
-}
-
-/**
- * Quintants the polygon swallows whole. The flood fill never crosses a
- * quintant edge, so such a quintant gets no seeds from the boundary shell and
- * would be left empty. A quintant holding none of the boundary or shell cells
- * has none of the polygon's edge passing through it: its cells lie wholly
- * inside or wholly outside, and a single probe cell decides which. Inside
- * quintants are emitted as their resolution 1 cell (resolution 0 when that is
- * the target), which `compact` merges with the rest of the output.
- */
-function swallowedQuintants(boundary: number[], shell: number[], resolution: number, prep: PreparedPolygon): bigint[] {
-  // A swallowed quintant lies inside the polygon's bounding cap, so the cap
-  // must have at least a quintant's area (4π/60: cells are equal-area)
-  if (2 * Math.PI * (1 - prep.cap.minDot) < (4 * Math.PI) / 60) return [];
-  // Quintants by origin.id * 5 + quintant, as the triples carry them
-  const touched = new Set<number>();
-  for (const cells of [boundary, shell]) {
-    for (let c = 0; c < cells.length; c += 5) touched.add(cells[c] * 5 + cells[c + 1]);
-  }
-
-  const out: bigint[] = [];
-  const quintantCells = cellToChildren(WORLD_CELL, FIRST_HILBERT_RESOLUTION - 1);
-  const quintants = cellIdsToTriples(quintantCells);
-  for (let i = 0; i < quintantCells.length; i++) {
-    if (touched.has(quintants[i * 5] * 5 + quintants[i * 5 + 1])) continue;
-    // Any cell of the quintant at the target resolution will do
-    const probe = serialize({...deserialize(quintantCells[i]), S: 0n, resolution});
-    if (pointInPreparedPolygon(toCartesian(cellToSpherical(probe)), prep)) out.push(quintantCells[i]);
-  }
-  return out;
+  return BigUint64Array.from(stack);
 }
 
 /**
@@ -370,65 +421,169 @@ export function polygonToCells(
     return polygonToCells(polygon, resolution - 1, {containment});
   }
 
-  // The boundary contribution to the output. In 'overlapping' mode every
-  // densely-sampled boundary cell contains a point on the polygon boundary, so
-  // it overlaps the polygon — keep them all, unfiltered. In 'center' mode we
-  // filter down to those whose center lies inside.
-  let boundaryOut: bigint[];
-  if (containment === 'overlapping') {
-    boundaryOut = boundaryCells;
-  } else {
-    // Flattened per-segment normals and interior-side signs, indexed like the
-    // segment map. The polygon interior lies on the *outside* of a hole ring,
-    // so hole segments get the opposite sign.
-    const segNormals: Cartesian[] = [];
-    const segSigns: number[] = [];
-    for (let r = 0; r < rings.length; r++) {
-      const sign = (r === 0 ? 1 : -1) * ringWindingSign(ringVecsList[r]);
-      const normals = prep.ringNormals[r];
-      for (let i = 0; i < normals.length; i++) {
-        segNormals.push(normals[i]);
-        segSigns.push(sign);
-      }
+  // Flattened per-segment endpoints, normals and interior-side signs, indexed
+  // like the segment map. The polygon interior lies on the *outside* of a hole
+  // ring, so hole segments get the opposite sign.
+  const segStarts: Cartesian[] = [];
+  const segEnds: Cartesian[] = [];
+  const segNormals: Cartesian[] = [];
+  const segSigns: number[] = [];
+  for (let r = 0; r < rings.length; r++) {
+    const sign = (r === 0 ? 1 : -1) * ringWindingSign(ringVecsList[r]);
+    const vecs = ringVecsList[r];
+    const normals = prep.ringNormals[r];
+    for (let i = 0; i < normals.length; i++) {
+      segStarts.push(vecs[i]);
+      segEnds.push(vecs[(i + 1) % vecs.length]);
+      segNormals.push(normals[i]);
+      segSigns.push(sign);
     }
-    boundaryOut = filterBoundaryCells(boundaryCells, segmentMap, segNormals, segSigns, prep);
   }
+  const {inside: boundaryInside, centers: boundaryCenters} = classifyBoundaryCells(
+    boundaryCells,
+    segmentMap,
+    segStarts,
+    segEnds,
+    segNormals,
+    segSigns,
+    prep
+  );
 
-  // Resolutions 0 and 1 have no lattice to flood (a quintant is a single
-  // cell): every cell off the boundary is in or out by its center, and there
-  // are at most 60 of them.
+  // In 'overlapping' mode every densely-sampled boundary cell contains a point
+  // on the polygon boundary, so it overlaps the polygon — keep them all. In
+  // 'center' mode keep those whose center lies inside.
+  const emitBoundary = (c: number) => containment === 'overlapping' || boundaryInside[c] === 1;
+
+  // Resolutions 0 and 1 have no lattice (a quintant is a single cell): every
+  // cell off the boundary is in or out by its center, and there are at most 60
+  // of them.
   if (resolution < FIRST_HILBERT_RESOLUTION) {
-    const out = [...boundaryOut];
+    const out: bigint[] = [];
+    for (let c = 0; c < boundaryCells.length; c++) if (emitBoundary(c)) out.push(boundaryCells[c]);
     for (const cell of cellToChildren(WORLD_CELL, resolution)) {
       if (!boundarySet.has(cell) && pointInPreparedPolygon(toCartesian(cellToSpherical(cell)), prep)) out.push(cell);
     }
     return compact(out);
   }
 
-  // The rest runs in triple space: cells as flat (originId, quintant, x, y, z)
+  // The rest relies on the curve. Within a quintant consecutive cells are
+  // neighbors, or at most a step over one or two cells. So the band of boundary
+  // cells plus one ring of their neighbors splits each quintant's stretch of the
+  // curve (a range of keys) into runs that lie wholly inside or wholly outside
+  // the polygon: a step over the boundary would have to land in the band. One
+  // probe classifies a run, and an inside run is emitted directly as the
+  // coarsest cells covering it, so the interior costs O(boundary), not O(area).
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
   const boundary = cellIdsToTriples(boundaryCells);
+  const {ring: ringCells, parents} = growRing(boundary, maxRow);
 
-  // Dense sampling can leave gaps; the shell catches them, classifying each cell.
-  const shell = expandShell(boundary, maxRow);
-  const swallowed = swallowedQuintants(boundary, shell, resolution, prep);
-  if (shell.length === 0) return compact([...boundaryOut, ...swallowed]);
+  if (TRIPLE_PREFIX.length === 0) fillQuintantTables();
+  const unitShift = BigInt(58 - 2 * hilbertRes);
+  const unit = 1n << unitShift;
 
-  const seeds: number[] = [];
-  const exteriorShell: number[] = []; // exterior shell (and hole interiors) join the firewall
-  for (let c = 0; c < shell.length; c += 5) {
-    const originId = shell[c];
-    const quintant = shell[c + 1];
-    const x = shell[c + 2];
-    const y = shell[c + 3];
-    const z = shell[c + 4];
-    const center = tripleCellCenter(originId, quintant, x, y, z, hilbertRes, maxRow);
-    (pointInPreparedPolygon(toCartesian(center), prep) ? seeds : exteriorShell).push(originId, quintant, x, y, z);
+  // Band keys carry two flags: EMIT (the cell is in the output) and RING. Below
+  // resolution 30 a key has zero low bits to hold them; at 30 a map does.
+  const EMIT = 1;
+  const RING = 2;
+  const packed = unitShift >= 2n;
+  const flagMap = new Map<bigint, number>();
+  const withFlags = (key: bigint, flags: number): bigint => {
+    if (packed) return key | BigInt(flags);
+    flagMap.set(key, flags);
+    return key;
+  };
+  const flagsOf = (key: bigint): number => (packed ? Number(key & 3n) : flagMap.get(key)!);
+  const keyOf = (key: bigint): bigint => (packed ? key & ~3n : key);
+
+  const nBoundary = boundaryCells.length;
+  const nBand = nBoundary + ringCells.length / 5;
+  const keys = new BigUint64Array(nBand);
+  for (let i = 0; i < nBoundary; i++) {
+    keys[i] = withFlags(cellToKey(boundaryCells[i], resolution), emitBoundary(i) ? EMIT : 0);
   }
-  if (seeds.length === 0) return compact([...boundaryOut, ...swallowed]);
+  // Ring cells by flagged key (as their offset into ringCells), with their class
+  const ringByKey = new Map<bigint, number>();
+  const ringInside = new Uint8Array(ringCells.length / 5);
+  for (let c = 0, i = nBoundary; c < ringCells.length; c += 5, i++) {
+    const r = ringCells;
+    const center = toCartesian(tripleCellCenter(r[c], r[c + 1], r[c + 2], r[c + 3], r[c + 4], hilbertRes, maxRow));
+    // Locally: the parent's class, flipped by each ring segment crossed on the
+    // way (full PIP only on a near-degenerate crossing)
+    const parent = parents[i - nBoundary];
+    const segments = segmentMap.get(boundaryCells[parent])!;
+    const odd = arcCrossingParity(center, boundaryCenters[parent], segments, segStarts, segEnds, segNormals);
+    const inside = odd === undefined ? pointInPreparedPolygon(center, prep) : (boundaryInside[parent] === 1) !== odd;
+    if (inside) ringInside[c / 5] = 1;
+    const key = withFlags(
+      tripleKey(r[c], r[c + 1], r[c + 2], r[c + 3], r[c + 4], hilbertRes, unitShift),
+      inside ? EMIT | RING : RING
+    );
+    keys[i] = key;
+    ringByKey.set(key, c);
+  }
+  keys.sort();
 
-  const interiorCells = floodInterior(seeds, boundaryCells, boundary, exteriorShell, resolution);
+  // A quintant without band cells is wholly inside or outside; it can only be
+  // inside when the polygon's bounding cap holds a quintant's area (4π/60)
+  const capHoldsQuintant = 2 * Math.PI * (1 - prep.cap.minDot) >= (4 * Math.PI) / 60;
 
-  return compact([...boundaryOut, ...interiorCells, ...swallowed]);
+  // The class of a run cell from a ring cell next to it on the curve, when the
+  // two are lattice neighbors: any boundary cell near the run cell would have
+  // put it in the ring, so nothing between them can cross the boundary.
+  const classFromRing = (key: bigint, ringKey: bigint): boolean | undefined => {
+    if ((flagsOf(ringKey) & RING) === 0) return undefined;
+    const c = ringByKey.get(ringKey)!;
+    const q = Number(key >> QUINTANT_SHIFT);
+    const t = sToTriple((key & S_MASK) >> unitShift, hilbertRes, PREFIX_ORIENTATION[q]);
+    const r = ringCells;
+    const dx = t.x - r[c + 2];
+    const dy = t.y - r[c + 3];
+    const dz = t.z - r[c + 4];
+    const deltas = NEIGHBOR_DELTAS[tripleFlavor({x: r[c + 2], y: r[c + 3], z: r[c + 4]}, maxRow)].all;
+    for (let k = 0; k < deltas.length; k++) {
+      const d = deltas[k];
+      if (d.x === dx && d.y === dy && d.z === dz) return ringInside[c / 5] === 1;
+    }
+    return undefined;
+  };
+
+  // Walk each quintant's keys in curve order, emitting the inside band cells and
+  // runs as they come, so the output is sorted.
+  const out: bigint[] = [];
+  const probeRun = (lo: bigint, hi: bigint, prev: bigint, next: bigint) => {
+    let inside = prev >= 0n ? classFromRing(lo, prev) : undefined;
+    if (inside === undefined && next >= 0n) inside = classFromRing(hi - unit, next);
+    if (inside === undefined) {
+      inside = pointInPreparedPolygon(toCartesian(cellToSpherical(keyToCell(lo, resolution))), prep);
+    }
+    if (inside) emitRange(lo, hi, resolution, out);
+  };
+  let i = 0;
+  for (let q = 0; q < 60; q++) {
+    // Skip straight to the next quintant holding band cells, unless whole ones may be inside
+    if (!capHoldsQuintant) {
+      if (i >= nBand) break;
+      q = Number(keys[i] >> QUINTANT_SHIFT);
+    }
+    const qEnd = BigInt(q + 1) << QUINTANT_SHIFT;
+    let cursor = BigInt(q) << QUINTANT_SHIFT;
+    if (i >= nBand || keys[i] >= qEnd) {
+      if (capHoldsQuintant) probeRun(cursor, qEnd, -1n, -1n);
+      continue;
+    }
+    let prev = -1n;
+    for (; i < nBand && keys[i] < qEnd; i++) {
+      const flagged = keys[i];
+      const key = keyOf(flagged);
+      if (key > cursor) probeRun(cursor, key, prev, flagged);
+      if (flagsOf(flagged) & EMIT) out.push(keyToCell(key, resolution));
+      prev = flagged;
+      cursor = key + unit;
+    }
+    if (cursor < qEnd) probeRun(cursor, qEnd, prev, -1n);
+  }
+
+  // Resolution 30 IDs don't sort like their keys (the quintant field varies in width)
+  return resolution === MAX_RESOLUTION ? compact(out) : compactSorted(out);
 }
