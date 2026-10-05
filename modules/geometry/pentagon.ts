@@ -177,6 +177,50 @@ export class PentagonShape {
   }
 
   /**
+   * The part of the segment a→b inside this (convex) pentagon, as parameters
+   * `start` ≤ `end` along the segment's line, with where along the edge it
+   * leaves through (`exitEdgeT`, 0..1 from the edge's first vertex); null when
+   * the line misses the pentagon. Uses the same edge sides as `containsPoint`.
+   */
+  clipSegment(a: Vec2, b: Vec2): {start: number; end: number; exitEdgeT: number} | null {
+    const N = this.vertices.length;
+    const sx = b[0] - a[0];
+    const sy = b[1] - a[1];
+    let start = -Infinity;
+    let end = Infinity;
+    let exitEdge = -1;
+    for (let i = 0; i < N; i++) {
+      const v1 = this.vertices[i];
+      const v2 = this.vertices[(i + 1) % N];
+      // Inside the edge where (v1 - v2) × (p - v1) >= 0, along p = a + t·(b - a)
+      const ex = v1[0] - v2[0];
+      const ey = v1[1] - v2[1];
+      const f = ex * (a[1] - v1[1]) - ey * (a[0] - v1[0]);
+      const g = ex * sy - ey * sx;
+      if (g === 0) {
+        if (f < 0) return null;
+      } else if (g > 0) {
+        start = Math.max(start, -f / g);
+      } else {
+        const t = -f / g;
+        if (t < end) {
+          end = t;
+          exitEdge = i;
+        }
+      }
+    }
+    if (start > end || exitEdge < 0) return null;
+    // Where the exit point falls along the exit edge, from its first vertex
+    const v1 = this.vertices[exitEdge];
+    const v2 = this.vertices[(exitEdge + 1) % N];
+    const px = a[0] + end * sx - v1[0];
+    const py = a[1] + end * sy - v1[1];
+    const ex = v2[0] - v1[0];
+    const ey = v2[1] - v1[1];
+    return {start, end, exitEdgeT: (px * ex + py * ey) / (ex * ex + ey * ey)};
+  }
+
+  /**
    * Tests whether a 2D segment intersects this pentagon.
    * True if either endpoint is inside, or any pentagon edge crosses the segment.
    * Operates entirely in Face coordinates — pentagon edges are exact straight lines

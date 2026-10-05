@@ -17,12 +17,14 @@ import {DodecahedronProjection} from '../projections/dodecahedron';
 import {estimateCellRadius} from './cap';
 import {sampleGreatCircleArc} from '../utils/great-circle';
 import * as vec3 from '../math/vec3';
-import {cellIdsToTriples, forEachTripleNeighbor, tripleCellKey, tripleCellToId} from './triple-cells';
+import {cellIdsToTriples, tripleCellToId, walkTripleCells} from './triple-cells';
 
 const dodecahedron = new DodecahedronProjection();
 
 // A cell's pentagon and origin, as `sphericalToCell` built them
 type CellShape = NonNullable<ReturnType<typeof lastCellShape>>;
+// The part of a sub-segment inside one pentagon
+type SegmentClip = NonNullable<ReturnType<PentagonShape['clipSegment']>>;
 
 /**
  * Resolution 0 version of the sub-segment BFS below: the cells are the 12
@@ -43,53 +45,6 @@ function traceFaces(cellA: bigint, cellB: bigint, a: LonLat, b: LonLat, addCell:
 const SHARED_EDGE_EPS = 1e-9;
 const SHARED_EDGE_MARGIN = 1e-6;
 
-/**
- * The part of the segment a→b inside a convex pentagon, as parameters
- * start ≤ end along it, with where along the edge it leaves through (0..1,
- * from the edge's first vertex); null when it misses the pentagon.
- */
-function clipToPentagon(
-  pentagon: PentagonShape,
-  a: Face,
-  b: Face
-): {start: number; end: number; exitEdgeT: number} | null {
-  const vertices = pentagon.getVertices();
-  const sx = b[0] - a[0];
-  const sy = b[1] - a[1];
-  let start = -Infinity;
-  let end = Infinity;
-  let exitEdge = -1;
-  for (let i = 0; i < 5; i++) {
-    const v1 = vertices[i];
-    const v2 = vertices[(i + 1) % 5];
-    // Inside an edge where (v1 - v2) × (p - v1) >= 0 (as containsPoint)
-    const ex = v1[0] - v2[0];
-    const ey = v1[1] - v2[1];
-    const f = ex * (a[1] - v1[1]) - ey * (a[0] - v1[0]);
-    const g = ex * sy - ey * sx;
-    if (g === 0) {
-      if (f < 0) return null;
-    } else if (g > 0) {
-      start = Math.max(start, -f / g);
-    } else {
-      const t = -f / g;
-      if (t < end) {
-        end = t;
-        exitEdge = i;
-      }
-    }
-  }
-  if (start > end || exitEdge < 0) return null;
-  // Where the exit point falls along the exit edge, from its first vertex
-  const v1 = vertices[exitEdge];
-  const v2 = vertices[(exitEdge + 1) % 5];
-  const px = a[0] + end * sx - v1[0];
-  const py = a[1] + end * sy - v1[1];
-  const ex = v2[0] - v1[0];
-  const ey = v2[1] - v1[1];
-  return {start, end, exitEdgeT: (px * ex + py * ey) / (ex * ex + ey * ey)};
-}
-
 // Scratch: the current sub-segment's endpoints projected onto each face, filled on demand
 const faceA: (Face | null)[] = new Array(origins.length);
 const faceB: (Face | null)[] = new Array(origins.length);
@@ -106,10 +61,10 @@ const faceB: (Face | null)[] = new Array(origins.length);
  * sub-segment between them is short enough to be straight (projected onto the
  * cell's Face). Between two cells, clipping the sub-segment to their pentagons
  * usually shows it crossing straight from one into the other, or clipping one
- * cell between them; otherwise a strict local BFS finds every cell whose
+ * cell between them; otherwise a strict local search finds every cell whose
  * pentagon it touches.
  *
- * The BFS runs in triple space: a cell's neighbors come from its flavor's
+ * The search runs in triple space: a cell's neighbors come from its flavor's
  * triple deltas plus the boundary delta tables, and its pentagon straight from
  * its triple, so a candidate is never decoded and only touched cells are
  * encoded.
@@ -171,77 +126,57 @@ export function tracePath(
     project(originId);
     return pentagonOf(quintant, triple).intersectsSegment(faceA[originId]!, faceB[originId]!);
   };
-  // Whether the sub-segment runs through the cells of `shapes` in turn, all on
-  // one origin, and through nothing else: from a (in the first) to b (in the
-  // last), the part inside each cell ends where the next one's begins, at a
-  // point well inside an edge, so no third cell meets it there.
-  const coversExactly = (shapes: CellShape[]): boolean => {
-    const originId = shapes[0].originId;
-    project(originId);
+  // Whether the sub-segment, clipped to each cell it passes through in turn,
+  // hands over cleanly: from a (in the first part) to b (in the last), each part
+  // ends where the next begins, at a point well inside an edge, so no other
+  // cell meets the sub-segment there.
+  const handsOver = (parts: (SegmentClip | null)[]): boolean => {
     let prevEnd = 0;
-    for (let i = 0; i < shapes.length; i++) {
-      if (shapes[i].originId !== originId) return false;
-      const part = clipToPentagon(shapes[i].pentagon, faceA[originId]!, faceB[originId]!);
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
       if (part === null) return false;
       if (i === 0 ? part.start > SHARED_EDGE_EPS : Math.abs(part.start - prevEnd) > SHARED_EDGE_EPS) return false;
-      if (i === shapes.length - 1) return part.end >= 1 - SHARED_EDGE_EPS;
+      if (i === parts.length - 1) return part.end >= 1 - SHARED_EDGE_EPS;
       if (part.exitEdgeT <= SHARED_EDGE_MARGIN || part.exitEdgeT >= 1 - SHARED_EDGE_MARGIN) return false;
       prevEnd = part.end;
     }
     return false;
   };
 
-  // Settle the sub-segment from cell A to cell B without the full search. It
-  // usually runs straight from A into B; failing that, it usually clips one
-  // cell C between them, found at the middle of the gap and then visited.
-  // False sends the sub-segment to the full search.
+  // Settle the sub-segment from cell A to cell B (on one origin) without the
+  // full search. It usually runs straight from A into B; failing that, it
+  // usually clips one cell C between them, found at the middle of the gap and
+  // then visited. False sends the sub-segment to the full search.
   const settle = (cellA: bigint, shapeA: CellShape, cellB: bigint, shapeB: CellShape, arc: number): boolean => {
-    if (shapeA.originId !== shapeB.originId) return false;
-    if (coversExactly([shapeA, shapeB])) return true;
     const originId = shapeA.originId;
-    const inA = clipToPentagon(shapeA.pentagon, faceA[originId]!, faceB[originId]!);
-    const inB = clipToPentagon(shapeB.pentagon, faceA[originId]!, faceB[originId]!);
+    if (shapeB.originId !== originId) return false;
+    project(originId);
+    const fa = faceA[originId]!;
+    const fb = faceB[originId]!;
+    const inA = shapeA.pentagon.clipSegment(fa, fb);
+    const inB = shapeB.pentagon.clipSegment(fa, fb);
+    if (handsOver([inA, inB])) return true;
     if (inA === null || inB === null || inB.start <= inA.end) return false;
     const t = (inA.end + inB.start) / 2;
-    const av = toCartesian(a);
-    const bv = toCartesian(b);
-    const mid = vec3.normalize(vec3.create(), vec3.lerp(vec3.create(), av, bv, t)) as Cartesian;
+    const mid = vec3.normalize(vec3.create(), vec3.lerp(vec3.create(), toCartesian(a), toCartesian(b), t)) as Cartesian;
     const cellC = sphericalToCell(toSpherical(mid), resolution);
     const shapeC = lastCellShape(cellC);
-    if (shapeC === null || cellC === cellA || cellC === cellB || !coversExactly([shapeA, shapeC, shapeB])) return false;
+    if (shapeC === null || shapeC.originId !== originId || cellC === cellA || cellC === cellB) return false;
+    if (!handsOver([inA, shapeC.pentagon.clipSegment(fa, fb), inB])) return false;
     visit(cellC, arc);
     return true;
   };
 
-  // Strict local BFS: expand neighbors of every cell known to touch the
-  // sub-segment, keeping anything whose pentagon the sub-segment crosses.
-  // Terminates as soon as no new touching cells are found — typically 1–2
-  // hops, since a sub-segment ≤ cellRadius/2 reaches at most a couple of
-  // cells beyond its endpoint cells.
+  // Strict local search: walk out from A and B, keeping every cell whose
+  // pentagon the sub-segment crosses. Terminates as soon as no new touching
+  // cells are found — typically 1–2 hops, since a sub-segment ≤ cellRadius/2
+  // reaches at most a couple of cells beyond its endpoint cells.
   const searchSubsegment = (cellA: bigint, cellB: bigint, arc: number) => {
-    let frontier = cellIdsToTriples([cellA, cellB]);
-    const visited = new Set<number>();
-    for (let c = 0; c < 10; c += 5) {
-      const t = frontier;
-      visited.add(tripleCellKey(t[c], t[c + 1], t[c + 2], t[c + 3], t[c + 4]));
-    }
-    while (frontier.length > 0) {
-      const next: number[] = [];
-      const visitNeighbor = (originId: number, quintant: number, x: number, y: number, z: number) => {
-        const key = tripleCellKey(originId, quintant, x, y, z);
-        if (visited.has(key)) return;
-        visited.add(key);
-        if (touches(originId, quintant, {x, y, z})) {
-          visit(tripleCellToId(originId, quintant, x, y, z, hilbertRes, resolution), arc);
-          next.push(originId, quintant, x, y, z);
-        }
-      };
-      for (let c = 0; c < frontier.length; c += 5) {
-        const f = frontier;
-        forEachTripleNeighbor(f[c], f[c + 1], f[c + 2], f[c + 3], f[c + 4], maxRow, false, visitNeighbor);
-      }
-      frontier = next;
-    }
+    walkTripleCells(cellIdsToTriples([cellA, cellB]), maxRow, (originId, quintant, x, y, z) => {
+      if (!touches(originId, quintant, {x, y, z})) return false;
+      visit(tripleCellToId(originId, quintant, x, y, z, hilbertRes, resolution), arc);
+      return true;
+    });
   };
 
   const arcs = closed ? n : n - 1;
