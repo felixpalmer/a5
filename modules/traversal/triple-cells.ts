@@ -219,6 +219,9 @@ export function tripleChildren(
  * appended to `out`. The child's coordinates mod 2 fix child - 2·parent, but
  * for two classes, where the two candidate parents differ in flavor — and so,
  * sharing x and z, in apex colour (see tripleFlavor).
+ *
+ * Not used by the library: kept for completeness, as the inverse of
+ * `tripleChildren`, for traversals that coarsen in triple space.
  */
 export function tripleParent(
   originId: number,
