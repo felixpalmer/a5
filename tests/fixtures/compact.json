@@ -31,11 +31,11 @@
       "name": "five_segments_res1",
       "description": "All 5 segments at resolution 1 compact to parent at resolution 0",
       "input": [
+        "100000000000000",
         "500000000000000",
         "900000000000000",
         "d00000000000000",
-        "1100000000000000",
-        "100000000000000"
+        "1100000000000000"
       ],
       "expectedOutput": [
         "200000000000000"

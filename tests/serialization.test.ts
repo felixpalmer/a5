@@ -8,7 +8,8 @@ import {
   getRes0Cells,
   isFirstChild,
   isChildOf,
-  getStride
+  getStride,
+  WORLD_CELL
 } from 'a5/core/serialization';
 import {A5Cell} from 'a5/core/utils';
 import {origins} from 'a5/core/origin';
@@ -156,6 +157,14 @@ describe('hierarchy', () => {
       // Should return the original cell
       expect(parent).toBe(cell);
     });
+  });
+
+  test('cellToChildren returns children in ascending ID order', () => {
+    const ascending = (cells: bigint[]) => cells.every((cell, i) => i === 0 || cells[i - 1] < cell);
+    for (const res of [0, 1, 2]) expect(ascending(cellToChildren(WORLD_CELL, res))).toBe(true);
+    for (const cell of getRes0Cells()) {
+      for (const res of [1, 2, 3]) expect(ascending(cellToChildren(cell, res))).toBe(true);
+    }
   });
 
   test('non-Hilbert to non-Hilbert hierarchy', () => {
