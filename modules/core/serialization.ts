@@ -191,6 +191,13 @@ export function serialize(cell: A5Cell): bigint {
   return index;
 }
 
+// The segments of an origin in ID (quintant) order, by its firstQuintant
+const QUINTANT_SEGMENTS: number[][] = [0, 1, 2, 3, 4].map(first => [0, 1, 2, 3, 4].map(n => (n + first) % 5));
+
+/**
+ * The children of a cell at `childResolution` (default: the next resolution),
+ * in ascending ID order.
+ */
 export function cellToChildren(index: bigint, childResolution?: number): bigint[] {
   const {origin, segment, S, resolution: currentResolution} = deserialize(index);
   const newResolution = childResolution ?? currentResolution + 1;
@@ -211,19 +218,18 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
   }
 
   let newOrigins: Origin[] = [origin];
-  let newSegments: number[] = [segment];
   if (currentResolution === -1) {
     newOrigins = origins;
   }
-  if ((currentResolution === -1 && newResolution > 0) || currentResolution === 0) {
-    newSegments = [0, 1, 2, 3, 4];
-  }
+  const allSegments = (currentResolution === -1 && newResolution > 0) || currentResolution === 0;
 
   const resolutionDiff = newResolution - Math.max(currentResolution, FIRST_HILBERT_RESOLUTION - 1);
   const childrenCount = Math.pow(4, resolutionDiff);
   const children: bigint[] = [];
   const shiftedS = S << BigInt(2 * resolutionDiff);
   for (const newOrigin of newOrigins) {
+    // An origin's quintants in ID order: the n-th is segment (n + firstQuintant) % 5
+    const newSegments = allSegments ? QUINTANT_SEGMENTS[newOrigin.firstQuintant] : [segment];
     for (const newSegment of newSegments) {
       for (let i = 0; i < childrenCount; i++) {
         const newS = shiftedS + BigInt(i);
