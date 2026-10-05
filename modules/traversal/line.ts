@@ -91,7 +91,8 @@ export function tracePath(
     pointSpherical[i] = fromLonLat(points[i]);
     pointVecs[i] = toCartesian(pointSpherical[i]);
     pointCells[i] = sphericalToCell(pointSpherical[i], resolution);
-    pointShapes[i] = lastCellShape(pointCells[i]);
+    // Only the exact trace uses the shapes
+    pointShapes[i] = exact ? lastCellShape(pointCells[i]) : null;
     const shape = pointShapes[i];
     pointFaces[i] = shape === null ? null : lastProjection(pointSpherical[i], shape.originId);
   }
@@ -200,7 +201,7 @@ export function tracePath(
       a = b;
       b = sampleAt(j);
       const cellB = j === last ? pointCells[end] : sphericalToCell(b, resolution);
-      shapeB = j === last ? pointShapes[end] : lastCellShape(cellB);
+      shapeB = j === last ? pointShapes[end] : exact ? lastCellShape(cellB) : null;
       faceOfB = j === last ? pointFaces[end] : faceOf(b, shapeB);
       visit(cellB, arc);
       const search = cellA !== cellB && exact;
