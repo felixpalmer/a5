@@ -383,7 +383,7 @@ for (const tc of polygonCases) {
 console.log('\nOverlapping fixtures:');
 const overlappingFixtures = [];
 for (const tc of polygonCases) {
-  // 'overlapping' surfaces the raw densely-sampled boundary cells, unfiltered.
+  // 'overlapping' surfaces every cell the boundary touches, unfiltered.
   // At res 30 which exact cell a boundary sample lands in is a last-ULP
   // decision that isn't reproducible across languages, so skip it here — the
   // res-30 code path is still covered by the center-containment fixtures.

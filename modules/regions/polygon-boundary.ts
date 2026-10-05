@@ -7,15 +7,14 @@
 // cells next to it without a full point-in-polygon test.
 
 import type {LonLat, Cartesian} from '../core/coordinate-systems';
-import {lonLatToCell, sphericalToCell, cellToSpherical} from '../core/cell';
-import {toCartesian, toSpherical} from '../core/coordinate-transforms';
+import {cellToSpherical} from '../core/cell';
+import {toCartesian} from '../core/coordinate-transforms';
 import {ringWindingSign, sphericalTriangleArea} from '../geometry/spherical-polygon';
 import type {PreparedPolygon} from '../geometry/prepared-polygon';
 import {pointInPreparedPolygon} from '../geometry/prepared-polygon';
-import {estimateCellRadius} from '../traversal/cap';
+import {tracePath} from '../traversal/line';
 import {tripleCellKey} from '../traversal/triple-cells';
 import type {TripleCellVisitor} from '../traversal/triple-cells';
-import {sampleGreatCircleArc} from '../utils/great-circle';
 
 /**
  * Maps each boundary cell to the indices of the ring segments that produced it.
@@ -49,19 +48,19 @@ export interface Boundary {
 }
 
 /**
- * Dense-sample boundary cells along every closed ring (outer + holes) at
- * `cellRadius * 0.4` spacing, calling `sphericalToCell` per sample.
+ * The boundary cells, each recorded with the ring segments (outer ring and
+ * holes) that reached it: with `exact`, every cell a segment touches; without,
+ * the cells holding samples along the segments at half-cell-radius spacing,
+ * which can miss a cell whose corner a segment clips between samples.
  */
 export function sampleBoundary(
   rings: LonLat[][],
-  ringVecsList: Cartesian[][],
-  resolution: number
+  resolution: number,
+  exact: boolean
 ): {cells: bigint[]; set: Set<bigint>; segmentMap: SegmentMap} {
   const cells: bigint[] = [];
   const set = new Set<bigint>();
   const segmentMap: SegmentMap = new Map();
-  const cellRadius = estimateCellRadius(resolution);
-  const sampleInterval = cellRadius * 0.4;
 
   const recordCell = (cell: bigint, segIdx: number) => {
     if (!set.has(cell)) {
@@ -78,26 +77,8 @@ export function sampleBoundary(
 
   let segOffset = 0;
   for (let r = 0; r < rings.length; r++) {
-    const ring = rings[r];
-    const ringVecs = ringVecsList[r];
-
-    const vertexCells: bigint[] = new Array(ring.length);
-    for (let i = 0; i < ring.length; i++) {
-      vertexCells[i] = lonLatToCell(ring[i], resolution);
-    }
-
-    for (let i = 0; i < ring.length; i++) {
-      const nextI = (i + 1) % ring.length;
-      recordCell(vertexCells[i], segOffset + i);
-
-      // Skip the lonLat round-trip: samples are authalic-Cartesian already.
-      const samples = sampleGreatCircleArc(ringVecs[i], ringVecs[nextI], sampleInterval);
-      for (const s of samples) {
-        recordCell(sphericalToCell(toSpherical(s), resolution), segOffset + i);
-      }
-      recordCell(vertexCells[nextI], segOffset + i);
-    }
-    segOffset += ring.length;
+    tracePath(rings[r], true, resolution, (cell, arc) => recordCell(cell, segOffset + arc), exact);
+    segOffset += rings[r].length;
   }
 
   return {cells, set, segmentMap};
@@ -191,9 +172,9 @@ export function classifyBoundary(
 }
 
 /**
- * The boundary cells in the output. In 'overlapping' mode every densely-sampled
- * boundary cell contains a point on the polygon boundary, so it overlaps the
- * polygon — keep them all. In 'center' mode keep those whose center lies inside.
+ * The boundary cells in the output. In 'overlapping' mode the boundary is
+ * traced exactly, so every boundary cell touches the polygon — keep them all.
+ * In 'center' mode keep those whose center lies inside.
  */
 export function emitsBoundaryCell(boundary: Boundary, c: number, overlapping: boolean): boolean {
   return overlapping || boundary.inside[c] === 1;
