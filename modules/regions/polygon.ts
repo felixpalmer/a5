@@ -18,7 +18,8 @@ import {
   WORLD_CELL
 } from '../core/serialization';
 import {compact} from '../core/compact';
-import {ringWindingSign} from '../geometry/spherical-polygon';
+import {getNumCells} from '../core/cell-info';
+import {ringWindingSign, sphericalTriangleArea} from '../geometry/spherical-polygon';
 import type {PreparedPolygon} from '../geometry/prepared-polygon';
 import {preparePolygon, pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {estimateCellRadius} from '../traversal/cap';
@@ -27,7 +28,15 @@ import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
 import type {Orientation} from '../lattice';
 import {sToTriple, tripleFlavor, tripleToS} from '../lattice';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
-import {cellIdsToTriples, forEachTripleNeighbor, tripleCellCenter, tripleCellKey} from '../traversal/triple-cells';
+import {tripleSpaceFloodFill} from '../traversal/lattice-flood-fill';
+import {
+  cellIdsToTriples,
+  forEachLatticeNeighbor,
+  forEachTripleNeighbor,
+  tripleCellCenter,
+  tripleCellKey,
+  tripleCellToId
+} from '../traversal/triple-cells';
 
 /**
  * Maps each boundary cell to the indices of the ring segments that produced it.
@@ -310,6 +319,23 @@ function growRing(boundary: number[], maxRow: number): {ring: number[]; parents:
   return {ring, parents};
 }
 
+/** Area of the polygon (outer ring minus holes) on the unit sphere, in steradians. */
+function polygonArea(ringVecsList: Cartesian[][]): number {
+  let total = 0;
+  for (let r = 0; r < ringVecsList.length; r++) {
+    // Signed fan from the first vertex: concave rings come out right too
+    const ring = ringVecsList[r];
+    let area = 0;
+    for (let i = 1; i + 1 < ring.length; i++) area += sphericalTriangleArea(ring[0], ring[i], ring[i + 1]);
+    total += r === 0 ? Math.abs(area) : -Math.abs(area);
+  }
+  return total;
+}
+
+// Below this many estimated interior cells per boundary cell, flooding the
+// interior beats splitting the curve into runs (measured crossover: ~3.3).
+const FLOOD_INTERIOR_PER_BOUNDARY = 3;
+
 /**
  * Compact cells that are already sorted and disjoint, in one pass: a stack
  * whose top is merged into its parent whenever it ends in a full sibling group.
@@ -476,6 +502,58 @@ export function polygonToCells(
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
   const boundary = cellIdsToTriples(boundaryCells);
+
+  // A quintant without band cells is wholly inside or outside; it can only be
+  // inside when the polygon's bounding cap holds a quintant's area (4π/60)
+  const capHoldsQuintant = 2 * Math.PI * (1 - prep.cap.minDot) >= (4 * Math.PI) / 60;
+
+  // A small interior is cheaper to flood than to split into curve runs: the
+  // flood costs about boundary + interior cells, the runs a sorted band of
+  // boundary plus ring keys. The flood can't reach a quintant the polygon
+  // swallows whole, which a polygon smaller than its bounding cap never does.
+  if (
+    !capHoldsQuintant &&
+    (polygonArea(ringVecsList) / (4 * Math.PI)) * getNumCells(resolution) <
+      FLOOD_INTERIOR_PER_BOUNDARY * boundaryCells.length
+  ) {
+    const out: bigint[] = [];
+    for (let c = 0; c < boundaryCells.length; c++) if (emitBoundary(c)) out.push(boundaryCells[c]);
+    // The shell: the flood's own moves out of the boundary, each cell classified
+    // from the boundary cell it was found from (they share an edge)
+    const seen = new Set<number>();
+    for (let c = 0; c < boundary.length; c += 5) {
+      seen.add(tripleCellKey(boundary[c], boundary[c + 1], boundary[c + 2], boundary[c + 3], boundary[c + 4]));
+    }
+    const seeds: number[] = [];
+    const firewall: number[] = boundary.slice();
+    let parent = 0;
+    const visit = (originId: number, quintant: number, x: number, y: number, z: number) => {
+      const key = tripleCellKey(originId, quintant, x, y, z);
+      if (seen.has(key)) return;
+      seen.add(key);
+      const center = toCartesian(tripleCellCenter(originId, quintant, x, y, z, hilbertRes, maxRow));
+      const segments = segmentMap.get(boundaryCells[parent])!;
+      const odd = arcCrossingParity(center, boundaryCenters[parent], segments, segStarts, segEnds, segNormals);
+      const inside = odd === undefined ? pointInPreparedPolygon(center, prep) : (boundaryInside[parent] === 1) !== odd;
+      (inside ? seeds : firewall).push(originId, quintant, x, y, z);
+    };
+    for (let c = 0; c < boundary.length; c += 5) {
+      parent = c / 5;
+      const b = boundary;
+      forEachLatticeNeighbor(b[c], b[c + 1], b[c + 2], b[c + 3], b[c + 4], maxRow, visit);
+    }
+    if (seeds.length > 0) {
+      for (let c = 0; c < seeds.length; c += 5) {
+        out.push(
+          tripleCellToId(seeds[c], seeds[c + 1], seeds[c + 2], seeds[c + 3], seeds[c + 4], hilbertRes, resolution)
+        );
+      }
+      const {interiorCells} = tripleSpaceFloodFill(firewall, seeds, resolution);
+      for (let i = 0; i < interiorCells.length; i++) out.push(interiorCells[i]);
+    }
+    return compact(out);
+  }
+
   const {ring: ringCells, parents} = growRing(boundary, maxRow);
 
   if (TRIPLE_PREFIX.length === 0) fillQuintantTables();
@@ -523,10 +601,6 @@ export function polygonToCells(
     ringByKey.set(key, c);
   }
   keys.sort();
-
-  // A quintant without band cells is wholly inside or outside; it can only be
-  // inside when the polygon's bounding cap holds a quintant's area (4π/60)
-  const capHoldsQuintant = 2 * Math.PI * (1 - prep.cap.minDot) >= (4 * Math.PI) / 60;
 
   // The class of a run cell from a ring cell next to it on the curve, when the
   // two are lattice neighbors: any boundary cell near the run cell would have
