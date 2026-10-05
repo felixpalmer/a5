@@ -8,68 +8,166 @@ import {origins} from './origin';
 
 export const FIRST_HILBERT_RESOLUTION = 2;
 export const MAX_RESOLUTION = 30;
-const HILBERT_START_BIT = 58n; // 64 - 6 bits for origin & segment
+// IDs below res 30 start with a 6-bit origin (res 0) or quintant, above S
+export const QUINTANT_SHIFT = 58n;
+export const S_MASK = (1n << QUINTANT_SHIFT) - 1n;
 
 // Abstract cell that contains the whole world, has resolution -1 and 12 children,
 // which are the res0 cells.
 export const WORLD_CELL = 0n;
 
-export function getResolution(index: bigint): number {
-  if (index === 0n) return -1;
+// Resolution 30 IDs have no room for a 6-bit quintant: its field is 5, 3 or 1
+// bits wide, marked by the tag (lowest bits) ...1, ...100 or ...10000:
+//   ...1     → 5-bit quintant (0-31),  58-bit S
+//   ...100   → 3-bit quintant (32-39), 58-bit S
+//   ...10000 → 1-bit quintant (40-41), 58-bit S
+// Quintants 42-59 have no res-30 IDs.
 
-  // Resolution 30 uses three encoding patterns:
-  //   ...1     → 5-bit quintant (0-31),  58-bit S
-  //   ...100   → 3-bit quintant (32-39), 58-bit S
-  //   ...10000 → 1-bit quintant (40-41), 58-bit S
-  if (index & 1n || (index & 0b111n) === 0b100n || (index & 0b11111n) === 0b10000n) return MAX_RESOLUTION;
+/** The leaf slot of a res-30 ID: its quintant, then its 58-bit S (see Leaf slots below). */
+function res30ToSlot(index: bigint): bigint {
+  if (index & 1n) return ((index >> 59n) << QUINTANT_SHIFT) | ((index >> 1n) & S_MASK);
+  if (index & 0b100n) return (((index >> 61n) + 32n) << QUINTANT_SHIFT) | ((index >> 3n) & S_MASK);
+  return (((index >> 63n) + 40n) << QUINTANT_SHIFT) | ((index >> 5n) & S_MASK);
+}
 
-  let resolution = MAX_RESOLUTION - 1;
-  let shifted = index >> 1n;
-  if (shifted === 0n) return -1;
+/** The res-30 ID of a leaf slot in quintants 0-41. */
+function slotToRes30(slot: bigint): bigint {
+  const q = slot >> QUINTANT_SHIFT;
+  const s = slot & S_MASK;
+  if (q < 32n) return (q << 59n) | (s << 1n) | 1n;
+  if (q < 40n) return ((q - 32n) << 61n) | (s << 3n) | 0b100n;
+  return ((q - 40n) << 63n) | (s << 5n) | 0b10000n;
+}
 
-  // Fast path: split into 32-bit chunks and work with regular numbers (much faster than bigints)
-  // Check low 32 bits first
-  let low32 = Number(shifted & 0xffffffffn);
-  let remaining: number;
+// Leaf slots. The A5 curve, at resolution 30, passes through every leaf
+// (res-30) cell of the globe once: picture it as a line of slots, one per leaf
+// cell, numbered in curve order from 0 to 60 * 4^29 - 1. A leaf slot is the
+// 6-bit quintant (0-59) then the leaf's S, left-aligned below it.
+//
+// A cell at resolution r occupies 4^(30-r) consecutive slots, an aligned block
+// starting at its first slot, and the cells of a resolution step along the
+// slots in strides of that size, as the Hilbert curve does. Unlike cell IDs,
+// whose layout differs at resolutions 0, 1 and 30, slots put every cell on one
+// integer line in curve order, including all 60 quintants at resolution 30.
+// A leaf slot is not a cell ID.
 
-  if (low32 === 0) {
-    // Low 32 bits are all zero, skip 16 resolution levels and work with high bits
-    shifted >>= 32n;
-    resolution -= 16;
-    // Now shifted fits in 32 bits (original max was 58 bits, now 26 bits)
-    remaining = Number(shifted);
+export const QUINTANT_SLOTS = 1n << QUINTANT_SHIFT;
+export const ORIGIN_SLOTS = 5n * QUINTANT_SLOTS;
+export const WORLD_SLOTS = 60n * QUINTANT_SLOTS;
+
+/**
+ * By resolution 0..30: the resolution tag (lowest set bit) of a cell below
+ * res 30, and the number of slots a cell occupies.
+ */
+export const RESOLUTION_TAGS: bigint[] = [];
+export const SLOT_COUNTS: bigint[] = [];
+for (let r = 0; r <= MAX_RESOLUTION; r++) {
+  RESOLUTION_TAGS.push(r === 0 ? 1n << 57n : r === 1 ? 1n << 56n : 1n << BigInt(Math.max(59 - 2 * r, 0)));
+  SLOT_COUNTS.push(r === 0 ? ORIGIN_SLOTS : r === 1 ? QUINTANT_SLOTS : 1n << BigInt(60 - 2 * r));
+}
+
+/** Res-30 IDs end in ...1, ...100 or ...10000: their tag has one of these bits */
+export const RES30_TAG_BITS = 0b10101n;
+
+/** The tags of resolutions 2-29: the odd bits 55 down to 1 */
+const HILBERT_TAG_BITS = RESOLUTION_TAGS.slice(FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION).reduce(
+  (bits, tag) => bits | tag,
+  0n
+);
+
+/**
+ * The first slot a cell occupies. Throws if the value is not an A5 cell ID:
+ * its tag (lowest set bit) must be a resolution tag, and its origin (res 0) or
+ * quintant (res 1-29) must exist. Every res-30 pattern decodes to an existing
+ * quintant (0-41).
+ */
+export function cellFirstSlot(cell: bigint): bigint {
+  // The resolution tag: the lowest set bit (0 for the world cell)
+  const tag = cell & -cell;
+  if (tag < RESOLUTION_TAGS[1]) {
+    if ((tag & RES30_TAG_BITS) !== 0n) return res30ToSlot(cell);
+    // Resolutions 2-29, in quintants 0-59: the first slot is the ID without its tag
+    if ((tag & HILBERT_TAG_BITS) !== 0n && cell < WORLD_SLOTS) return cell - tag;
+    if (tag === 0n) return 0n;
   } else {
-    // Low 32 bits have data, work with them
-    remaining = low32;
+    // Resolution 0 (tag bit 57) starts its origin's 5 quintants, 1 (bit 56) its quintant
+    const top = cell >> QUINTANT_SHIFT;
+    if (tag === RESOLUTION_TAGS[0] && top < 12n) return (5n * top) << QUINTANT_SHIFT;
+    if (tag === RESOLUTION_TAGS[1] && top < 60n) return top << QUINTANT_SHIFT;
   }
+  throw invalidCell(cell);
+}
 
-  // Check remaining 16 bits
-  if ((remaining & 0xffff) === 0) {
-    remaining >>= 16;
-    resolution -= 8;
+/**
+ * The first slot of a cell, without checking that the value is an A5 cell ID:
+ * for searches, which check the cell they land on. A value that is not a cell
+ * gives a meaningless slot.
+ */
+export function cellFirstSlotUnchecked(cell: bigint): bigint {
+  const tag = cell & -cell;
+  if (tag === 0n) return 0n;
+  if (tag >= RESOLUTION_TAGS[1]) {
+    const top = cell >> QUINTANT_SHIFT;
+    return (tag === RESOLUTION_TAGS[0] ? 5n * top : top) << QUINTANT_SHIFT;
   }
+  if ((tag & RES30_TAG_BITS) !== 0n) return res30ToSlot(cell);
+  return cell - tag;
+}
 
-  // Check remaining 8 bits
-  if (resolution >= 6 && (remaining & 0xff) === 0) {
-    remaining >>= 8;
-    resolution -= 4;
+/**
+ * The resolution of a cell, as `getResolution` gives it, but throwing if the
+ * value is not an A5 cell ID (see `cellFirstSlot` for what that requires).
+ */
+export function checkedResolution(cell: bigint): number {
+  const tag = cell & -cell;
+  if (tag === 0n) return -1;
+  const bit = Math.log2(Number(tag)); // exact, as a power of two converts exactly
+  if (bit < 56) {
+    if (bit % 2 === 1 && cell < WORLD_SLOTS) return (59 - bit) >> 1;
+    if (bit <= 4 && bit % 2 === 0) return MAX_RESOLUTION;
+  } else {
+    const top = cell >> QUINTANT_SHIFT;
+    if (bit === 57 && top < 12n) return 0;
+    if (bit === 56 && top < 60n) return 1;
   }
+  throw invalidCell(cell);
+}
 
-  // Check remaining 4 bits
-  if (resolution >= 4 && (remaining & 0xf) === 0) {
-    remaining >>= 4;
-    resolution -= 2;
-  }
+function invalidCell(cell: bigint): Error {
+  return new Error(`Invalid cell: 0x${cell.toString(16)}`);
+}
 
-  // Final loop with remaining bits (still as Number, much faster)
-  while (resolution > -1 && (remaining & 0b1) === 0) {
-    resolution -= 1;
-    // For non-Hilbert resolutions, resolution marker moves by 1 bit per resolution
-    // For Hilbert resolutions, resolution marker moves by 2 bits per resolution
-    remaining = remaining >> (resolution < FIRST_HILBERT_RESOLUTION ? 1 : 2);
-  }
+/** The number of slots a cell occupies. */
+export function cellSlotCount(cell: bigint): bigint {
+  // The resolution tag: the lowest set bit (0 for the world cell)
+  const tag = cell & -cell;
+  if (tag === 0n) return WORLD_SLOTS;
+  if (tag === RESOLUTION_TAGS[0]) return ORIGIN_SLOTS;
+  if (tag === RESOLUTION_TAGS[1]) return QUINTANT_SLOTS;
+  if ((tag & RES30_TAG_BITS) !== 0n) return 1n;
+  // Resolutions 2-29: the slots are symmetric about the ID
+  return tag << 1n;
+}
 
-  return resolution;
+/** The res-r cell whose block of slots starts at `slot`. */
+export function slotToCell(slot: bigint, resolution: number): bigint {
+  if (resolution < 0) return WORLD_CELL;
+  if (resolution > 0 && resolution < MAX_RESOLUTION) return slot + RESOLUTION_TAGS[resolution];
+  if (resolution === 0) return (((slot >> QUINTANT_SHIFT) / 5n) << QUINTANT_SHIFT) | RESOLUTION_TAGS[0];
+  return slotToRes30(slot);
+}
+
+export function getResolution(index: bigint): number {
+  // The resolution tag: the lowest set bit (0 for the world cell). Its position
+  // gives the resolution: bit 57 is res 0, 56 res 1, 59 - 2r res r (2-29), and
+  // res 30 uses the patterns ...1, ...100 and ...10000 (bits 0, 2 and 4).
+  const tag = index & -index;
+  if (tag === 0n) return -1;
+  const bit = Math.log2(Number(tag)); // exact, as a power of two converts exactly
+  if (bit === 57) return 0;
+  if (bit === 56) return 1;
+  if (bit <= 4 && bit % 2 === 0) return MAX_RESOLUTION;
+  return (59 - bit) >> 1;
 }
 
 export function deserialize(index: bigint): A5Cell {
@@ -81,46 +179,14 @@ export function deserialize(index: bigint): A5Cell {
     return {origin: origins[0], segment: 0, S: 0n, resolution};
   }
 
-  // For res 30, quintant bits are fewer to make room for S:
-  //   ...1     marker (1 bit)  → 5-bit quintant (0-31)
-  //   ...100   marker (3 bits) → 3-bit quintant + 32 (32-39)
-  //   ...10000 marker (5 bits) → 1-bit quintant + 40 (40-41)
-  let quintantShift = HILBERT_START_BIT;
-  let quintantOffset = 0;
-  if (resolution === MAX_RESOLUTION) {
-    const markerBits = index & 1n ? 1n : index & 0b100n ? 3n : 5n;
-    quintantShift = HILBERT_START_BIT + markerBits;
-    quintantOffset = markerBits === 1n ? 0 : markerBits === 3n ? 32 : 40;
-  }
+  // The cell's first slot holds its quintant, then its S above the slots of one cell
+  const slot = cellFirstSlot(index);
+  const quintant = Number(slot >> QUINTANT_SHIFT);
+  const origin = origins[Math.floor(quintant / 5)];
+  if (resolution === 0) return {origin, segment: 0, S: 0n, resolution};
 
-  // Extract origin*segment from top bits
-  const topBits = Number(index >> quintantShift) + quintantOffset;
-
-  // Find origin and segment
-  let origin: Origin, segment: number;
-
-  if (resolution === 0) {
-    origin = origins[topBits];
-    segment = 0;
-  } else {
-    const originId = Math.floor(topBits / 5);
-    origin = origins[originId];
-    segment = (topBits + origin.firstQuintant) % 5;
-  }
-
-  if (!origin) {
-    throw new Error(`Could not parse origin: ${topBits}`);
-  }
-
-  if (resolution < FIRST_HILBERT_RESOLUTION) {
-    return {origin, segment, S: 0n, resolution};
-  }
-
-  // Mask away origin & segment and shift away resolution and marker bits
-  const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const hilbertBits = BigInt(2 * hilbertLevels);
-  const removalMask = (1n << quintantShift) - 1n;
-  const S = (index & removalMask) >> (quintantShift - hilbertBits);
+  const segment = (quintant + origin.firstQuintant) % 5;
+  const S = resolution < FIRST_HILBERT_RESOLUTION ? 0n : (slot & S_MASK) / SLOT_COUNTS[resolution];
   return {origin, segment, S, resolution};
 }
 
@@ -131,64 +197,20 @@ export function serialize(cell: A5Cell): bigint {
   }
 
   if (resolution === -1) return WORLD_CELL;
+  if (resolution === 0) return slotToCell(BigInt(5 * origin.id) * QUINTANT_SLOTS, 0);
 
-  // For res 30, quintant bits are fewer to make room for S:
-  //   quintant 0-31:  ...1     marker → 5-bit quintant
-  //   quintant 32-39: ...100   marker → 3-bit quintant + 32
-  //   quintant 40-41: ...10000 marker → 1-bit quintant + 40
-  //   quintant 42+:   fall back to res 29
-  let quintantShift = HILBERT_START_BIT;
-
-  // Position of resolution marker as bit shift from LSB
-  let R;
-  if (resolution < FIRST_HILBERT_RESOLUTION) {
-    R = BigInt(resolution + 1);
-  } else {
-    const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-    R = BigInt(2 * hilbertResolution + 1);
+  // The cell's first slot: its quintant, then S cells of this resolution into it
+  const offset = resolution >= FIRST_HILBERT_RESOLUTION ? BigInt(S) * SLOT_COUNTS[resolution] : 0n;
+  if (offset >= QUINTANT_SLOTS) {
+    throw new Error(`S (${S}) is too large for resolution level ${resolution}`);
   }
 
-  // Top bits encode the origin id and segment
-  const segmentN = (segment - origin.firstQuintant + 5) % 5;
-
-  let index;
-  if (resolution === 0) {
-    index = BigInt(origin.id) << quintantShift;
-  } else {
-    const quintant = 5 * origin.id + segmentN;
-    if (resolution === MAX_RESOLUTION) {
-      let quintantValue: number;
-      if (quintant <= 31) {
-        quintantShift = HILBERT_START_BIT + 1n;
-        quintantValue = quintant;
-      } else if (quintant <= 39) {
-        quintantShift = HILBERT_START_BIT + 3n;
-        quintantValue = quintant - 32;
-      } else if (quintant <= 41) {
-        quintantShift = HILBERT_START_BIT + 5n;
-        quintantValue = quintant - 40;
-      } else {
-        return serialize({origin, segment, S: S >> 2n, resolution: MAX_RESOLUTION - 1});
-      }
-      index = BigInt(quintantValue) << quintantShift;
-    } else {
-      index = BigInt(quintant) << quintantShift;
-    }
+  const quintant = 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5);
+  // Quintants 42+ have no res-30 IDs: fall back to res 29
+  if (resolution === MAX_RESOLUTION && quintant > 41) {
+    return serialize({origin, segment, S: S >> 2n, resolution: MAX_RESOLUTION - 1});
   }
-
-  if (resolution >= FIRST_HILBERT_RESOLUTION) {
-    const hilbertLevels = resolution - FIRST_HILBERT_RESOLUTION + 1;
-    const hilbertBits = BigInt(2 * hilbertLevels);
-    if (BigInt(S) >= 1n << hilbertBits) {
-      throw new Error(`S (${S}) is too large for resolution level ${resolution}`);
-    }
-    index += BigInt(S) << (quintantShift - hilbertBits);
-  }
-
-  // Resolution is encoded by position of the least significant 1
-  index |= 1n << (quintantShift - R);
-
-  return index;
+  return slotToCell((BigInt(quintant) << QUINTANT_SHIFT) + offset, resolution);
 }
 
 // The segments of an origin in ID (quintant) order, by its firstQuintant
@@ -241,38 +263,19 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
   return children;
 }
 
-/**
- * Cheap predicate that mirrors the first three checks in `getResolution`:
- * res-30 cells are exactly those whose low bits match one of the three
- * variable-width quintant marker patterns.
- */
+/** Whether a cell is at resolution 30: its tag is one of ...1, ...100 or ...10000. */
 function isMaxResolution(index: bigint): boolean {
-  return (index & 1n) !== 0n || (index & 0b111n) === 0b100n || (index & 0b11111n) === 0b10000n;
+  return (index & -index & RES30_TAG_BITS) !== 0n;
 }
 
 /**
  * Re-pack a res-30 cell into the standard res-29 bit layout (6-bit quintant
- * in [63..58], 56-bit S in [57..2], marker at bit 1). The 58-bit res-30 S is
+ * in [63..58], 56-bit S in [57..2], tag at bit 1). The 58-bit res-30 S is
  * truncated by 2 bits, exactly as `cellToParent(_, 29)` would.
  */
 function normalizeRes30(index: bigint): bigint {
-  let qShift: bigint, qOffset: bigint, markerBits: bigint;
-  if (index & 1n) {
-    qShift = 59n;
-    qOffset = 0n;
-    markerBits = 1n;
-  } else if (index & 0b100n) {
-    qShift = 61n;
-    qOffset = 32n;
-    markerBits = 3n;
-  } else {
-    qShift = 63n;
-    qOffset = 40n;
-    markerBits = 5n;
-  }
-  const quintant = (index >> qShift) + qOffset;
-  const s58 = (index >> markerBits) & ((1n << 58n) - 1n);
-  return (quintant << 58n) | ((s58 >> 2n) << 2n) | (1n << 1n);
+  // The res-29 parent starts at the same slot, rounded down to its 4 children
+  return (res30ToSlot(index) & ~3n) | 0b10n;
 }
 
 /**
@@ -305,15 +308,15 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
   }
 
   if (parentResolution >= FIRST_HILBERT_RESOLUTION) {
-    // Hilbert-range parent: clear bits below the parent marker, set the marker.
-    // Identity (parent res === child res) falls out for free: the marker lands
+    // Hilbert-range parent: clear bits below the parent tag, set the tag.
+    // Identity (parent res === child res) falls out for free: the tag lands
     // in the same position and bits below the keep cut are already zero.
     const keepShift = BigInt(60 - 2 * parentResolution);
     return ((c >> keepShift) << keepShift) | (1n << BigInt(59 - 2 * parentResolution));
   }
 
   if (parentResolution === 1) {
-    // Top 6 bits already encode 5*originId + segmentN; only the marker moves.
+    // Top 6 bits already encode 5*originId + segmentN; only the tag moves.
     // Identity (cell already at res 1) is preserved.
     return ((c >> 58n) << 58n) | (1n << 56n);
   }
@@ -340,31 +343,6 @@ export function getRes0Cells(): bigint[] {
 }
 
 /**
- * Check for whether index corresponds to first child of its parent
- */
-export function isFirstChild(index: bigint, resolution?: number): boolean {
-  resolution ??= getResolution(index);
-
-  if (resolution < 2) {
-    // For resolution 0: first child is origin 0 (child count = 12)
-    // For resolution 1: first children are at multiples of 5 (child count = 5)
-    const top6Bits = Number(index >> HILBERT_START_BIT);
-    const childCount = resolution === 0 ? 12 : 5;
-    return top6Bits % childCount === 0;
-  }
-
-  if (resolution === MAX_RESOLUTION) {
-    // S's 2 LSBs sit just above the marker bits
-    const markerBits = index & 1n ? 1n : index & 0b100n ? 3n : 5n;
-    return (index & (3n << markerBits)) === 0n;
-  }
-
-  const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
-  const sMask = 3n << sPosition; // Mask for the 2 LSBs of S
-  return (index & sMask) === 0n;
-}
-
-/**
  * Bit-level descendant test: is `child` the same cell as `parent`, or one of
  * its descendants at any deeper resolution? Compares the high (quintant +
  * parent's Hilbert) bits in a single shift, no deserialize needed.
@@ -376,24 +354,9 @@ export function isFirstChild(index: bigint, resolution?: number): boolean {
  */
 export function isChildOf(child: bigint, parent: bigint, parentResolution: number): boolean {
   // Parent's identifying bits occupy positions 63..(60-2P): 6 quintant bits
-  // + 2(P-1) Hilbert bits. Bit (59-2P) is the marker, below that is zero.
+  // + 2(P-1) Hilbert bits. Bit (59-2P) is the tag, below that is zero.
   // Shifting both right by (60-2P) keeps exactly those identifying bits and
-  // discards the marker, so a descendant matches iff the high bits match.
+  // discards the tag, so a descendant matches iff the high bits match.
   const shift = BigInt(60 - 2 * parentResolution);
   return child >> shift === parent >> shift;
-}
-
-/**
- * Difference between two neighboring sibling cells at a given resolution
- */
-export function getStride(resolution: number): bigint {
-  // Both level 0 & 1 just write values 0-11 or 0-59 to the first 6 bits
-  if (resolution < 2) return 1n << HILBERT_START_BIT;
-
-  // For res 30, S is shifted left by 1 (marker bit at position 0)
-  if (resolution === MAX_RESOLUTION) return 2n;
-
-  // For hilbert levels, the position shifts by 2 bits per resolution level
-  const sPosition = 2n * BigInt(MAX_RESOLUTION - resolution);
-  return 1n << sPosition;
 }

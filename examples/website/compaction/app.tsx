@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {A5Layer} from '@deck.gl/geo-layers';
-import {migrate, uncompact} from 'a5';
+import {cellToChildren, migrate} from 'a5';
 import {parquetRead} from 'hyparquet';
 
 // Generated using examples/cli/compact with:
@@ -46,7 +46,8 @@ const App: React.FC = () => {
 
         // Uncompact in the background after rendering to avoid delaying initial render
         setTimeout(() => {
-          const uncompacted = uncompact(compacted, RESOLUTION);
+          // The data file predates the compaction marker, so expand to its known resolution
+          const uncompacted = compacted.flatMap(cell => cellToChildren(cell, RESOLUTION));
           setUncompactedCells(uncompacted);
         }, 1000);
       } catch (error) {

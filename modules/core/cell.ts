@@ -24,6 +24,7 @@ import {roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '.
 import type {Triple} from '../lattice';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from './serialization';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
+import {isCompactionMarker} from './compaction-marker';
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -317,8 +318,9 @@ export function cellToBoundary(
   cellId: bigint,
   {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}
 ): LonLat[] {
-  if (cellId === WORLD_CELL) {
-    // WORLD_CELL represents the entire world and is unbounded
+  if (cellId === WORLD_CELL || isCompactionMarker(cellId)) {
+    // WORLD_CELL represents the entire world and is unbounded; a compaction marker
+    // (recording a compacted collection's resolution) is not a cell at all
     return [];
   }
 

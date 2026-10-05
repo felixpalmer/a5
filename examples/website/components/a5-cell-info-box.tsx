@@ -16,7 +16,7 @@ export interface A5CellInfoBoxProps {
  * Displays A5 cell information with color-coded binary representation showing:
  * - Blue: Origin/Segment bits (top 6 bits)
  * - Black: Space-filling curve position (S)
- * - Pink: Resolution marker
+ * - Pink: Resolution tag
  * - Gray: Trailing zeros
  *
  * Usage:

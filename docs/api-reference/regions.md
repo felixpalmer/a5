@@ -15,9 +15,9 @@ The `containment` option controls which cells count as belonging to the polygon:
 - `'center'` (default) — a cell is included only if its center lies inside the polygon. Adjacent polygons that share an edge produce disjoint coverings, so this is the right choice for partitioning.
 - `'overlapping'` — additionally includes every cell that overlaps the polygon boundary. The result is a superset of `'center'` that fully covers the polygon with no gaps, at the cost of some overlap with adjacent polygons. Use this when a query must not miss any cell touching the region (for example, filtering database rows by cell before applying an exact geometry test).
 
-The result is compacted — use [`uncompact`](compaction#uncompact) to expand to the input resolution. The compacted form is intended for storage, transfer and set operations: cell boundaries of different resolutions do not nest geometrically, so a mixed-resolution covering will show overlaps and gaps when rendered. Uncompact to a single resolution before drawing cells on a map.
+The result is compacted into a [collection](compaction#collections-and-the-compaction-marker) — the cells, then a compaction marker recording the resolution — so use [`uncompact`](compaction#uncompact) to expand it to the input resolution. The compacted form is intended for storage, transfer and set operations: cell boundaries of different resolutions do not nest geometrically, so a mixed-resolution covering will show overlaps and gaps when rendered. Uncompact to a single resolution before drawing cells on a map.
 
-Multi-polygons are not supported directly — call `polygonToCells` per polygon and concatenate the results (with `'center'` containment, coverings of disjoint polygons never overlap).
+Multi-polygons are not supported directly — call `polygonToCells` per polygon and combine the results with [`union`](set-operations#union). Collections can also be intersected, subtracted and tested for containment without uncompacting, see [Set Operations](set-operations).
 
 ```ts
 function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, options?: {
@@ -34,12 +34,12 @@ function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, opti
 
 #### Return value
 
-- **(BigUint64Array)** Sorted, compacted array of cell identifiers belonging to the polygon
+- **(BigUint64Array)** Compacted cells belonging to the polygon sorted in curve order, then the compaction marker. A polygon with no cells gives just the compaction marker
 
 #### Example
 
 ```ts
-import { polygonToCells, uncompact, getResolution } from 'a5-js';
+import { polygonToCells, uncompact } from 'a5-js';
 
 // Bounding box around central Paris
 const ring = [
@@ -49,7 +49,7 @@ const ring = [
   [2.25, 48.90]
 ];
 const compact = polygonToCells(ring, 10);
-const flat = uncompact(compact, 10);
+const flat = uncompact(compact); // all cells at resolution 10
 
 // The same polygon with a hole — cells inside the hole are excluded
 const hole = [

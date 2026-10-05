@@ -28,7 +28,7 @@ const random = mulberry32(42);
 
 // --- Resolution masks ---
 // Serialize with origin 0 (firstQuintant=4), segment=4 (segmentN=0), S=0
-// at each resolution to get the minimal bit pattern showing only the marker
+// at each resolution to get the minimal bit pattern showing only the tag
 const origin0 = origins[0];
 const maskSegment = (0 + origin0.firstQuintant) % 5;
 const resolutionMasks = [];

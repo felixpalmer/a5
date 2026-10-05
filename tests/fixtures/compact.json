@@ -2,7 +2,7 @@
   "compact": [
     {
       "name": "four_siblings_res3",
-      "description": "Four sibling cells at resolution 3 compact to parent at resolution 2",
+      "description": "Four sibling cells at resolution 3 compact to parent at resolution 2, compaction marker records res 3",
       "input": [
         "420000000000000",
         "460000000000000",
@@ -10,7 +10,8 @@
         "4e0000000000000"
       ],
       "expectedOutput": [
-        "480000000000000"
+        "480000000000000",
+        "f003000000000040"
       ]
     },
     {
@@ -24,7 +25,8 @@
       "expectedOutput": [
         "420000000000000",
         "460000000000000",
-        "4a0000000000000"
+        "4a0000000000000",
+        "f003000000000040"
       ]
     },
     {
@@ -38,7 +40,8 @@
         "1100000000000000"
       ],
       "expectedOutput": [
-        "200000000000000"
+        "200000000000000",
+        "f001000000000040"
       ]
     },
     {
@@ -59,19 +62,21 @@
         "2e00000000000000"
       ],
       "expectedOutput": [
-        "0"
+        "0",
+        "f000000000000040"
       ]
     },
     {
       "name": "mixed_resolutions",
-      "description": "Cells at different resolutions with no sibling relationships",
+      "description": "Cells at different resolutions with no sibling relationships, compaction marker records the finest",
       "input": [
         "1458000000000000",
         "382a000000000000"
       ],
       "expectedOutput": [
         "1458000000000000",
-        "382a000000000000"
+        "382a000000000000",
+        "f005000000000040"
       ]
     },
     {
@@ -96,12 +101,13 @@
         "40f8000000000000"
       ],
       "expectedOutput": [
-        "4080000000000000"
+        "4080000000000000",
+        "f004000000000040"
       ]
     },
     {
       "name": "empty_array",
-      "description": "Empty input returns empty output",
+      "description": "Empty input returns empty output (there is no resolution to record)",
       "input": [],
       "expectedOutput": []
     },
@@ -112,7 +118,8 @@
         "7407800000000000"
       ],
       "expectedOutput": [
-        "7407800000000000"
+        "7407800000000000",
+        "f006000000000040"
       ]
     },
     {
@@ -124,7 +131,8 @@
         "7407800000000000"
       ],
       "expectedOutput": [
-        "7407800000000000"
+        "7407800000000000",
+        "f006000000000040"
       ]
     },
     {
@@ -141,7 +149,8 @@
       "expectedOutput": [
         "480000000000000",
         "520000000000000",
-        "560000000000000"
+        "560000000000000",
+        "f003000000000040"
       ]
     },
     {
@@ -169,7 +178,8 @@
         "1a00000000000000",
         "1e00000000000000",
         "2200000000000000",
-        "2600000000000000"
+        "2600000000000000",
+        "f000000000000040"
       ]
     },
     {
@@ -181,87 +191,304 @@
       ],
       "expectedOutput": [
         "c38000000000000",
-        "1438000000000000"
+        "1438000000000000",
+        "f004000000000040"
+      ]
+    },
+    {
+      "name": "eight_res4_to_two_res3",
+      "description": "8 res-4 cells compact to 2 res-3 cells; the compaction marker records res 4",
+      "input": [
+        "448000000000000",
+        "458000000000000",
+        "468000000000000",
+        "478000000000000",
+        "488000000000000",
+        "498000000000000",
+        "4a8000000000000",
+        "4b8000000000000"
+      ],
+      "expectedOutput": [
+        "460000000000000",
+        "4a0000000000000",
+        "f004000000000040"
+      ]
+    },
+    {
+      "name": "ancestor_absorbs_descendants",
+      "description": "Cells inside another input cell are absorbed by it",
+      "input": [
+        "458000000000000",
+        "8498000000000000",
+        "480000000000000",
+        "420000000000000"
+      ],
+      "expectedOutput": [
+        "480000000000000",
+        "8498000000000000",
+        "f004000000000040"
+      ]
+    },
+    {
+      "name": "idempotent",
+      "description": "Compacting an already compacted collection (with its compaction marker) returns it unchanged",
+      "input": [
+        "460000000000000",
+        "4a0000000000000",
+        "f004000000000040"
+      ],
+      "expectedOutput": [
+        "460000000000000",
+        "4a0000000000000",
+        "f004000000000040"
+      ]
+    },
+    {
+      "name": "marker_only",
+      "description": "An empty collection keeps its resolution",
+      "input": [
+        "f007000000000040"
+      ],
+      "expectedOutput": [
+        "f007000000000040"
+      ]
+    },
+    {
+      "name": "res30_quintant_encodings",
+      "description": "Res-30 cells from quintants 5, 35 and 41 come out in curve order; full sibling groups compact",
+      "input": [
+        "80000000000000b0",
+        "6000000000000264",
+        "600000000000026c",
+        "6000000000000274",
+        "600000000000027c",
+        "28000000000009a5"
+      ],
+      "expectedOutput": [
+        "28000000000009a5",
+        "8c0000000000004e",
+        "80000000000000b0",
+        "f01e000000000040"
+      ]
+    },
+    {
+      "name": "res0_res1_curve_order",
+      "description": "A res-0 cell (origin 1, quintants 5-9) sorts after a res-1 cell in quintant 3",
+      "input": [
+        "600000000000000",
+        "d00000000000000"
+      ],
+      "expectedOutput": [
+        "d00000000000000",
+        "600000000000000",
+        "f001000000000040"
       ]
     }
   ],
   "uncompact": [
     {
       "name": "expand_res2_to_res3",
-      "description": "Single cell at resolution 2 expands to 4 cells at resolution 3",
+      "description": "A res-2 cell in a res-3 collection expands to its 4 children",
       "input": [
-        "480000000000000"
+        "480000000000000",
+        "f003000000000040"
       ],
-      "targetResolution": 3,
-      "expectedCount": 4
+      "expectedResolution": 3,
+      "expectedCount": 4,
+      "expectedCells": [
+        "420000000000000",
+        "460000000000000",
+        "4a0000000000000",
+        "4e0000000000000"
+      ]
     },
     {
       "name": "expand_res2_to_res4",
-      "description": "Single cell at resolution 2 expands to 16 cells at resolution 4",
+      "description": "A res-2 cell in a res-4 collection expands to its 16 descendants",
       "input": [
-        "480000000000000"
+        "480000000000000",
+        "f004000000000040"
       ],
-      "targetResolution": 4,
-      "expectedCount": 16
+      "expectedResolution": 4,
+      "expectedCount": 16,
+      "expectedCells": [
+        "408000000000000",
+        "418000000000000",
+        "428000000000000",
+        "438000000000000",
+        "448000000000000",
+        "458000000000000",
+        "468000000000000",
+        "478000000000000",
+        "488000000000000",
+        "498000000000000",
+        "4a8000000000000",
+        "4b8000000000000",
+        "4c8000000000000",
+        "4d8000000000000",
+        "4e8000000000000",
+        "4f8000000000000"
+      ]
     },
     {
       "name": "expand_res0_to_res1",
-      "description": "Resolution 0 cell expands to 5 segments at resolution 1",
+      "description": "A res-0 cell in a res-1 collection expands to its 5 quintants",
       "input": [
-        "200000000000000"
+        "200000000000000",
+        "f001000000000040"
       ],
-      "targetResolution": 1,
-      "expectedCount": 5
+      "expectedResolution": 1,
+      "expectedCount": 5,
+      "expectedCells": [
+        "100000000000000",
+        "500000000000000",
+        "900000000000000",
+        "d00000000000000",
+        "1100000000000000"
+      ]
     },
     {
       "name": "expand_world_to_res0",
-      "description": "World cell expands to 12 resolution 0 cells",
+      "description": "The world cell in a res-0 collection expands to the 12 res-0 cells",
       "input": [
-        "0"
+        "0",
+        "f000000000000040"
       ],
-      "targetResolution": 0,
-      "expectedCount": 12
+      "expectedResolution": 0,
+      "expectedCount": 12,
+      "expectedCells": [
+        "200000000000000",
+        "600000000000000",
+        "a00000000000000",
+        "e00000000000000",
+        "1200000000000000",
+        "1600000000000000",
+        "1a00000000000000",
+        "1e00000000000000",
+        "2200000000000000",
+        "2600000000000000",
+        "2a00000000000000",
+        "2e00000000000000"
+      ]
     },
     {
       "name": "mixed_input_to_res5",
-      "description": "Cells at resolutions 3 and 4 both expand to resolution 5",
+      "description": "Cells at resolutions 3 and 4 in a res-5 collection both expand to resolution 5",
+      "input": [
+        "24a0000000000000",
+        "2858000000000000",
+        "f005000000000040"
+      ],
+      "expectedResolution": 5,
+      "expectedCount": 20,
+      "expectedCells": [
+        "2482000000000000",
+        "2486000000000000",
+        "248a000000000000",
+        "248e000000000000",
+        "2492000000000000",
+        "2496000000000000",
+        "249a000000000000",
+        "249e000000000000",
+        "24a2000000000000",
+        "24a6000000000000",
+        "24aa000000000000",
+        "24ae000000000000",
+        "24b2000000000000",
+        "24b6000000000000",
+        "24ba000000000000",
+        "24be000000000000",
+        "2852000000000000",
+        "2856000000000000",
+        "285a000000000000",
+        "285e000000000000"
+      ]
+    },
+    {
+      "name": "two_res3_to_eight_res4",
+      "description": "The motivating case: 2 res-3 cells with a res-4 compaction marker stand for 8 res-4 cells",
+      "input": [
+        "460000000000000",
+        "4a0000000000000",
+        "f004000000000040"
+      ],
+      "expectedResolution": 4,
+      "expectedCount": 8,
+      "expectedCells": [
+        "448000000000000",
+        "458000000000000",
+        "468000000000000",
+        "478000000000000",
+        "488000000000000",
+        "498000000000000",
+        "4a8000000000000",
+        "4b8000000000000"
+      ]
+    },
+    {
+      "name": "no_marker_single",
+      "description": "Without a compaction marker, the finest cell gives the resolution: a single cell is unchanged",
+      "input": [
+        "540a800000000000"
+      ],
+      "expectedResolution": 6,
+      "expectedCount": 1,
+      "expectedCells": [
+        "540a800000000000"
+      ]
+    },
+    {
+      "name": "no_marker_mixed",
+      "description": "Without a compaction marker, cells expand to the finest resolution present",
       "input": [
         "24a0000000000000",
         "2858000000000000"
       ],
-      "targetResolution": 5,
-      "expectedCount": 20
+      "expectedResolution": 4,
+      "expectedCount": 5,
+      "expectedCells": [
+        "2488000000000000",
+        "2498000000000000",
+        "24a8000000000000",
+        "24b8000000000000",
+        "2858000000000000"
+      ]
     },
     {
-      "name": "already_at_target",
-      "description": "Cell already at target resolution remains unchanged",
+      "name": "world_alone",
+      "description": "The world cell alone is a collection at resolution -1",
       "input": [
-        "540a800000000000"
+        "0"
       ],
-      "targetResolution": 6,
-      "expectedCount": 1
+      "expectedResolution": -1,
+      "expectedCount": 1,
+      "expectedCells": [
+        "0"
+      ]
     },
     {
       "name": "empty_array",
       "description": "Empty input returns empty output",
       "input": [],
-      "targetResolution": 5,
-      "expectedCount": 0
+      "expectedResolution": -1,
+      "expectedCount": 0,
+      "expectedCells": []
     },
     {
-      "name": "uncompact_to_lower_resolution",
-      "description": "Attempting to uncompact to lower resolution should throw error",
+      "name": "marker_only",
+      "description": "An empty collection expands to no cells",
       "input": [
-        "403e000000000000"
+        "f005000000000040"
       ],
-      "targetResolution": 3,
-      "expectedError": true
+      "expectedResolution": 5,
+      "expectedCount": 0,
+      "expectedCells": []
     }
   ],
   "roundTrip": [
     {
       "name": "roundtrip_basic",
-      "description": "Compact then uncompact should maintain cell coverage",
+      "description": "Compact then uncompact returns the original cells",
       "initialCells": [
         "940800000000000",
         "941800000000000",
@@ -329,79 +556,15 @@
         "97f800000000000"
       ],
       "afterCompact": [
-        "960000000000000"
+        "960000000000000",
+        "f006000000000040"
       ],
-      "targetResolution": 6,
-      "afterUncompact": [
-        "940800000000000",
-        "941800000000000",
-        "942800000000000",
-        "943800000000000",
-        "944800000000000",
-        "945800000000000",
-        "946800000000000",
-        "947800000000000",
-        "948800000000000",
-        "949800000000000",
-        "94a800000000000",
-        "94b800000000000",
-        "94c800000000000",
-        "94d800000000000",
-        "94e800000000000",
-        "94f800000000000",
-        "950800000000000",
-        "951800000000000",
-        "952800000000000",
-        "953800000000000",
-        "954800000000000",
-        "955800000000000",
-        "956800000000000",
-        "957800000000000",
-        "958800000000000",
-        "959800000000000",
-        "95a800000000000",
-        "95b800000000000",
-        "95c800000000000",
-        "95d800000000000",
-        "95e800000000000",
-        "95f800000000000",
-        "960800000000000",
-        "961800000000000",
-        "962800000000000",
-        "963800000000000",
-        "964800000000000",
-        "965800000000000",
-        "966800000000000",
-        "967800000000000",
-        "968800000000000",
-        "969800000000000",
-        "96a800000000000",
-        "96b800000000000",
-        "96c800000000000",
-        "96d800000000000",
-        "96e800000000000",
-        "96f800000000000",
-        "970800000000000",
-        "971800000000000",
-        "972800000000000",
-        "973800000000000",
-        "974800000000000",
-        "975800000000000",
-        "976800000000000",
-        "977800000000000",
-        "978800000000000",
-        "979800000000000",
-        "97a800000000000",
-        "97b800000000000",
-        "97c800000000000",
-        "97d800000000000",
-        "97e800000000000",
-        "97f800000000000"
-      ]
+      "resolution": 6,
+      "expectedFinalCount": 64
     },
     {
       "name": "roundtrip_mixed_resolutions",
-      "description": "Mixed resolutions maintain coverage through compact/uncompact cycle",
+      "description": "Mixed resolutions expand to the finest resolution through compact/uncompact",
       "initialCells": [
         "480000000000000",
         "2428000000000000",
@@ -410,10 +573,11 @@
       "afterCompact": [
         "480000000000000",
         "2428000000000000",
-        "2816000000000000"
+        "2816000000000000",
+        "f005000000000040"
       ],
-      "targetResolution": 5,
-      "expectedCount": 69
+      "resolution": 5,
+      "expectedFinalCount": 69
     },
     {
       "name": "roundtrip_cell_coverage",
@@ -484,11 +648,11 @@
         "44afa00000000000",
         "44afe00000000000"
       ],
-      "initialCount": 64,
       "afterCompact": [
-        "44a8000000000000"
+        "44a8000000000000",
+        "f007000000000040"
       ],
-      "targetResolution": 7,
+      "resolution": 7,
       "expectedFinalCount": 64
     }
   ]

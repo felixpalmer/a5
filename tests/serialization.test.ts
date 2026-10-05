@@ -6,9 +6,7 @@ import {
   FIRST_HILBERT_RESOLUTION,
   MAX_RESOLUTION,
   getRes0Cells,
-  isFirstChild,
   isChildOf,
-  getStride,
   WORLD_CELL
 } from 'a5/core/serialization';
 import {A5Cell} from 'a5/core/utils';
@@ -326,7 +324,7 @@ describe('resolution 30', () => {
       const serialized = serialize(cell);
       expect(getResolution(serialized)).toBe(30);
 
-      // Verify correct marker pattern
+      // Verify correct tag pattern
       if (q <= 31) {
         expect(serialized & 1n).toBe(1n); // ...1 encoding
       } else if (q <= 39) {
@@ -366,13 +364,13 @@ describe('resolution 30', () => {
     const origin = origins[0];
     const segment = (0 + origin.firstQuintant) % 5; // quintant=0
 
-    // Quintant 0, S=0 → just the marker bit
+    // Quintant 0, S=0 → just the tag bit
     const cell0 = serialize({origin, segment, S: 0n, resolution: 30});
     expect(cell0).toBe(1n);
 
-    // Quintant 0, S=1 → marker + S shifted left by 1
+    // Quintant 0, S=1 → tag + S shifted left by 1
     const cell1 = serialize({origin, segment, S: 1n, resolution: 30});
-    expect(cell1).toBe(0b11n); // S=1 at bit 1, marker at bit 0
+    expect(cell1).toBe(0b11n); // S=1 at bit 1, tag at bit 0
   });
 
   test('bit layout: ...10000 encoding (quintant 40-41)', () => {
@@ -380,13 +378,13 @@ describe('resolution 30', () => {
     const origin = origins[8];
     const segment = (0 + origin.firstQuintant) % 5;
 
-    // Quintant 40, S=0 → (40-40)=0 in top 1 bit, marker 10000
+    // Quintant 40, S=0 → (40-40)=0 in top 1 bit, tag 10000
     const cell0 = serialize({origin, segment, S: 0n, resolution: 30});
-    expect(cell0).toBe(0b10000n); // just the marker
+    expect(cell0).toBe(0b10000n); // just the tag
 
-    // Quintant 40, S=1 → S shifted left by 5 + marker
+    // Quintant 40, S=1 → S shifted left by 5 + tag
     const cell1 = serialize({origin, segment, S: 1n, resolution: 30});
-    expect(cell1).toBe(0b110000n); // S=1 at bit 5, marker 10000 at bits 4-0
+    expect(cell1).toBe(0b110000n); // S=1 at bit 5, tag 10000 at bits 4-0
   });
 
   test('bit layout: ...100 encoding (quintant 32-39)', () => {
@@ -396,13 +394,13 @@ describe('resolution 30', () => {
     const segmentN = 2;
     const segment = (segmentN + origin.firstQuintant) % 5;
 
-    // Quintant 32, S=0 → (32-32)=0 in top 3 bits, marker 100
+    // Quintant 32, S=0 → (32-32)=0 in top 3 bits, tag 100
     const cell0 = serialize({origin, segment, S: 0n, resolution: 30});
-    expect(cell0).toBe(0b100n); // just the marker
+    expect(cell0).toBe(0b100n); // just the tag
 
-    // Quintant 32, S=1 → S shifted left by 3 + marker
+    // Quintant 32, S=1 → S shifted left by 3 + tag
     const cell1 = serialize({origin, segment, S: 1n, resolution: 30});
-    expect(cell1).toBe(0b1100n); // S=1 at bit 3, marker 100 at bits 2-0
+    expect(cell1).toBe(0b1100n); // S=1 at bit 3, tag 100 at bits 2-0
   });
 
   test('serialize/deserialize round trip with non-zero S (extended encoding)', () => {
@@ -414,7 +412,7 @@ describe('resolution 30', () => {
     for (const S of testSValues) {
       const cell: A5Cell = {origin, segment, S, resolution: 30};
       const serialized = serialize(cell);
-      expect(serialized & 0b111n).toBe(0b100n); // ...100 marker
+      expect(serialized & 0b111n).toBe(0b100n); // ...100 tag
       const deserialized = deserialize(serialized);
       expect(deserialized.S).toBe(S);
       expect(deserialized.resolution).toBe(30);
@@ -495,19 +493,6 @@ describe('resolution 30', () => {
     });
   });
 
-  test('getStride returns 2 for res 30', () => {
-    expect(getStride(30)).toBe(2n);
-  });
-
-  test('isFirstChild works for res 30 (...1 encoding)', () => {
-    const origin = origins[0];
-    const segment = (0 + origin.firstQuintant) % 5;
-
-    expect(isFirstChild(serialize({origin, segment, S: 0n, resolution: 30}))).toBe(true);
-    expect(isFirstChild(serialize({origin, segment, S: 1n, resolution: 30}))).toBe(false);
-    expect(isFirstChild(serialize({origin, segment, S: 4n, resolution: 30}))).toBe(true);
-  });
-
   test('serialize/deserialize round trip with non-zero S (...10000 encoding)', () => {
     // Use quintant 40 (origin 8, segmentN=0) for ...10000 encoding
     const origin = origins[8];
@@ -517,30 +502,12 @@ describe('resolution 30', () => {
     for (const S of testSValues) {
       const cell: A5Cell = {origin, segment, S, resolution: 30};
       const serialized = serialize(cell);
-      expect(serialized & 0b11111n).toBe(0b10000n); // ...10000 marker
+      expect(serialized & 0b11111n).toBe(0b10000n); // ...10000 tag
       const deserialized = deserialize(serialized);
       expect(deserialized.S).toBe(S);
       expect(deserialized.resolution).toBe(30);
       expect(serialize(deserialized)).toBe(serialized);
     }
-  });
-
-  test('isFirstChild works for res 30 (...100 encoding)', () => {
-    const origin = origins[7]; // quintant 35, uses ...100
-    const segment = (0 + origin.firstQuintant) % 5;
-
-    expect(isFirstChild(serialize({origin, segment, S: 0n, resolution: 30}))).toBe(true);
-    expect(isFirstChild(serialize({origin, segment, S: 1n, resolution: 30}))).toBe(false);
-    expect(isFirstChild(serialize({origin, segment, S: 4n, resolution: 30}))).toBe(true);
-  });
-
-  test('isFirstChild works for res 30 (...10000 encoding)', () => {
-    const origin = origins[8]; // quintant 40, uses ...10000
-    const segment = (0 + origin.firstQuintant) % 5;
-
-    expect(isFirstChild(serialize({origin, segment, S: 0n, resolution: 30}))).toBe(true);
-    expect(isFirstChild(serialize({origin, segment, S: 1n, resolution: 30}))).toBe(false);
-    expect(isFirstChild(serialize({origin, segment, S: 4n, resolution: 30}))).toBe(true);
   });
 
   test('cellToChildren/cellToParent round trip (...10000 encoding)', () => {
@@ -553,7 +520,7 @@ describe('resolution 30', () => {
     expect(children.length).toBe(4);
     children.forEach(child => {
       expect(getResolution(child)).toBe(30);
-      expect(child & 0b11111n).toBe(0b10000n); // ...10000 marker
+      expect(child & 0b11111n).toBe(0b10000n); // ...10000 tag
       expect(cellToParent(child)).toBe(parent);
     });
   });
@@ -568,7 +535,7 @@ describe('resolution 30', () => {
     expect(children.length).toBe(4);
     children.forEach(child => {
       expect(getResolution(child)).toBe(30);
-      expect(child & 0b111n).toBe(0b100n); // ...100 marker
+      expect(child & 0b111n).toBe(0b100n); // ...100 tag
       expect(cellToParent(child)).toBe(parent);
     });
   });

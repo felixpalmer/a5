@@ -1,4 +1,4 @@
-import {lonLatToCell, compact, cellArea, cellToBoundary, u64ToHex} from '../../../dist/a5.js';
+import {lonLatToCell, compact, isCompactionMarker, cellArea, cellToBoundary, u64ToHex} from '../../../dist/a5.js';
 import fs from 'fs';
 
 // Parse command line arguments
@@ -167,7 +167,8 @@ function generateCells(centerLonLat, radiusKm, resolution) {
   console.log(`  Unique cells: ${cells.length}`);
 
   // Compact the cells
-  const compacted = compact(cells);
+  // One row per cell: drop the compaction marker (the resolution is known from the options)
+  const compacted = Array.from(compact(cells)).filter(cell => !isCompactionMarker(cell));
   console.log(`  Compacted to: ${compacted.length} cells`);
   console.log(`  Compression ratio: ${(cells.length / compacted.length).toFixed(2)}x`);
 

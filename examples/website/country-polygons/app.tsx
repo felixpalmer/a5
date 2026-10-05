@@ -5,7 +5,7 @@ import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {SolidPolygonLayer} from '@deck.gl/layers';
 import {cellToBoundary} from 'a5/core/cell';
-import {uncompact} from 'a5/core/compact';
+import {cellToChildren} from 'a5/core/serialization';
 import {migrate} from 'a5/core/migrate';
 import {parquetRead} from 'hyparquet';
 import type {LonLat} from 'a5/core/coordinate-systems';
@@ -337,7 +337,8 @@ const App: React.FC = () => {
     const result: CellPoly[] = [];
     for (const [idx, ids] of byColor) {
       const base = idx >= 1 && idx <= PALETTE.length ? PALETTE[idx - 1] : FALLBACK_COLOR;
-      const expanded = uncompact(BigUint64Array.from(ids), RESOLUTION);
+      // The data file predates the compaction marker, so expand to its known resolution
+      const expanded = ids.flatMap(id => cellToChildren(id, RESOLUTION));
       for (const id of expanded) {
         result.push({
           boundary: cellBoundary(id),

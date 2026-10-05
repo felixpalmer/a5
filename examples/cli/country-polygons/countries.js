@@ -1,4 +1,4 @@
-import {polygonToCells} from '../../../dist/a5.js';
+import {isCompactionMarker, polygonToCells} from '../../../dist/a5.js';
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
@@ -62,6 +62,7 @@ async function main() {
       const compacted = polygonToCells(ring, opts.resolution);
       for (let i = 0; i < compacted.length; i++) {
         const id = compacted[i];
+        if (isCompactionMarker(id)) continue;
         if (!claim.has(id)) claim.set(id, name);
       }
     }

@@ -32,7 +32,7 @@
   "scripts": {
     "start": "tsup --watch",
     "test": "vitest",
-    "bench": "vitest bench --run",
+    "bench": "tsup benchmarks/a5-bench.ts --no-config --format esm --target es2020 --out-dir benchmarks/.build --silent && vitest bench --run",
     "coverage": "vitest run --coverage",
     "build": "tsup",
     "generate-fixtures": "yarn build && node scripts/generate-fixtures.cjs",

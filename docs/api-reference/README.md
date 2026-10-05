@@ -33,3 +33,15 @@ For examples on how to use the code, see the [example code on Github](https://gi
 
 - [compact](./api-reference/compaction#compact)
 - [uncompact](./api-reference/compaction#uncompact)
+- [getCompactionResolution](./api-reference/compaction#getcompactionresolution)
+- [isCompactionMarker](./api-reference/compaction#iscompactionmarker)
+
+### Set Operations
+
+- [union](./api-reference/set-operations#union)
+- [intersect](./api-reference/set-operations#intersect)
+- [difference](./api-reference/set-operations#difference)
+- [contains](./api-reference/set-operations#contains)
+- [overlaps](./api-reference/set-operations#overlaps)
+- [count](./api-reference/set-operations#count)
+- [area](./api-reference/set-operations#area)

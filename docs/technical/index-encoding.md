@@ -23,7 +23,7 @@ The 64 bits are organized into several distinct sections:
 ┌────────────────────────────────────────────────────────┐
 │  6 bits  │ Variable bits │   2 bits   │ Trailing zeros │
 │  Origin/ │ Hilbert Curve │ resolution │                │
-│ Quintant │               │   marker   │                │
+│ Quintant │               │    tag     │                │
 └────────────────────────────────────────────────────────┘
   63 - 58       57 - ...        ..          ... - 0
 ```
@@ -40,7 +40,8 @@ The 64 bits are organized into several distinct sections:
    - Length = 2 × (resolution - 1) bits
    - Not present for resolution 0 and 1
 
-3. **Resolution Marker (2 bits)**: The right-most `01` or `10` bitpair
+3. **Resolution Tag (2 bits)**: The right-most `01` or `10` bitpair
+   - A tag is the bit pattern read first when processing an index: it says how to interpret the remaining bits
    - The position of these bits encodes the resolution level
    - For resolution 0: `10`, resolution 1: `01` (`1` shifts by one bit)
    - For resolution ≥ 2: shifts by 2 bits per resolution (accounts for Hilbert curve)
@@ -48,7 +49,7 @@ The 64 bits are organized into several distinct sections:
 4. **Trailing Zeros**: All remaining bits
    - Pads the integer to 64 bits
    - Allows efficient computation of parents (right-shift) and children (left-shift)
-   - Unambigiously determines which bits are the resolution marker bits
+   - Unambigiously determines which bits are the resolution tag bits
 
 ## Examples
 
@@ -58,7 +59,7 @@ Let's look at how different cells are encoded. Using London `-0.1276, 51.5074` a
 
 At resolution 0, there are only 12 cells covering the entire Earth. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> directly encode the origin (<span style={{color: '#0066FF', fontWeight: 'bold'}}>000100 = 4</span>).
 
-Notice how all bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> after the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.
+Notice how all bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> after the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution tag</span>.
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={0}/>
 
@@ -66,7 +67,7 @@ Notice how all bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zer
 
 At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment as (<span style={{color: '#0066FF', fontWeight: 'bold'}}>011000 = 24</span>). This can be decomposed into <span style={{color: '#0066FF', fontWeight: 'bold'}}>5 x 4 + 0 = 24</span>, thus like with resolution 0, we are in origin 4 and in the first segment (as the count starts with 0).
 
-The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution marker is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
+The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution tag is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={1}/>
 
@@ -76,7 +77,7 @@ From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolut
 
 They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit Hilbert value 11010011</span> encoding position along the space-filling curve.
 
-Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>, followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
+Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution tag</span>, followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={5}/>
 
@@ -92,7 +93,7 @@ import HierarchyDemo from 'website-examples/hierarchy/app';
 
 ## Special Case: Resolution 30
 
-At resolution 30 the Hilbert curve requires 2 × 29 = 58 bits, and combined with 6 quintant bits that's already 64 — leaving no room for the resolution marker.
+At resolution 30 the Hilbert curve requires 2 × 29 = 58 bits, and combined with 6 quintant bits that's already 64 — leaving no room for the resolution tag.
 
 The solution is a **virtual 66-bit layout**: when the final 1, 3 or 5 bits of the 64-bit index are set to a special value - before interpreting the index it must be first shifted right and then treated as a *66* bit integer, where the last two bits are `10` as usual.
 
@@ -129,7 +130,7 @@ As an encoded index it can be thought of as having:
 
 - No **origin** or **quintant**
 - **Resolution -1** one less than the Resolution 0 cells as it acts as their parent
-- A **Resolution Marker** shifted so far left that it disappears, so only the zero padding remains
+- A **Resolution Tag** shifted so far left that it disappears, so only the zero padding remains
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={-1}/>
 
@@ -142,6 +143,25 @@ A general A5 cell boundary is a set of points which enclose the region represent
 ### World Cell Location
 
 Conversely, for completeness `cellToLonLat(0n)` will return `[0, 0]`. While this choice is arbitrary, as the World Cell covers the whole world and thus has no center - it seems the most natural choice as it is the point at the center of many map projections.
+
+## Special Case: Compaction Marker
+
+A [compacted collection](../api-reference/compaction#collections-and-the-compaction-marker) holds cells at mixed resolutions but stands for a set of cells at one resolution, which compaction may leave no cell at. The collection records it in a **compaction marker**, appended after its cells: a 64-bit value that no cell can take, holding the resolution in a field of its own.
+
+```
+┌──────────┬──────────┬────────────┬──────────────┬─────────────┐
+│  111100  │    00    │ resolution │  0 ... 0     │   1000000   │
+│ (q = 60) │          │  (8 bits)  │  (41 bits)   │ marker tag  │
+└──────────┴──────────┴────────────┴──────────────┴─────────────┘
+  63 - 58    57 - 56     55 - 48      47 - 7          6 - 0
+```
+
+For example, the compaction marker for resolution 10 is `0xf00a000000000040`: quintant 60 (`f0`), resolution 10 (`0a`) and the marker tag (`40`).
+
+- The compaction marker is recognized by its marker tag `1000000`, which no cell's resolution tag can match: a cell ID ends in a `1` followed by an odd number of zeros, or in one of the resolution 30 patterns `...1`, `...100` and `...10000` — never in a `1` followed by 6 zeros (see [Why this works](#why-this-works))
+- Quintant 60 does not exist (only quintants 0–59 do) and is above every real one, so the compaction marker sorts after the cells
+- The bits marked `0` carry no meaning yet: they are always written as 0, and ignored when read, so a later version can use them
+- At resolution 30 the top 6 bits of a real cell may also read 60 (the quintant field is narrower there), so identify compaction markers by their whole value, with `isCompactionMarker`, not by their top bits
 
 ## Key Properties
 

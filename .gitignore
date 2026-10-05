@@ -42,3 +42,4 @@ data/
 debug-scripts/
 
 debug.sh
+benchmarks/.build/

@@ -4,12 +4,11 @@
 
 // Polygon fill by flooding the interior: cheaper than curve runs when the
 // interior is small, as the flood costs about boundary + interior cells while
-// the runs sort a band of boundary plus ring keys.
+// the runs sort a band of boundary plus ring slots.
 
 import type {Cartesian} from '../core/coordinate-systems';
 import {toCartesian} from '../core/coordinate-transforms';
 import {FIRST_HILBERT_RESOLUTION} from '../core/serialization';
-import {compact} from '../core/compact';
 import {getNumCells} from '../core/cell-info';
 import {tripleSpaceFloodFill} from '../traversal/lattice-flood-fill';
 import {forEachLatticeNeighbor, tripleCellCenter, tripleCellToId} from '../traversal/triple-cells';
@@ -39,14 +38,10 @@ export function prefersFlood(
 
 /**
  * Fill a polygon by flooding its interior, given its classified boundary and
- * the boundary cells as flat triples.
+ * the boundary cells as flat triples. Returns the cells inside, uncompacted and
+ * unsorted.
  */
-export function fillByFlood(
-  boundary: Boundary,
-  triples: number[],
-  resolution: number,
-  overlapping: boolean
-): BigUint64Array {
+export function fillByFlood(boundary: Boundary, triples: number[], resolution: number, overlapping: boolean): bigint[] {
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
   const out = boundaryOutput(boundary, overlapping);
@@ -73,5 +68,5 @@ export function fillByFlood(
     const {interiorCells} = tripleSpaceFloodFill(firewall, seeds, resolution);
     for (let i = 0; i < interiorCells.length; i++) out.push(interiorCells[i]);
   }
-  return compact(out);
+  return out;
 }

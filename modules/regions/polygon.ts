@@ -12,7 +12,7 @@ import {
   MAX_RESOLUTION,
   WORLD_CELL
 } from '../core/serialization';
-import {compact} from '../core/compact';
+import {slotRunsToCollection, toCollection} from '../collections/slot-runs';
 import {preparePolygon, pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {cellIdsToTriples} from '../traversal/triple-cells';
 import {boundaryOutput, classifyBoundary, sampleBoundary} from './polygon-boundary';
@@ -36,8 +36,8 @@ type PolygonToCellsOptions = {
 };
 
 /**
- * Find all cells within a polygon. The result is compacted — use `uncompact`
- * to expand to the input resolution.
+ * Find all cells within a polygon. The result is compacted, with a compaction marker
+ * cell recording the resolution — use `uncompact` to expand it.
  *
  * @param polygon - Either a single ring of [longitude, latitude] vertices, or
  *   GeoJSON-style rings `[outer, ...holes]` where cells inside a hole are
@@ -48,7 +48,7 @@ type PolygonToCellsOptions = {
  * @param options - `containment` selects `'center'` (default, cell center
  *   inside the polygon) or `'overlapping'` (any cell touching the polygon, for
  *   gap-free coverage).
- * @returns Sorted, compacted BigUint64Array of cell IDs
+ * @returns Compacted cells sorted in curve order, then the compaction marker
  */
 export function polygonToCells(
   polygon: LonLat[] | LonLat[][],
@@ -65,9 +65,9 @@ export function polygonToCells(
     return last > 0 && ring[0][0] === ring[last][0] && ring[0][1] === ring[last][1] ? ring.slice(0, -1) : ring;
   };
 
-  if (inputRings.length === 0) return new BigUint64Array(0);
+  if (inputRings.length === 0) return toCollection([], resolution);
   const outer = stripClosing(inputRings[0]);
-  if (outer.length < 3) return new BigUint64Array(0);
+  if (outer.length < 3) return toCollection([], resolution);
   const rings: LonLat[][] = [outer];
   for (let r = 1; r < inputRings.length; r++) {
     const hole = stripClosing(inputRings[r]);
@@ -110,14 +110,18 @@ export function polygonToCells(
     for (const cell of cellToChildren(WORLD_CELL, resolution)) {
       if (!boundary.set.has(cell) && pointInPreparedPolygon(toCartesian(cellToSpherical(cell)), prep)) out.push(cell);
     }
-    return compact(out);
+    return toCollection(out, resolution);
   }
 
   // A quintant holding no boundary cells is wholly inside or outside; it can
   // only be inside when the polygon's bounding cap holds a quintant's area (4π/60)
   const capHoldsQuintant = 2 * Math.PI * (1 - prep.cap.minDot) >= (4 * Math.PI) / 60;
   const triples = cellIdsToTriples(boundary.cells);
-  return prefersFlood(ringVecsList, boundary.cells.length, resolution, capHoldsQuintant)
-    ? fillByFlood(boundary, triples, resolution, overlapping)
-    : fillByCurveRuns(boundary, triples, resolution, overlapping, capHoldsQuintant);
+  if (prefersFlood(ringVecsList, boundary.cells.length, resolution, capHoldsQuintant)) {
+    return toCollection(fillByFlood(boundary, triples, resolution, overlapping), resolution);
+  }
+  return slotRunsToCollection(
+    fillByCurveRuns(boundary, triples, resolution, overlapping, capHoldsQuintant),
+    resolution
+  );
 }

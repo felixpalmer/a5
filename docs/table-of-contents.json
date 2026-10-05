@@ -40,7 +40,8 @@
       "api-reference/traversal",
       "api-reference/regions",
       "api-reference/cell-info",
-      "api-reference/compaction"
+      "api-reference/compaction",
+      "api-reference/set-operations"
     ]
   },
   {
