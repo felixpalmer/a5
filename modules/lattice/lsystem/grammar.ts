@@ -26,12 +26,6 @@ export const RULES: Record<string, string> = {
 /** Each motif's leaf draw symbol — the terminal it renders as at the base case. */
 export const DRAWS: Record<string, string> = {A: 'E', B: '+e-', C: '-e+', M: 'T', P: 'S', Q: 'D', R: '+++D---'};
 
-/** The authored (uppercase) motif keys. */
-export const MOTIFS = Object.keys(RULES);
-
-/** All motif keys, uppercase + their lowercase (reversed) counterparts. */
-export const ALL_MOTIFS = [...MOTIFS, ...MOTIFS.map(m => m.toLowerCase())];
-
 const swapCase = (c: string): string => (c >= 'a' && c <= 'z' ? c.toUpperCase() : c.toLowerCase());
 
 /**

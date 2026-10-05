@@ -188,3 +188,58 @@ function visitBoundary(
     visit(boundary[i], boundary[i + 1], boundary[i + 2], boundary[i + 3], boundary[i + 4]);
   }
 }
+
+// The cell hierarchy in triple space. A cell's 4 children are 2·triple + the
+// offsets for its flavor (each level of A5 refines the square grid R of
+// g o^r D into 4); only their curve order depends on the orientation.
+// prettier-ignore
+const CHILD_OFFSETS: readonly number[][] = [
+  [0, 0, 0, 0, 1, -1, 0, 1, 0, 0, 2, -1], // flavor 0
+  [-1, -1, 0, -1, 0, -1, -1, 0, 0, -1, 1, -1], // flavor 1
+  [-1, 1, 0, 0, 0, 0, 0, 1, -1, 0, 1, 0], // flavor 2
+  [-1, 0, -1, -1, 0, 0, -1, 1, -1, 0, 0, -1] // flavor 3
+];
+
+/** The 4 children of a cell given in triple space (`maxRow` is its own), appended to `out`. */
+export function tripleChildren(
+  originId: number,
+  quintant: number,
+  x: number,
+  y: number,
+  z: number,
+  maxRow: number,
+  out: number[]
+): void {
+  const d = CHILD_OFFSETS[tripleFlavor({x, y, z}, maxRow)];
+  for (let i = 0; i < 12; i += 3) out.push(originId, quintant, 2 * x + d[i], 2 * y + d[i + 1], 2 * z + d[i + 2]);
+}
+
+/**
+ * The parent of a cell given in triple space (`parentMaxRow` is the parent's),
+ * appended to `out`. The child's coordinates mod 2 fix child - 2·parent, but
+ * for two classes, where the two candidate parents differ in flavor — and so,
+ * sharing x and z, in apex colour (see tripleFlavor).
+ *
+ * Not used by the library: kept for completeness, as the inverse of
+ * `tripleChildren`, for traversals that coarsen in triple space.
+ */
+export function tripleParent(
+  originId: number,
+  quintant: number,
+  x: number,
+  y: number,
+  z: number,
+  parentMaxRow: number,
+  out: number[]
+): void {
+  const dx = -(x & 1);
+  const dz = -(z & 1);
+  let dy = y & 1;
+  // The offsets are even-sized steps, so >> 1 halves exactly (and keeps small integers)
+  const px = (x - dx) >> 1;
+  const pz = (z - dz) >> 1;
+  const colour = (parentMaxRow + 1 + px + pz) & 1;
+  if (dx === 0 && dy === 0 && dz === -1) dy = colour === 0 ? 2 : 0; // flavor 0 or 3 parent
+  if (dx === -1 && dy === 1 && dz === 0) dy = colour === 1 ? 1 : -1; // flavor 2 or 1 parent
+  out.push(originId, quintant, px, (y - dy) >> 1, pz);
+}
