@@ -21,10 +21,6 @@ export type Polar = [rho: number, gamma: Radians] & {__brand: 'Polar'};
  * 2D planar coordinate system defined by the eigenvectors of the lattice tiling
  */
 export type IJ = Vec2 & {__brand: 'IJ'};
-/**
- * 2D planar coordinate system formed by the transformation K -> I + J
- */
-export type KJ = Vec2 & {__brand: 'KJ'};
 
 // 3D (with radius fixed)
 /**
