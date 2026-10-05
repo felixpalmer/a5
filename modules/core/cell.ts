@@ -41,6 +41,28 @@ let _lastResult: {
   resolution: number;
 } | null = null;
 
+// The most recent point sphericalToCell projected onto a face, and where it landed
+let _lastPoint: Spherical | null = null;
+let _lastPointOrigin = -1;
+let _lastPointFace: Face | null = null;
+
+/**
+ * Where `spherical` lands on `originId`'s face, when the most recent
+ * `sphericalToCell` call already projected it there, else null.
+ */
+export function lastProjection(spherical: Spherical, originId: number): Face | null {
+  return spherical === _lastPoint && originId === _lastPointOrigin ? _lastPointFace : null;
+}
+
+/**
+ * The pentagon and origin of `cellId` when it is the cell the most recent
+ * `sphericalToCell` call returned, else null: lets dense-sample loops reuse the
+ * geometry that lookup already built.
+ */
+export function lastCellShape(cellId: bigint): {originId: OriginId; pentagon: PentagonShape} | null {
+  return _lastResult !== null && _lastResult.cellId === cellId ? _lastResult : null;
+}
+
 export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   return sphericalToCell(fromLonLat(lonLat), resolution);
 }
@@ -74,6 +96,9 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   // calls land in the same cell (common in dense-sample loops).
   if (_lastResult && _lastResult.resolution === resolution) {
     const projected = dodecahedron.forward(spherical, _lastResult.originId);
+    _lastPoint = spherical;
+    _lastPointOrigin = _lastResult.originId;
+    _lastPointFace = projected;
     if (_lastResult.pentagon.containsPoint(projected as Face) > 0) return _lastResult.cellId;
   }
 
@@ -85,6 +110,9 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   // one 7-candidate walk resolves it — then a single curve encode.
   const origin = findNearestOrigin(spherical);
   const dodecPoint = dodecahedron.forward(spherical, origin.id);
+  _lastPoint = spherical;
+  _lastPointOrigin = origin.id;
+  _lastPointFace = dodecPoint;
   const quintant = getQuintantPolar(toPolar(dodecPoint));
   const best = _lookupInQuintant(dodecPoint, origin, quintant, resolution);
   if (best !== null && best.margin > 0) return _acceptCandidate(best);

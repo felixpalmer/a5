@@ -10,14 +10,7 @@ import {cellArea} from '../core/cell-info';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
 import {walkFaces} from '../core/face-adjacency';
 import {haversine, origins} from '../core/origin';
-import {
-  cellIdsToTriples,
-  forEachTripleNeighbor,
-  tripleCellCenter,
-  tripleCellKey,
-  tripleCellToId,
-  tripleChildren
-} from './triple-cells';
+import {cellIdsToTriples, tripleCellCenter, tripleCellToId, tripleChildren, walkTripleCells} from './triple-cells';
 
 /** Safety factor applied to equal-area circle radius to get conservative circumradius estimate */
 const CELL_RADIUS_SAFETY_FACTOR = 2.0;
@@ -91,25 +84,10 @@ function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number)
   const hilbertRes = getResolution(startCell) - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
   const cells = cellIdsToTriples([startCell]);
-  const visited = new Set<number>([tripleCellKey(cells[0], cells[1], cells[2], cells[3], cells[4])]);
-  let frontier = cells.slice();
-  while (frontier.length > 0) {
-    const next: number[] = [];
-    const visit = (originId: number, q: number, x: number, y: number, z: number) => {
-      const key = tripleCellKey(originId, q, x, y, z);
-      if (visited.has(key)) return;
-      visited.add(key);
-      cells.push(originId, q, x, y, z);
-      if (haversine(center, tripleCellCenter(originId, q, x, y, z, hilbertRes, maxRow)) <= hExpanded) {
-        next.push(originId, q, x, y, z);
-      }
-    };
-    for (let c = 0; c < frontier.length; c += 5) {
-      const f = frontier;
-      forEachTripleNeighbor(f[c], f[c + 1], f[c + 2], f[c + 3], f[c + 4], maxRow, false, visit);
-    }
-    frontier = next;
-  }
+  walkTripleCells(cells.slice(), maxRow, (originId, q, x, y, z) => {
+    cells.push(originId, q, x, y, z);
+    return haversine(center, tripleCellCenter(originId, q, x, y, z, hilbertRes, maxRow)) <= hExpanded;
+  });
   return cells;
 }
 

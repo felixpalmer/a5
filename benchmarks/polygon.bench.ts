@@ -36,5 +36,12 @@ describe('polygonToCells', () => {
       },
       BENCH_OPTS
     );
+    bench(
+      `polygonToCells overlapping ${name} res ${resolution}`,
+      () => {
+        polygonToCells(polygon, resolution, {containment: 'overlapping'});
+      },
+      BENCH_OPTS
+    );
   }
 });

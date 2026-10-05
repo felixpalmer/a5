@@ -87,7 +87,11 @@ export function polygonToCells(
   }
 
   const prep = preparePolygon(ringVecsList);
-  const sampled = sampleBoundary(rings, ringVecsList, resolution);
+  // 'overlapping' output is the boundary itself, so it needs every cell the
+  // boundary touches; 'center' only needs a boundary the fill can't step past
+  // (the curve runs' ring covers any cell the sampling skips).
+  const overlapping = containment === 'overlapping';
+  const sampled = sampleBoundary(rings, resolution, overlapping);
 
   // Res 30 covers only quintants 0-41 (elsewhere A5 answers at res 29, see
   // serialize), so a polygon reaching past them is filled at res 29: mixing the
@@ -97,7 +101,6 @@ export function polygonToCells(
   }
 
   const boundary = classifyBoundary(sampled, ringVecsList, prep);
-  const overlapping = containment === 'overlapping';
 
   // Resolutions 0 and 1 have no lattice (a quintant is a single cell): every
   // cell off the boundary is in or out by its center, and there are at most 60

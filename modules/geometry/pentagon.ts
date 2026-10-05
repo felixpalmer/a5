@@ -10,9 +10,13 @@ import type {Face} from '../core/coordinate-systems';
 
 export type Pentagon = [Face, Face, Face, Face, Face];
 
+// How close (as a fraction of its length) to either end of the p3→p4 segment
+// a crossing counts as touching only that endpoint
+const VERTEX_MARGIN = 1e-9;
+
 /**
  * 2D segment-vs-segment intersection test.
- * Returns true iff the closed segments p1→p2 and p3→p4 share at least one point.
+ * Returns true iff the closed segment p1→p2 crosses p3→p4 away from p3 and p4.
  */
 function segments2dIntersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2): boolean {
   const d1x = p2[0] - p1[0],
@@ -20,13 +24,21 @@ function segments2dIntersect(p1: Vec2, p2: Vec2, p3: Vec2, p4: Vec2): boolean {
   const d2x = p4[0] - p3[0],
     d2y = p4[1] - p3[1];
   const denom = d1x * d2y - d1y * d2x;
-  if (Math.abs(denom) < 1e-12) return false;
+  // Parallel (or degenerate) when the sine of the angle between them is ~0.
+  // Relative to the segment lengths: an absolute threshold swallows every
+  // crossing once cells are small (res 20+, where |d1|·|d2| < 1e-12).
+  if (denom * denom <= 1e-24 * (d1x * d1x + d1y * d1y) * (d2x * d2x + d2y * d2y)) return false;
 
   const dx = p3[0] - p1[0],
     dy = p3[1] - p1[1];
   const t = (dx * d2y - dy * d2x) / denom;
   const u = (dx * d1y - dy * d1x) / denom;
-  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+  // A crossing within float noise of p3 or p4 (a pentagon vertex, as
+  // `intersectsSegment` passes them) only grazes the corner: no shared area,
+  // and which side of the vertex it falls on is a last-bit decision that
+  // differs between languages. A segment that truly enters through a corner
+  // also crosses another edge or ends inside, so it is still found.
+  return t >= 0 && t <= 1 && u > VERTEX_MARGIN && u < 1 - VERTEX_MARGIN;
 }
 
 export class PentagonShape {
@@ -162,6 +174,50 @@ export class PentagonShape {
     }
 
     return dMax;
+  }
+
+  /**
+   * The part of the segment a→b inside this (convex) pentagon, as parameters
+   * `start` ≤ `end` along the segment's line, with where along the edge it
+   * leaves through (`exitEdgeT`, 0..1 from the edge's first vertex); null when
+   * the line misses the pentagon. Uses the same edge sides as `containsPoint`.
+   */
+  clipSegment(a: Vec2, b: Vec2): {start: number; end: number; exitEdgeT: number} | null {
+    const N = this.vertices.length;
+    const sx = b[0] - a[0];
+    const sy = b[1] - a[1];
+    let start = -Infinity;
+    let end = Infinity;
+    let exitEdge = -1;
+    for (let i = 0; i < N; i++) {
+      const v1 = this.vertices[i];
+      const v2 = this.vertices[(i + 1) % N];
+      // Inside the edge where (v1 - v2) × (p - v1) >= 0, along p = a + t·(b - a)
+      const ex = v1[0] - v2[0];
+      const ey = v1[1] - v2[1];
+      const f = ex * (a[1] - v1[1]) - ey * (a[0] - v1[0]);
+      const g = ex * sy - ey * sx;
+      if (g === 0) {
+        if (f < 0) return null;
+      } else if (g > 0) {
+        start = Math.max(start, -f / g);
+      } else {
+        const t = -f / g;
+        if (t < end) {
+          end = t;
+          exitEdge = i;
+        }
+      }
+    }
+    if (start > end || exitEdge < 0) return null;
+    // Where the exit point falls along the exit edge, from its first vertex
+    const v1 = this.vertices[exitEdge];
+    const v2 = this.vertices[(exitEdge + 1) % N];
+    const px = a[0] + end * sx - v1[0];
+    const py = a[1] + end * sy - v1[1];
+    const ex = v2[0] - v1[0];
+    const ey = v2[1] - v1[1];
+    return {start, end, exitEdgeT: (px * ex + py * ey) / (ex * ex + ey * ey)};
   }
 
   /**

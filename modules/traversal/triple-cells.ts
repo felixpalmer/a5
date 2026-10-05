@@ -139,6 +139,38 @@ export function forEachTripleNeighbor(
 }
 
 /**
+ * Breadth-first walk from `seeds` (flat triples) through neighbors (edge and
+ * vertex, across quintant edges too): each cell reached is passed to `expand`
+ * once, and the walk continues from those it returns true for. The seeds count
+ * as reached but are not passed to `expand`.
+ */
+export function walkTripleCells(
+  seeds: number[],
+  maxRow: number,
+  expand: (originId: number, quintant: number, x: number, y: number, z: number) => boolean
+): void {
+  const visited = new Set<number>();
+  for (let c = 0; c < seeds.length; c += 5) {
+    visited.add(tripleCellKey(seeds[c], seeds[c + 1], seeds[c + 2], seeds[c + 3], seeds[c + 4]));
+  }
+  let frontier = seeds;
+  while (frontier.length > 0) {
+    const next: number[] = [];
+    const visit = (originId: number, quintant: number, x: number, y: number, z: number) => {
+      const key = tripleCellKey(originId, quintant, x, y, z);
+      if (visited.has(key)) return;
+      visited.add(key);
+      if (expand(originId, quintant, x, y, z)) next.push(originId, quintant, x, y, z);
+    };
+    for (let c = 0; c < frontier.length; c += 5) {
+      const f = frontier;
+      forEachTripleNeighbor(f[c], f[c + 1], f[c + 2], f[c + 3], f[c + 4], maxRow, false, visit);
+    }
+    frontier = next;
+  }
+}
+
+/**
  * Visit every lattice neighbor of a cell given in triple space: the 3
  * parity-valid single-axis moves within its quintant (the connectivity
  * `tripleSpaceFloodFill` floods by), and, for a cell on a quintant edge, its
