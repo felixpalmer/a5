@@ -71,19 +71,6 @@ export function tripleCellToId(
   return serialize({origin: origins[originId], segment: QUINTANT_SEGMENT[q], S: s, resolution});
 }
 
-/** Encode cells given in triple space (all at one resolution), appending their IDs to `out`. */
-export function tripleCellsToIds(
-  cells: number[],
-  hilbertRes: number,
-  resolution: number,
-  out: bigint[] = []
-): bigint[] {
-  for (let c = 0; c < cells.length; c += 5) {
-    out.push(tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], hilbertRes, resolution));
-  }
-  return out;
-}
-
 /**
  * Decode cell IDs (each at resolution 1 or above) into triple space, appending
  * them to `out` as flat (originId, quintant, x, y, z).

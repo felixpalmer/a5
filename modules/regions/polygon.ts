@@ -6,6 +6,7 @@ import type {LonLat, Cartesian} from '../core/coordinate-systems';
 import {lonLatToCell, sphericalToCell, cellToSpherical} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical} from '../core/coordinate-transforms';
 import {
+  cellToParent,
   cellToChildren,
   getResolution,
   deserialize,
@@ -26,9 +27,7 @@ import {
   forEachLatticeNeighbor,
   tripleCellCenter,
   tripleCellKey,
-  tripleCellsToIds,
-  tripleChildren,
-  tripleParent
+  tripleCellToId
 } from '../traversal/triple-cells';
 
 /**
@@ -169,78 +168,97 @@ function expandShell(boundary: number[], maxRow: number): number[] {
  * resumes fine BFS to fill gaps near the boundary. The coarse phase is skipped
  * when the polygon is too small to amortize its setup overhead.
  *
- * All in triple space (cells as flat (originId, quintant, x, y, z)), moving
- * between resolutions with `tripleParent` / `tripleChildren`; only the cells
- * emitted are encoded.
+ * The seeds, boundary and exterior shell come in triple space (cells as flat
+ * (originId, quintant, x, y, z)); the boundary also as cell IDs.
  */
-function floodInterior(seeds: number[], boundary: number[], exteriorShell: number[], resolution: number): bigint[] {
+function floodInterior(
+  seeds: number[],
+  boundaryCells: bigint[],
+  boundary: number[],
+  exteriorShell: number[],
+  resolution: number
+): bigint[] {
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const seedIds: bigint[] = [];
+  for (let c = 0; c < seeds.length; c += 5) {
+    seedIds.push(
+      tripleCellToId(seeds[c], seeds[c + 1], seeds[c + 2], seeds[c + 3], seeds[c + 4], hilbertRes, resolution)
+    );
+  }
   const firewall = boundary.concat(exteriorShell);
 
   // Isoperimetric bound: B² / (4π) is the max interior for B boundary cells.
-  const boundarySize = boundary.length / 5;
-  const maxInterior = (boundarySize * boundarySize) / (4 * Math.PI);
+  const maxInterior = (boundaryCells.length * boundaryCells.length) / (4 * Math.PI);
   // res 30 has a different encoding the parent-emit optimization can't use.
   const useCoarsePhase = resolution > FIRST_HILBERT_RESOLUTION && resolution < MAX_RESOLUTION && maxInterior > 1000;
 
   if (!useCoarsePhase) {
-    const {interior} = tripleSpaceFloodFill(firewall, seeds, resolution);
-    return tripleCellsToIds(seeds.concat(interior), hilbertRes, resolution);
+    const result = tripleSpaceFloodFill(firewall, seeds, resolution);
+    return [...seedIds, ...result.interiorCells];
   }
 
-  const parentMaxRow = (1 << (hilbertRes - 1)) - 1;
-  const keyOf = (cells: number[], c: number) =>
-    tripleCellKey(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4]);
-  const parents = (cells: number[]): number[] => {
-    const out: number[] = [];
-    for (let c = 0; c < cells.length; c += 5) {
-      tripleParent(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], parentMaxRow, out);
-    }
-    return out;
-  };
-  const coarseFirewall = parents(firewall.concat(seeds));
+  const parentRes = resolution - 1;
+  const coarseFirewall = new Set<bigint>();
+  for (const cell of boundaryCells) coarseFirewall.add(cellToParent(cell, parentRes));
+  for (let c = 0; c < exteriorShell.length; c += 5) {
+    const e = exteriorShell;
+    coarseFirewall.add(
+      cellToParent(tripleCellToId(e[c], e[c + 1], e[c + 2], e[c + 3], e[c + 4], hilbertRes, resolution), parentRes)
+    );
+  }
+  for (const cell of seedIds) coarseFirewall.add(cellToParent(cell, parentRes));
 
   // Phase 1: short fine BFS to move the frontier off the boundary.
   const phase1 = tripleSpaceFloodFill(firewall, seeds, resolution, 3);
 
-  // Phase 2: coarse BFS through the bulk interior, seeded by the parents of the
-  // phase 1 frontier that aren't firewall parents.
-  const seen = new Set<number>();
-  for (let c = 0; c < coarseFirewall.length; c += 5) seen.add(keyOf(coarseFirewall, c));
-  const frontierParents = parents(phase1.frontier);
-  const coarseSeeds: number[] = [];
-  for (let c = 0; c < frontierParents.length; c += 5) {
-    const key = keyOf(frontierParents, c);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    for (let i = 0; i < 5; i++) coarseSeeds.push(frontierParents[c + i]);
-  }
-  let coarseInterior: number[] = [];
+  // Phase 2: coarse BFS through the bulk interior.
+  let coarseInteriorSet: Set<bigint> | null = null;
   const phase3Delta: number[] = [];
-  if (coarseSeeds.length > 0) {
-    coarseInterior = coarseSeeds.concat(tripleSpaceFloodFill(coarseFirewall, coarseSeeds, resolution - 1).interior);
-    // Children become firewall for phase 3; the coarse parent represents
-    // them in the output, so we don't emit them individually.
-    for (let c = 0; c < coarseInterior.length; c += 5) {
-      const p = coarseInterior;
-      tripleChildren(p[c], p[c + 1], p[c + 2], p[c + 3], p[c + 4], parentMaxRow, phase3Delta);
+  const coarseInteriorCells: bigint[] = [];
+  if (phase1.frontierCellIds.length > 0) {
+    const coarseSeeds = new Set<bigint>();
+    for (const cell of phase1.frontierCellIds) {
+      const parent = cellToParent(cell, parentRes);
+      if (!coarseFirewall.has(parent)) coarseSeeds.add(parent);
     }
+
+    if (coarseSeeds.size > 0) {
+      const coarseVisited = new Set(coarseFirewall);
+      for (const seed of coarseSeeds) coarseVisited.add(seed);
+      const coarseResult = tripleSpaceFloodFill(
+        cellIdsToTriples(coarseVisited),
+        cellIdsToTriples(coarseSeeds),
+        parentRes
+      );
+      const coarseInterior = [...coarseSeeds, ...coarseResult.interiorCells];
+      coarseInteriorSet = new Set(coarseInterior);
+      coarseInteriorCells.push(...coarseInterior);
+
+      // Children become firewall for phase 3; the coarse parent represents
+      // them in the output, so we don't emit them individually.
+      for (const coarseCell of coarseInterior) cellIdsToTriples(cellToChildren(coarseCell, resolution), phase3Delta);
+    }
+  }
+
+  // Emit fine cells only when not already covered by a coarse parent.
+  const interiorCells: bigint[] = [];
+  if (coarseInteriorSet === null) {
+    interiorCells.push(...seedIds, ...phase1.interiorCells);
+  } else {
+    for (const cell of seedIds) {
+      if (!coarseInteriorSet.has(cellToParent(cell, parentRes))) interiorCells.push(cell);
+    }
+    for (const cell of phase1.interiorCells) {
+      if (!coarseInteriorSet.has(cellToParent(cell, parentRes))) interiorCells.push(cell);
+    }
+    interiorCells.push(...coarseInteriorCells);
   }
 
   // Phase 3: resume fine BFS, reusing phase 1's state.
   const phase3 = tripleSpaceFloodFill({state: phase1.state, delta: phase3Delta}, phase1.frontier, resolution);
+  interiorCells.push(...phase3.interiorCells);
 
-  // Emit fine cells only when not already covered by a coarse parent.
-  const covered = new Set<number>();
-  for (let c = 0; c < coarseInterior.length; c += 5) covered.add(keyOf(coarseInterior, c));
-  const fine = seeds.concat(phase1.interior);
-  const fineParents = parents(fine);
-  const emitted: number[] = [];
-  for (let c = 0; c < fine.length; c += 5) {
-    if (!covered.has(keyOf(fineParents, c))) for (let i = 0; i < 5; i++) emitted.push(fine[c + i]);
-  }
-  const out = tripleCellsToIds(emitted.concat(phase3.interior), hilbertRes, resolution);
-  return tripleCellsToIds(coarseInterior, hilbertRes - 1, resolution - 1, out);
+  return interiorCells;
 }
 
 /**
@@ -410,7 +428,7 @@ export function polygonToCells(
   }
   if (seeds.length === 0) return compact([...boundaryOut, ...swallowed]);
 
-  const interiorCells = floodInterior(seeds, boundary, exteriorShell, resolution);
+  const interiorCells = floodInterior(seeds, boundaryCells, boundary, exteriorShell, resolution);
 
   return compact([...boundaryOut, ...interiorCells, ...swallowed]);
 }
