@@ -4,7 +4,7 @@ Functions for finding neighboring cells, collecting cells within a range, and tr
 
 Each A5 cell has exactly 5 edge neighbors, which can be obtained using the `gridDisk` function. If the vertex neighbors are required, `gridDiskVertex` can be used. For broader range queries `sphericalCap` provides all the cells within a great-circle radius. To trace cells along a great-circle path, use `lineStringToCells`.
 
-In order to save memory, the returned cells from `gridDisk`, `gridDiskVertex` and `sphericalCap` are [compacted](./compaction) into a collection: the cells, then a compaction marker recording their resolution. Collections can be combined with the [set operations](./set-operations).
+In order to save memory, the returned cells from `gridDisk`, `gridDiskVertex` and `sphericalCap` are [compacted](./compaction) into a collection: the cells, then a compaction marker recording their resolution. Collections can be combined with the [set operations](./collections).
 
 ### gridDisk
 

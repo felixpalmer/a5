@@ -17,7 +17,7 @@ The `containment` option controls which cells count as belonging to the polygon:
 
 The result is compacted into a [collection](compaction#collections-and-the-compaction-marker) — the cells, then a compaction marker recording the resolution — so use [`uncompact`](compaction#uncompact) to expand it to the input resolution. The compacted form is intended for storage, transfer and set operations: cell boundaries of different resolutions do not nest geometrically, so a mixed-resolution covering will show overlaps and gaps when rendered. Uncompact to a single resolution before drawing cells on a map.
 
-Multi-polygons are not supported directly — call `polygonToCells` per polygon and combine the results with [`union`](set-operations#union). Collections can also be intersected, subtracted and tested for containment without uncompacting, see [Set Operations](set-operations).
+Multi-polygons are not supported directly — call `polygonToCells` per polygon and combine the results with [`union`](collections#union). Collections can also be intersected, subtracted and tested for containment without uncompacting, see [Collections](collections).
 
 ```ts
 function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, options?: {

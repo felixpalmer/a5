@@ -6,16 +6,16 @@ For example, if you have all 4 children of a cell, you can represent them with j
 
 ### Collections and the compaction marker
 
-A compacted array holds cells at mixed resolutions, but it stands for a set of cells at **one** resolution: compacting 8 cells at resolution 4 may leave 2 cells at resolution 3, which still mean those 8 cells. To keep that resolution, every compacted array ends with a **compaction marker**: a value in quintant 60 (only 0–59 exist), which no cell can take, recording the resolution of the set — for example `0xf00a000000000040` for resolution 10. We call such an array a *collection*.
+A compacted array holds cells at mixed resolutions, but it stands for a set of cells at **one** resolution: compacting 8 cells at resolution 4 may leave 2 cells at resolution 3, which still mean those 8 cells. To keep that resolution, every compacted array ends with a **compaction marker**: a value in quintant 60 (only 0–59 exist), which no cell can take, recording the resolution of the set — for example `0xf00a000000000040` for resolution 10. We call such an array a *collection*, see [Collections](./collections) for the functions that combine, query and measure them.
 
 - `uncompact` reads the compaction marker, so it needs no resolution argument.
 - The array is still a plain `BigUint64Array` of 64-bit values, so a collection stores as a single list column in a database, Parquet or Arrow — the resolution travels with it.
 - `cellToBoundary` returns `[]` for the compaction marker, so rendering a collection draws only its cells.
 - An array without a compaction marker is a collection too: its resolution is that of its finest cell.
 
-Read collections only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`count`](./set-operations#count) and [`area`](./set-operations#area) measure a collection, [`contains`](./set-operations#contains) tests a cell, [`uncompact`](#uncompact) lists its cells at its resolution, and [`getCompactionResolution`](#getcompactionresolution) gives that resolution.
+Read collections only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`count`](./collections#count) and [`area`](./collections#area) measure a collection, [`contains`](./collections#contains) tests a cell, [`uncompact`](#uncompact) lists its cells at its resolution, and [`getCompactionResolution`](#getcompactionresolution) gives that resolution.
 
-`compact`, [`polygonToCells`](./regions#polygontocells), [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap) and the [set operations](./set-operations) all return collections. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
+`compact`, [`polygonToCells`](./regions#polygontocells), [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap) and the [set operations](./collections) all return collections. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
 See [Bit Tags](../technical/bit-tags#compaction-marker) for how the compaction marker is encoded.
 
@@ -173,5 +173,5 @@ const array = [...cells];
 
 - Use `BigUint64Array` as input for large datasets
 - Compact cells before storing or transmitting to reduce data size
-- Use the [set operations](./set-operations) to combine collections without uncompacting them
+- Use the [set operations](./collections) to combine collections without uncompacting them
 - Cache uncompacted results if you need to access them multiple times

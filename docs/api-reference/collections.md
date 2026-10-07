@@ -1,4 +1,4 @@
-# Set Operations
+# Collections
 
 Functions for combining and measuring [collections](./compaction#collections-and-the-compaction-marker) of cells, such as the output of `polygonToCells`, `sphericalCap` or `compact`.
 

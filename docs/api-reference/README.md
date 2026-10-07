@@ -36,12 +36,12 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [getCompactionResolution](./api-reference/compaction#getcompactionresolution)
 - [isCompactionMarker](./api-reference/compaction#iscompactionmarker)
 
-### Set Operations
+### Collections
 
-- [union](./api-reference/set-operations#union)
-- [intersect](./api-reference/set-operations#intersect)
-- [difference](./api-reference/set-operations#difference)
-- [contains](./api-reference/set-operations#contains)
-- [overlaps](./api-reference/set-operations#overlaps)
-- [count](./api-reference/set-operations#count)
-- [area](./api-reference/set-operations#area)
+- [union](./api-reference/collections#union)
+- [intersect](./api-reference/collections#intersect)
+- [difference](./api-reference/collections#difference)
+- [contains](./api-reference/collections#contains)
+- [overlaps](./api-reference/collections#overlaps)
+- [count](./api-reference/collections#count)
+- [area](./api-reference/collections#area)
