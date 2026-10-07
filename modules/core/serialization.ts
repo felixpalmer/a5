@@ -22,6 +22,8 @@ export const WORLD_CELL = 0n;
 //   ...100   → 3-bit quintant (32-39), 58-bit S
 //   ...10000 → 1-bit quintant (40-41), 58-bit S
 // Quintants 42-59 have no res-30 IDs.
+/** The number of quintants (in ID order) with resolution 30 IDs. */
+export const RES30_QUINTANTS = 42;
 
 /** The leaf slot of a res-30 ID: its quintant, then its 58-bit S (see Leaf slots below). */
 function res30ToSlot(index: bigint): bigint {
@@ -206,8 +208,8 @@ export function serialize(cell: A5Cell): bigint {
   }
 
   const quintant = 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5);
-  // Quintants 42+ have no res-30 IDs: fall back to res 29
-  if (resolution === MAX_RESOLUTION && quintant > 41) {
+  // Quintants past RES30_QUINTANTS have no res-30 IDs: fall back to res 29
+  if (resolution === MAX_RESOLUTION && quintant >= RES30_QUINTANTS) {
     return serialize({origin, segment, S: S >> 2n, resolution: MAX_RESOLUTION - 1});
   }
   return slotToCell((BigInt(quintant) << QUINTANT_SHIFT) + offset, resolution);

@@ -10,7 +10,7 @@ import type {Face, Spherical} from '../core/coordinate-systems';
 import type {OriginId} from '../core/utils';
 import type {Orientation, Triple} from '../lattice';
 import {sToTriple, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
-import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, QUINTANT_SHIFT} from '../core/serialization';
 import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
 import {getPentagonCenter} from '../core/tiling';
 import {DodecahedronProjection} from '../projections/dodecahedron';
@@ -41,11 +41,31 @@ export function tripleCellKey(originId: number, quintant: number, x: number, y: 
   );
 }
 
-// Segment and curve orientation of each of the 60 quintants, by origin.id * 5 +
-// quintant. Filled on first use: calling quintantToSegment at module load
-// leaves V8 type feedback that slows serialize everywhere (uncompact 2x).
-const QUINTANT_SEGMENT: number[] = [];
-const QUINTANT_ORIENTATION: Orientation[] = [];
+// Each of the 60 quintants, by triple quintant (origin.id * 5 + quintant): its
+// segment, curve orientation and slot prefix (its place in ID order, shifted
+// into the top bits of a slot); and the triple quintant in each place of ID
+// order. Filled on first use by `fillQuintantTables`: calling quintantToSegment
+// at module load leaves V8 type feedback that slows serialize everywhere
+// (uncompact 2x).
+export const QUINTANT_SEGMENT: number[] = [];
+export const QUINTANT_ORIENTATION: Orientation[] = [];
+export const QUINTANT_PREFIX: bigint[] = [];
+export const TRIPLE_QUINTANT_BY_ID_ORDER: number[] = [];
+
+/** Fill the quintant tables above, if not yet filled. */
+export function fillQuintantTables(): void {
+  if (QUINTANT_SEGMENT.length > 0) return;
+  for (const origin of origins) {
+    for (let quintant = 0; quintant < 5; quintant++) {
+      const {segment, orientation} = quintantToSegment(quintant, origin);
+      const idOrder = 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5);
+      QUINTANT_SEGMENT.push(segment);
+      QUINTANT_ORIENTATION.push(orientation);
+      QUINTANT_PREFIX.push(BigInt(idOrder) << QUINTANT_SHIFT);
+      TRIPLE_QUINTANT_BY_ID_ORDER[idOrder] = 5 * origin.id + quintant;
+    }
+  }
+}
 
 /** The cell ID of a cell given in triple space. */
 export function tripleCellToId(
@@ -57,15 +77,7 @@ export function tripleCellToId(
   hilbertRes: number,
   resolution: number
 ): bigint {
-  if (QUINTANT_SEGMENT.length === 0) {
-    for (const origin of origins) {
-      for (let q = 0; q < 5; q++) {
-        const {segment, orientation} = quintantToSegment(q, origin);
-        QUINTANT_SEGMENT.push(segment);
-        QUINTANT_ORIENTATION.push(orientation);
-      }
-    }
-  }
+  if (QUINTANT_SEGMENT.length === 0) fillQuintantTables();
   const q = originId * 5 + quintant;
   const s = tripleToS({x, y, z}, hilbertRes, QUINTANT_ORIENTATION[q])!;
   return serialize({origin: origins[originId], segment: QUINTANT_SEGMENT[q], S: s, resolution});
