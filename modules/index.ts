@@ -19,6 +19,7 @@ export {
   WORLD_CELL
 } from './core/serialization';
 export {getNumCells, getNumChildren, cellArea, cellEdgeLengthAvg} from './core/cell-info';
+export {cellToSubcell, cellToSupercell} from './regions/subcell';
 export {compact, uncompact} from './collections/compact';
 export {isCompactionMarker} from './core/compaction-marker';
 

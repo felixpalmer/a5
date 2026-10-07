@@ -132,6 +132,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/regions/fixtures/polygon.json"),
         (RS_ROOT, "tests/fixtures/regions/polygon.json"),
     ],
+    "tests/fixtures/regions/subcell.json": [
+        (PY_ROOT, "tests/regions/fixtures/subcell.json"),
+        (RS_ROOT, "tests/fixtures/regions/subcell.json"),
+    ],
 
     # Projection fixtures
     "tests/projections/fixtures/authalic.json": [

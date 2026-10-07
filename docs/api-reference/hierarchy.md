@@ -62,6 +62,54 @@ function cellToChildren(index: bigint, childResolution?: number): bigint[];
 
 - **(bigint[])** Array of child cell identifiers
 
+### Spatial hierarchy: subcells and supercells
+
+Where the parent/child relationship groups cells by index, subcells and supercells group them by location: a finer cell belongs to the coarser cell that contains its center. Every cell at one resolution is then the subcell of exactly one cell at each coarser resolution, so aggregating fine data by supercell attributes each value to the coarse cell it actually lies in. This costs more than `cellToParent` / `cellToChildren`, which are pure bit operations.
+
+### cellToSupercell
+
+Returns the cell at a coarser resolution that contains the center of an A5 cell: the spatial counterpart of `cellToParent`.
+
+```ts
+function cellToSupercell(index: bigint, resolution: number): bigint;
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `resolution` **(number)** Target resolution, at most the cell's own
+
+#### Return value
+
+- **(bigint)** The cell at `resolution` containing the center of `index`
+
+### cellToSubcell
+
+Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `cellToChildren`, and the inverse of `cellToSupercell`. Like the other functions returning a [covering](./coverings), the result is compacted, ending with a compaction marker recording the resolution.
+
+```ts
+function cellToSubcell(index: bigint, resolution: number): BigUint64Array;
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `resolution` **(number)** Target resolution, at least the cell's own
+
+#### Return value
+
+- **(BigUint64Array)** The compacted subcells, then the compaction marker — use `uncompact` to expand them. Resolution 30 covers only part of the world, so for a cell reaching past it the subcells are given at resolution 29.
+
+#### Example
+
+```ts
+import { cellToSubcell, cellToSupercell, lonLatToCell, uncompact } from 'a5-js';
+
+const cell = lonLatToCell([2.35, 48.85], 8);
+const subcells = uncompact(cellToSubcell(cell, 11));
+subcells.every(subcell => cellToSupercell(subcell, 8) === cell); // true
+```
+
 ### getRes0Cells
 
 Returns resolution 0 cells of the A5 system, which serve as a starting point for all higher-resolution subdivisions in the hierarchy.

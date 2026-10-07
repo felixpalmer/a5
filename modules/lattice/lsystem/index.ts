@@ -251,3 +251,71 @@ export function tripleToSLattice(triple: Triple, resolution: number, orientation
   const sAxiom = axiomTargetToS(A5, ab.a - tauSum, ab.b + tauSum, resolution, rec.axiom)[0];
   return rec.reverse ? N - 1n - sAxiom : sAxiom;
 }
+
+// ---------- stepwise descent: the cell hierarchy in curve order ----------
+// A walk down the hierarchy reads one digit per level, so rather than a full
+// O(resolution) descent per cell it carries each cell's descent state and
+// takes each child in O(1). The state below a cell is the one its children's
+// digits are read from: the motif, flip and turtle position after the cell's
+// own digits, the position in units of the children's level (one level down,
+// it doubles).
+
+// The parity (x + y + z) of each leaf cell by (motif, flip, digit): a cell's
+// position only translates its leaf by lattice vectors, which keep the parity.
+const LEAF_PARITY = new Uint8Array(A5.leafFlavor.length);
+for (let i = 0; i < LEAF_PARITY.length; i++) {
+  const t = abToTriple(A5.leafSum[2 * i], A5.leafSum[2 * i + 1]);
+  LEAF_PARITY[i] = t.x + t.y + t.z;
+}
+
+/** The descent state below a cell (see `curveChild`). */
+export interface CurveNode {
+  motif: number;
+  flip: number;
+  posA: number;
+  posB: number;
+}
+
+/** The descent state below the resolution-0 cell (the whole quintant). */
+export function curveRoot(orientation: Orientation): CurveNode {
+  return {motif: ORIENT[orientation].axiom, flip: 0, posA: 0, posB: 0};
+}
+
+/**
+ * The child with curve digit `digit` (0-3, the child's last digit of s) of the
+ * cell whose descent state is `node`: its cell at `resolution` (the child's),
+ * and the descent state below it. Agrees with `sToCell` on the child's s.
+ */
+export function curveChild(
+  node: CurveNode,
+  digit: number,
+  resolution: number,
+  orientation: Orientation
+): {cell: Cell; node: CurveNode} {
+  const {childToken, childFlip, childOffA, childOffB, leafSum, leafFlavor} = A5;
+  const rec = ORIENT[orientation];
+  // A reversed curve reads s as N - 1 - s: every digit complemented
+  const d = rec.reverse ? 3 - digit : digit;
+  const {motif, flip, posA, posB} = node;
+  const base = motif * 2 + flip;
+  // abToTriple with the parity known up front (see LEAF_PARITY): no search
+  const sumA = 3 * posA + leafSum[base * 8 + d * 2];
+  const sumB = 3 * posB + leafSum[base * 8 + d * 2 + 1];
+  const parity = LEAF_PARITY[base * 4 + d];
+  const x = ((sumB + 4) / 4 + parity) / 3;
+  const r = parity - x; // y + z
+  const yz = (2 * sumA + sumB - 12) / 12; // y - z
+  const shift = rec.isB ? POW2[resolution] : 0;
+  const triple = {x: (x - shift) | 0, y: ((r + yz) / 2 + shift) | 0, z: ((r - yz) / 2) | 0};
+  const ci = motif * 4 + d;
+  const sign = flip ? -1 : 1;
+  return {
+    cell: {triple, flavor: leafFlavor[base * 4 + d]},
+    node: {
+      motif: childToken[ci],
+      flip: flip ^ childFlip[ci],
+      posA: 2 * posA + childOffA[ci] * sign,
+      posB: 2 * posB + childOffB[ci] * sign
+    }
+  };
+}

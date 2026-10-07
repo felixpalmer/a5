@@ -31,6 +31,7 @@ require('./fixtures/utils/great-circle.cjs');
 
 // Region generators
 require('./fixtures/regions/polygon.cjs');
+require('./fixtures/regions/subcell.cjs');
 
 // Geometry generators
 require('./fixtures/geometry/spherical-polygon.cjs');

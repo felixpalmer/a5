@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import type {IJ} from 'a5/core/coordinate-systems';
 import type {Orientation, Triple} from 'a5/lattice';
-import {sToCell, sToTriple, tripleToSLattice} from 'a5/lattice/lsystem';
+import {curveChild, curveRoot, sToCell, sToTriple, tripleToSLattice} from 'a5/lattice/lsystem';
 import {roundToTriple} from 'a5/lattice/curve';
 import fixtures from '../fixtures/lattice/lsystem.json';
 
@@ -64,6 +64,36 @@ describe('lsystem pointToS (roundToTriple + tripleToSLattice)', () => {
     for (const f of fixtures.pointToS as PointToSFixture[]) {
       const s = tripleToSLattice(roundToTriple([f.i, f.j] as IJ, f.resolution), f.resolution, f.orientation);
       expect(Number(s), `s for (${f.i},${f.j}) res=${f.resolution} ori=${f.orientation}`).toBe(f.s);
+    }
+  });
+});
+
+describe('curveChild', () => {
+  const ORIENTATIONS: Orientation[] = ['uv', 'vu', 'uw', 'wu', 'vw', 'wv'];
+
+  it('should step down the hierarchy in agreement with sToCell', () => {
+    for (const orientation of ORIENTATIONS) {
+      // Every cell through resolution 3, then one deep path to resolution 30
+      const stack: [ReturnType<typeof curveRoot>, bigint, number][] = [[curveRoot(orientation), 0n, 0]];
+      while (stack.length > 0) {
+        const [node, s, resolution] = stack.pop()!;
+        if (resolution === 3) continue;
+        for (let digit = 0; digit < 4; digit++) {
+          const child = curveChild(node, digit, resolution + 1, orientation);
+          const childS = s * 4n + BigInt(digit);
+          expect(child.cell).toEqual(sToCell(childS, resolution + 1, orientation));
+          stack.push([child.node, childS, resolution + 1]);
+        }
+      }
+      let node = curveRoot(orientation);
+      let s = 0n;
+      for (let resolution = 1; resolution <= 30; resolution++) {
+        const digit = (resolution * 7 + orientation.charCodeAt(0)) % 4;
+        const child = curveChild(node, digit, resolution, orientation);
+        s = s * 4n + BigInt(digit);
+        expect(child.cell).toEqual(sToCell(s, resolution, orientation));
+        node = child.node;
+      }
     }
   });
 });
