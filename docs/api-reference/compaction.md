@@ -17,7 +17,7 @@ Read collections only through the A5 functions, which handle the compaction mark
 
 `compact`, [`polygonToCells`](./regions#polygontocells), [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap) and the [set operations](./set-operations) all return collections. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
-See [Index Encoding](../technical/index-encoding#special-case-compaction-marker) for how the compaction marker is encoded.
+See [Bit Tags](../technical/bit-tags#compaction-marker) for how the compaction marker is encoded.
 
 ### compact
 

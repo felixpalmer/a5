@@ -41,7 +41,7 @@ The 64 bits are organized into several distinct sections:
    - Not present for resolution 0 and 1
 
 3. **Resolution Tag (2 bits)**: The right-most `01` or `10` bitpair
-   - A tag is the bit pattern read first when processing an index: it says how to interpret the remaining bits
+   - A tag is the bit pattern read first when processing an index: it says how to interpret the remaining bits (see [Bit Tags](./bit-tags))
    - The position of these bits encodes the resolution level
    - For resolution 0: `10`, resolution 1: `01` (`1` shifts by one bit)
    - For resolution ≥ 2: shifts by 2 bits per resolution (accounts for Hilbert curve)
@@ -111,7 +111,7 @@ Examples:
 
 ### Why this works
 
-The trick above exploits the fact that the indexing scheme has some unused values, which can be used to represent the final resolution level. In the general case, an index value will have a `1` followed by an *odd* number of `0`s, e.g. `...1000`. Thus by choosing patterns that have an *even* number of `0`s, we can be sure to avoid collisions and effectively gain an extra two bits.
+The trick above exploits the fact that the indexing scheme has some unused values, which can be used to represent the final resolution level. In the general case, an index value will have a `1` followed by an *odd* number of `0`s, e.g. `...1000`. Thus by choosing patterns that have an *even* number of `0`s, we can be sure to avoid collisions and effectively gain an extra two bits. See [Bit Tags](./bit-tags) for how every tag is assigned.
 
 ### Quintants beyond 41
 
@@ -143,25 +143,6 @@ A general A5 cell boundary is a set of points which enclose the region represent
 ### World Cell Location
 
 Conversely, for completeness `cellToLonLat(0n)` will return `[0, 0]`. While this choice is arbitrary, as the World Cell covers the whole world and thus has no center - it seems the most natural choice as it is the point at the center of many map projections.
-
-## Special Case: Compaction Marker
-
-A [compacted collection](../api-reference/compaction#collections-and-the-compaction-marker) holds cells at mixed resolutions but stands for a set of cells at one resolution, which compaction may leave no cell at. The collection records it in a **compaction marker**, appended after its cells: a 64-bit value that no cell can take, holding the resolution in a field of its own.
-
-```
-┌──────────┬──────────┬────────────┬──────────────┬─────────────┐
-│  111100  │    00    │ resolution │  0 ... 0     │   1000000   │
-│ (q = 60) │          │  (8 bits)  │  (41 bits)   │ marker tag  │
-└──────────┴──────────┴────────────┴──────────────┴─────────────┘
-  63 - 58    57 - 56     55 - 48      47 - 7          6 - 0
-```
-
-For example, the compaction marker for resolution 10 is `0xf00a000000000040`: quintant 60 (`f0`), resolution 10 (`0a`) and the marker tag (`40`).
-
-- The compaction marker is recognized by its marker tag `1000000`, which no cell's resolution tag can match: a cell ID ends in a `1` followed by an odd number of zeros, or in one of the resolution 30 patterns `...1`, `...100` and `...10000` — never in a `1` followed by 6 zeros (see [Why this works](#why-this-works))
-- Quintant 60 does not exist (only quintants 0–59 do) and is above every real one, so the compaction marker sorts after the cells
-- The bits marked `0` carry no meaning yet: they are always written as 0, and ignored when read, so a later version can use them
-- At resolution 30 the top 6 bits of a real cell may also read 60 (the quintant field is narrower there), so identify compaction markers by their whole value, with `isCompactionMarker`, not by their top bits
 
 ## Key Properties
 
