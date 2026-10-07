@@ -1,14 +1,14 @@
 import React, {Component} from 'react';
 import {GITHUB_TREE} from '../constants/defaults';
-import App from 'website-examples/collections/app';
+import App from 'website-examples/coverings/app';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 
 import {makeExample} from '../components';
 
-class CollectionsDemo extends Component {
-  static title = 'Collections';
+class CoveringsDemo extends Component {
+  static title = 'Coverings';
 
-  static code = `${GITHUB_TREE}/examples/website/collections`;
+  static code = `${GITHUB_TREE}/examples/website/coverings`;
 
   static parameters = {};
 
@@ -16,9 +16,9 @@ class CollectionsDemo extends Component {
     return (
       <div>
         <p>
-          Toggle any selection of countries (each from <code>polygonToCells</code>, merged into one collection) and
-          place two spherical caps around European capitals with <code>sphericalCap</code>. Each is a compacted
-          collection; combine any two with <code>union</code>, <code>intersect</code> or <code>difference</code>.
+          Toggle any selection of countries (each from <code>polygonToCells</code>, merged into one covering) and
+          place two spherical caps around European capitals with <code>sphericalCap</code>. Each is a
+          covering; combine any two with <code>union</code>, <code>intersect</code> or <code>difference</code>.
         </p>
         <p>
           The set operations work directly on the compacted cells, which cover contiguous runs of the A5 curve, so
@@ -37,4 +37,4 @@ class CollectionsDemo extends Component {
   }
 }
 
-export default makeExample(CollectionsDemo);
+export default makeExample(CoveringsDemo);

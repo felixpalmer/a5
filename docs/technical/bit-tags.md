@@ -37,7 +37,7 @@ A5 has an aperture of 4, in other words the number of cell quadruples in general
 
 ## Compaction Marker
 
-A [compacted collection](../api-reference/compaction#collections-and-the-compaction-marker) represents a collection of cells at given resolution `R` by grouping them into parent cells at a coarser resolution. In order to correctly interpret thsuch a collection it is necessary to supply the resolution `R`, which has been effectively stripped by the compaction procedure. The *Compaction Marker* is a special 64bit value that encodes the resolution `R` for this purpose.
+A [covering](../api-reference/compaction#coverings-and-the-compaction-marker) represents a set of cells at given resolution `R` by grouping them into parent cells at a coarser resolution. In order to correctly interpret such a covering it is necessary to supply the resolution `R`, which has been effectively stripped by the compaction procedure. The *Compaction Marker* is a special 64bit value that encodes the resolution `R` for this purpose.
 
 The bit layout is as follows:
 

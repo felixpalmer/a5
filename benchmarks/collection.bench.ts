@@ -13,7 +13,7 @@ type CountryFixture = {name: string; polygon: [number, number][][]};
 const countries = (fixtures as any).country as CountryFixture[];
 const country = (name: string) => countries.find(c => c.name === name)!.polygon as LonLat[][];
 
-// Compacted collections at resolution 12: two neighboring countries and a cap overlapping both
+// Coverings at resolution 12: two neighboring countries and a cap overlapping both
 const france = polygonToCells(country('France'), 12);
 const uk = polygonToCells(country('United Kingdom'), 12);
 const capParis = sphericalCap(lonLatToCell([2.3522, 48.8566] as LonLat, 12), 400_000);

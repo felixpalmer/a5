@@ -12,7 +12,7 @@ import {
   MAX_RESOLUTION,
   WORLD_CELL
 } from '../core/serialization';
-import {slotRunsToCollection, toCollection} from '../collections/slot-runs';
+import {slotRunsToCovering, toCovering} from '../collections/slot-runs';
 import {preparePolygon, pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {cellIdsToTriples} from '../traversal/triple-cells';
 import {boundaryOutput, classifyBoundary, sampleBoundary} from './polygon-boundary';
@@ -65,9 +65,9 @@ export function polygonToCells(
     return last > 0 && ring[0][0] === ring[last][0] && ring[0][1] === ring[last][1] ? ring.slice(0, -1) : ring;
   };
 
-  if (inputRings.length === 0) return toCollection([], resolution);
+  if (inputRings.length === 0) return toCovering([], resolution);
   const outer = stripClosing(inputRings[0]);
-  if (outer.length < 3) return toCollection([], resolution);
+  if (outer.length < 3) return toCovering([], resolution);
   const rings: LonLat[][] = [outer];
   for (let r = 1; r < inputRings.length; r++) {
     const hole = stripClosing(inputRings[r]);
@@ -110,7 +110,7 @@ export function polygonToCells(
     for (const cell of cellToChildren(WORLD_CELL, resolution)) {
       if (!boundary.set.has(cell) && pointInPreparedPolygon(toCartesian(cellToSpherical(cell)), prep)) out.push(cell);
     }
-    return toCollection(out, resolution);
+    return toCovering(out, resolution);
   }
 
   // A quintant holding no boundary cells is wholly inside or outside; it can
@@ -118,9 +118,9 @@ export function polygonToCells(
   const capHoldsQuintant = 2 * Math.PI * (1 - prep.cap.minDot) >= (4 * Math.PI) / 60;
   const triples = cellIdsToTriples(boundary.cells);
   if (prefersFlood(ringVecsList, boundary.cells.length, resolution, capHoldsQuintant)) {
-    return toCollection(fillByFlood(boundary, triples, resolution, overlapping), resolution);
+    return toCovering(fillByFlood(boundary, triples, resolution, overlapping), resolution);
   }
-  return slotRunsToCollection(
+  return slotRunsToCovering(
     fillByCurveRuns(boundary, triples, resolution, overlapping, capHoldsQuintant),
     resolution
   );

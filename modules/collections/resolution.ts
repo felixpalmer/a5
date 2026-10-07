@@ -8,14 +8,14 @@ import type {Cells} from './types';
 
 /**
  * The resolution of a set of cells: the resolution of its compaction marker, or of
- * its finest cell when it has none. A compacted collection stands for all its
+ * its finest cell when it has none. A covering stands for all its
  * cells at this resolution. Returns -1 for an empty set (or the world cell).
  *
  * @param cells - Cells, as returned by `compact`, `polygonToCells` etc.
  * @returns Resolution (-1 to 30)
  */
-export function getCompactionResolution(cells: Cells): number {
-  // A collection ends in its compaction marker, which records the resolution
+export function coveringResolution(cells: Cells): number {
+  // A covering ends in its compaction marker, which records the resolution
   const last = cells.length > 0 ? cells[cells.length - 1] : undefined;
   if (last !== undefined && isCompactionMarker(last)) return compactionMarkerResolution(last);
 

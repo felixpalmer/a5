@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {compactCells, toCollection} from '../collections/slot-runs';
+import {compactCells, toCovering} from '../collections/slot-runs';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {origins} from '../core/origin';
 import {walkFaces} from '../core/face-adjacency';
@@ -53,11 +53,11 @@ function pushCellIds(out: bigint[], cells: number[], hilbertRes: number, resolut
  */
 function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array {
   const {origin, resolution} = deserialize(cellId);
-  if (k === 0) return toCollection([cellId], resolution);
+  if (k === 0) return toCovering([cellId], resolution);
   if (resolution === 0) {
     // The cells are the 12 dodecahedron faces
     const faces = walkFaces([origin.id], () => true, k);
-    return toCollection(
+    return toCovering(
       faces.map(face => serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0})),
       0
     );
@@ -101,7 +101,7 @@ function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array
   pushCellIds(interior, prevFrontier.cells, hilbertRes, resolution);
   pushCellIds(interior, frontier.cells, hilbertRes, resolution);
 
-  return toCollection(interior, resolution);
+  return toCovering(interior, resolution);
 }
 
 /**

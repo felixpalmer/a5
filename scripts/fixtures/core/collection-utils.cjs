@@ -1,4 +1,4 @@
-// Spec-level helpers for compaction / collection fixtures. These re-derive the
+// Spec-level helpers for compaction / covering fixtures. These re-derive the
 // encoding from the definitions rather than calling the library's internals,
 // so fixtures cross-check the implementation.
 
@@ -27,7 +27,7 @@ function firstSlot(cell) {
   return (quintant << 58n) | (BigInt(S) << BigInt(60 - 2 * resolution));
 }
 
-/** Sort cells in curve order (the canonical order of a compacted collection). */
+/** Sort cells in curve order (the canonical order of a covering). */
 const sortByCurve = cells =>
   [...cells].sort((a, b) => {
     const slotA = firstSlot(a);
@@ -35,8 +35,8 @@ const sortByCurve = cells =>
     return slotA < slotB ? -1 : slotA > slotB ? 1 : 0;
   });
 
-/** The canonical collection for already-compacted cells at resolution r: curve order, then the compaction marker. */
-const collection = (cells, resolution) => [...sortByCurve(cells), compactionMarker(resolution)];
+/** The canonical covering for already-compacted cells at resolution r: curve order, then the compaction marker. */
+const covering = (cells, resolution) => [...sortByCurve(cells), compactionMarker(resolution)];
 
 /** Brute force: the flat set of res-r cells a set of cells stands for. */
 function flatAt(cells, resolution) {
@@ -73,7 +73,7 @@ module.exports = {
   compactionMarkerResolution,
   firstSlot,
   sortByCurve,
-  collection,
+  covering,
   flatAt,
   sameSet,
   res30Cell,

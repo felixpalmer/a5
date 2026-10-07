@@ -16,7 +16,7 @@ class CountryPolygonsDemo extends Component {
       <div>
         <p>
           A5 cells covering the world, colored by country. Generated from vector data using{' '}
-          <a href="/docs/api-reference/regions#polygontocells">
+          <a href="/docs/api-reference/indexing#polygontocells">
             <code>polygonToCells</code>
           </a>
           .

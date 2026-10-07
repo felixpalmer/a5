@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-// The compaction marker: the value a compacted collection carries as its last
+// The compaction marker: the value a covering carries as its last
 // element, recording the resolution its cells stand for. It is a value no cell
 // can take: quintant 60 (only 0-59 exist), the resolution in bits 55-48, and the
 // marker tag 1000000 in bits 6-0. Cell IDs end in a 1 followed by an odd number
@@ -32,7 +32,7 @@ export function compactionMarkerResolution(value: bigint): number {
 }
 
 /**
- * Check whether a value is a compaction marker: the value a compacted collection
+ * Check whether a value is a compaction marker: the value a covering
  * carries, as its last element, to record its resolution. It is not a cell.
  */
 export function isCompactionMarker(value: bigint): boolean {

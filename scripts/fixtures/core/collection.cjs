@@ -18,7 +18,7 @@ const {
   count,
   area,
   cellArea,
-  getCompactionResolution,
+  coveringResolution,
   WORLD_CELL,
   u64ToHex
 } = require('../../a5-test.cjs');
@@ -37,7 +37,7 @@ const fail = message => {
   throw new Error(`collection fixtures: ${message}`);
 };
 
-// Small regions, so brute-force checks stay cheap
+// Small coverings, so brute-force checks stay cheap
 const rect = (lon0, lat0, lon1, lat1) => [
   [lon0, lat0],
   [lon1, lat0],
@@ -85,8 +85,8 @@ const pairs = [
 const setOperations = pairs.map(([nameA, nameB]) => {
   const a = sets[nameA];
   const b = sets[nameB];
-  const resolution = getCompactionResolution(a);
-  if (getCompactionResolution(b) !== resolution) fail(`${nameA} ${nameB} resolutions differ`);
+  const resolution = coveringResolution(a);
+  if (coveringResolution(b) !== resolution) fail(`${nameA} ${nameB} resolutions differ`);
   const A = flatAt(a, resolution);
   const B = flatAt(b, resolution);
   const expected = {
@@ -121,7 +121,7 @@ const setOperations = pairs.map(([nameA, nameB]) => {
 
 // Per-set measures: resolution, count, area
 const measures = Object.entries(sets).map(([name, cells]) => {
-  const resolution = getCompactionResolution(cells);
+  const resolution = coveringResolution(cells);
   const flat = flatAt(cells, resolution);
   if (count(cells) !== BigInt(flat.size)) fail(`count ${name}`);
   const expectedArea = flat.size * cellArea(resolution);
@@ -144,7 +144,7 @@ const measures = Object.entries(sets).map(([name, cells]) => {
 // contains: members and nearby cells, all at the set's resolution
 const containsCases = ['rectLondon7', 'capParis7', 'res1Some', 'res30a', 'flatNoMarker'].map(name => {
   const cells = sets[name];
-  const resolution = getCompactionResolution(cells);
+  const resolution = coveringResolution(cells);
   const flat = flatAt(cells, resolution);
   const members = [...flat].slice(0, 12);
   const probes = new Set(members);
@@ -170,7 +170,7 @@ const containsCases = ['rectLondon7', 'capParis7', 'res1Some', 'res30a', 'flatNo
 // contains refuses cells at another resolution (A5 cells don't nest across resolutions)
 const mismatchedProbes = ['rectLondon7', 'res30a'].map(name => {
   const cells = sets[name];
-  const resolution = getCompactionResolution(cells);
+  const resolution = coveringResolution(cells);
   const member = [...flatAt(cells, resolution)][0];
   const probes = [cellToParent(member, resolution - 1), cellToParent(member, resolution - 3)];
   if (resolution < 30) probes.push(cellToChildren(member, resolution + 1)[1]);

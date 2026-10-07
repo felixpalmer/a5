@@ -2,7 +2,7 @@ import {describe, it, expect} from 'vitest';
 import {area, count} from 'a5/collections/measures';
 import {compact, uncompact} from 'a5/collections/compact';
 import {contains, difference, intersect, overlaps, union} from 'a5/collections/set-operations';
-import {getCompactionResolution} from 'a5/collections/resolution';
+import {coveringResolution} from 'a5/collections/resolution';
 import {isCompactionMarker} from 'a5/core/compaction-marker';
 import {cellToBoundary} from 'a5/core/cell';
 import {hexToU64} from 'a5/core/hex';
@@ -20,7 +20,7 @@ describe('set operations', () => {
       expect(Array.from(difference(a, b))).toEqual(toCells(f.difference));
       expect(overlaps(a, b)).toBe(f.overlaps);
       expect(overlaps(b, a)).toBe(f.overlaps);
-      expect(getCompactionResolution(union(a, b))).toBe(f.resolution);
+      expect(coveringResolution(union(a, b))).toBe(f.resolution);
     });
   }
 
@@ -58,7 +58,7 @@ describe('measures', () => {
   for (const f of fixtures.measures) {
     it(`should match fixtures for ${f.name}`, () => {
       const cells = toCells(f.cells);
-      expect(getCompactionResolution(cells)).toBe(f.resolution);
+      expect(coveringResolution(cells)).toBe(f.resolution);
       expect(count(cells)).toBe(BigInt(f.count));
       expect(Math.abs(area(cells) - f.area)).toBeLessThanOrEqual(1e-10 * f.area);
     });
@@ -109,7 +109,7 @@ describe('isCompactionMarker', () => {
     for (const f of fixtures.isCompactionMarker) {
       if (!f.expected) continue;
       const value = hexToU64(f.value);
-      expect(getCompactionResolution([value])).toBe(f.resolution);
+      expect(coveringResolution([value])).toBe(f.resolution);
     }
   });
 

@@ -5,7 +5,7 @@
 import {cellArea, getNumChildren} from '../core/cell-info';
 import {isCompactionMarker} from '../core/compaction-marker';
 import {checkedResolution} from '../core/serialization';
-import {getCompactionResolution} from './resolution';
+import {coveringResolution} from './resolution';
 import type {Cells} from './types';
 
 /**
@@ -19,7 +19,7 @@ import type {Cells} from './types';
  * @throws If a value is neither an A5 cell ID nor a compaction marker
  */
 export function count(cells: Cells): bigint {
-  const resolution = BigInt(getCompactionResolution(cells));
+  const resolution = BigInt(coveringResolution(cells));
   // Children per cell, by cell resolution + 1 (the world cell is -1)
   const children: bigint[] = [];
   let total = 0n;

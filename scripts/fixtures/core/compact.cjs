@@ -15,7 +15,7 @@ const {
 const {
   compactionMarker,
   compactionMarkerResolution,
-  collection,
+  covering,
   sortByCurve,
   flatAt,
   sameSet,
@@ -35,7 +35,7 @@ function generateCompactFixtures() {
     description:
       'Four sibling cells at resolution 3 compact to parent at resolution 2, compaction marker records res 3',
     input: hex(res3Children),
-    expectedOutput: hex(collection([res2Cell], 3))
+    expectedOutput: hex(covering([res2Cell], 3))
   });
 
   // Test case 2: Only 3 of 4 siblings -> no compaction
@@ -43,7 +43,7 @@ function generateCompactFixtures() {
     name: 'three_of_four_siblings',
     description: 'Three sibling cells cannot be compacted (missing one sibling)',
     input: hex(res3Children.slice(0, 3)),
-    expectedOutput: hex(collection(res3Children.slice(0, 3), 3))
+    expectedOutput: hex(covering(res3Children.slice(0, 3), 3))
   });
 
   // Test case 3: All 5 segments at resolution 1 -> compact to res 0
@@ -53,7 +53,7 @@ function generateCompactFixtures() {
     name: 'five_segments_res1',
     description: 'All 5 segments at resolution 1 compact to parent at resolution 0',
     input: hex(res1Children),
-    expectedOutput: hex(collection([res0Cell], 1))
+    expectedOutput: hex(covering([res0Cell], 1))
   });
 
   // Test case 4: All 12 resolution 0 cells -> compact to world cell
@@ -62,7 +62,7 @@ function generateCompactFixtures() {
     name: 'twelve_res0_cells',
     description: 'All 12 resolution 0 cells compact to world cell',
     input: hex(worldChildren),
-    expectedOutput: hex(collection([WORLD_CELL], 0))
+    expectedOutput: hex(covering([WORLD_CELL], 0))
   });
 
   // Test case 5: Mixed resolutions
@@ -72,7 +72,7 @@ function generateCompactFixtures() {
     name: 'mixed_resolutions',
     description: 'Cells at different resolutions with no sibling relationships, compaction marker records the finest',
     input: hex([res4Cell, res5Cell]),
-    expectedOutput: hex(collection([res4Cell, res5Cell], 5))
+    expectedOutput: hex(covering([res4Cell, res5Cell], 5))
   });
 
   // Test case 6: Nested compaction - 16 cells at res 4 -> 4 at res 3 -> 1 at res 2
@@ -82,7 +82,7 @@ function generateCompactFixtures() {
     name: 'nested_compaction_res4_to_res2',
     description: '16 cells at resolution 4 compact through res 3 to single cell at res 2',
     input: hex(res4Descendants),
-    expectedOutput: hex(collection([res2CellNested], 4))
+    expectedOutput: hex(covering([res2CellNested], 4))
   });
 
   // Test case 7: Empty array
@@ -99,7 +99,7 @@ function generateCompactFixtures() {
     name: 'single_cell',
     description: 'Single cell remains unchanged',
     input: hex([singleCell]),
-    expectedOutput: hex(collection([singleCell], 6))
+    expectedOutput: hex(covering([singleCell], 6))
   });
 
   // Test case 9: Duplicates
@@ -107,7 +107,7 @@ function generateCompactFixtures() {
     name: 'duplicate_cells',
     description: 'Duplicate cells are removed',
     input: hex([singleCell, singleCell, singleCell]),
-    expectedOutput: hex(collection([singleCell], 6))
+    expectedOutput: hex(covering([singleCell], 6))
   });
 
   // Test case 10: Partial compaction - some groups complete, some incomplete
@@ -119,7 +119,7 @@ function generateCompactFixtures() {
     name: 'partial_compaction',
     description: 'One complete sibling group compacts, one incomplete group does not',
     input: hex([...children1, ...children2]),
-    expectedOutput: hex(collection([parent1, ...children2], 3))
+    expectedOutput: hex(covering([parent1, ...children2], 3))
   });
 
   // Test case 11: Incomplete set of resolution 0 cells (only 10 of 12)
@@ -128,7 +128,7 @@ function generateCompactFixtures() {
     name: 'incomplete_res0_cells',
     description: 'Only 10 of 12 resolution 0 cells - should not compact to world cell',
     input: hex(incompleteRes0),
-    expectedOutput: hex(collection(incompleteRes0, 0))
+    expectedOutput: hex(covering(incompleteRes0, 0))
   });
 
   // Test case 12: Cross-origin compaction (cells from different origins that don't form sibling groups)
@@ -138,7 +138,7 @@ function generateCompactFixtures() {
     name: 'cross_origin_no_compact',
     description: 'Cells from different origins with same segment/S should not compact',
     input: hex([origin0Cell, origin1Cell]),
-    expectedOutput: hex(collection([origin0Cell, origin1Cell], 4))
+    expectedOutput: hex(covering([origin0Cell, origin1Cell], 4))
   });
 
   // Test case 13: The motivating case - 8 res-4 cells compact to 2 res-3 cells, and
@@ -148,7 +148,7 @@ function generateCompactFixtures() {
     name: 'eight_res4_to_two_res3',
     description: '8 res-4 cells compact to 2 res-3 cells; the compaction marker records res 4',
     input: hex(res3Pair.flatMap(c => cellToChildren(c, 4))),
-    expectedOutput: hex(collection(res3Pair, 4))
+    expectedOutput: hex(covering(res3Pair, 4))
   });
 
   // Test case 14: A cell and its descendants - the descendants are absorbed
@@ -157,22 +157,22 @@ function generateCompactFixtures() {
     name: 'ancestor_absorbs_descendants',
     description: 'Cells inside another input cell are absorbed by it',
     input: hex([cellToChildren(res2Cell, 4)[5], otherRes4, res2Cell, cellToChildren(res2Cell, 3)[0]]),
-    expectedOutput: hex(collection([res2Cell, otherRes4], 4))
+    expectedOutput: hex(covering([res2Cell, otherRes4], 4))
   });
 
-  // Test case 15: A compacted collection compacts to itself
+  // Test case 15: A covering compacts to itself
   const compacted = compact(res3Pair.flatMap(c => cellToChildren(c, 4)));
   fixtures.push({
     name: 'idempotent',
-    description: 'Compacting an already compacted collection (with its compaction marker) returns it unchanged',
+    description: 'Compacting a covering (with its compaction marker) returns it unchanged',
     input: hex(Array.from(compacted)),
-    expectedOutput: hex(collection(res3Pair, 4))
+    expectedOutput: hex(covering(res3Pair, 4))
   });
 
-  // Test case 16: A compaction marker alone is an empty collection at its resolution
+  // Test case 16: A compaction marker alone is an empty covering at its resolution
   fixtures.push({
     name: 'marker_only',
-    description: 'An empty collection keeps its resolution',
+    description: 'An empty covering keeps its resolution',
     input: hex([compactionMarker(7)]),
     expectedOutput: hex([compactionMarker(7)])
   });
@@ -187,7 +187,7 @@ function generateCompactFixtures() {
     name: 'res30_quintant_encodings',
     description: 'Res-30 cells from quintants 5, 35 and 41 come out in curve order; full sibling groups compact',
     input: hex([res30High, ...res30Siblings, res30Low]),
-    expectedOutput: hex(collection([res30Low, cellToParent(res30Mid, 29), res30High], 30))
+    expectedOutput: hex(covering([res30Low, cellToParent(res30Mid, 29), res30High], 30))
   });
 
   // Test case 18: Res 0 and res 1 cells, whose IDs don't sort like the curve
@@ -197,7 +197,7 @@ function generateCompactFixtures() {
     name: 'res0_res1_curve_order',
     description: 'A res-0 cell (origin 1, quintants 5-9) sorts after a res-1 cell in quintant 3',
     input: hex([res0Origin1, res1Quintant3]),
-    expectedOutput: hex(collection([res1Quintant3, res0Origin1], 1))
+    expectedOutput: hex(covering([res1Quintant3, res0Origin1], 1))
   });
 
   // Every expected output must stand for exactly the input's cells
@@ -234,43 +234,43 @@ function generateUncompactFixtures() {
 
   push(
     'expand_res2_to_res3',
-    'A res-2 cell in a res-3 collection expands to its 4 children',
-    collection([res2Cell], 3),
+    'A res-2 cell in a res-3 covering expands to its 4 children',
+    covering([res2Cell], 3),
     3,
     cellToChildren(res2Cell, 3)
   );
   push(
     'expand_res2_to_res4',
-    'A res-2 cell in a res-4 collection expands to its 16 descendants',
-    collection([res2Cell], 4),
+    'A res-2 cell in a res-4 covering expands to its 16 descendants',
+    covering([res2Cell], 4),
     4,
     cellToChildren(res2Cell, 4)
   );
   push(
     'expand_res0_to_res1',
-    'A res-0 cell in a res-1 collection expands to its 5 quintants',
-    collection([res0Cell], 1),
+    'A res-0 cell in a res-1 covering expands to its 5 quintants',
+    covering([res0Cell], 1),
     1,
     cellToChildren(res0Cell, 1)
   );
   push(
     'expand_world_to_res0',
-    'The world cell in a res-0 collection expands to the 12 res-0 cells',
-    collection([WORLD_CELL], 0),
+    'The world cell in a res-0 covering expands to the 12 res-0 cells',
+    covering([WORLD_CELL], 0),
     0,
     cellToChildren(WORLD_CELL, 0)
   );
   push(
     'mixed_input_to_res5',
-    'Cells at resolutions 3 and 4 in a res-5 collection both expand to resolution 5',
-    collection([res3Cell, res4Cell], 5),
+    'Cells at resolutions 3 and 4 in a res-5 covering both expand to resolution 5',
+    covering([res3Cell, res4Cell], 5),
     5,
     sortByCurve([...cellToChildren(res3Cell, 5), ...cellToChildren(res4Cell, 5)])
   );
   push(
     'two_res3_to_eight_res4',
     'The motivating case: 2 res-3 cells with a res-4 compaction marker stand for 8 res-4 cells',
-    collection(res3Pair, 4),
+    covering(res3Pair, 4),
     4,
     res3Pair.flatMap(c => cellToChildren(c, 4))
   );
@@ -288,9 +288,9 @@ function generateUncompactFixtures() {
     4,
     sortByCurve([...cellToChildren(res3Cell, 4), res4Cell])
   );
-  push('world_alone', 'The world cell alone is a collection at resolution -1', [WORLD_CELL], -1, [WORLD_CELL]);
+  push('world_alone', 'The world cell alone is a covering at resolution -1', [WORLD_CELL], -1, [WORLD_CELL]);
   push('empty_array', 'Empty input returns empty output', [], -1, []);
-  push('marker_only', 'An empty collection expands to no cells', [compactionMarker(5)], 5, []);
+  push('marker_only', 'An empty covering expands to no cells', [compactionMarker(5)], 5, []);
 
   return fixtures;
 }

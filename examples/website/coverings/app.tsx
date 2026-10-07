@@ -10,7 +10,7 @@ import {
   compact,
   count,
   difference,
-  getCompactionResolution,
+  coveringResolution,
   getResolution,
   intersect,
   isCompactionMarker,
@@ -228,28 +228,28 @@ function capOutline(center: [number, number], radiusKm: number): [number, number
   return path;
 }
 
-/** A capital's cell and the spherical cap around it, as a compacted collection */
+/** A capital's cell and the spherical cap around it, as a covering */
 function capCells(capitalIndex: number, radiusKm: number, resolution: number): BigUint64Array {
   const cell = lonLatToCell(CAPITALS[capitalIndex].position as LonLat, resolution);
   return sphericalCap(cell, radiusKm * 1000);
 }
 
-/** An empty collection at a resolution: no cells, just the compaction marker */
-function emptyCollection(resolution: number): BigUint64Array {
+/** An empty covering at a resolution: no cells, just the compaction marker */
+function emptyCovering(resolution: number): BigUint64Array {
   return polygonToCells([], resolution);
 }
 
 /**
- * Several collections merged into one. compact accepts collections (compaction marker
+ * Several coverings merged into one. compact accepts coverings (compaction marker
  * cells included), so a single pass merges them all
  */
-function merge(collections: BigUint64Array[]): BigUint64Array {
+function merge(coverings: BigUint64Array[]): BigUint64Array {
   const cells: bigint[] = [];
-  for (const collection of collections) for (const cell of collection) cells.push(cell);
+  for (const covering of coverings) for (const cell of covering) cells.push(cell);
   return compact(cells);
 }
 
-/** All parts of a country at a resolution, as one compacted collection */
+/** All parts of a country at a resolution, as one covering */
 function countryCells(polygons: Polygons, resolution: number): BigUint64Array {
   return merge(polygons.map(rings => polygonToCells(rings as LonLat[][], resolution)));
 }
@@ -298,7 +298,7 @@ const App: React.FC = () => {
   // Start from the first preset; any manual change to the query clears the preset
   const [presetIndex, setPresetIndex] = useState<number | null>(0);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(PRESETS[0].countries));
-  // Each country's collection, by `${country}:${resolution}`, so toggling a flag only merges
+  // Each country's covering, by `${country}:${resolution}`, so toggling a flag only merges
   const countryCache = useRef(new Map<string, BigUint64Array>());
   const [caps, setCaps] = useState(() => presetCaps(PRESETS[0]));
   // The expression (A op1 B) op2 C, where op2 may be 'none'
@@ -349,12 +349,12 @@ const App: React.FC = () => {
 
   const loaded = Object.keys(polygonsByCountry).length > 0;
 
-  // The three input collections, each compacted with a compaction marker recording its resolution
-  const countryCollection = useMemo(() => {
+  // The three input coverings, each compacted with a compaction marker recording its resolution
+  const countryCovering = useMemo(() => {
     // Set operations need both sides at one resolution, so no countries is an
-    // empty collection at this resolution
-    if (!loaded || selected.size === 0) return emptyCollection(settledResolution);
-    const collections: BigUint64Array[] = [];
+    // empty covering at this resolution
+    if (!loaded || selected.size === 0) return emptyCovering(settledResolution);
+    const coverings: BigUint64Array[] = [];
     for (const name of selected) {
       const key = `${name}:${settledResolution}`;
       let cells = countryCache.current.get(key);
@@ -362,9 +362,9 @@ const App: React.FC = () => {
         cells = countryCells(polygonsByCountry[name], settledResolution);
         countryCache.current.set(key, cells);
       }
-      collections.push(cells);
+      coverings.push(cells);
     }
-    return merge(collections);
+    return merge(coverings);
   }, [polygonsByCountry, loaded, selected, settledResolution]);
   const [cap1, cap2] = useMemo(
     () => settledCaps.map(cap => capCells(cap.capital, cap.radiusKm, settledResolution)),
@@ -373,7 +373,7 @@ const App: React.FC = () => {
 
   const capLabel = (i: number) => `${CAPITALS[caps[i].capital].capital} ${caps[i].radiusKm} km`;
   const operands: Record<Operand, {label: string; cells: BigUint64Array}> = {
-    country: {label: countriesLabel(selected), cells: countryCollection},
+    country: {label: countriesLabel(selected), cells: countryCovering},
     cap1: {label: capLabel(0), cells: cap1},
     cap2: {label: capLabel(1), cells: cap2}
   };
@@ -384,7 +384,7 @@ const App: React.FC = () => {
     [operandA, operandB, operation2, operandC]
   );
 
-  // The set operations, run on the compacted collections without uncompacting them
+  // The set operations, run on the coverings without uncompacting them
   const {result, millis, processed} = useMemo(() => {
     const a = operands[operandA].cells;
     const b = operands[operandB].cells;
@@ -400,7 +400,7 @@ const App: React.FC = () => {
       processedCompacted += operands[operand].cells.length - 1; // without the compaction marker
     }
     return {result: cells, millis: elapsed, processed: {count: processedCount, compacted: processedCompacted}};
-  }, [operandA, operation1, operandB, operation2, operandC, usedOperands, countryCollection, cap1, cap2]);
+  }, [operandA, operation1, operandB, operation2, operandC, usedOperands, countryCovering, cap1, cap2]);
 
   const resultCells = useMemo(() => Array.from(result).filter(cell => !isCompactionMarker(cell)), [result]);
   const coarsest = useMemo(
@@ -412,7 +412,7 @@ const App: React.FC = () => {
       compacted: resultCells.length,
       count: count(result),
       areaKm2: area(result) / 1e6,
-      collectionResolution: getCompactionResolution(result)
+      coveringResolution: coveringResolution(result)
     }),
     [result, resultCells]
   );
@@ -679,7 +679,7 @@ const App: React.FC = () => {
               ({processed.compacted.toLocaleString()} compacted)
             </span>
           </Row>
-          <Row label={`Result at res ${stats.collectionResolution}`}>
+          <Row label={`Result at res ${stats.coveringResolution}`}>
             {stats.count.toLocaleString()}{' '}
             <span style={{color: '#888', fontWeight: 'normal'}}>({stats.compacted.toLocaleString()} compacted)</span>
           </Row>

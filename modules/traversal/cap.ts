@@ -7,7 +7,7 @@ import type {OriginId} from '../core/utils';
 import {getResolution, cellToParent, deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {cellToSpherical} from '../core/cell';
 import {cellArea} from '../core/cell-info';
-import {toCollection} from '../collections/slot-runs';
+import {toCovering} from '../collections/slot-runs';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
 import {walkFaces} from '../core/face-adjacency';
 import {haversine, origins} from '../core/origin';
@@ -164,5 +164,5 @@ export function sphericalCap(cellId: bigint, radius: number): BigUint64Array {
     }
   }
 
-  return toCollection(result, targetRes);
+  return toCovering(result, targetRes);
 }

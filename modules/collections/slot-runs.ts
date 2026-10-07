@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-// The collection engine. Each cell covers a block of leaf slots (see
+// The covering engine. Each cell covers a block of leaf slots (see
 // core/serialization), so a set of cells is a list of sorted, disjoint slot runs:
 // cells are turned into slot runs, set operations merge runs, and runs are
 // turned back into the coarsest cells covering them. Nothing is uncompacted.
@@ -82,7 +82,7 @@ function sortCells(cells: Cells): Cells {
  * The slot runs covered by a set of cells, sorted and merged. Compaction
  * markers are skipped.
  *
- * Collections come sorted in curve order, so the cells are first merged as
+ * Coverings come sorted in curve order, so the cells are first merged as
  * given, checking the order as they go; only input found out of order is
  * sorted, and merged again.
  */
@@ -150,7 +150,7 @@ export function slotRunsToCells(runs: SlotRuns): bigint[] {
 }
 
 /** The coarsest cells covering slot runs, in curve order, then the compaction marker for `resolution`. */
-export function slotRunsToCollection(runs: SlotRuns, resolution: number): BigUint64Array {
+export function slotRunsToCovering(runs: SlotRuns, resolution: number): BigUint64Array {
   const cells = slotRunsToCells(runs);
   if (resolution >= 0) cells.push(compactionMarker(resolution));
   return BigUint64Array.from(cells);
@@ -165,11 +165,11 @@ export function compactCells(cells: Cells): bigint[] {
 }
 
 /**
- * Compact cells, at resolution `resolution` or coarser, into a collection: the
+ * Compact cells, at resolution `resolution` or coarser, into a covering: the
  * coarsest cells covering them, sorted in curve order, then the compaction
  * marker for `resolution`. The resolution is given, so an empty fill still
  * records it.
  */
-export function toCollection(cells: Cells, resolution: number): BigUint64Array {
-  return slotRunsToCollection(toSlotRuns(cells), resolution);
+export function toCovering(cells: Cells, resolution: number): BigUint64Array {
+  return slotRunsToCovering(toSlotRuns(cells), resolution);
 }

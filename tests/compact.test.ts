@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {compact, uncompact} from 'a5/collections/compact';
-import {getCompactionResolution} from 'a5/collections/resolution';
+import {coveringResolution} from 'a5/collections/resolution';
 import {hexToU64} from 'a5/core/hex';
 import {getResolution} from 'a5/core/serialization';
 import compactFixtures from './fixtures/compact.json';
@@ -13,9 +13,9 @@ describe('uncompact', () => {
 
       expect(result.length).toBe(testCase.expectedCount);
       expect(Array.from(result)).toEqual(testCase.expectedCells.map(hexToU64));
-      expect(getCompactionResolution(input)).toBe(testCase.expectedResolution);
+      expect(coveringResolution(input)).toBe(testCase.expectedResolution);
 
-      // All results should be at the collection's resolution
+      // All results should be at the covering's resolution
       for (const cell of result) {
         expect(getResolution(cell)).toBe(testCase.expectedResolution);
       }

@@ -22,8 +22,8 @@ export {getNumCells, getNumChildren, cellArea, cellEdgeLengthAvg} from './core/c
 export {compact, uncompact} from './collections/compact';
 export {isCompactionMarker} from './core/compaction-marker';
 
-// Collections
-export {getCompactionResolution} from './collections/resolution';
+// Coverings
+export {coveringResolution} from './collections/resolution';
 export {contains, difference, intersect, overlaps, union} from './collections/set-operations';
 export {area, count} from './collections/measures';
 

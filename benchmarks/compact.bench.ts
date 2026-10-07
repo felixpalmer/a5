@@ -14,7 +14,7 @@ const countries = (fixtures as any).country as CountryFixture[];
 const uk = countries.find(c => c.name === 'United Kingdom')!;
 
 // A realistic mixed-resolution cell set: country fill expanded to a flat list.
-// The resolution argument is for the pre-collection uncompact(cells, resolution),
+// The resolution argument is for the pre-compaction-marker uncompact(cells, resolution),
 // which the baseline run may use; uncompact now reads it from the compaction marker.
 const uncompactAt = uncompact as (cells: BigUint64Array, resolution: number) => BigUint64Array;
 const flat = uncompactAt(polygonToCells(uk.polygon as LonLat[][], 10), 10);

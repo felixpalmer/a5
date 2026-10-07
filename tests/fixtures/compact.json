@@ -231,7 +231,7 @@
     },
     {
       "name": "idempotent",
-      "description": "Compacting an already compacted collection (with its compaction marker) returns it unchanged",
+      "description": "Compacting a covering (with its compaction marker) returns it unchanged",
       "input": [
         "460000000000000",
         "4a0000000000000",
@@ -245,7 +245,7 @@
     },
     {
       "name": "marker_only",
-      "description": "An empty collection keeps its resolution",
+      "description": "An empty covering keeps its resolution",
       "input": [
         "f007000000000040"
       ],
@@ -288,7 +288,7 @@
   "uncompact": [
     {
       "name": "expand_res2_to_res3",
-      "description": "A res-2 cell in a res-3 collection expands to its 4 children",
+      "description": "A res-2 cell in a res-3 covering expands to its 4 children",
       "input": [
         "480000000000000",
         "f003000000000040"
@@ -304,7 +304,7 @@
     },
     {
       "name": "expand_res2_to_res4",
-      "description": "A res-2 cell in a res-4 collection expands to its 16 descendants",
+      "description": "A res-2 cell in a res-4 covering expands to its 16 descendants",
       "input": [
         "480000000000000",
         "f004000000000040"
@@ -332,7 +332,7 @@
     },
     {
       "name": "expand_res0_to_res1",
-      "description": "A res-0 cell in a res-1 collection expands to its 5 quintants",
+      "description": "A res-0 cell in a res-1 covering expands to its 5 quintants",
       "input": [
         "200000000000000",
         "f001000000000040"
@@ -349,7 +349,7 @@
     },
     {
       "name": "expand_world_to_res0",
-      "description": "The world cell in a res-0 collection expands to the 12 res-0 cells",
+      "description": "The world cell in a res-0 covering expands to the 12 res-0 cells",
       "input": [
         "0",
         "f000000000000040"
@@ -373,7 +373,7 @@
     },
     {
       "name": "mixed_input_to_res5",
-      "description": "Cells at resolutions 3 and 4 in a res-5 collection both expand to resolution 5",
+      "description": "Cells at resolutions 3 and 4 in a res-5 covering both expand to resolution 5",
       "input": [
         "24a0000000000000",
         "2858000000000000",
@@ -456,7 +456,7 @@
     },
     {
       "name": "world_alone",
-      "description": "The world cell alone is a collection at resolution -1",
+      "description": "The world cell alone is a covering at resolution -1",
       "input": [
         "0"
       ],
@@ -476,7 +476,7 @@
     },
     {
       "name": "marker_only",
-      "description": "An empty collection expands to no cells",
+      "description": "An empty covering expands to no cells",
       "input": [
         "f005000000000040"
       ],

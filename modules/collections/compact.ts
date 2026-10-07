@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 /**
- * compact/uncompact for A5 DGGS. A compacted set of cells is a collection: its
+ * compact/uncompact for A5 DGGS. A compacted set of cells is a covering: its
  * cells sorted in curve order, then a compaction marker recording the resolution
  * they stand for (see ../core/compaction-marker).
  */
@@ -11,8 +11,8 @@
 import {getNumChildren} from '../core/cell-info';
 import {isCompactionMarker} from '../core/compaction-marker';
 import {checkedResolution, cellToChildren} from '../core/serialization';
-import {toCollection} from './slot-runs';
-import {getCompactionResolution} from './resolution';
+import {toCovering} from './slot-runs';
+import {coveringResolution} from './resolution';
 import type {Cells} from './types';
 
 /**
@@ -26,7 +26,7 @@ import type {Cells} from './types';
  * @throws If a value is neither an A5 cell ID nor a compaction marker
  */
 export function uncompact(cells: Cells): BigUint64Array {
-  const targetResolution = getCompactionResolution(cells);
+  const targetResolution = coveringResolution(cells);
 
   // First calculate how much space is needed
   let n = 0;
@@ -70,5 +70,5 @@ export function uncompact(cells: Cells): BigUint64Array {
  * @throws If a value is neither an A5 cell ID nor a compaction marker
  */
 export function compact(cells: Cells): BigUint64Array {
-  return toCollection(cells, getCompactionResolution(cells));
+  return toCovering(cells, coveringResolution(cells));
 }

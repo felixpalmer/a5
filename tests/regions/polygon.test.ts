@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {hexToU64, u64ToHex, polygonToCells, uncompact, getResolution, count, getCompactionResolution} from 'a5';
+import {hexToU64, u64ToHex, polygonToCells, uncompact, getResolution, count, coveringResolution} from 'a5';
 import type {LonLat} from 'a5/core/coordinate-systems';
 import fixtures from '../fixtures/regions/polygon.json';
 
@@ -64,7 +64,7 @@ describe('polygonToCells', () => {
     expect(polygonToCells(ring, 6)).toEqual(polygonToCells(ring, 6, {containment: 'center'}));
   });
 
-  it('should return an empty collection for less than 3 vertices', () => {
+  it('should return an empty covering for less than 3 vertices', () => {
     const degenerate = [
       [],
       [
@@ -88,8 +88,8 @@ describe('polygonToCells', () => {
     for (const polygon of degenerate) {
       const cells = polygonToCells(polygon, 5);
       expect(count(cells)).toBe(0n);
-      // The empty collection still records its resolution
-      expect(getCompactionResolution(cells)).toBe(5);
+      // The empty covering still records its resolution
+      expect(coveringResolution(cells)).toBe(5);
     }
   });
 

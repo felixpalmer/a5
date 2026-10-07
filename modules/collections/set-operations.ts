@@ -4,8 +4,8 @@
 
 import {isCompactionMarker} from '../core/compaction-marker';
 import {cellFirstSlot, cellFirstSlotUnchecked, cellSlotCount, checkedResolution} from '../core/serialization';
-import {getCompactionResolution} from './resolution';
-import {appendSlotRun, slotRunsToCollection, toSlotRuns} from './slot-runs';
+import {coveringResolution} from './resolution';
+import {appendSlotRun, slotRunsToCovering, toSlotRuns} from './slot-runs';
 import type {Cells, SlotRuns} from './types';
 
 /** Merge two lists of slot runs, keeping slots in either. */
@@ -64,8 +64,8 @@ function differenceSlotRuns(a: SlotRuns, b: SlotRuns): SlotRuns {
  * don't nest geometrically, so combining sets at different ones has no meaning.
  */
 function sameResolution(a: Cells, b: Cells): number {
-  const resolutionA = getCompactionResolution(a);
-  const resolutionB = getCompactionResolution(b);
+  const resolutionA = coveringResolution(a);
+  const resolutionB = coveringResolution(b);
   if (resolutionA !== resolutionB) {
     throw new Error(`Cannot combine cells at resolution ${resolutionA} with cells at resolution ${resolutionB}`);
   }
@@ -75,7 +75,7 @@ function sameResolution(a: Cells, b: Cells): number {
 /** Combine two sets of cells as slot runs, compacted at their resolution. */
 function combine(a: Cells, b: Cells, operation: (a: SlotRuns, b: SlotRuns) => SlotRuns): BigUint64Array {
   const resolution = sameResolution(a, b);
-  return slotRunsToCollection(operation(toSlotRuns(a), toSlotRuns(b)), resolution);
+  return slotRunsToCovering(operation(toSlotRuns(a), toSlotRuns(b)), resolution);
 }
 
 /**
@@ -145,7 +145,7 @@ export function overlaps(a: Cells, b: Cells): boolean {
  *   lands on, is not an A5 cell ID
  */
 export function contains(cells: Cells, cell: bigint): boolean {
-  const resolution = getCompactionResolution(cells);
+  const resolution = coveringResolution(cells);
   const cellResolution = checkedResolution(cell);
   if (cellResolution !== resolution) {
     throw new Error(`Cannot test a cell at resolution ${cellResolution} against cells at resolution ${resolution}`);
