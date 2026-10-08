@@ -1,27 +1,38 @@
+import Coverings from '/images/coverings.png';
+
 # Coverings
 
-A **covering** is a set of cells at one resolution, standing for an area of the globe, possibly in disjoint parts, such as the output of [`polygonToCells`](./indexing#polygontocells) or [`sphericalCap`](./traversal#sphericalcap). It is stored compacted, as cells at mixed resolutions followed by a [compaction marker](./compaction#coverings-and-the-compaction-marker) recording its resolution. The functions on this page combine, query and measure coverings:
+A **covering** is a set of cells at one resolution, standing for an area of the globe, possibly in disjoint parts, such as the output of [`polygonToCells`](./indexing#polygontocells) or [`sphericalCap`](./traversal#sphericalcap). It is stored [compacted](./compaction), and in general should be used with methods expecting compacted data, if the actual cells are required (for example for a JOIN operation) a covering should be [uncompacted](./compaction#uncompact) first.
+
+The functions on this page combine, query and measure coverings:
 
 - [Set operations](#set-operations): [`union`](#union), [`intersect`](#intersect), [`difference`](#difference)
 - [Predicates](#predicates): [`contains`](#contains), [`overlaps`](#overlaps)
 - [Measures](#measures): [`count`](#count), [`area`](#area)
 
-## Working on compacted data
+## Example processing flow
 
-All of these functions work directly on compacted data, without uncompacting. At its finest resolution (30) the A5 space-filling curve passes through every *leaf cell* once, so the curve can be pictured as a line of slots, one per leaf cell. A cell at resolution r occupies 4^(30−r) consecutive slots, and a covering in curve order occupies a sorted list of such stretches, so a set operation is a single merge of two sorted lists. Inputs may be compacted or not, but both must be at the same resolution: A5 cells don't nest geometrically across resolutions, so combining, say, a resolution 7 set with a resolution 9 set has no meaning, and the functions throw. Results are compacted at that resolution, with a compaction marker recording it. Every value given must be an A5 cell or a compaction marker: anything else, such as a corrupted ID, makes these functions throw rather than return a wrong answer.
+<img src={Coverings} style={{width: "100%", maxWidth: "600px"}}/>
 
 ```ts
 import { polygonToCells, sphericalCap, lonLatToCell, intersect, area, contains } from 'a5-js';
 
-const france = polygonToCells(franceRing, 12);
-const nearParis = sphericalCap(lonLatToCell([2.3522, 48.8566], 12), 200_000);
+// Construct coverings
+const france = polygonToCells(francePolygon, 18); // 30ms -> 1.5 billion cells
+const germany = polygonToCells(germanyPolygon, 18); // 30ms -> 1.9 billion cells
+const nearBern = sphericalCap(bern, 18), 400_000); // 45ms -> 800 million cells
+const nearLuxembourg = sphericalCap(luxembourg, 18), 150_000); // 45ms -> 400 million cells
 
-// Part of France within 200 km of Paris, both at resolution 12 — without uncompacting either input
-const covering = intersect(france, nearParis);
-console.log(area(covering) / 1e6, 'km²');
+// Set operations
+const franceAndGermany = union(france, germany); // 4.5ms -> 3.3 billion cells
+const alsoCloseToBern = intersect(franceAndGermany); // 7.3ms -> 500 million cells
+const butFarFromLuxembourg = difference(alsoCloseToBern, nearLuxembourg); // 1.3ms -> 140 million cells
 
-// Point in polygon: index the point at the covering's resolution, then one binary search
-console.log(contains(france, lonLatToCell([4.8357, 45.764], 12)));  // Lyon: true
+// Area of covering, accurate to 1m
+console.log(area(butFarFromLuxembourg) / 1e6, 'km²'); // 1.2ms
+
+// Point in polygon 
+console.log(contains(butFarFromLuxembourg, munich)); // 4.3ms -> true
 ```
 
 ## Set operations
