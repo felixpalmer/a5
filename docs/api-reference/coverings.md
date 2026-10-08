@@ -2,7 +2,7 @@ import Coverings from '/images/coverings.png';
 
 # Coverings
 
-A **covering** is a set of cells at one resolution, standing for an area of the globe, possibly in disjoint parts, such as the output of [`polygonToCells`](./indexing#polygontocells) or [`sphericalCap`](./traversal#sphericalcap). It is stored [compacted](./compaction), and in general should be used with methods expecting compacted data, if the actual cells are required (for example for a JOIN operation) a covering should be [uncompacted](./compaction#uncompact) first.
+A **covering** is a set of cells at one resolution, standing for an area of the globe, possibly in disjoint parts, such as the output of [`polygonToCells`](./indexing#polygontocells) or [`sphericalCap`](./traversal#sphericalcap). It is stored [compacted](./compaction), and in general should be used with methods expecting compacted data. If the actual cells are required (for example for a JOIN operation) a covering should be [uncompacted](./compaction#uncompact) first (warning: could use a huge amount of memory).
 
 The functions on this page combine, query and measure coverings:
 
@@ -15,12 +15,6 @@ The functions on this page combine, query and measure coverings:
 <img src={Coverings} style={{width: "100%", maxWidth: "600px"}}/>
 
 ```rust
-use a5::{area, contains, difference, intersect, lonlat_to_cell, polygon_to_cells, spherical_cap, union, LonLat};
-
-let bern = lonlat_to_cell(LonLat::new(7.4474, 46.948), 18)?;
-let luxembourg = lonlat_to_cell(LonLat::new(6.1296, 49.6116), 18)?;
-let munich = lonlat_to_cell(LonLat::new(11.582, 48.1351), 18)?;
-
 // Construct coverings
 let france = polygon_to_cells(&france_polygon, 18, None)?; // 944ms -> 1.09 billion cells
 let germany = polygon_to_cells(&germany_polygon, 18, None)?; // 708ms -> 718 million cells
@@ -39,7 +33,7 @@ println!("{} km²", area(&but_far_from_luxembourg)? / 1e6); // 1.4ms -> 269516 k
 println!("{}", contains(&but_far_from_luxembourg, munich)?); // 50ns -> true
 ```
 
-Timings measured with the [Rust port](https://github.com/felixpalmer/a5-rs) on an Apple M1 Pro.
+Timings measured with the [Rust implementation](https://github.com/felixpalmer/a5-rs) on an Apple M1 Pro.
 
 ## Set operations
 
@@ -58,7 +52,7 @@ function union(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): BigU
 
 #### Return value
 
-- **(BigUint64Array)** Compacted cells sorted in curve order, then the compaction marker recording their resolution
+- **(BigUint64Array)** Combined covering of both input coverings
 
 #### Example
 
@@ -84,7 +78,7 @@ function intersect(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): 
 
 #### Return value
 
-- **(BigUint64Array)** Compacted cells sorted in curve order, then the compaction marker recording their resolution
+- **(BigUint64Array)** Covering of cell present in both input coverings
 
 ### difference
 
@@ -101,7 +95,7 @@ function difference(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array):
 
 #### Return value
 
-- **(BigUint64Array)** Compacted cells sorted in curve order, then the compaction marker recording their resolution
+- **(BigUint64Array)** Covering of cell present in first coverings, but not the second
 
 #### Example
 
@@ -161,7 +155,7 @@ function overlaps(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): b
 
 ### count
 
-Returns the number of cells a covering stands for at its resolution — the length of `uncompact(cells)`, computed without uncompacting. Note that this differs from the length of the compacted array. Every cell given is counted, so cells that overlap (e.g. two coverings concatenated) are counted more than once; merge them with [`union`](#union) first.
+Returns the number of cells in a covering, equivalent to the length of `uncompact(cells)` without having to materialize the uncompacted cells. Note that this generally differs from the length of the compacted array.
 
 ```ts
 function count(cells: bigint[] | BigUint64Array): bigint;
@@ -187,7 +181,7 @@ console.log(count(france));  // 67995098n cells at resolution 16
 
 ### area
 
-Returns the area of a covering in square meters. As A5 cells are equal-area, this is exact: the number of cells times the [cell area](./cell-info#cellarea) at the covering's resolution. As with `count`, overlapping cells each add their area.
+Returns the area of a covering in square meters. As A5 cells are equal-area, this is exact: the number of cells times the [cell area](./cell-info#cellarea) at the covering's resolution.
 
 ```ts
 function area(cells: bigint[] | BigUint64Array): number;

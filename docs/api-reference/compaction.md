@@ -4,24 +4,24 @@ Compaction is a way to efficiently represent a set of A5 cells by replacing grou
 
 For example, if you have all 4 children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
 
-### Coverings and the compaction marker
+The result of a compaction is a [covering](./coverings.md), which automatically stores the resolution of the compacted cells in-band using a [Compaction Marker](#coverings-and-the-compaction-marker)
 
-A compacted array holds cells at mixed resolutions, but it stands for a set of cells at **one** resolution: compacting 8 cells at resolution 4 may leave 2 cells at resolution 3, which still mean those 8 cells. To keep that resolution, every compacted array ends with a **compaction marker**: a value in quintant 60 (only 0–59 exist), which no cell can take, recording the resolution of the set — for example `0xf00a000000000040` for resolution 10. We call such an array a *covering*, see [Coverings](./coverings) for the functions that combine, query and measure them.
+## Functions supporting compacted data
 
-- `uncompact` reads the compaction marker, so it needs no resolution argument.
-- The array is still a plain `BigUint64Array` of 64-bit values, so a covering stores as a single list column in a database, Parquet or Arrow — the resolution travels with it.
-- `cellToBoundary` returns `[]` for the compaction marker, so rendering a covering draws only its cells.
-- An array without a compaction marker is a covering too: its resolution is that of its finest cell.
+Many of the functions in the A5 API return and accept compacted data, and should be used whenever possible rather than using the more low-level functions below. See [here](./coverings#example-processing-flow) for an example.
 
-Read coverings only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`count`](./coverings#count) and [`area`](./coverings#area) measure a covering, [`contains`](./coverings#contains) tests a cell, [`uncompact`](#uncompact) lists its cells at its resolution, and [`coveringResolution`](#coveringresolution) gives that resolution.
+- Indexing: [`polygonToCells`](./indexing#polygontocells)
+- Traversal: [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap)
+- Set operations: [`union`](./coverings#union), [`intersect`](./coverings#intersect), [`difference`](./coverings#difference)
+- Predicates: [`contains`](./coverings#contains), [`overlaps`](./coverings#overlaps)
+- Measures: [`count`](./coverings#count), [`area`](./coverings#area)
 
-`compact`, [`polygonToCells`](./indexing#polygontocells), [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap) and the [set operations](./coverings) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
-See [Bit Tags](../technical/bit-tags#compaction-marker) for how the compaction marker is encoded.
+## Compaction helpers
 
 ### compact
 
-Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells, and appends the compaction marker recording the resolution of the finest input cell.
+Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells, and appends the compaction marker recording the resolution of the finest input cell. In most cases users will use [polygonToCells](./indexing#polygontocells)
 
 ```ts
 function compact(cells: bigint[] | BigUint64Array): BigUint64Array;
@@ -50,14 +50,6 @@ console.log(count(compacted));  // 4n
 console.log(coveringResolution(compacted));  // 3
 console.log(uncompact(compacted));  // the 4 children again
 ```
-
-#### Notes
-
-- The compaction process is recursive - if compacting cells creates complete sibling groups at coarser resolutions, those will also be compacted
-- Duplicate cells, and cells inside another input cell, are absorbed
-- The output is always sorted in curve order. Below resolution 30 and above resolution 0 this matches numeric order
-- Compacting a covering again returns it unchanged
-- For optimal performance with large datasets, consider using `BigUint64Array` as input
 
 ### uncompact
 
@@ -145,33 +137,19 @@ import { isCompactionMarker, lonLatToCell } from 'a5-js';
 console.log(isCompactionMarker(lonLatToCell([2.35, 48.85], 10)));  // false: a cell
 ```
 
-### Working with BigUint64Array
+## Coverings and the compaction marker
 
-`compact()`, `uncompact()` and the set operations return `BigUint64Array` for optimal performance. This typed array provides:
+A compacted array holds cells at mixed resolutions, but it stands for a set of cells at **one** resolution: compacting 8 cells at resolution 4 may leave 2 cells at resolution 3, which still mean those 8 cells. To keep that resolution, every compacted array ends with a **compaction marker**: a value in quintant 60 (only 0–59 exist), which no cell can take, recording the resolution of the set — for example `0xf00a000000000040` for resolution 10. We call such an array a *covering*, see [Coverings](./coverings) for the functions that combine, query and measure them.
 
-- Faster iteration and memory access compared to regular arrays
-- Array-like methods (`.map()`, `.filter()`, `.slice()`, etc.)
-- Efficient interop with TypedArray APIs
+- `uncompact` reads the compaction marker, so it needs no resolution argument.
+- The array is still a plain `BigUint64Array` of 64-bit values, so a covering stores as a single list column in a database, Parquet or Arrow — the resolution travels with it.
+- `cellToBoundary` returns `[]` for the compaction marker, so rendering a covering draws only its cells.
+- An array without a compaction marker is a covering too: its resolution is that of its finest cell.
 
-```ts
-import { compact, uncompact, count, cellToLonLat } from 'a5-js';
+Read coverings only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`count`](./coverings#count) and [`area`](./coverings#area) measure a covering, [`contains`](./coverings#contains) tests a cell, [`uncompact`](#uncompact) lists its cells at its resolution, and [`coveringResolution`](#coveringresolution) gives that resolution.
 
-const cells = new BigUint64Array([7161033607237074944n, 7161033882114981888n, 7161034156992888832n, 7161034431870795776n, 7161033057481261056n]);
-const compacted = compact(cells);
-console.log(count(compacted));  // 5n
+`compact`, [`polygonToCells`](./indexing#polygontocells), [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap) and the [set operations](./coverings) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
-// Uncompacted cells are plain cell IDs: use them like a regular array
-for (const cell of uncompact(compacted)) {
-  console.log(cellToLonLat(cell));
-}
+See [Bit Tags](../technical/bit-tags#compaction-marker) for how the compaction marker is encoded.
 
-// Convert to regular array if needed
-const array = [...cells];
-```
 
-### Performance Tips
-
-- Use `BigUint64Array` as input for large datasets
-- Compact cells before storing or transmitting to reduce data size
-- Use the [set operations](./coverings) to combine coverings without uncompacting them
-- Cache uncompacted results if you need to access them multiple times
