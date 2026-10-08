@@ -125,12 +125,19 @@ export function getPentagonVertices(
  * The center of a cell's pentagon, without constructing the pentagon —
  * O(1) via the precomputed flavor centers. Equivalent to
  * `getPentagonVertices(...).getCenter()` (up to float associativity).
+ * Written to `out` when given.
  */
-export function getPentagonCenter(resolution: number, quintant: number, triple: Triple, flavor: number): Vec2 {
+export function getPentagonCenter(
+  resolution: number,
+  quintant: number,
+  triple: Triple,
+  flavor: number,
+  out: Vec2 = vec2.create()
+): Vec2 {
   const c = FLAVOR_CENTERS[flavor];
   vec2.set(refIJ, triple.x + triple.y, -triple.x + (flavor & 1));
   vec2.transformMat2(translation, refIJ, BASIS);
-  const out = vec2.fromValues((c[0] + translation[0]) / 2 ** resolution, (c[1] + translation[1]) / 2 ** resolution);
+  vec2.set(out, (c[0] + translation[0]) / 2 ** resolution, (c[1] + translation[1]) / 2 ** resolution);
   return vec2.transformMat2(out, out, QUINTANT_ROTATIONS[quintant]);
 }
 

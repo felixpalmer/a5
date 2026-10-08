@@ -98,10 +98,6 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/traversal/fixtures/lattice-flood-fill.json"),
         (RS_ROOT, "tests/fixtures/traversal/lattice-flood-fill.json"),
     ],
-    "tests/fixtures/traversal/triple-hierarchy.json": [
-        (PY_ROOT, "tests/traversal/fixtures/triple-hierarchy.json"),
-        (RS_ROOT, "tests/fixtures/traversal/triple-hierarchy.json"),
-    ],
     "tests/fixtures/traversal/line.json": [
         (PY_ROOT, "tests/traversal/fixtures/line.json"),
         (RS_ROOT, "tests/fixtures/traversal/line.json"),

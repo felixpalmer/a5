@@ -19,22 +19,15 @@ import {
   FIRST_HILBERT_RESOLUTION,
   MAX_RESOLUTION,
   RES30_QUINTANTS,
-  SLOT_COUNTS,
   WORLD_CELL
 } from '../core/serialization';
-import {getFaceVertices, getPentagonCenter} from '../core/tiling';
+import {getFaceVertices} from '../core/tiling';
 import type {OriginId} from '../core/utils';
-import {curveChild, curveRoot, LEVEL0_FLAVOR} from '../lattice';
-import type {CurveNode, Orientation, Triple} from '../lattice';
 import {DodecahedronProjection} from '../projections/dodecahedron';
-import {appendSlotRun, slotRunsToCovering, toCovering} from '../collections/slot-runs';
+import {slotRunsToCovering, toCovering} from '../collections/slot-runs';
 import type {SlotRuns} from '../collections/types';
-import {
-  fillQuintantTables,
-  QUINTANT_ORIENTATION,
-  QUINTANT_PREFIX,
-  TRIPLE_QUINTANT_BY_ID_ORDER
-} from '../traversal/triple-cells';
+import {descendInCurveOrder, INSIDE, OUTSIDE, SPLIT} from '../traversal/curve-descent';
+import type {CurveDescentClassifier} from '../traversal/curve-descent';
 
 const dodecahedron = new DodecahedronProjection();
 
@@ -137,13 +130,32 @@ export function cellToSubcell(cell: bigint, resolution: number): BigUint64Array 
   // Res-30 IDs only reach the first RES30_QUINTANTS quintants (in ID order)
   if (resolution === MAX_RESOLUTION && frameOrigins.some(id => 5 * id + 5 > RES30_QUINTANTS)) resolution--;
 
-  // Walk the faces in curve order (by origin id), so the slot runs come out sorted
-  const frames = frameOrigins.map((id, f) => f).sort((f, g) => frameOrigins[f] - frameOrigins[g]);
-  const runs: SlotRuns = [];
-  for (const f of frames) {
-    walkFace(frameOrigins[f], edgeLines(frameVertices[f]), cell, cellResolution, resolution, runs);
+  // Descend each face from its resolution-1 cells, classifying a cell by the
+  // signed distance of its center from the pentagon's edges, in that face's frame
+  const linesByOrigin: Float64Array[] = new Array(12).fill(FACE_EDGES[0]);
+  const starts: number[] = [];
+  for (let f = 0; f < frameOrigins.length; f++) {
+    linesByOrigin[frameOrigins[f]] = edgeLines(frameVertices[f]);
+    // The resolution-1 cells: triple (0, 0, 0) of each quintant
+    for (let q = 0; q < 5; q++) starts.push(frameOrigins[f], q, 0, 0, 0);
   }
-  return slotRunsToCovering(runs, resolution);
+  // By resolution: how far a cell's center must lie inside (or outside) for all
+  // its descendants' to; none at the target, where each cell decides for itself
+  const target = resolution;
+  const reaches = new Float64Array(target + 1);
+  for (let res = 1; res < target; res++) reaches[res] = DESCENDANT_REACH / 2 ** (res - FIRST_HILBERT_RESOLUTION + 1);
+  const classify: CurveDescentClassifier = (id, res, center, slot) => {
+    const margin = signedMargin(linesByOrigin[id], center[0], center[1]);
+    const reach = reaches[res] + EDGE_EPS;
+    if (margin > reach) return INSIDE;
+    if (margin < -reach) return OUTSIDE;
+    if (res < target) return SPLIT;
+    // Within float noise of an edge: decide exactly as cellToSupercell does
+    return cellToSupercell(slotToCell(slot, res), cellResolution) === cell ? INSIDE : OUTSIDE;
+  };
+  const runs: SlotRuns = [];
+  descendInCurveOrder(starts, 0, target, classify, runs);
+  return slotRunsToCovering(runs, target);
 }
 
 // The edge lines of the face pentagon (filled on first use)
@@ -243,83 +255,4 @@ function unfold(originId: OriginId, quintant: number): [OriginId, Float64Array] 
     }
   }
   return UNFOLDS[originId * 5 + quintant];
-}
-
-// The walk's fixed inputs, shared by every level of `descend`
-interface Walk {
-  /** The cell's pentagon, as edge lines in the frame of the face being walked */
-  lines: Float64Array;
-  cell: bigint;
-  cellResolution: number;
-  /** Hilbert level of the target resolution */
-  targetLevel: number;
-  quintant: number;
-  orientation: Orientation;
-  /** Output, as sorted slot runs */
-  runs: SlotRuns;
-}
-
-/**
- * Walk one face's cell hierarchy down from its resolution-1 cells, in curve
- * order, appending to `runs` the slots of the cells at `resolution` whose
- * centers lie in `cell` (given as the edge lines of its pentagon in this face's
- * frame). A cell whose descendants all have centers inside is output whole,
- * one whose descendants all lie outside is dropped, and the rest split: only
- * cells along the edges split, so the work follows the boundary, not the area.
- */
-function walkFace(
-  originId: OriginId,
-  lines: Float64Array,
-  cell: bigint,
-  cellResolution: number,
-  resolution: number,
-  runs: SlotRuns
-): void {
-  fillQuintantTables();
-  // The face's quintants in ID (curve) order
-  for (let k = 0; k < 5; k++) {
-    const tripleQuintant = TRIPLE_QUINTANT_BY_ID_ORDER[5 * originId + k];
-    const orientation = QUINTANT_ORIENTATION[tripleQuintant];
-    const walk: Walk = {
-      lines,
-      cell,
-      cellResolution,
-      targetLevel: resolution - FIRST_HILBERT_RESOLUTION + 1,
-      quintant: tripleQuintant - 5 * originId,
-      orientation,
-      runs
-    };
-    descend(walk, 0, {x: 0, y: 0, z: 0}, LEVEL0_FLAVOR, curveRoot(orientation), QUINTANT_PREFIX[tripleQuintant]);
-  }
-}
-
-/**
- * Visit the cell at Hilbert `level` with the given triple, flavor, descent
- * state and first slot.
- */
-function descend(walk: Walk, level: number, triple: Triple, flavor: number, node: CurveNode, slot: bigint): void {
-  const center = getPentagonCenter(level, walk.quintant, triple, flavor);
-  const margin = signedMargin(walk.lines, center[0], center[1]);
-  const reach = level === walk.targetLevel ? 0 : DESCENDANT_REACH / 2 ** level;
-  if (margin < -reach - EDGE_EPS) return;
-  const resolution = level + FIRST_HILBERT_RESOLUTION - 1;
-  if (margin > reach + EDGE_EPS) {
-    appendSlotRun(walk.runs, slot, slot + SLOT_COUNTS[resolution]);
-    return;
-  }
-  if (level === walk.targetLevel) {
-    // Within float noise of an edge: decide exactly as cellToSupercell does
-    if (cellToSupercell(slotToCell(slot, resolution), walk.cellResolution) === walk.cell) {
-      appendSlotRun(walk.runs, slot, slot + SLOT_COUNTS[resolution]);
-    }
-    return;
-  }
-  // The children's slots follow one another in curve order
-  const childSlots = SLOT_COUNTS[resolution + 1];
-  let childSlot = slot;
-  for (let digit = 0; digit < 4; digit++) {
-    const child = curveChild(node, digit, level + 1, walk.orientation);
-    descend(walk, level + 1, child.cell.triple, child.cell.flavor, child.node, childSlot);
-    childSlot += childSlots;
-  }
 }

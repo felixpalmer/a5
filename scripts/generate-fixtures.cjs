@@ -22,7 +22,6 @@ require('./fixtures/traversal/grid-disk.cjs');
 require('./fixtures/traversal/cap.cjs');
 require('./fixtures/traversal/line.cjs');
 require('./fixtures/traversal/lattice-flood-fill.cjs');
-require('./fixtures/traversal/triple-hierarchy.cjs');
 require('./fixtures/core/compact.cjs');
 require('./fixtures/core/collection.cjs');
 

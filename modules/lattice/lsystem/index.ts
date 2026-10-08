@@ -35,7 +35,7 @@ import type {Orientation, Triple} from '../types';
 import type {AB} from './turtle';
 import {RULES, DRAWS} from './grammar';
 import type {CurveTables} from './tables';
-import {compileGrammar, POW2, POW4, BSP_EPS} from './tables';
+import {compileGrammar, POW2, POW4} from './tables';
 
 /** The compiled A5 grammar. */
 const A5 = compileGrammar(RULES, DRAWS);
@@ -45,10 +45,17 @@ const A5 = compileGrammar(RULES, DRAWS);
  * indexes the per-state lookup table (no data-dependent branches). Used on the
  * exact path, where the target is strictly interior at every level.
  */
+// A real cell's corner sum lies exactly on a separator (0, exact in floats) or
+// at least 48 corner-sum units off it, at every level: the gap is between
+// integer points and fixed lines, so it does not shrink as the scale grows. A
+// threshold scaled with the level (as the footprints' BSP_EPS is)
+// would swallow that gap by level 28 and pick the wrong child.
+const CLASSIFY_THRESHOLD = -1;
+
 function classify(t: CurveTables, state: number, relA: number, relB: number, scale: number): number {
   const s = t.classSep;
   const b = state * 9;
-  const thr = -BSP_EPS * scale;
+  const thr = CLASSIFY_THRESHOLD;
   const b0 = s[b] * relA + s[b + 1] * relB + s[b + 2] * scale >= thr ? 1 : 0;
   const b1 = s[b + 3] * relA + s[b + 4] * relB + s[b + 5] * scale >= thr ? 1 : 0;
   const b2 = s[b + 6] * relA + s[b + 7] * relB + s[b + 8] * scale >= thr ? 1 : 0;
@@ -80,19 +87,30 @@ export function abToTriple(sumA: number, sumB: number): Triple {
   if ((2 * sumA + sumB) % 12 !== 0 || sumB % 4 !== 0) {
     throw new Error(`abToTriple: off-lattice corner sum (${sumA},${sumB})`);
   }
-  const yz = (2 * sumA + sumB - 12) / 12; // y - z
-  const e = (sumB + 4) / 4; // 2x - y - z
-  for (const parity of [0, 1]) {
-    if ((e + parity) % 3 !== 0) continue;
-    const x = (e + parity) / 3;
-    const r = parity - x; // = y + z
-    if ((r + yz) % 2 !== 0) continue;
-    // The quotients are exact integers, but V8 keeps division results as
-    // doubles; `| 0` hands callers small integers, which keeps the arrays and
-    // objects they flow into on V8's fast integer representation
-    return {x: x | 0, y: ((r + yz) / 2) | 0, z: ((r - yz) / 2) | 0};
+  // x = (2x - y - z + parity) / 3 is an integer, which pins the parity
+  const parity = (((-(sumB + 4) / 4) % 3) + 3) % 3;
+  const triple = {x: 0, y: 0, z: 0};
+  abToTripleInto(sumA, sumB, parity, triple);
+  if (parity > 1 || triple.x + triple.y + triple.z !== parity) {
+    throw new Error(`abToTriple: no integer triple for (${sumA},${sumB})`);
   }
-  throw new Error(`abToTriple: no integer triple for (${sumA},${sumB})`);
+  return triple;
+}
+
+/**
+ * `abToTriple` for a corner sum whose parity is known, written to `out`: no
+ * search and no checks.
+ */
+function abToTripleInto(sumA: number, sumB: number, parity: number, out: {x: number; y: number; z: number}): void {
+  const x = ((sumB + 4) / 4 + parity) / 3;
+  const r = parity - x; // y + z
+  const yz = (2 * sumA + sumB - 12) / 12; // y - z
+  // The quotients are exact integers, but V8 keeps division results as
+  // doubles; `| 0` hands callers small integers, which keeps the arrays and
+  // objects they flow into on V8's fast integer representation
+  out.x = x | 0;
+  out.y = ((r + yz) / 2) | 0;
+  out.z = ((r - yz) / 2) | 0;
 }
 export function tripleToAB(t: Triple): AB {
   const b = 4 * (2 * t.x - t.y - t.z) - 4;
@@ -143,8 +161,16 @@ export function axiomLeafCell(
 // point location no longer descends at all — sphericalToCell rounds to a triple
 // (see curve.ts roundToTriple). Internal; also used by compat.ts.
 //
-// Returns [s, leafFlavor]. Callers that only need `s` take [0].
-export function axiomTargetToS(t: CurveTables, ta: number, tb: number, R: number, axiom: number): [bigint, number] {
+// Returns [s, leafFlavor]. Callers that only need `s` take [0]. With `below`,
+// also writes the descent state below the leaf there (see curveChild).
+export function axiomTargetToS(
+  t: CurveTables,
+  ta: number,
+  tb: number,
+  R: number,
+  axiom: number,
+  below?: CurveNode
+): [bigint, number] {
   const {childToken, childFlip, childOffA, childOffB, leafSum} = t;
   let motif = axiom,
     flip = 0;
@@ -179,6 +205,7 @@ export function axiomTargetToS(t: CurveTables, ta: number, tb: number, R: number
   if (d0 < 0) throw new Error(`lsystem inverse: no leaf match for corner sum (${ta},${tb})`);
   sLo += d0;
   const s = R > LO_DIGITS ? (BigInt(sHi) << LO_BITS) | BigInt(sLo) : BigInt(sLo);
+  if (below) stepBelow(t, motif, flip, posA, posB, d0, below);
   return [s, t.leafFlavor[base * 4 + d0]];
 }
 
@@ -244,12 +271,23 @@ export function sToTriple(s: bigint, resolution: number, orientation: Orientatio
  * orientation. Inverse of {@link sToTriple}.
  */
 export function tripleToSLattice(triple: Triple, resolution: number, orientation: Orientation = 'uv'): bigint {
+  return tripleToCurve(triple, resolution, orientation)[0];
+}
+
+/** `tripleToSLattice`, also giving the leaf flavor and, with `below`, the descent state below the cell. */
+function tripleToCurve(
+  triple: Triple,
+  resolution: number,
+  orientation: Orientation,
+  below?: CurveNode
+): [bigint, number] {
   const N = 1n << BigInt(2 * resolution);
   const rec = ORIENT[orientation];
   const ab = tripleToAB(triple);
   const tauSum = rec.isB ? 12 * POW2[resolution] : 0;
-  const sAxiom = axiomTargetToS(A5, ab.a - tauSum, ab.b + tauSum, resolution, rec.axiom)[0];
-  return rec.reverse ? N - 1n - sAxiom : sAxiom;
+  const result = axiomTargetToS(A5, ab.a - tauSum, ab.b + tauSum, resolution, rec.axiom, below);
+  if (rec.reverse) result[0] = N - 1n - result[0];
+  return result;
 }
 
 // ---------- stepwise descent: the cell hierarchy in curve order ----------
@@ -268,7 +306,7 @@ for (let i = 0; i < LEAF_PARITY.length; i++) {
   LEAF_PARITY[i] = t.x + t.y + t.z;
 }
 
-/** The descent state below a cell (see `curveChild`). */
+/** The descent state below a cell (see `curveChild`, `tripleToCurveNode`). */
 export interface CurveNode {
   motif: number;
   flip: number;
@@ -276,46 +314,72 @@ export interface CurveNode {
   posB: number;
 }
 
-/** The descent state below the resolution-0 cell (the whole quintant). */
-export function curveRoot(orientation: Orientation): CurveNode {
-  return {motif: ORIENT[orientation].axiom, flip: 0, posA: 0, posB: 0};
-}
-
 /**
  * The child with curve digit `digit` (0-3, the child's last digit of s) of the
- * cell whose descent state is `node`: its cell at `resolution` (the child's),
- * and the descent state below it. Agrees with `sToCell` on the child's s.
+ * cell whose descent state is `node`: writes its triple at `resolution` (the
+ * child's) to `triple` and the descent state below it to `below` (which may be
+ * `node` itself), and returns its flavor. Agrees with `sToCell` on the child's s.
  */
 export function curveChild(
   node: CurveNode,
   digit: number,
   resolution: number,
-  orientation: Orientation
-): {cell: Cell; node: CurveNode} {
-  const {childToken, childFlip, childOffA, childOffB, leafSum, leafFlavor} = A5;
+  orientation: Orientation,
+  triple: {x: number; y: number; z: number},
+  below: CurveNode
+): number {
+  const {leafSum, leafFlavor} = A5;
   const rec = ORIENT[orientation];
   // A reversed curve reads s as N - 1 - s: every digit complemented
   const d = rec.reverse ? 3 - digit : digit;
   const {motif, flip, posA, posB} = node;
   const base = motif * 2 + flip;
-  // abToTriple with the parity known up front (see LEAF_PARITY): no search
+  // The parity is known up front (see LEAF_PARITY): no search
   const sumA = 3 * posA + leafSum[base * 8 + d * 2];
   const sumB = 3 * posB + leafSum[base * 8 + d * 2 + 1];
-  const parity = LEAF_PARITY[base * 4 + d];
-  const x = ((sumB + 4) / 4 + parity) / 3;
-  const r = parity - x; // y + z
-  const yz = (2 * sumA + sumB - 12) / 12; // y - z
-  const shift = rec.isB ? POW2[resolution] : 0;
-  const triple = {x: (x - shift) | 0, y: ((r + yz) / 2 + shift) | 0, z: ((r - yz) / 2) | 0};
+  abToTripleInto(sumA, sumB, LEAF_PARITY[base * 4 + d], triple);
+  if (rec.isB) {
+    triple.x -= POW2[resolution];
+    triple.y += POW2[resolution];
+  }
+  stepBelow(A5, motif, flip, posA, posB, d, below);
+  return leafFlavor[base * 4 + d];
+}
+
+/**
+ * The descent state below the child with (axiom-order) digit `d` of the cell
+ * whose descent state is (motif, flip, posA, posB), written to `below`.
+ */
+function stepBelow(
+  t: CurveTables,
+  motif: number,
+  flip: number,
+  posA: number,
+  posB: number,
+  d: number,
+  below: CurveNode
+): void {
   const ci = motif * 4 + d;
   const sign = flip ? -1 : 1;
-  return {
-    cell: {triple, flavor: leafFlavor[base * 4 + d]},
-    node: {
-      motif: childToken[ci],
-      flip: flip ^ childFlip[ci],
-      posA: 2 * posA + childOffA[ci] * sign,
-      posB: 2 * posB + childOffB[ci] * sign
-    }
-  };
+  below.motif = t.childToken[ci];
+  below.flip = flip ^ t.childFlip[ci];
+  below.posA = 2 * posA + t.childOffA[ci] * sign;
+  below.posB = 2 * posB + t.childOffB[ci] * sign;
+}
+
+/**
+ * A cell's curve position `s`, flavor and the descent state below it, from its
+ * triple: where a walk down to the cell by `curveChild` would arrive, in one
+ * descent rather than one step per level.
+ */
+export function tripleToCurveNode(
+  triple: Triple,
+  resolution: number,
+  orientation: Orientation
+): {s: bigint; flavor: number; node: CurveNode} {
+  // Below the resolution-0 cell (the whole quintant) is the axiom itself
+  const node: CurveNode = {motif: ORIENT[orientation].axiom, flip: 0, posA: 0, posB: 0};
+  if (resolution === 0) return {s: 0n, flavor: LEVEL0_FLAVOR, node};
+  const [s, flavor] = tripleToCurve(triple, resolution, orientation, node);
+  return {s, flavor, node};
 }
