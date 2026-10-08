@@ -14,26 +14,32 @@ The functions on this page combine, query and measure coverings:
 
 <img src={Coverings} style={{width: "100%", maxWidth: "600px"}}/>
 
-```ts
-import { polygonToCells, sphericalCap, lonLatToCell, intersect, area, contains } from 'a5-js';
+```rust
+use a5::{area, contains, difference, intersect, lonlat_to_cell, polygon_to_cells, spherical_cap, union, LonLat};
+
+let bern = lonlat_to_cell(LonLat::new(7.4474, 46.948), 18)?;
+let luxembourg = lonlat_to_cell(LonLat::new(6.1296, 49.6116), 18)?;
+let munich = lonlat_to_cell(LonLat::new(11.582, 48.1351), 18)?;
 
 // Construct coverings
-const france = polygonToCells(francePolygon, 18); // 30ms -> 1.5 billion cells
-const germany = polygonToCells(germanyPolygon, 18); // 30ms -> 1.9 billion cells
-const nearBern = sphericalCap(bern, 18), 400_000); // 45ms -> 800 million cells
-const nearLuxembourg = sphericalCap(luxembourg, 18), 150_000); // 45ms -> 400 million cells
+let france = polygon_to_cells(&france_polygon, 18, None)?; // 944ms -> 1.09 billion cells
+let germany = polygon_to_cells(&germany_polygon, 18, None)?; // 708ms -> 718 million cells
+let near_bern = spherical_cap(bern, 400_000.0)?; // 302ms -> 1.02 billion cells
+let near_luxembourg = spherical_cap(luxembourg, 150_000.0)?; // 113ms -> 143 million cells
 
 // Set operations
-const franceAndGermany = union(france, germany); // 4.5ms -> 3.3 billion cells
-const alsoCloseToBern = intersect(franceAndGermany); // 7.3ms -> 500 million cells
-const butFarFromLuxembourg = difference(alsoCloseToBern, nearLuxembourg); // 1.3ms -> 140 million cells
+let france_and_germany = union(&france, &germany)?; // 7.0ms -> 1.81 billion cells
+let also_close_to_bern = intersect(&france_and_germany, &near_bern)?; // 5.4ms -> 646 million cells
+let but_far_from_luxembourg = difference(&also_close_to_bern, &near_luxembourg)?; // 3.2ms -> 545 million cells
 
-// Area of covering, accurate to 1m
-console.log(area(butFarFromLuxembourg) / 1e6, 'km²'); // 1.2ms
+// Area of covering, to the nearest resolution 18 cell (~500m²)
+println!("{} km²", area(&but_far_from_luxembourg)? / 1e6); // 1.4ms -> 269516 km²
 
-// Point in polygon 
-console.log(contains(butFarFromLuxembourg, munich)); // 4.3ms -> true
+// Point in polygon
+println!("{}", contains(&but_far_from_luxembourg, munich)?); // 50ns -> true
 ```
+
+Timings measured with the [Rust port](https://github.com/felixpalmer/a5-rs) on an Apple M1 Pro.
 
 ## Set operations
 
@@ -111,8 +117,6 @@ const outside = difference(polygonToCells(ring, 10), sphericalCap(lonLatToCell(c
 ### contains
 
 Checks whether a cell is in a covering. The cell must be at the covering's resolution, or it throws: A5 cells don't nest geometrically across resolutions, so a finer cell isn't guaranteed to lie inside its ancestor. To test a point, index it at the covering's resolution with `lonLatToCell(point, resolution)`.
-
-The test is a binary search, so the covering must be sorted in curve order, as returned by `compact`, `polygonToCells` and the other A5 functions. For speed, it checks only the cell and the covering cell the search lands on: a value elsewhere in the covering that is not a cell goes unnoticed.
 
 ```ts
 function contains(cells: bigint[] | BigUint64Array, cell: bigint): boolean;
