@@ -1,8 +1,14 @@
 # Coverings
 
-A **covering** is a set of cells at one resolution, standing for an area of the globe, possibly in disjoint parts, such as the output of [`polygonToCells`](./indexing#polygontocells), [`sphericalCap`](./traversal#sphericalcap) or [`compact`](./compaction#compact). It is stored compacted, as cells at mixed resolutions followed by a [compaction marker](./compaction#coverings-and-the-compaction-marker) recording its resolution. The functions on this page combine, query and measure coverings.
+A **covering** is a set of cells at one resolution, standing for an area of the globe, possibly in disjoint parts, such as the output of [`polygonToCells`](./indexing#polygontocells) or [`sphericalCap`](./traversal#sphericalcap). It is stored compacted, as cells at mixed resolutions followed by a [compaction marker](./compaction#coverings-and-the-compaction-marker) recording its resolution. The functions on this page combine, query and measure coverings:
 
-All of them work directly on compacted data, without uncompacting. At its finest resolution (30) the A5 space-filling curve passes through every *leaf cell* once, so the curve can be pictured as a line of slots, one per leaf cell. A cell at resolution r occupies 4^(30−r) consecutive slots, and a covering in curve order occupies a sorted list of such stretches, so a set operation is a single merge of two sorted lists. Inputs may be compacted or not, but both must be at the same resolution: A5 cells don't nest geometrically across resolutions, so combining, say, a resolution 7 set with a resolution 9 set has no meaning, and the functions throw. Results are compacted at that resolution, with a compaction marker recording it. Every value given must be an A5 cell or a compaction marker: anything else, such as a corrupted ID, makes these functions throw rather than return a wrong answer.
+- [Set operations](#set-operations): [`union`](#union), [`intersect`](#intersect), [`difference`](#difference)
+- [Predicates](#predicates): [`contains`](#contains), [`overlaps`](#overlaps)
+- [Measures](#measures): [`count`](#count), [`area`](#area)
+
+## Working on compacted data
+
+All of these functions work directly on compacted data, without uncompacting. At its finest resolution (30) the A5 space-filling curve passes through every *leaf cell* once, so the curve can be pictured as a line of slots, one per leaf cell. A cell at resolution r occupies 4^(30−r) consecutive slots, and a covering in curve order occupies a sorted list of such stretches, so a set operation is a single merge of two sorted lists. Inputs may be compacted or not, but both must be at the same resolution: A5 cells don't nest geometrically across resolutions, so combining, say, a resolution 7 set with a resolution 9 set has no meaning, and the functions throw. Results are compacted at that resolution, with a compaction marker recording it. Every value given must be an A5 cell or a compaction marker: anything else, such as a corrupted ID, makes these functions throw rather than return a wrong answer.
 
 ```ts
 import { polygonToCells, sphericalCap, lonLatToCell, intersect, area, contains } from 'a5-js';
@@ -17,6 +23,8 @@ console.log(area(covering) / 1e6, 'km²');
 // Point in polygon: index the point at the covering's resolution, then one binary search
 console.log(contains(france, lonLatToCell([4.8357, 45.764], 12)));  // Lyon: true
 ```
+
+## Set operations
 
 ### union
 
@@ -87,6 +95,8 @@ import { polygonToCells, difference, lonLatToCell, sphericalCap } from 'a5-js';
 const outside = difference(polygonToCells(ring, 10), sphericalCap(lonLatToCell(capital, 10), 50_000));
 ```
 
+## Predicates
+
 ### contains
 
 Checks whether a cell is in a covering. The cell must be at the covering's resolution, or it throws: A5 cells don't nest geometrically across resolutions, so a finer cell isn't guaranteed to lie inside its ancestor. To test a point, index it at the covering's resolution with `lonLatToCell(point, resolution)`.
@@ -131,6 +141,8 @@ function overlaps(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): b
 #### Return value
 
 - **(boolean)** Whether some cell is in both coverings
+
+## Measures
 
 ### count
 
