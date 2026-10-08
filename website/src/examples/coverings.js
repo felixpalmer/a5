@@ -16,9 +16,9 @@ class CoveringsDemo extends Component {
     return (
       <div>
         <p>
-          Toggle any selection of countries (each from <code>polygonToCells</code>, merged into one covering) and
-          place two spherical caps around European capitals with <code>sphericalCap</code>. Each is a
-          covering; combine any two with <code>union</code>, <code>intersect</code> or <code>difference</code>.
+          Toggle any selection of countries (each from <code>polygonToCells</code>, merged into one covering) and place
+          two spherical caps around European capitals with <code>sphericalCap</code>. Each is a covering; combine any
+          two with <code>union</code>, <code>intersect</code> or <code>difference</code>.
         </p>
         <p>
           The set operations work directly on the compacted cells, which cover contiguous runs of the A5 curve, so

@@ -120,8 +120,5 @@ export function polygonToCells(
   if (prefersFlood(ringVecsList, boundary.cells.length, resolution, capHoldsQuintant)) {
     return toCovering(fillByFlood(boundary, triples, resolution, overlapping), resolution);
   }
-  return slotRunsToCovering(
-    fillByCurveRuns(boundary, triples, resolution, overlapping, capHoldsQuintant),
-    resolution
-  );
+  return slotRunsToCovering(fillByCurveRuns(boundary, triples, resolution, overlapping, capHoldsQuintant), resolution);
 }
