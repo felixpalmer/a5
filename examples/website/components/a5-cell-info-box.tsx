@@ -67,7 +67,9 @@ export const A5CellInfoBox: React.FC<A5CellInfoBoxProps> = ({
       ];
 
   const label = isMarker ? 'Compaction marker' : 'Cell ID';
-  const lonLat = location ? `Longitude: ${location[0].toFixed(4)}, Latitude: ${location[1].toFixed(4)}` : 'Longitude: N/A, Latitude: N/A';
+  const lonLat = location
+    ? `Longitude: ${location[0].toFixed(4)}, Latitude: ${location[1].toFixed(4)}`
+    : 'Longitude: N/A, Latitude: N/A';
 
   return (
     <div>
