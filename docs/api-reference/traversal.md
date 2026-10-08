@@ -4,7 +4,7 @@ Functions for finding neighboring cells and collecting cells within a range. See
 
 Each A5 cell has exactly 5 edge neighbors, which can be obtained using the `gridDisk` function. If the vertex neighbors are required, `gridDiskVertex` can be used. For broader range queries `sphericalCap` provides all the cells within a great-circle radius. To trace cells along a path, use [`lineStringToCells`](./indexing#linestringtocells).
 
-In order to save memory, the returned cells from `gridDisk`, `gridDiskVertex` and `sphericalCap` are [compacted](./compaction) into a [covering](./coverings): the cells, then a compaction marker recording their resolution. Coverings can be combined with the [set operations](./coverings).
+In order to save memory, the returned cells from `gridDisk`, `gridDiskVertex` and `sphericalCap` are [compacted](./compaction) into a [covering](./coverings): the cells, then a [compaction marker](./compaction#coverings-and-the-compaction-marker) recording their resolution. Coverings can be combined with the [set operations](./coverings).
 
 ### gridDisk
 
@@ -25,7 +25,7 @@ function gridDisk(cellId: bigint, k: number): BigUint64Array;
 
 #### Return value
 
-- **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the compaction marker
+- **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the [compaction marker](./compaction#coverings-and-the-compaction-marker)
 
 #### Example
 
@@ -54,7 +54,7 @@ function gridDiskVertex(cellId: bigint, k: number): BigUint64Array;
 
 #### Return value
 
-- **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the compaction marker
+- **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the [compaction marker](./compaction#coverings-and-the-compaction-marker)
 
 ### sphericalCap
 
@@ -73,7 +73,7 @@ function sphericalCap(cellId: bigint, radius: number): BigUint64Array;
 
 #### Return value
 
-- **(BigUint64Array)** Compacted cells sorted in curve order, then the compaction marker
+- **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](./compaction#coverings-and-the-compaction-marker)
 
 #### Example
 

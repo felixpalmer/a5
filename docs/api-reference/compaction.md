@@ -4,7 +4,7 @@ Compaction is a way to efficiently represent a set of A5 cells by replacing grou
 
 For example, if you have all 4 children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
 
-The result of a compaction is a [covering](./coverings.md), which automatically stores the resolution of the compacted cells in-band using a [Compaction Marker](#coverings-and-the-compaction-marker)
+The result of a compaction is a [covering](./coverings.md), which automatically stores the resolution of the compacted cells in-band using a [compaction marker](#coverings-and-the-compaction-marker)
 
 ## Functions supporting compacted data
 
@@ -21,7 +21,7 @@ Many of the functions in the A5 API return and accept compacted data, and should
 
 ### compact
 
-Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells, and appends the compaction marker recording the resolution of the finest input cell. In most cases users will use [polygonToCells](./indexing#polygontocells)
+Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells, and appends the [compaction marker](#coverings-and-the-compaction-marker) recording the resolution of the finest input cell. In most cases users will use [polygonToCells](./indexing#polygontocells)
 
 ```ts
 function compact(cells: bigint[] | BigUint64Array): BigUint64Array;
@@ -33,7 +33,7 @@ function compact(cells: bigint[] | BigUint64Array): BigUint64Array;
 
 #### Return value
 
-- **(BigUint64Array)** Compacted cells sorted in curve order, then the compaction marker. An empty input returns an empty array.
+- **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](#coverings-and-the-compaction-marker). An empty input returns an empty array.
 
 #### Example
 
@@ -53,7 +53,7 @@ console.log(uncompact(compacted));  // the 4 children again
 
 ### uncompact
 
-Expands a covering to all of its cells at the covering's resolution: the resolution of its compaction marker, or of its finest cell when it has none.
+Expands a covering to all of its cells at the covering's resolution: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
 
 ```ts
 function uncompact(cells: bigint[] | BigUint64Array): BigUint64Array;
@@ -82,14 +82,13 @@ console.log(getResolution(flat[0]));  // 10
 
 #### Notes
 
-- All output cells are at the covering's resolution; the compaction marker is not included
+- All output cells are at the covering's resolution; the [compaction marker](#coverings-and-the-compaction-marker) is not included
 - The expansion is complete - every descendant cell at that resolution is included
 - **Ordering property**: If the input is sorted in curve order (as `compact` returns it), the output is too. All children of a cell form a contiguous, ordered block on the curve, so `uncompact` on a covering produces sorted output without requiring a re-sort, which is useful for large result sets
-- To expand a compacted array that predates the compaction marker (and so lost its resolution), expand each cell to the known resolution instead: `cells.flatMap(c => cellToChildren(c, resolution))`
 
 ### coveringResolution
 
-Returns the resolution a covering stands for: the resolution of its compaction marker, or of its finest cell when it has none.
+Returns the resolution a covering stands for: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
 
 ```ts
 function coveringResolution(cells: bigint[] | BigUint64Array): number;
@@ -115,7 +114,7 @@ console.log(coveringResolution(compacted));  // 4
 
 ### isCompactionMarker
 
-Checks whether a value is a compaction marker, the value at the end of a covering that records its resolution. Most code never needs it: the A5 functions that read coverings handle the compaction marker themselves, and to get a covering's cells one at a time, use [`uncompact`](#uncompact). Always keep the compaction marker when you store or pass on a covering, as without it the compacted cells no longer say which resolution they stand for.
+Checks whether a value is a [compaction marker](#coverings-and-the-compaction-marker), the value at the end of a covering that records its resolution. Most code never needs it: the A5 functions that read coverings handle the [compaction marker](#coverings-and-the-compaction-marker) themselves, and to get a covering's cells one at a time, use [`uncompact`](#uncompact). Always keep the [compaction marker](#coverings-and-the-compaction-marker) when you store or pass on a covering, as without it the compacted cells no longer say which resolution they stand for.
 
 ```ts
 function isCompactionMarker(value: bigint): boolean;
@@ -127,7 +126,7 @@ function isCompactionMarker(value: bigint): boolean;
 
 #### Return value
 
-- **(boolean)** Whether the value is a compaction marker
+- **(boolean)** Whether the value is a [compaction marker](#coverings-and-the-compaction-marker)
 
 #### Example
 

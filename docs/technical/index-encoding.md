@@ -11,7 +11,7 @@ Generally the term **cell** is used to describe the pentagonal region that the A
 - Resolution 0 cells are also called **origins**
 - Resolution 1 cells correspond to **quintants**, one cell per fifth of a dodecahedron face
 - Resolution 2+ cells are just **cells**
-- There is a **World Cell** which can be thought of as having Resolution -1, see [below for more details](#special-case-world-cell)
+- There is a [world cell](#special-case-world-cell) which can be thought of as having resolution -1
 
 See [Platonic Solids](./platonic-solids) for more details.
 
@@ -136,13 +136,13 @@ As an encoded index it can be thought of as having:
 
 ### World Cell Boundary
 
-A general A5 cell boundary is a set of points which enclose the region represented by that cell. As the World Cell contains the whole world it is not bounded by any points. Thus the boundary returned by `cellToBoundary(0n)` is `[]`, an empty array to represent the fact the region is valid, but unbounded.
+A general A5 cell boundary is a set of points which enclose the region represented by that cell. As the world cell contains the whole world it is not bounded by any points. Thus the boundary returned by `cellToBoundary(0n)` is `[]`, an empty array to represent the fact the region is valid, but unbounded.
 
 *Note that other libraries may need to handle this case specially as not all systems have a concept of a geometry that is the entire globe*
 
 ### World Cell Location
 
-Conversely, for completeness `cellToLonLat(0n)` will return `[0, 0]`. While this choice is arbitrary, as the World Cell covers the whole world and thus has no center - it seems the most natural choice as it is the point at the center of many map projections.
+Conversely, for completeness `cellToLonLat(0n)` will return `[0, 0]`. While this choice is arbitrary, as the world cell covers the whole world and thus has no center - it seems the most natural choice as it is the point at the center of many map projections.
 
 ## Key Properties
 

@@ -2,8 +2,8 @@
 
 The A5 API passes around 64-bit unsigned integers, almost all of which are [cell IDs](./index-encoding). There are a few exceptions:
 
-- the [World Cell](./index-encoding#special-case-world-cell),
-- the [Compaction Marker](#compaction-marker) that indicates the compaction resolution of a set of compacted cells
+- the [world cell](./index-encoding#special-case-world-cell),
+- the [compaction marker](#compaction-marker) that indicates the compaction resolution of a set of compacted cells
 
 All of them share one rule for telling them apart: the **tag**, inspired by [Tagged Pointers](https://en.wikipedia.org/wiki/Tagged_pointer) used in other programming contexts.
 
@@ -24,7 +24,7 @@ By exploiting an identity from twos-compliment arithemtic, obtaining the tag is 
 | 56                   | `1` + 56 zeros                 | Cell at resolution 1                                         |
 | 55, 53, …, 3, 1      | `1` + odd number of zeros      | Cell at resolution 2–29, bit `59 - 2r` for resolution `r`    |
 | 4, 2, 0              | `10000`, `100`, `1`            | Cell at [resolution 30](./index-encoding#special-case-resolution-30) |
-| none (value `0`)     | 64 zeros                       | [World Cell](./index-encoding#special-case-world-cell) (resolution -1) |
+| none (value `0`)     | 64 zeros                       | [World cell](./index-encoding#special-case-world-cell) (resolution -1) |
 | 6                    | `1000000`                      | [Compaction marker](#compaction-marker), with quintant 60    |
 | 8, 10, ...odd values | `100000000`, `10000000000`...  | Not used: not a valid A5 value                               |
 
@@ -37,7 +37,7 @@ A5 has an aperture of 4, in other words the number of cell quadruples in general
 
 ## Compaction Marker
 
-A [covering](../api-reference/compaction#coverings-and-the-compaction-marker) represents a set of cells at given resolution `R` by grouping them into parent cells at a coarser resolution. In order to correctly interpret such a covering it is necessary to supply the resolution `R`, which has been effectively stripped by the compaction procedure. The *Compaction Marker* is a special 64bit value that encodes the resolution `R` for this purpose.
+A [covering](../api-reference/compaction#coverings-and-the-compaction-marker) represents a set of cells at given resolution `R` by grouping them into parent cells at a coarser resolution. In order to correctly interpret such a covering it is necessary to supply the resolution `R`, which has been effectively stripped by the compaction procedure. The *compaction marker* is a special 64bit value that encodes the resolution `R` for this purpose.
 
 The bit layout is as follows:
 

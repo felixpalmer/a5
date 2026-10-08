@@ -74,7 +74,7 @@ The `containment` option controls which cells count as belonging to the polygon:
 - `'center'` (default) — a cell is included only if its center lies inside the polygon. Adjacent polygons that share an edge produce disjoint coverings, so this is the right choice for partitioning.
 - `'overlapping'` — additionally includes every cell that overlaps the polygon boundary. The result is a superset of `'center'` that fully covers the polygon with no gaps, at the cost of some overlap with adjacent polygons. Use this when a query must not miss any cell touching the polygon (for example, filtering database rows by cell before applying an exact geometry test).
 
-The result is a [covering](./coverings) of the polygon, approximating it with `'center'` and containing it with `'overlapping'`: compacted cells, then a compaction marker recording the resolution. Use [`uncompact`](./compaction#uncompact) to expand it to the input resolution. The compacted form is intended for storage, transfer and set operations: cell boundaries of different resolutions do not nest geometrically, so the mixed-resolution cells of a covering will show overlaps and gaps when rendered. Uncompact to a single resolution before drawing cells on a map.
+The result is a [covering](./coverings) of the polygon, approximating it with `'center'` and containing it with `'overlapping'`: compacted cells, then a [compaction marker](./compaction#coverings-and-the-compaction-marker) recording the resolution. Use [`uncompact`](./compaction#uncompact) to expand it to the input resolution. The compacted form is intended for storage, transfer and set operations: cell boundaries of different resolutions do not nest geometrically, so the mixed-resolution cells of a covering will show overlaps and gaps when rendered. Uncompact to a single resolution before drawing cells on a map.
 
 Multi-polygons are not supported directly — call `polygonToCells` per polygon and combine the results with [`union`](./coverings#union). Coverings can also be intersected, subtracted and tested for containment without uncompacting, see [Coverings](./coverings).
 
@@ -93,7 +93,7 @@ function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, opti
 
 #### Return value
 
-- **(BigUint64Array)** Compacted cells belonging to the polygon sorted in curve order, then the compaction marker. A polygon with no cells gives just the compaction marker
+- **(BigUint64Array)** Compacted cells belonging to the polygon sorted in curve order, then the [compaction marker](./compaction#coverings-and-the-compaction-marker). A polygon with no cells gives just the [compaction marker](./compaction#coverings-and-the-compaction-marker)
 
 #### Example
 
