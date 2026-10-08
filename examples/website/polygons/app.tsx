@@ -7,8 +7,10 @@ import {ScatterplotLayer, ArcLayer} from '@deck.gl/layers';
 import {A5Layer} from '@deck.gl/geo-layers';
 import {lineStringToCells} from 'a5/traversal/line';
 import {polygonToCells} from 'a5/regions/polygon';
-import {uncompact} from 'a5/core/compact';
-import {getResolution} from 'a5/core/serialization';
+import {uncompact} from 'a5/collections/compact';
+import {count} from 'a5/collections/measures';
+import {union} from 'a5/collections/set-operations';
+import {isCompactionMarker} from 'a5/core/compaction-marker';
 import type {LonLat} from 'a5/core/coordinate-systems';
 
 const INITIAL_VIEW_STATE = {
@@ -202,15 +204,9 @@ const App: React.FC = () => {
     if (!activePolygons || outlineOnly) return null;
     const containment = overlapping ? 'overlapping' : 'center';
     const parts = activePolygons.map(rings => polygonToCells(rings, resolution, {containment}));
-    if (parts.length === 1) return parts[0];
-    let total = 0;
-    for (const p of parts) total += p.length;
-    const merged = new BigUint64Array(total);
-    let offset = 0;
-    for (const p of parts) {
-      merged.set(p, offset);
-      offset += p.length;
-    }
+    // A multi-polygon is the union of its parts
+    let merged = parts[0];
+    for (let i = 1; i < parts.length; i++) merged = union(merged, parts[i]);
     return merged;
   }, [activePolygons, resolution, outlineOnly, overlapping]);
 
@@ -236,17 +232,15 @@ const App: React.FC = () => {
       return cells;
     }
     if (!compactedCells) return [];
-    return Array.from(showCompacted ? compactedCells : uncompact(compactedCells, resolution));
+    return Array.from(
+      showCompacted ? compactedCells.filter(cell => !isCompactionMarker(cell)) : uncompact(compactedCells)
+    );
   }, [waypoints, resolution, isPolygon, activePolygons, outlineOnly, showCompacted, compactedCells]);
 
   const uncompactedCount = useMemo(() => {
     if (!compactedCells) return 0;
-    return Array.from(compactedCells).reduce((sum, cell) => {
-      const res = getResolution(cell);
-      const diff = resolution - res;
-      return sum + Math.pow(4, diff);
-    }, 0);
-  }, [compactedCells, resolution]);
+    return Number(count(compactedCells));
+  }, [compactedCells]);
 
   // Waypoint markers
   const waypointData = useMemo((): WaypointData[] => {
@@ -395,7 +389,7 @@ const App: React.FC = () => {
           Cells: <strong>{tracedCells.length}</strong>
           {isPolygon && !outlineOnly && compactedCells && (
             <span style={{color: '#888'}}>
-              {showCompacted ? ` (${uncompactedCount} uncompacted)` : ` (${compactedCells.length} compacted)`}
+              {showCompacted ? ` (${uncompactedCount} uncompacted)` : ` (${compactedCells.length - 1} compacted)`}
             </span>
           )}
         </div>

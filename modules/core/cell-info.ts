@@ -25,7 +25,25 @@ export function getNumCells(resolution: number | bigint): number | bigint {
   }
 }
 
-export function getNumChildren(parentResolution: number, childResolution: number): number {
+/**
+ * Returns the number of descendants a cell has at a finer resolution.
+ *
+ * @param parentResolution The cell's resolution (-1 for the world cell)
+ * @param childResolution The resolution of the descendants (use BigInt for
+ *   exact values when the count exceeds 2^53)
+ * @returns Number of descendants (1 at the same resolution, 0 if coarser)
+ */
+export function getNumChildren(parentResolution: number, childResolution: number): number;
+export function getNumChildren(parentResolution: bigint, childResolution: bigint): bigint;
+export function getNumChildren(parentResolution: number | bigint, childResolution: number | bigint): number | bigint {
+  if (typeof parentResolution === 'bigint' || typeof childResolution === 'bigint') {
+    const parent = BigInt(parentResolution);
+    const child = BigInt(childResolution);
+    if (child < parent) return 0n;
+    if (child === parent) return 1n;
+    if (parent >= BigInt(FIRST_HILBERT_RESOLUTION)) return 4n ** (child - parent);
+    return getNumCells(child) / (parent < 0n ? 1n : getNumCells(parent));
+  }
   if (childResolution < parentResolution) return 0;
   if (childResolution === parentResolution) return 1;
   if (parentResolution >= FIRST_HILBERT_RESOLUTION) {

@@ -11,7 +11,7 @@ Generally the term **cell** is used to describe the pentagonal region that the A
 - Resolution 0 cells are also called **origins**
 - Resolution 1 cells correspond to **quintants**, one cell per fifth of a dodecahedron face
 - Resolution 2+ cells are just **cells**
-- There is a **World Cell** which can be thought of as having Resolution -1, see [below for more details](#special-case-world-cell)
+- There is a [world cell](#special-case-world-cell) which can be thought of as having resolution -1
 
 See [Platonic Solids](./platonic-solids) for more details.
 
@@ -23,7 +23,7 @@ The 64 bits are organized into several distinct sections:
 ┌────────────────────────────────────────────────────────┐
 │  6 bits  │ Variable bits │   2 bits   │ Trailing zeros │
 │  Origin/ │ Hilbert Curve │ resolution │                │
-│ Quintant │               │   marker   │                │
+│ Quintant │               │    tag     │                │
 └────────────────────────────────────────────────────────┘
   63 - 58       57 - ...        ..          ... - 0
 ```
@@ -40,7 +40,8 @@ The 64 bits are organized into several distinct sections:
    - Length = 2 × (resolution - 1) bits
    - Not present for resolution 0 and 1
 
-3. **Resolution Marker (2 bits)**: The right-most `01` or `10` bitpair
+3. **Resolution Tag (2 bits)**: The right-most `01` or `10` bitpair
+   - A tag is the bit pattern read first when processing an index: it says how to interpret the remaining bits (see [Bit Tags](./bit-tags))
    - The position of these bits encodes the resolution level
    - For resolution 0: `10`, resolution 1: `01` (`1` shifts by one bit)
    - For resolution ≥ 2: shifts by 2 bits per resolution (accounts for Hilbert curve)
@@ -48,7 +49,7 @@ The 64 bits are organized into several distinct sections:
 4. **Trailing Zeros**: All remaining bits
    - Pads the integer to 64 bits
    - Allows efficient computation of parents (right-shift) and children (left-shift)
-   - Unambigiously determines which bits are the resolution marker bits
+   - Unambigiously determines which bits are the resolution tag bits
 
 ## Examples
 
@@ -58,7 +59,7 @@ Let's look at how different cells are encoded. Using London `-0.1276, 51.5074` a
 
 At resolution 0, there are only 12 cells covering the entire Earth. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> directly encode the origin (<span style={{color: '#0066FF', fontWeight: 'bold'}}>000100 = 4</span>).
 
-Notice how all bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> after the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>.
+Notice how all bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span> after the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution tag</span>.
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={0}/>
 
@@ -66,7 +67,7 @@ Notice how all bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zer
 
 At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment as (<span style={{color: '#0066FF', fontWeight: 'bold'}}>011000 = 24</span>). This can be decomposed into <span style={{color: '#0066FF', fontWeight: 'bold'}}>5 x 4 + 0 = 24</span>, thus like with resolution 0, we are in origin 4 and in the first segment (as the count starts with 0).
 
-The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution marker is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
+The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution tag is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={1}/>
 
@@ -76,7 +77,7 @@ From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolut
 
 They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit Hilbert value 11010011</span> encoding position along the space-filling curve.
 
-Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution marker</span>, followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
+Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution tag</span>, followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={5}/>
 
@@ -92,7 +93,7 @@ import HierarchyDemo from 'website-examples/hierarchy/app';
 
 ## Special Case: Resolution 30
 
-At resolution 30 the Hilbert curve requires 2 × 29 = 58 bits, and combined with 6 quintant bits that's already 64 — leaving no room for the resolution marker.
+At resolution 30 the Hilbert curve requires 2 × 29 = 58 bits, and combined with 6 quintant bits that's already 64 — leaving no room for the resolution tag.
 
 The solution is a **virtual 66-bit layout**: when the final 1, 3 or 5 bits of the 64-bit index are set to a special value - before interpreting the index it must be first shifted right and then treated as a *66* bit integer, where the last two bits are `10` as usual.
 
@@ -110,7 +111,7 @@ Examples:
 
 ### Why this works
 
-The trick above exploits the fact that the indexing scheme has some unused values, which can be used to represent the final resolution level. In the general case, an index value will have a `1` followed by an *odd* number of `0`s, e.g. `...1000`. Thus by choosing patterns that have an *even* number of `0`s, we can be sure to avoid collisions and effectively gain an extra two bits.
+The trick above exploits the fact that the indexing scheme has some unused values, which can be used to represent the final resolution level. In the general case, an index value will have a `1` followed by an *odd* number of `0`s, e.g. `...1000`. Thus by choosing patterns that have an *even* number of `0`s, we can be sure to avoid collisions and effectively gain an extra two bits. See [Bit Tags](./bit-tags) for how every tag is assigned.
 
 ### Quintants beyond 41
 
@@ -123,25 +124,17 @@ A special cell identifier with value `0n` (all 64 bits are zero) represents the 
 - Representing "all cells" in a compact form
 - Computing all resolution 0 cells via `cellToChildren(WORLD_CELL, 0)`, or any other resolution
 
-### World Cell Encoding
-
-As an encoded index it can be thought of as having:
-
-- No **origin** or **quintant**
-- **Resolution -1** one less than the Resolution 0 cells as it acts as their parent
-- A **Resolution Marker** shifted so far left that it disappears, so only the zero padding remains
-
-<A5CellInfoBox location={[-0.1276, 51.5074]} resolution={-1}/>
+See [World Cell Encoding](./bit-tags#world-cell-encoding) for how it is encoded.
 
 ### World Cell Boundary
 
-A general A5 cell boundary is a set of points which enclose the region represented by that cell. As the World Cell contains the whole world it is not bounded by any points. Thus the boundary returned by `cellToBoundary(0n)` is `[]`, an empty array to represent the fact the region is valid, but unbounded.
+A general A5 cell boundary is a set of points which enclose the region represented by that cell. As the world cell contains the whole world it is not bounded by any points. Thus the boundary returned by `cellToBoundary(0n)` is `[]`, an empty array to represent the fact the region is valid, but unbounded.
 
 *Note that other libraries may need to handle this case specially as not all systems have a concept of a geometry that is the entire globe*
 
 ### World Cell Location
 
-Conversely, for completeness `cellToLonLat(0n)` will return `[0, 0]`. While this choice is arbitrary, as the World Cell covers the whole world and thus has no center - it seems the most natural choice as it is the point at the center of many map projections.
+Conversely, for completeness `cellToLonLat(0n)` will return `[0, 0]`. While this choice is arbitrary, as the world cell covers the whole world and thus has no center - it seems the most natural choice as it is the point at the center of many map projections.
 
 ## Key Properties
 

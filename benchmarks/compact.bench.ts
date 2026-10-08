@@ -13,9 +13,12 @@ type CountryFixture = {name: string; polygon: [number, number][][]};
 const countries = (fixtures as any).country as CountryFixture[];
 const uk = countries.find(c => c.name === 'United Kingdom')!;
 
-// A realistic mixed-resolution cell set: country fill expanded to a flat list
-const compacted = polygonToCells(uk.polygon as LonLat[][], 10);
-const flat = uncompact(compacted, 10);
+// A realistic mixed-resolution cell set: country fill expanded to a flat list.
+// The resolution argument is for the pre-compaction-marker uncompact(cells, resolution),
+// which the baseline run may use; uncompact now reads it from the compaction marker.
+const uncompactAt = uncompact as (cells: BigUint64Array, resolution: number) => BigUint64Array;
+const flat = uncompactAt(polygonToCells(uk.polygon as LonLat[][], 10), 10);
+const compacted12 = polygonToCells(uk.polygon as LonLat[][], 12);
 
 describe('compact', () => {
   bench(
@@ -27,9 +30,9 @@ describe('compact', () => {
   );
 
   bench(
-    `uncompact UK res 10 -> 12 (${flat.length * 16} cells)`,
+    `uncompact UK res 12 (${flat.length * 16} cells)`,
     () => {
-      uncompact(flat, 12);
+      uncompactAt(compacted12, 12);
     },
     BENCH_OPTS
   );

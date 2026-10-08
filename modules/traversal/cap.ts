@@ -7,6 +7,7 @@ import type {OriginId} from '../core/utils';
 import {getResolution, cellToParent, deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {cellToSpherical} from '../core/cell';
 import {cellArea} from '../core/cell-info';
+import {toCovering} from '../collections/slot-runs';
 import {AUTHALIC_RADIUS_EARTH} from '../core/constants';
 import {walkFaces} from '../core/face-adjacency';
 import {haversine, origins} from '../core/origin';
@@ -92,8 +93,8 @@ function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number)
 }
 
 /**
- * Compute all cells within a great-circle radius, returning a naturally
- * compacted result (mix of resolutions) as a BigUint64Array.
+ * Compute all cells within a great-circle radius, returning a compacted result
+ * (mix of resolutions), with a compaction marker recording the resolution.
  *
  * Uses hierarchical BFS: starts at a coarse resolution and recursively
  * subdivides boundary cells, keeping interior cells at coarser resolutions.
@@ -105,12 +106,12 @@ function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number)
  *
  * To get all cells at the target resolution, chain with `uncompact`:
  * ```ts
- * const flat = uncompact(sphericalCap(cellId, 50_000), getResolution(cellId));
+ * const flat = uncompact(sphericalCap(cellId, 50_000));
  * ```
  *
  * @param cellId - Center cell ID (bigint)
  * @param radius - Radius in meters
- * @returns Sorted BigUint64Array of cell IDs at mixed resolutions (compacted)
+ * @returns Compacted cells sorted in curve order, then the compaction marker
  */
 export function sphericalCap(cellId: bigint, radius: number): BigUint64Array {
   const targetRes = getResolution(cellId);
@@ -163,7 +164,5 @@ export function sphericalCap(cellId: bigint, radius: number): BigUint64Array {
     }
   }
 
-  const out = BigUint64Array.from(result);
-  out.sort();
-  return out;
+  return toCovering(result, targetRes);
 }

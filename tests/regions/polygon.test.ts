@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {hexToU64, u64ToHex, polygonToCells, uncompact, getResolution} from 'a5';
+import {hexToU64, u64ToHex, polygonToCells, uncompact, getResolution, count, coveringResolution} from 'a5';
 import type {LonLat} from 'a5/core/coordinate-systems';
 import fixtures from '../fixtures/regions/polygon.json';
 
@@ -23,7 +23,7 @@ describe('polygonToCells', () => {
   for (const f of cases) {
     it(`should fill correct cells for ${f.name}`, () => {
       const result = polygonToCells(f.polygon as LonLat[][], f.resolution);
-      const expanded = uncompact(result, f.resolution);
+      const expanded = uncompact(result);
       const sorted = [...expanded].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
       const resultHex = sorted.map(c => u64ToHex(c));
       expect(resultHex).toEqual(f.cells);
@@ -34,7 +34,7 @@ describe('polygonToCells', () => {
   for (const f of overlappingCases) {
     it(`should fill correct overlapping cells for ${f.name}`, () => {
       const result = polygonToCells(f.polygon as LonLat[][], f.resolution, {containment: 'overlapping'});
-      const expanded = uncompact(result, f.resolution);
+      const expanded = uncompact(result);
       const sorted = [...expanded].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
       const resultHex = sorted.map(c => u64ToHex(c));
       expect(resultHex).toEqual(f.cells);
@@ -48,8 +48,8 @@ describe('polygonToCells', () => {
       [15, 44],
       [-5, 44]
     ] as LonLat[];
-    const center = new Set(uncompact(polygonToCells(ring, 6), 6));
-    const overlapping = new Set(uncompact(polygonToCells(ring, 6, {containment: 'overlapping'}), 6));
+    const center = new Set(uncompact(polygonToCells(ring, 6)));
+    const overlapping = new Set(uncompact(polygonToCells(ring, 6, {containment: 'overlapping'})));
     for (const cell of center) expect(overlapping.has(cell)).toBe(true);
     expect(overlapping.size).toBeGreaterThan(center.size);
   });
@@ -64,40 +64,33 @@ describe('polygonToCells', () => {
     expect(polygonToCells(ring, 6)).toEqual(polygonToCells(ring, 6, {containment: 'center'}));
   });
 
-  it('should return empty for less than 3 vertices', () => {
-    expect(polygonToCells([] as LonLat[], 5).length).toBe(0);
-    expect(
-      polygonToCells(
+  it('should return an empty covering for less than 3 vertices', () => {
+    const degenerate = [
+      [],
+      [
+        [0, 0],
+        [1, 1]
+      ],
+      // Nested form with a degenerate outer ring
+      [
         [
           [0, 0],
           [1, 1]
-        ] as LonLat[],
-        5
-      ).length
-    ).toBe(0);
-    // Nested form with a degenerate outer ring
-    expect(
-      polygonToCells(
-        [
-          [
-            [0, 0],
-            [1, 1]
-          ]
-        ] as LonLat[][],
-        5
-      ).length
-    ).toBe(0);
-    // Closed ring with only 2 distinct vertices
-    expect(
-      polygonToCells(
-        [
-          [0, 0],
-          [1, 1],
-          [0, 0]
-        ] as LonLat[],
-        5
-      ).length
-    ).toBe(0);
+        ]
+      ],
+      // Closed ring with only 2 distinct vertices
+      [
+        [0, 0],
+        [1, 1],
+        [0, 0]
+      ]
+    ] as (LonLat[] | LonLat[][])[];
+    for (const polygon of degenerate) {
+      const cells = polygonToCells(polygon, 5);
+      expect(count(cells)).toBe(0n);
+      // The empty covering still records its resolution
+      expect(coveringResolution(cells)).toBe(5);
+    }
   });
 
   it('should accept GeoJSON-style closed rings', () => {
@@ -146,7 +139,7 @@ describe('polygonToCells', () => {
     for (const f of countryCases) {
       it(`should match brute-force count for ${f.name} at res ${f.resolution}`, () => {
         const result = polygonToCells(f.polygon as LonLat[][], f.resolution);
-        const expanded = uncompact(result, f.resolution);
+        const expanded = uncompact(result);
         const unique = new Set(expanded);
         expect(unique.size).toBe(f.cellCount);
       });

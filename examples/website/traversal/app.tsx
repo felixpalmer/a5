@@ -9,7 +9,8 @@ import {getResolution} from 'a5/core/serialization';
 import {getGlobalCellNeighbors} from 'a5/traversal/global-neighbors';
 import {gridDisk, gridDiskVertex} from 'a5/traversal/grid-disk';
 import {sphericalCap} from 'a5/traversal/cap';
-import {uncompact} from 'a5/core/compact';
+import {uncompact} from 'a5/collections/compact';
+import {isCompactionMarker} from 'a5/core/compaction-marker';
 import type {LonLat} from 'a5/core/coordinate-systems';
 
 const INITIAL_VIEW_STATE = {
@@ -27,9 +28,8 @@ const SELECTED_COLOR: [number, number, number, number] = [255, 255, 0, 200];
  * each cell its hop distance.
  */
 function kRingWithDistance(cellId: bigint, k: number, edgeOnly: boolean): Map<bigint, number> {
-  const res = getResolution(cellId);
   const compact = edgeOnly ? gridDisk(cellId, k) : gridDiskVertex(cellId, k);
-  const cells = new Set(uncompact(compact, res));
+  const cells = new Set(uncompact(compact));
   cells.delete(cellId);
 
   const ringMap = new Map<bigint, number>();
@@ -64,8 +64,7 @@ function haversineDistance(a: LonLat, b: LonLat): number {
 }
 
 function capWithDistance(cellId: bigint, radiusM: number): Map<bigint, number> {
-  const res = getResolution(cellId);
-  const cells = uncompact(sphericalCap(cellId, radiusM), res);
+  const cells = uncompact(sphericalCap(cellId, radiusM));
   const center = cellToLonLat(cellId);
 
   const distMap = new Map<bigint, number>();
@@ -187,10 +186,12 @@ const App: React.FC = () => {
         : edgeOnly
           ? gridDisk(selectedId, k)
           : gridDiskVertex(selectedId, k);
-    return Array.from(cells).map(id => ({
-      id,
-      resolution: getResolution(id)
-    }));
+    return Array.from(cells)
+      .filter(id => !isCompactionMarker(id))
+      .map(id => ({
+        id,
+        resolution: getResolution(id)
+      }));
   }, [selectedId, mode, k, radiusM, edgeOnly, doUncompact]);
 
   const maxRing = useMemo(() => {

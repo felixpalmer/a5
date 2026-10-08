@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {sphericalCap, uncompact, getResolution, hexToU64, u64ToHex} from 'a5';
+import {sphericalCap, uncompact, hexToU64, u64ToHex} from 'a5';
 import {metersToH, estimateCellRadius, pickCoarseResolution} from 'a5/traversal/cap';
 import fixtures from '../fixtures/traversal/cap.json';
 
@@ -27,8 +27,7 @@ describe('sphericalCap', () => {
   it('should return correct cells when uncompacted', () => {
     for (const f of flatCases) {
       const cellId = hexToU64(f.cellId);
-      const targetRes = getResolution(cellId);
-      const result = Array.from(uncompact(sphericalCap(cellId, f.radius), targetRes)).map(n => u64ToHex(n));
+      const result = Array.from(uncompact(sphericalCap(cellId, f.radius))).map(n => u64ToHex(n));
       expect(result).toEqual(f.cells);
     }
   });

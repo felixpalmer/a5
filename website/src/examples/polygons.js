@@ -17,11 +17,11 @@ class PolygonsDemo extends Component {
         <p>Click on the map to place waypoints, or load a country preset.</p>
         <p>
           Depending on the mode,{' '}
-          <a href="/docs/api-reference/regions#polygontocells">
+          <a href="/docs/api-reference/indexing#polygontocells">
             <code>polygonToCells</code>
           </a>{' '}
           is used to show the cells enclosed, or{' '}
-          <a href="/docs/api-reference/traversal#linestringtocells">
+          <a href="/docs/api-reference/indexing#linestringtocells">
             <code>lineStringToCells</code>
           </a>{' '}
           is used to show cells which overlap the outline

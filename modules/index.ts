@@ -19,7 +19,13 @@ export {
   WORLD_CELL
 } from './core/serialization';
 export {getNumCells, getNumChildren, cellArea, cellEdgeLengthAvg} from './core/cell-info';
-export {compact, uncompact} from './core/compact';
+export {compact, uncompact} from './collections/compact';
+export {isCompactionMarker} from './core/compaction-marker';
+
+// Coverings
+export {coveringResolution} from './collections/resolution';
+export {contains, difference, intersect, overlaps, union} from './collections/set-operations';
+export {area, count} from './collections/measures';
 
 // Migration
 export {migrate} from './core/migrate';

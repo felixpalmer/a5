@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {compact} from '../core/compact';
+import {compactCells, toCovering} from '../collections/slot-runs';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {origins} from '../core/origin';
 import {walkFaces} from '../core/face-adjacency';
@@ -52,12 +52,15 @@ function pushCellIds(out: bigint[], cells: number[], hilbertRes: number, resolut
  * periodically compacted to reduce memory pressure.
  */
 function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array {
-  if (k === 0) return new BigUint64Array([cellId]);
   const {origin, resolution} = deserialize(cellId);
+  if (k === 0) return toCovering([cellId], resolution);
   if (resolution === 0) {
     // The cells are the 12 dodecahedron faces
     const faces = walkFaces([origin.id], () => true, k);
-    return compact(faces.map(face => serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0})));
+    return toCovering(
+      faces.map(face => serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0})),
+      0
+    );
   }
   const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
   const maxRow = (1 << hilbertRes) - 1;
@@ -87,7 +90,7 @@ function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array
 
     // Progressively compact interior to reduce memory pressure
     if (interior.length > 100) {
-      interior = Array.from(compact(interior));
+      interior = compactCells(interior);
     }
 
     prevFrontier = frontier;
@@ -98,22 +101,22 @@ function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array
   pushCellIds(interior, prevFrontier.cells, hilbertRes, resolution);
   pushCellIds(interior, frontier.cells, hilbertRes, resolution);
 
-  return compact(interior);
+  return toCovering(interior, resolution);
 }
 
 /**
  * Compute the grid disk of edge-sharing neighbors within k hops.
- * Returns a sorted, compacted BigUint64Array of cell IDs including
- * the center cell.
+ * Returns compacted cell IDs including the center cell, sorted in curve
+ * order, then a compaction marker recording the resolution.
  *
  * To get all cells at the input resolution, chain with `uncompact`:
  * ```ts
- * const flat = uncompact(gridDisk(cellId, k), getResolution(cellId));
+ * const flat = uncompact(gridDisk(cellId, k));
  * ```
  *
  * @param cellId - Center cell ID (bigint)
  * @param k - Number of hops (must be >= 0)
- * @returns Sorted BigUint64Array of compacted cell IDs in the disk
+ * @returns Compacted cells in the disk, sorted in curve order, then the compaction marker
  */
 export function gridDisk(cellId: bigint, k: number): BigUint64Array {
   return _gridDisk(cellId, k, true);
@@ -121,17 +124,17 @@ export function gridDisk(cellId: bigint, k: number): BigUint64Array {
 
 /**
  * Compute the grid disk of all neighbors (edge + vertex sharing) within k hops.
- * Returns a sorted, compacted BigUint64Array of cell IDs including
- * the center cell.
+ * Returns compacted cell IDs including the center cell, sorted in curve
+ * order, then a compaction marker recording the resolution.
  *
  * To get all cells at the input resolution, chain with `uncompact`:
  * ```ts
- * const flat = uncompact(gridDiskVertex(cellId, k), getResolution(cellId));
+ * const flat = uncompact(gridDiskVertex(cellId, k));
  * ```
  *
  * @param cellId - Center cell ID (bigint)
  * @param k - Number of hops (must be >= 0)
- * @returns Sorted BigUint64Array of compacted cell IDs in the disk
+ * @returns Compacted cells in the disk, sorted in curve order, then the compaction marker
  */
 export function gridDiskVertex(cellId: bigint, k: number): BigUint64Array {
   return _gridDisk(cellId, k, false);

@@ -24,6 +24,7 @@ import {roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '.
 import type {Triple} from '../lattice';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from './serialization';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
+import {isCompactionMarker} from './compaction-marker';
 
 // Reuse these objects to avoid allocation
 const rotation = mat2.create();
@@ -151,7 +152,7 @@ function _lookupInQuintant(
   const segment = (origin.firstQuintant + faceRelativeQuintant) % 5;
 
   // Res-30 ids can only encode quintants 0-41 (by design: 64 bits cannot fit
-  // res 30 globally, so A5 covers the populous region). In the unsupported
+  // res 30 globally, so A5 covers the populous covering). In the unsupported
   // quintants, answer at the finest representable resolution instead — the
   // res-29 cell CONTAINING the point. (Previously the cap lived only in
   // serialize, which swapped in the res-29 parent of a res-30 search result —
@@ -317,8 +318,9 @@ export function cellToBoundary(
   cellId: bigint,
   {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}
 ): LonLat[] {
-  if (cellId === WORLD_CELL) {
-    // WORLD_CELL represents the entire world and is unbounded
+  if (cellId === WORLD_CELL || isCompactionMarker(cellId)) {
+    // WORLD_CELL represents the entire world and is unbounded; a compaction marker
+    // (recording a covering's resolution) is not a cell at all
     return [];
   }
 

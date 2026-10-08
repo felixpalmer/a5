@@ -1,4 +1,4 @@
-import {polygonToCells} from '../../../dist/a5.js';
+import {isCompactionMarker, polygonToCells} from '../../../dist/a5.js';
 import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
@@ -70,8 +70,9 @@ async function main() {
     for (const ring of extractRings(feature.geometry)) {
       totalRings++;
       const compacted = polygonToCells(ring, opts.resolution);
-      totalCompacted += compacted.length;
+      totalCompacted += compacted.length - 1;
       for (const id of compacted) {
+        if (isCompactionMarker(id)) continue;
         if (!claim.has(id)) claim.set(id, name);
       }
     }

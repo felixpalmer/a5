@@ -27,7 +27,8 @@
       "technical/dggs",
       "technical/the-pentagon-that-could",
       "technical/platonic-solids",
-      "technical/index-encoding"
+      "technical/index-encoding",
+      "technical/bit-tags"
     ]
   },
   {
@@ -38,9 +39,9 @@
       "api-reference/indexing",
       "api-reference/hierarchy",
       "api-reference/traversal",
-      "api-reference/regions",
       "api-reference/cell-info",
-      "api-reference/compaction"
+      "api-reference/compaction",
+      "api-reference/coverings"
     ]
   },
   {

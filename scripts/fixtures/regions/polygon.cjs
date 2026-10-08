@@ -188,7 +188,7 @@ function bruteForcePolygonToCells(rings, resolution, insidePoint) {
   // A polygon reaching past a hemisphere can't be bounded by a cap around its
   // vertex centroid, so test every cell.
   const candidateCells = insidePoint
-    ? uncompact(getRes0Cells(), resolution)
+    ? getRes0Cells().flatMap(c => cellToChildren(c, resolution))
     : getCandidateCells(rings, resolution, true);
   const result = [];
   for (const cellId of candidateCells) {
@@ -266,7 +266,7 @@ function cellOverlapsPolygon(cellId, rings, insidePoint) {
 function bruteForceOverlappingCells(rings, resolution, insidePoint) {
   // As in bruteForcePolygonToCells: past a hemisphere, test every cell
   const candidateCells = insidePoint
-    ? uncompact(getRes0Cells(), resolution)
+    ? getRes0Cells().flatMap(c => cellToChildren(c, resolution))
     : getCandidateCells(rings, resolution, false);
   const result = [];
   for (const cellId of candidateCells) {

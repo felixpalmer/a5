@@ -24,6 +24,7 @@ require('./fixtures/traversal/line.cjs');
 require('./fixtures/traversal/lattice-flood-fill.cjs');
 require('./fixtures/traversal/triple-hierarchy.cjs');
 require('./fixtures/core/compact.cjs');
+require('./fixtures/core/collection.cjs');
 
 // Utils generators
 require('./fixtures/utils/great-circle.cjs');

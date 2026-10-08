@@ -31,6 +31,10 @@ FIXTURE_MAP = {
         (PY_ROOT, "tests/fixtures/compact.json"),
         (RS_ROOT, "tests/fixtures/compact.json"),
     ],
+    "tests/fixtures/collection.json": [
+        (PY_ROOT, "tests/fixtures/collection.json"),
+        (RS_ROOT, "tests/fixtures/collection.json"),
+    ],
     "tests/fixtures/cell-to-lonlat.json": [
         (PY_ROOT, "tests/core/fixtures/cell-to-lonlat.json"),
         (RS_ROOT, "tests/fixtures/cell-to-lonlat.json"),
