@@ -1,9 +1,11 @@
+import A5CellInfoBox from 'website-examples/components/a5-cell-info-box';
+
 # Bit Tags
 
 The A5 API passes around 64-bit unsigned integers, almost all of which are [cell IDs](./index-encoding). There are a few exceptions:
 
 - the [world cell](./index-encoding#special-case-world-cell),
-- the [compaction marker](#compaction-marker) that indicates the compaction resolution of a set of compacted cells
+- the [compaction marker](../api-reference/compaction#coverings-and-the-compaction-marker) that indicates the compaction resolution of a set of compacted cells
 
 All of them share one rule for telling them apart: the **tag**, inspired by [Tagged Pointers](https://en.wikipedia.org/wiki/Tagged_pointer) used in other programming contexts.
 
@@ -24,33 +26,33 @@ By exploiting an identity from twos-compliment arithemtic, obtaining the tag is 
 | 56                   | `1` + 56 zeros                 | Cell at resolution 1                                         |
 | 55, 53, …, 3, 1      | `1` + odd number of zeros      | Cell at resolution 2–29, bit `59 - 2r` for resolution `r`    |
 | 4, 2, 0              | `10000`, `100`, `1`            | Cell at [resolution 30](./index-encoding#special-case-resolution-30) |
-| none (value `0`)     | 64 zeros                       | [World cell](./index-encoding#special-case-world-cell) (resolution -1) |
-| 6                    | `1000000`                      | [Compaction marker](#compaction-marker), with quintant 60    |
+| 64                   | 64 zeros (no space for `1`)    | [World cell](./index-encoding#special-case-world-cell) (resolution -1) | 
+| 6                    | `1000000`                      | [Compaction marker](../api-reference/compaction#coverings-and-the-compaction-marker), with quintant 60 |
 | 8, 10, ...odd values | `100000000`, `10000000000`...  | Not used: not a valid A5 value                               |
 
 For more information on the index encoding, see [64-Bit Structure](./index-encoding#64-bit-structure)).
 
 ### Why this works
 
-A5 has an aperture of 4, in other words the number of cell quadruples in general at every resolution level. Thus two more bits of storage are needed to represent each level. By appending a tag of the form `100...000` after the bit needed to store the cell index we generally end up with an *odd* number of zeroes following the final `1`. Thus binary values that have an even number of zeros are available for specific use cases.
+A5 has an aperture of 4, in other words the number of cells quadruples in general at every resolution level. Thus two more bits of storage are needed to represent each level. By appending a tag of the form `100...000` after the bit needed to store the cell index we generally end up with an *odd* number of zeroes following the final `1`. Thus binary values that have an even number of zeros are available for specific use cases.
 
 
-## Compaction Marker
+## World Cell Encoding
+
+The [world cell](./index-encoding#special-case-world-cell) is the value `0`. As an encoded index it can be thought of as having:
+
+- No **origin** or **quintant**
+- **Resolution -1** one less than the Resolution 0 cells as it acts as their parent
+- A **Resolution Tag** shifted so far left that its `1` is pushed off the end, so the tag is all 64 zeros
+
+<A5CellInfoBox cell={0n}/>
+
+## Compaction Marker Encoding
 
 A [covering](../api-reference/compaction#coverings-and-the-compaction-marker) represents a set of cells at given resolution `R` by grouping them into parent cells at a coarser resolution. In order to correctly interpret such a covering it is necessary to supply the resolution `R`, which has been effectively stripped by the compaction procedure. The *compaction marker* is a special 64bit value that encodes the resolution `R` for this purpose.
 
-The bit layout is as follows:
-
-```
-┌──────────┬──────────┬────────────┬──────────────┬─────────────┐
-│  111100  │    00    │ resolution │  0 ... 0     │   1000000   │
-│ (q = 60) │          │  (8 bits)  │  (41 bits)   │ marker tag  │
-└──────────┴──────────┴────────────┴──────────────┴─────────────┘
-  63 - 58    57 - 56     55 - 48      47 - 7          6 - 0
-```
+The resolution is encoded in the 2nd byte of the 64bit value, with the tag value of `6`. In order for the marker to sort after all A5 cells a value of `60` is written into the bits normally reserved for the [origin and quintant](./index-encoding#terminology).
 
 For example, the compaction marker for resolution 10 is `0xf00a000000000040`: quintant 60 (`f0`), resolution 10 (`0a`) and the marker tag (`40`).
 
-- A "quintant" of 60 if written into the marker in order make sure it sorts after all valid A5 cells (which have a maximum quintant of 59). The value has no geometric meaning like in a standard A5 cell.
-- The bits marked `0` carry no meaning yet: they are always written as 0, and ignored when read, so a later version can use them
-- The actual payload is written into bits 55-48 in order to place it neatly onto a byte
+<A5CellInfoBox cell={0xf00a000000000040n}/>

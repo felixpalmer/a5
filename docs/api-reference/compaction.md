@@ -149,6 +149,6 @@ Read coverings only through the A5 functions, which handle the compaction marker
 
 `compact`, [`polygonToCells`](./indexing#polygontocells), [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap) and the [set operations](./coverings) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
-See [Bit Tags](../technical/bit-tags#compaction-marker) for how the compaction marker is encoded.
+See [Bit Tags](../technical/bit-tags#compaction-marker-encoding) for how the compaction marker is encoded.
 
 

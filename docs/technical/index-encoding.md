@@ -124,15 +124,7 @@ A special cell identifier with value `0n` (all 64 bits are zero) represents the 
 - Representing "all cells" in a compact form
 - Computing all resolution 0 cells via `cellToChildren(WORLD_CELL, 0)`, or any other resolution
 
-### World Cell Encoding
-
-As an encoded index it can be thought of as having:
-
-- No **origin** or **quintant**
-- **Resolution -1** one less than the Resolution 0 cells as it acts as their parent
-- A **Resolution Tag** shifted so far left that it disappears, so only the zero padding remains
-
-<A5CellInfoBox location={[-0.1276, 51.5074]} resolution={-1}/>
+See [World Cell Encoding](./bit-tags#world-cell-encoding) for how it is encoded.
 
 ### World Cell Boundary
 
