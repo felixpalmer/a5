@@ -19,6 +19,12 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v1.0.0-beta.2] - October 9 2026
+
+- feat: Faster cellToSupercell (#161)
+- feat: isValidCell (#160)
+- chore: rename collections -> covering (#159)
+
 #### A5 [v1.0.0-beta.1] - October 9 2026
 
 **BREAKING: new, permanent cell-ID system.** The grid moves to a new non-self-intersecting curve and a new face tour, so cell IDs are not compatible with 0.x — re-index from lon/lat OR use the migrate() function
