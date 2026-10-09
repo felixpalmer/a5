@@ -16,6 +16,10 @@
 // Output is GitHub-flavored markdown for $GITHUB_STEP_SUMMARY: regressions
 // and gains beyond the threshold are surfaced in their own tables at the top,
 // with the full results in a collapsed <details> section below.
+//
+// The PR's benchmark files drive both runs, so in the baseline run a benchmark
+// of a function the PR adds throws and records no samples: it is reported as
+// new. A benchmark with no samples in the PR's own run is broken, and fails.
 
 const fs = require('fs');
 
@@ -52,9 +56,11 @@ function main() {
   const baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8')).benchmarks;
   const current = JSON.parse(fs.readFileSync(currentPath, 'utf8')).benchmarks;
 
+  // Benchmarks that threw record no samples
+  const ran = bench => bench.samples > 0;
   const baselineByName = new Map();
   for (let i = 0; i < baseline.length; i++) {
-    baselineByName.set(baseline[i].name, baseline[i]);
+    if (ran(baseline[i])) baselineByName.set(baseline[i].name, baseline[i]);
   }
 
   // Compare on min sample time (falls back to mean for older result files)
@@ -64,10 +70,17 @@ function main() {
   const rows = [];
   const regressions = [];
   const gains = [];
+  const failed = [];
   let added = 0;
 
   for (let i = 0; i < current.length; i++) {
     const bench = current[i];
+    if (!ran(bench)) {
+      failed.push(bench.name);
+      baselineByName.delete(bench.name);
+      rows.push({name: bench.name, baseline: '—', current: '—', change: 'failed'});
+      continue;
+    }
     const base = baselineByName.get(bench.name);
     if (!base) {
       added++;
@@ -106,6 +119,13 @@ function main() {
   lines.push('_Times are the minimum sample per benchmark (most stable metric across runs)._');
   lines.push('');
 
+  if (failed.length > 0) {
+    lines.push(`### ❌ ${failed.length} benchmark${failed.length === 1 ? '' : 's'} failed to run`);
+    lines.push('');
+    for (let i = 0; i < failed.length; i++) lines.push(`- ${failed[i]}`);
+    lines.push('');
+  }
+
   if (regressions.length > 0) {
     lines.push(`### ❌ ${regressions.length} regression${regressions.length === 1 ? '' : 's'} above ${threshold}%`);
     lines.push('');
@@ -136,7 +156,7 @@ function main() {
   lines.push('</details>');
 
   console.log(lines.join('\n'));
-  process.exit(regressions.length > 0 ? 1 : 0);
+  process.exit(regressions.length > 0 || failed.length > 0 ? 1 : 0);
 }
 
 main();

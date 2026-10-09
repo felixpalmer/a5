@@ -3,44 +3,11 @@
 // Copyright (c) A5 contributors
 
 // Benchmarks for the space-filling curve: s -> cell decode and cell -> s encode.
-//
-// CI runs these same files against both the PR and its merge-base, so they
-// must run on either side of the L-system migration: the adapters below pick
-// the new API (sToCell / tripleToS) when present and fall back to the old
-// engine (sToAnchor / anchorToS) on pre-L-system builds. Inputs are derived
-// via triple coordinates, which both engines expose and agree on, so both
-// sides measure the equivalent operation on identical cells.
 
 import {bench, describe} from 'vitest';
-import * as lattice from 'a5/lattice';
+import {sToCell, tripleToS} from 'a5/lattice';
 import type {Orientation, Triple} from 'a5/lattice';
-import {BENCH_OPTS, createRandom} from './utils';
-
-const N = 256;
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const api = lattice as any;
-const hasNewApi = Boolean(api.sToCell);
-
-/** s -> cell decode (new: sToCell, old: sToAnchor). */
-const decode: (s: bigint, resolution: number, orientation: Orientation) => unknown = hasNewApi
-  ? api.sToCell
-  : api.sToAnchor;
-
-/** The (orientation-independent) triple of the cell at s. */
-function tripleOf(s: bigint, resolution: number, orientation: Orientation): Triple {
-  return hasNewApi
-    ? api.sToCell(s, resolution, orientation).triple
-    : api.anchorToTriple(api.sToAnchor(s, resolution, orientation));
-}
-
-/** cell -> s encode input + function (new: triple, old: anchor). */
-function encodeInput(s: bigint, resolution: number, orientation: Orientation): unknown {
-  return hasNewApi ? tripleOf(s, resolution, orientation) : api.sToAnchor(s, resolution, orientation);
-}
-const encode: (input: unknown, resolution: number, orientation: Orientation) => unknown = hasNewApi
-  ? api.tripleToS
-  : api.anchorToS;
+import {BATCH, BENCH_OPTS, SINK, createRandom} from './utils';
 
 /** Deterministic S values in [0, 4^resolution). */
 function sampleS(resolution: number, n: number, seed = 42): bigint[] {
@@ -55,26 +22,33 @@ function sampleS(resolution: number, n: number, seed = 42): bigint[] {
   return values;
 }
 
+/** The triples of the cells at `values`. */
+function triplesOf(values: bigint[], resolution: number, orientation: Orientation): Triple[] {
+  const triples: Triple[] = new Array(values.length);
+  for (let i = 0; i < values.length; i++) {
+    triples[i] = sToCell(values[i], resolution, orientation).triple;
+  }
+  return triples;
+}
+
 describe('sToCell', () => {
   for (const resolution of [5, 15, 28]) {
-    const values = sampleS(resolution, N);
-    let i = 0;
+    const values = sampleS(resolution, BATCH);
     bench(
-      `sToCell res ${resolution}`,
+      `sToCell res ${resolution} ×100`,
       () => {
-        decode(values[i++ & (N - 1)], resolution, 'uv');
+        for (let i = 0; i < BATCH; i++) SINK[i] = sToCell(values[i], resolution, 'uv');
       },
       BENCH_OPTS
     );
   }
 
   // Orientation with both flip and reversal transforms
-  const values = sampleS(15, N);
-  let i = 0;
+  const values = sampleS(15, BATCH);
   bench(
-    `sToCell res 15 orientation wu`,
+    `sToCell res 15 orientation wu ×100`,
     () => {
-      decode(values[i++ & (N - 1)], 15, 'wu');
+      for (let i = 0; i < BATCH; i++) SINK[i] = sToCell(values[i], 15, 'wu');
     },
     BENCH_OPTS
   );
@@ -82,16 +56,11 @@ describe('sToCell', () => {
 
 describe('tripleToS', () => {
   for (const resolution of [5, 15, 28]) {
-    const values = sampleS(resolution, N);
-    const inputs: unknown[] = new Array(N);
-    for (let i = 0; i < N; i++) {
-      inputs[i] = encodeInput(values[i], resolution, 'uv');
-    }
-    let i = 0;
+    const triples = triplesOf(sampleS(resolution, BATCH), resolution, 'uv');
     bench(
-      `tripleToS res ${resolution}`,
+      `tripleToS res ${resolution} ×100`,
       () => {
-        encode(inputs[i++ & (N - 1)], resolution, 'uv');
+        for (let i = 0; i < BATCH; i++) SINK[i] = tripleToS(triples[i], resolution, 'uv');
       },
       BENCH_OPTS
     );
