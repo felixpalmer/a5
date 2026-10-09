@@ -36,6 +36,11 @@ The TypeScript, Python, and Rust libraries are maintained directly by the A5 pro
 ### DuckDB
 📖 [Quickstart](../quickstart/duckdb.md) • 📦 [Extension](https://query.farm/duckdb_extension_a5.html) • 🔗 [Source](https://github.com/Query-farm/a5)
 
+### GeoLibre
+The [DGGS Plugin](https://geolibre.app/user-guide/plugins/) renders and identifies A5 cells over the current view, and [DGGS Processing](https://geolibre.app/user-guide/processing/) generates, bins and compacts A5 cells.
+
+🔗 [Website](https://geolibre.app/) • 📖 [Docs](https://geolibre.app/user-guide/plugins/) • 🔗 [Source](https://github.com/opengeos/GeoLibre)
+
 ### GeoParquet
  🔗 [Website](https://geoparquet.io/) • 📖 [Docs](https://geoparquet.io/guide/partition/#by-a5-cells) • 🔗 [Source](https://github.com/geoparquet/geoparquet-io)
 
