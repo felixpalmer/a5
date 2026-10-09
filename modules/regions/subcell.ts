@@ -69,7 +69,7 @@ export function cellToSupercell(cell: bigint, resolution: number): bigint {
  * counterpart of `cellToChildren`, and the inverse of `cellToSupercell` — a cell
  * is a subcell of exactly the supercell it maps to, so the subcells of all the
  * cells at one resolution partition every finer one. The result is compacted,
- * with a compaction marker cell recording the resolution — use `uncompact` to
+ * with a compaction marker recording the resolution — use `uncompact` to
  * expand it.
  *
  * Resolution 30 covers only part of the world (see `lonLatToCell`); for a cell

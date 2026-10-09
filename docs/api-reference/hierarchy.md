@@ -85,7 +85,7 @@ function cellToSupercell(index: bigint, resolution: number): bigint;
 
 ### cellToSubcell
 
-Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `cellToChildren`, and the inverse of `cellToSupercell`. Like the other functions returning a [covering](./coverings), the result is compacted, ending with a compaction marker recording the resolution.
+Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `cellToChildren`, and the inverse of `cellToSupercell`. Like the other functions returning a [covering](./coverings), the result is compacted, ending with a [compaction marker](./compaction#coverings-and-the-compaction-marker) recording the resolution.
 
 ```ts
 function cellToSubcell(index: bigint, resolution: number): BigUint64Array;
@@ -98,7 +98,7 @@ function cellToSubcell(index: bigint, resolution: number): BigUint64Array;
 
 #### Return value
 
-- **(BigUint64Array)** The compacted subcells, then the compaction marker — use `uncompact` to expand them. Resolution 30 covers only part of the world, so for a cell reaching past it the subcells are given at resolution 29.
+- **(BigUint64Array)** Compacted subcells sorted in curve order, then the [compaction marker](./compaction#coverings-and-the-compaction-marker) — use [`uncompact`](./compaction#uncompact) to expand them. Resolution 30 covers only part of the world, so for a cell reaching past it the subcells are given at resolution 29.
 
 #### Example
 

@@ -11,6 +11,7 @@ The result of a compaction is a [covering](./coverings.md), which automatically 
 Many of the functions in the A5 API return and accept compacted data, and should be used whenever possible rather than using the more low-level functions below. See [here](./coverings#example-processing-flow) for an example.
 
 - Indexing: [`polygonToCells`](./indexing#polygontocells)
+- Hierarchy: [`cellToSubcell`](./hierarchy#celltosubcell)
 - Traversal: [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap)
 - Set operations: [`union`](./coverings#union), [`intersect`](./coverings#intersect), [`difference`](./coverings#difference)
 - Predicates: [`contains`](./coverings#contains), [`overlaps`](./coverings#overlaps)
@@ -147,7 +148,7 @@ A compacted array holds cells at mixed resolutions, but it stands for a set of c
 
 Read coverings only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`count`](./coverings#count) and [`area`](./coverings#area) measure a covering, [`contains`](./coverings#contains) tests a cell, [`uncompact`](#uncompact) lists its cells at its resolution, and [`coveringResolution`](#coveringresolution) gives that resolution.
 
-`compact`, [`polygonToCells`](./indexing#polygontocells), [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap) and the [set operations](./coverings) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
+`compact`, [`polygonToCells`](./indexing#polygontocells), [`gridDisk`](./traversal#griddisk), [`gridDiskVertex`](./traversal#griddiskvertex), [`sphericalCap`](./traversal#sphericalcap), [`cellToSubcell`](./hierarchy#celltosubcell) and the [set operations](./coverings) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
 See [Bit Tags](../technical/bit-tags#compaction-marker-encoding) for how the compaction marker is encoded.
 
