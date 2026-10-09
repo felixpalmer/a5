@@ -19,6 +19,34 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v1.0.0-beta.1] - October 9 2026
+
+**BREAKING: new, permanent cell-ID system.** The grid moves to a new non-self-intersecting curve and a new face tour, so cell IDs are not compatible with 0.x — re-index from lon/lat OR use the migrate() function
+
+- feat: cellToSubcell/supercell (#157)
+- Feat: Covering + set operations (#156)
+- fix: better polygon 'overlapping' accuracy (#155)
+- fix: cellToChildren order (#154)
+- feat: Polygon fill from boundary only (#153)
+- feat: tripleChildren & tripleParent speedup (#152)
+- feat: optimize polygonToCells (#151)
+- feat: sphericalCap optimize (#150)
+- feat: optimize linestringToCells (#149)
+- feat: faster gridDisk (#148)
+- Fix: polygon fills for huge polygons (#147)
+- fix: Cleaner tripleFlavor function (#146)
+- Feat: Simpler tour through dodecahedron faces (#144)
+- feat: Cell ID migration helper (#143)
+- fix: Pentagonal cells at resolution 1 (#139)
+- fix: Remove slow spiral search (#140)
+- feat: Cutover to new non-selfintersecting curve (#116)
+- chore: api parity include R & DuckDB (#136)
+- chore: api-parity Rust type fix (#135)
+
+#### A5 [v0.10.1] - September 15 2026
+
+- chore: cleanup CRS debug loggin (#129)
+
 #### A5 [v0.10.0] - August 28 2026
 
 - feat: Bring gl-matrix function into library (#123)
