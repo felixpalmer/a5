@@ -100,7 +100,7 @@ When porting features between languages:
 1. **Any language can be the source** - changes can originate in TypeScript, Python, or Rust
 2. **TypeScript has fixture generation** - test fixtures are generated here by default, but any implementation can be used as reference
 3. **Mirror to other languages** - port the feature to the other two implementations
-4. **Verify all tests pass** - all three implementations must have identical behavior
+4. **Verify all tests pass** - all three implementations must have identical behavior. After touching `../a5-rs`, ALWAYS run `cargo fmt` there (even for renames/sed edits) — it's easy to forget and fails CI
 5. **Key file mappings** across languages:
    - Core implementation: `modules/core/cell.ts` ↔ `a5/core/cell.py` ↔ `src/core/cell.rs`
    - Tests: `tests/cell.test.ts` ↔ `tests/core/test_cell.py` ↔ `tests/cell.rs`
