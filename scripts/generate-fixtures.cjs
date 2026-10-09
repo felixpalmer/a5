@@ -22,7 +22,6 @@ require('./fixtures/traversal/grid-disk.cjs');
 require('./fixtures/traversal/cap.cjs');
 require('./fixtures/traversal/line.cjs');
 require('./fixtures/traversal/lattice-flood-fill.cjs');
-require('./fixtures/traversal/triple-hierarchy.cjs');
 require('./fixtures/core/compact.cjs');
 require('./fixtures/core/collection.cjs');
 
@@ -31,6 +30,7 @@ require('./fixtures/utils/great-circle.cjs');
 
 // Region generators
 require('./fixtures/regions/polygon.cjs');
+require('./fixtures/regions/subcell.cjs');
 
 // Geometry generators
 require('./fixtures/geometry/spherical-polygon.cjs');

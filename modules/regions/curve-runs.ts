@@ -13,41 +13,31 @@
 
 import {cellToSpherical} from '../core/cell';
 import {toCartesian} from '../core/coordinate-transforms';
-import {cellFirstSlot, slotToCell, QUINTANT_SHIFT, S_MASK, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {
+  cellFirstSlot,
+  slotToCell,
+  QUINTANT_SHIFT,
+  S_MASK,
+  SLOT_COUNTS,
+  FIRST_HILBERT_RESOLUTION
+} from '../core/serialization';
 import {appendSlotRun} from '../collections/slot-runs';
 import type {SlotRuns} from '../collections/types';
-import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
 import {pointInPreparedPolygon} from '../geometry/prepared-polygon';
-import type {Orientation} from '../lattice';
 import {sToTriple, tripleFlavor, tripleToS} from '../lattice';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
-import {forEachTripleNeighbor, tripleCellCenter} from '../traversal/triple-cells';
+import {
+  fillQuintantTables,
+  forEachTripleNeighbor,
+  tripleCellCenter,
+  QUINTANT_ORIENTATION,
+  QUINTANT_PREFIX,
+  TRIPLE_QUINTANT_BY_ID_ORDER
+} from '../traversal/triple-cells';
 import type {Boundary} from './polygon-boundary';
 import {boundaryNeighbors, emitsBoundaryCell, insideNextTo} from './polygon-boundary';
 
 // Cells are ordered on the curve by the leaf slots they occupy (see core/serialization).
-
-// Curve orientation of each quintant by its 6-bit slot prefix, and the slot
-// prefix and orientation by triple quintant (origin.id * 5 + quintant).
-// Filled on first use: calling quintantToSegment at module load leaves V8
-// type feedback that slows serialize everywhere (see tripleCellToId).
-const PREFIX_ORIENTATION: Orientation[] = [];
-const TRIPLE_PREFIX: bigint[] = [];
-const TRIPLE_ORIENTATION: Orientation[] = [];
-function fillQuintantTables(): void {
-  for (let q = 0; q < 60; q++) {
-    const origin = origins[Math.floor(q / 5)];
-    PREFIX_ORIENTATION.push(segmentToQuintant((q + origin.firstQuintant) % 5, origin).orientation);
-  }
-  for (const origin of origins) {
-    for (let quintant = 0; quintant < 5; quintant++) {
-      const {segment, orientation} = quintantToSegment(quintant, origin);
-      const q = 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5);
-      TRIPLE_PREFIX.push(BigInt(q) << QUINTANT_SHIFT);
-      TRIPLE_ORIENTATION.push(orientation);
-    }
-  }
-}
 
 /** The slot of a cell given in triple space. */
 function tripleSlot(
@@ -60,7 +50,7 @@ function tripleSlot(
   unitShift: bigint
 ): bigint {
   const i = originId * 5 + quintant;
-  return TRIPLE_PREFIX[i] | (tripleToS({x, y, z}, hilbertRes, TRIPLE_ORIENTATION[i])! << unitShift);
+  return QUINTANT_PREFIX[i] | (tripleToS({x, y, z}, hilbertRes, QUINTANT_ORIENTATION[i])! << unitShift);
 }
 
 /**
@@ -84,9 +74,9 @@ export function fillByCurveRuns(
     (b, c, visit) => forEachTripleNeighbor(b[c], b[c + 1], b[c + 2], b[c + 3], b[c + 4], maxRow, false, visit)
   ]);
 
-  if (TRIPLE_PREFIX.length === 0) fillQuintantTables();
+  fillQuintantTables();
+  const unit = SLOT_COUNTS[resolution];
   const unitShift = BigInt(58 - 2 * hilbertRes);
-  const unit = 1n << unitShift;
 
   // Band slots carry two flags: EMIT (the cell is in the output) and RING. Below
   // resolution 30 a slot has zero low bits to hold them; at 30 a map does.
@@ -132,7 +122,7 @@ export function fillByCurveRuns(
     if ((flagsOf(ringSlot) & RING) === 0) return undefined;
     const c = ringBySlot.get(ringSlot)!;
     const q = Number(slot >> QUINTANT_SHIFT);
-    const t = sToTriple((slot & S_MASK) >> unitShift, hilbertRes, PREFIX_ORIENTATION[q]);
+    const t = sToTriple((slot & S_MASK) >> unitShift, hilbertRes, QUINTANT_ORIENTATION[TRIPLE_QUINTANT_BY_ID_ORDER[q]]);
     const r = ringCells;
     const dx = t.x - r[c + 2];
     const dy = t.y - r[c + 3];

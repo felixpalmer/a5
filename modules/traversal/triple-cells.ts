@@ -10,7 +10,7 @@ import type {Face, Spherical} from '../core/coordinate-systems';
 import type {OriginId} from '../core/utils';
 import type {Orientation, Triple} from '../lattice';
 import {sToTriple, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
-import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, QUINTANT_SHIFT} from '../core/serialization';
 import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
 import {getPentagonCenter} from '../core/tiling';
 import {DodecahedronProjection} from '../projections/dodecahedron';
@@ -41,11 +41,31 @@ export function tripleCellKey(originId: number, quintant: number, x: number, y: 
   );
 }
 
-// Segment and curve orientation of each of the 60 quintants, by origin.id * 5 +
-// quintant. Filled on first use: calling quintantToSegment at module load
-// leaves V8 type feedback that slows serialize everywhere (uncompact 2x).
-const QUINTANT_SEGMENT: number[] = [];
-const QUINTANT_ORIENTATION: Orientation[] = [];
+// Each of the 60 quintants, by triple quintant (origin.id * 5 + quintant): its
+// segment, curve orientation and slot prefix (its place in ID order, shifted
+// into the top bits of a slot); and the triple quintant in each place of ID
+// order. Filled on first use by `fillQuintantTables`: calling quintantToSegment
+// at module load leaves V8 type feedback that slows serialize everywhere
+// (uncompact 2x).
+export const QUINTANT_SEGMENT: number[] = [];
+export const QUINTANT_ORIENTATION: Orientation[] = [];
+export const QUINTANT_PREFIX: bigint[] = [];
+export const TRIPLE_QUINTANT_BY_ID_ORDER: number[] = [];
+
+/** Fill the quintant tables above, if not yet filled. */
+export function fillQuintantTables(): void {
+  if (QUINTANT_SEGMENT.length > 0) return;
+  for (const origin of origins) {
+    for (let quintant = 0; quintant < 5; quintant++) {
+      const {segment, orientation} = quintantToSegment(quintant, origin);
+      const idOrder = 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5);
+      QUINTANT_SEGMENT.push(segment);
+      QUINTANT_ORIENTATION.push(orientation);
+      QUINTANT_PREFIX.push(BigInt(idOrder) << QUINTANT_SHIFT);
+      TRIPLE_QUINTANT_BY_ID_ORDER[idOrder] = 5 * origin.id + quintant;
+    }
+  }
+}
 
 /** The cell ID of a cell given in triple space. */
 export function tripleCellToId(
@@ -57,15 +77,7 @@ export function tripleCellToId(
   hilbertRes: number,
   resolution: number
 ): bigint {
-  if (QUINTANT_SEGMENT.length === 0) {
-    for (const origin of origins) {
-      for (let q = 0; q < 5; q++) {
-        const {segment, orientation} = quintantToSegment(q, origin);
-        QUINTANT_SEGMENT.push(segment);
-        QUINTANT_ORIENTATION.push(orientation);
-      }
-    }
-  }
+  if (QUINTANT_SEGMENT.length === 0) fillQuintantTables();
   const q = originId * 5 + quintant;
   const s = tripleToS({x, y, z}, hilbertRes, QUINTANT_ORIENTATION[q])!;
   return serialize({origin: origins[originId], segment: QUINTANT_SEGMENT[q], S: s, resolution});
@@ -219,59 +231,4 @@ function visitBoundary(
   for (let i = 0; i < boundary.length; i += 5) {
     visit(boundary[i], boundary[i + 1], boundary[i + 2], boundary[i + 3], boundary[i + 4]);
   }
-}
-
-// The cell hierarchy in triple space. A cell's 4 children are 2·triple + the
-// offsets for its flavor (each level of A5 refines the square grid R of
-// g o^r D into 4); only their curve order depends on the orientation.
-// prettier-ignore
-const CHILD_OFFSETS: readonly number[][] = [
-  [0, 0, 0, 0, 1, -1, 0, 1, 0, 0, 2, -1], // flavor 0
-  [-1, -1, 0, -1, 0, -1, -1, 0, 0, -1, 1, -1], // flavor 1
-  [-1, 1, 0, 0, 0, 0, 0, 1, -1, 0, 1, 0], // flavor 2
-  [-1, 0, -1, -1, 0, 0, -1, 1, -1, 0, 0, -1] // flavor 3
-];
-
-/** The 4 children of a cell given in triple space (`maxRow` is its own), appended to `out`. */
-export function tripleChildren(
-  originId: number,
-  quintant: number,
-  x: number,
-  y: number,
-  z: number,
-  maxRow: number,
-  out: number[]
-): void {
-  const d = CHILD_OFFSETS[tripleFlavor({x, y, z}, maxRow)];
-  for (let i = 0; i < 12; i += 3) out.push(originId, quintant, 2 * x + d[i], 2 * y + d[i + 1], 2 * z + d[i + 2]);
-}
-
-/**
- * The parent of a cell given in triple space (`parentMaxRow` is the parent's),
- * appended to `out`. The child's coordinates mod 2 fix child - 2·parent, but
- * for two classes, where the two candidate parents differ in flavor — and so,
- * sharing x and z, in apex colour (see tripleFlavor).
- *
- * Not used by the library: kept for completeness, as the inverse of
- * `tripleChildren`, for traversals that coarsen in triple space.
- */
-export function tripleParent(
-  originId: number,
-  quintant: number,
-  x: number,
-  y: number,
-  z: number,
-  parentMaxRow: number,
-  out: number[]
-): void {
-  const dx = -(x & 1);
-  const dz = -(z & 1);
-  let dy = y & 1;
-  // The offsets are even-sized steps, so >> 1 halves exactly (and keeps small integers)
-  const px = (x - dx) >> 1;
-  const pz = (z - dz) >> 1;
-  const colour = (parentMaxRow + 1 + px + pz) & 1;
-  if (dx === 0 && dy === 0 && dz === -1) dy = colour === 0 ? 2 : 0; // flavor 0 or 3 parent
-  if (dx === -1 && dy === 1 && dz === 0) dy = colour === 1 ? 1 : -1; // flavor 2 or 1 parent
-  out.push(originId, quintant, px, (y - dy) >> 1, pz);
 }

@@ -22,7 +22,14 @@ import {cellMarginScaled, getFaceVertices, getPentagonCenter, getPentagonVertice
 import {PI_OVER_5} from './constants';
 import {roundToTriple, sToCell, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
 import type {Triple} from '../lattice';
-import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from './serialization';
+import {
+  deserialize,
+  serialize,
+  FIRST_HILBERT_RESOLUTION,
+  MAX_RESOLUTION,
+  RES30_QUINTANTS,
+  WORLD_CELL
+} from './serialization';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';
 import {isCompactionMarker} from './compaction-marker';
 
@@ -157,7 +164,7 @@ function _lookupInQuintant(
   // res-29 cell CONTAINING the point. (Previously the cap lived only in
   // serialize, which swapped in the res-29 parent of a res-30 search result —
   // a cell that fails to contain the query point ~44% of the time there.)
-  if (resolution === MAX_RESOLUTION && 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5) > 41) {
+  if (resolution === MAX_RESOLUTION && 5 * origin.id + ((segment - origin.firstQuintant + 5) % 5) >= RES30_QUINTANTS) {
     resolution = MAX_RESOLUTION - 1;
   }
 

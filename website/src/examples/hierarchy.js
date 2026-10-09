@@ -21,6 +21,11 @@ class HierarchyDemo extends Component {
           ids.
         </p>
         <p>Parent cells do not exactly cover children cells, but are guaranteed to overlap.</p>
+        <p>
+          Subcells and supercells are the spatial counterpart: the subcells of a cell are the finer cells whose centers
+          lie inside it, and the supercell of a cell is the coarser cell containing its center. Use the slider to choose
+          how many resolutions finer or coarser to look.
+        </p>
       </div>
     );
   }

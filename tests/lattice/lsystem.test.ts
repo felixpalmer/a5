@@ -1,7 +1,8 @@
 import {describe, it, expect} from 'vitest';
 import type {IJ} from 'a5/core/coordinate-systems';
 import type {Orientation, Triple} from 'a5/lattice';
-import {sToCell, sToTriple, tripleToSLattice} from 'a5/lattice/lsystem';
+import {curveChild, sToCell, sToTriple, tripleToCurveNode, tripleToSLattice} from 'a5/lattice/lsystem';
+import type {CurveNode} from 'a5/lattice/lsystem';
 import {roundToTriple} from 'a5/lattice/curve';
 import fixtures from '../fixtures/lattice/lsystem.json';
 
@@ -64,6 +65,43 @@ describe('lsystem pointToS (roundToTriple + tripleToSLattice)', () => {
     for (const f of fixtures.pointToS as PointToSFixture[]) {
       const s = tripleToSLattice(roundToTriple([f.i, f.j] as IJ, f.resolution), f.resolution, f.orientation);
       expect(Number(s), `s for (${f.i},${f.j}) res=${f.resolution} ori=${f.orientation}`).toBe(f.s);
+    }
+  });
+});
+
+describe('curveChild / tripleToCurveNode', () => {
+  const ORIENTATIONS: Orientation[] = ['uv', 'vu', 'uw', 'wu', 'vw', 'wv'];
+  const root = (orientation: Orientation) => tripleToCurveNode({x: 0, y: 0, z: 0}, 0, orientation).node;
+
+  // Step to the child with `digit`, checking it against sToCell, and the
+  // descent state against tripleToCurveNode's from the child's triple
+  const step = (node: CurveNode, s: bigint, digit: number, resolution: number, orientation: Orientation) => {
+    const triple = {x: 0, y: 0, z: 0};
+    const below: CurveNode = {motif: 0, flip: 0, posA: 0, posB: 0};
+    const flavor = curveChild(node, digit, resolution, orientation, triple, below);
+    const childS = s * 4n + BigInt(digit);
+    expect({triple, flavor}).toEqual(sToCell(childS, resolution, orientation));
+    expect(tripleToCurveNode(triple, resolution, orientation)).toEqual({s: childS, flavor, node: below});
+    return {node: below, s: childS};
+  };
+
+  it('should step down the hierarchy in agreement with sToCell and tripleToCurveNode', () => {
+    for (const orientation of ORIENTATIONS) {
+      // Every cell through level 3, then one deep path to level 29 (A5 resolution 30)
+      const stack: [CurveNode, bigint, number][] = [[root(orientation), 0n, 0]];
+      while (stack.length > 0) {
+        const [node, s, resolution] = stack.pop()!;
+        if (resolution === 3) continue;
+        for (let digit = 0; digit < 4; digit++) {
+          const child = step(node, s, digit, resolution + 1, orientation);
+          stack.push([child.node, child.s, resolution + 1]);
+        }
+      }
+      let child = {node: root(orientation), s: 0n};
+      for (let resolution = 1; resolution <= 29; resolution++) {
+        const digit = (resolution * 7 + orientation.charCodeAt(0)) % 4;
+        child = step(child.node, child.s, digit, resolution, orientation);
+      }
     }
   });
 });
