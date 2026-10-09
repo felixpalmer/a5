@@ -116,9 +116,28 @@ export function cellFirstSlotUnchecked(cell: bigint): bigint {
   return cell - tag;
 }
 
+const U64_MAX = (1n << 64n) - 1n;
+
+/**
+ * Check whether a 64-bit value is an A5 cell ID: its tag (lowest set bit) must
+ * be a resolution tag, and its origin (res 0) or quintant (res 1-29) must exist.
+ * The world cell counts as a cell: it has no boundary, but `cellToParent` gives
+ * it as the parent of the res-0 cells. A compaction marker is not a cell.
+ */
+export function isValidCell(cell: bigint): boolean {
+  if (cell <= 0n || cell > U64_MAX) return cell === WORLD_CELL;
+  const tag = cell & -cell;
+  const bit = Math.log2(Number(tag)); // exact, as a power of two converts exactly
+  // Resolutions 2-29 (odd bits 55-1), in quintants 0-59, or 30 (bits 4, 2, 0)
+  if (bit < 56) return bit % 2 === 1 ? cell < WORLD_SLOTS : bit <= 4;
+  // Resolution 0 (bit 57) of origins 0-11, or 1 (bit 56) of quintants 0-59
+  const top = cell >> QUINTANT_SHIFT;
+  return (bit === 57 && top < 12n) || (bit === 56 && top < 60n);
+}
+
 /**
  * The resolution of a cell, as `getResolution` gives it, but throwing if the
- * value is not an A5 cell ID (see `cellFirstSlot` for what that requires).
+ * value is not an A5 cell ID (see `isValidCell`).
  */
 export function checkedResolution(cell: bigint): number {
   const tag = cell & -cell;

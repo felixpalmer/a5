@@ -15,6 +15,7 @@ export {
   cellToChildren,
   getResolution,
   getRes0Cells,
+  isValidCell,
   MAX_RESOLUTION,
   WORLD_CELL
 } from './core/serialization';

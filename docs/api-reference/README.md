@@ -20,6 +20,13 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [cellToParent](./api-reference/hierarchy#celltoparent)
 - [cellToChildren](./api-reference/hierarchy#celltochildren)
 
+### Cell Info
+
+- [getNumCells](./api-reference/cell-info#getnumcells)
+- [cellArea](./api-reference/cell-info#cellarea)
+- [cellEdgeLengthAvg](./api-reference/cell-info#celledgelengthavg)
+- [isValidCell](./api-reference/cell-info#isvalidcell)
+
 ### Traversal
 
 - [gridDisk](./api-reference/traversal#griddisk)

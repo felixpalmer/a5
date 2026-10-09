@@ -19,6 +19,7 @@ const {
   area,
   cellArea,
   coveringResolution,
+  isValidCell,
   WORLD_CELL,
   u64ToHex
 } = require('../../a5-test.cjs');
@@ -259,6 +260,29 @@ for (const cell of validEdgeCells) {
   }
 }
 
+// isValidCell: real cells (including the world cell) and the edges of the
+// encoding are valid; values no cell can take, and compaction markers, are not
+const U64_MAX = (1n << 64n) - 1n;
+const validCellCases = [
+  ...[WORLD_CELL, ...res0, ...res1.slice(0, 5), london, paris, leaf35, leaf41, res30TopBits60, res30TopBits61].map(
+    value => ({value, expected: true})
+  ),
+  ...validEdgeCells.map(value => ({value, expected: true})),
+  {value: U64_MAX, expected: true}, // res 30, quintant 31
+  ...invalidCells.map(value => ({value, expected: false})),
+  {value: 1n << 6n, expected: false}, // a tag at an even bit above res 30's
+  {value: (60n << 58n) | tagAt(2), expected: false}, // res 2, quintant 60
+  ...Array.from({length: 31}, (_, r) => ({value: compactionMarker(r), expected: false}))
+];
+if (cellToParent(res0[0], -1) !== WORLD_CELL) fail('world cell is the parent of res 0');
+for (const {value, expected} of validCellCases) {
+  if (isValidCell(value) !== expected) fail(`isValidCell ${u64ToHex(value)}`);
+  // Every other cell is accepted by the functions taking cells
+  if (value !== WORLD_CELL && !isCompactionMarker(value) && throws(() => count([value])) === expected) {
+    fail(`isValidCell ${u64ToHex(value)} disagrees with count`);
+  }
+}
+
 const output = {
   setOperations,
   mismatchedResolutions,
@@ -267,7 +291,8 @@ const output = {
   mismatchedProbes,
   isCompactionMarker: markerCases,
   invalidCells: hex(invalidCells),
-  validEdgeCells: hex(validEdgeCells)
+  validEdgeCells: hex(validEdgeCells),
+  isValidCell: validCellCases.map(({value, expected}) => ({value: u64ToHex(value), expected}))
 };
 const outputPath = path.join(__dirname, '../../../tests/fixtures/covering.json');
 fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
@@ -278,4 +303,5 @@ console.log(`  - ${measures.length} measure cases`);
 console.log(`  - ${containsCases.length} contains cases`);
 console.log(`  - ${mismatchedProbes.length} mismatched probe cases`);
 console.log(`  - ${markerCases.length} isCompactionMarker cases`);
+console.log(`  - ${validCellCases.length} isValidCell cases`);
 console.log(`  - ${invalidCells.length} invalid and ${validEdgeCells.length} valid edge cells`);

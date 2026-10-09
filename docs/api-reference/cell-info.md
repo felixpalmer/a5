@@ -80,3 +80,28 @@ import { cellEdgeLengthAvg } from 'a5-js';
 console.log(cellEdgeLengthAvg(2)); // ~1,190,000 m
 console.log(cellEdgeLengthAvg(10)); // ~4,680 m
 ```
+
+### isValidCell
+
+Checks whether a 64-bit value is an A5 cell. Use it to validate cell IDs from outside sources, such as a file or a database, before passing them to other A5 functions. The [world cell](../technical/index-encoding#special-case-world-cell) is a valid cell: it has no boundary, but `cellToParent` returns it as the parent of the resolution 0 cells. A [compaction marker](./compaction#coverings-and-the-compaction-marker) is not a cell.
+
+```ts
+function isValidCell(index: bigint): boolean;
+```
+
+#### Parameters
+
+- `index` **(bigint)** Value to check
+
+#### Return value
+
+- **(boolean)** Whether the value is an A5 cell identifier
+
+#### Example
+
+```ts
+import { isValidCell, lonLatToCell, hexToU64 } from 'a5-js';
+
+console.log(isValidCell(lonLatToCell([2.35, 48.85], 10)));  // true
+console.log(isValidCell(hexToU64('fd00000000000000')));     // false: resolution 1 has no quintant 63
+```
