@@ -1,12 +1,12 @@
 import {describe, it, expect} from 'vitest';
-import {area, count} from 'a5/collections/measures';
-import {compact, uncompact} from 'a5/collections/compact';
-import {contains, difference, intersect, overlaps, union} from 'a5/collections/set-operations';
-import {coveringResolution} from 'a5/collections/resolution';
+import {area, count} from 'a5/coverings/measures';
+import {compact, uncompact} from 'a5/coverings/compact';
+import {contains, difference, intersect, overlaps, union} from 'a5/coverings/set-operations';
+import {coveringResolution} from 'a5/coverings/resolution';
 import {isCompactionMarker} from 'a5/core/compaction-marker';
 import {cellToBoundary} from 'a5/core/cell';
 import {hexToU64} from 'a5/core/hex';
-import fixtures from './fixtures/collection.json';
+import fixtures from './fixtures/covering.json';
 
 const toCells = (hex: string[]) => hex.map(hexToU64);
 

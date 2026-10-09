@@ -12,7 +12,7 @@ import {
   MAX_RESOLUTION,
   WORLD_CELL
 } from '../core/serialization';
-import {slotRunsToCovering, toCovering} from '../collections/slot-runs';
+import {slotRunsToCovering, toCovering} from '../coverings/slot-runs';
 import {preparePolygon, pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {cellIdsToTriples} from '../traversal/triple-cells';
 import {boundaryOutput, classifyBoundary, sampleBoundary} from './polygon-boundary';

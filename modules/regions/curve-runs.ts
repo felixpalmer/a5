@@ -8,7 +8,7 @@
 // stretch of the curve (a range of slots) into runs that lie wholly inside or
 // wholly outside the polygon: a step over the boundary would have to land in
 // the band. One probe classifies a run, and an inside run is emitted whole, as
-// a slot run (see collections/slot-runs), so the interior costs O(boundary), not
+// a slot run (see coverings/slot-runs), so the interior costs O(boundary), not
 // O(area).
 
 import {cellToSpherical} from '../core/cell';
@@ -21,8 +21,8 @@ import {
   SLOT_COUNTS,
   FIRST_HILBERT_RESOLUTION
 } from '../core/serialization';
-import {appendSlotRun} from '../collections/slot-runs';
-import type {SlotRuns} from '../collections/types';
+import {appendSlotRun} from '../coverings/slot-runs';
+import type {SlotRuns} from '../coverings/types';
 import {pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {sToTriple, tripleFlavor, tripleToS} from '../lattice';
 import {NEIGHBOR_DELTAS} from '../traversal/neighbors';

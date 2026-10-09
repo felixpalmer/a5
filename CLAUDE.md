@@ -20,7 +20,7 @@ Docs: docs/api-reference/README.md
 ## Typescript Project Structure
 - `/modules` - TypeScript source code (NOT `/src`)
   - `/core` - Core geospatial functionality (cell, hex, hilbert, serialization, leaf slots, compaction marker, etc.)
-  - `/collections` - Coverings (sets of cells at one resolution): compact/uncompact, set operations, measures (depends only on `/core`)
+  - `/coverings` - Coverings (sets of cells at one resolution): compact/uncompact, set operations, measures (depends only on `/core`)
   - `/geometry` - Geometric calculations (pentagon, spherical_triangle, spherical_polygon)
   - `/projections` - Map projection implementations (dodecahedron, authalic, gnomonic, etc.)
 - `/dist` - Built outputs (a5.js, a5.cjs, a5.d.ts)
@@ -37,7 +37,7 @@ Docs: docs/api-reference/README.md
 - **Resolution**: 0-30, where 0 is global coverage and 30 is ~30mm²
 - **Compaction**: Combining child cells into parent cells for efficient storage
 - **Cell ID**: Always a bigint (use `u64ToHex()` for string representation)
-- **Covering / compaction marker**: a *covering* is a set of cells at one resolution, stored compacted; compacting outputs (`compact`, `polygonToCells`, `sphericalCap`, `gridDisk`, set ops) end with a *compaction marker* (quintant 60, resolution in bits 55-48, marker tag `1000000` in the low bits) recording the resolution, so `uncompact(cells)` takes no resolution. Inside `/modules`, compact intermediate results with `compactCells` (no compaction marker) and finish public outputs with `toCovering(cells, resolution)` (`modules/collections/slot-runs.ts`), or `slotRunsToCovering` when you already have sorted slot runs (as the polygon fill does). Internally, cells map to blocks of *leaf slots* (in `modules/core/serialization.ts`, next to the index encoding they are derived from): positions along the res-30 curve, one per leaf cell, which are not cell IDs; skip compaction markers with `isCompactionMarker` when iterating cells
+- **Covering / compaction marker**: a *covering* is a set of cells at one resolution, stored compacted; compacting outputs (`compact`, `polygonToCells`, `sphericalCap`, `gridDisk`, set ops) end with a *compaction marker* (quintant 60, resolution in bits 55-48, marker tag `1000000` in the low bits) recording the resolution, so `uncompact(cells)` takes no resolution. Inside `/modules`, compact intermediate results with `compactCells` (no compaction marker) and finish public outputs with `toCovering(cells, resolution)` (`modules/coverings/slot-runs.ts`), or `slotRunsToCovering` when you already have sorted slot runs (as the polygon fill does). Internally, cells map to blocks of *leaf slots* (in `modules/core/serialization.ts`, next to the index encoding they are derived from): positions along the res-30 curve, one per leaf cell, which are not cell IDs; skip compaction markers with `isCompactionMarker` when iterating cells
 
 ## Commands
 ```bash
@@ -100,7 +100,7 @@ When porting features between languages:
 1. **Any language can be the source** - changes can originate in TypeScript, Python, or Rust
 2. **TypeScript has fixture generation** - test fixtures are generated here by default, but any implementation can be used as reference
 3. **Mirror to other languages** - port the feature to the other two implementations
-4. **Verify all tests pass** - all three implementations must have identical behavior
+4. **Verify all tests pass** - all three implementations must have identical behavior. After touching `../a5-rs`, ALWAYS run `cargo fmt` there (even for renames/sed edits) — it's easy to forget and fails CI
 5. **Key file mappings** across languages:
    - Core implementation: `modules/core/cell.ts` ↔ `a5/core/cell.py` ↔ `src/core/cell.rs`
    - Tests: `tests/cell.test.ts` ↔ `tests/core/test_cell.py` ↔ `tests/cell.rs`

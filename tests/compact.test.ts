@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
-import {compact, uncompact} from 'a5/collections/compact';
-import {coveringResolution} from 'a5/collections/resolution';
+import {compact, uncompact} from 'a5/coverings/compact';
+import {coveringResolution} from 'a5/coverings/resolution';
 import {hexToU64} from 'a5/core/hex';
 import {getResolution} from 'a5/core/serialization';
 import compactFixtures from './fixtures/compact.json';

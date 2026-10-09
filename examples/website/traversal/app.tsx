@@ -9,7 +9,7 @@ import {getResolution} from 'a5/core/serialization';
 import {getGlobalCellNeighbors} from 'a5/traversal/global-neighbors';
 import {gridDisk, gridDiskVertex} from 'a5/traversal/grid-disk';
 import {sphericalCap} from 'a5/traversal/cap';
-import {uncompact} from 'a5/collections/compact';
+import {uncompact} from 'a5/coverings/compact';
 import {isCompactionMarker} from 'a5/core/compaction-marker';
 import type {LonLat} from 'a5/core/coordinate-systems';
 

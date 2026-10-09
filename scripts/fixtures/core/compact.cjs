@@ -20,7 +20,7 @@ const {
   flatAt,
   sameSet,
   res30Cell
-} = require('./collection-utils.cjs');
+} = require('./covering-utils.cjs');
 
 const hex = cells => cells.map(c => u64ToHex(c));
 

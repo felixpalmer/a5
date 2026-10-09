@@ -7,9 +7,9 @@ import {ScatterplotLayer, ArcLayer} from '@deck.gl/layers';
 import {A5Layer} from '@deck.gl/geo-layers';
 import {lineStringToCells} from 'a5/traversal/line';
 import {polygonToCells} from 'a5/regions/polygon';
-import {uncompact} from 'a5/collections/compact';
-import {count} from 'a5/collections/measures';
-import {union} from 'a5/collections/set-operations';
+import {uncompact} from 'a5/coverings/compact';
+import {count} from 'a5/coverings/measures';
+import {union} from 'a5/coverings/set-operations';
 import {isCompactionMarker} from 'a5/core/compaction-marker';
 import type {LonLat} from 'a5/core/coordinate-systems';
 
