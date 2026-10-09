@@ -30,11 +30,11 @@ const {
   sameSet,
   res30Cell,
   throws
-} = require('./collection-utils.cjs');
+} = require('./covering-utils.cjs');
 
 const hex = cells => Array.from(cells, c => u64ToHex(c));
 const fail = message => {
-  throw new Error(`collection fixtures: ${message}`);
+  throw new Error(`covering fixtures: ${message}`);
 };
 
 // Small coverings, so brute-force checks stay cheap
@@ -269,9 +269,9 @@ const output = {
   invalidCells: hex(invalidCells),
   validEdgeCells: hex(validEdgeCells)
 };
-const outputPath = path.join(__dirname, '../../../tests/fixtures/collection.json');
+const outputPath = path.join(__dirname, '../../../tests/fixtures/covering.json');
 fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
-console.log(`Generated collection fixtures: ${outputPath}`);
+console.log(`Generated covering fixtures: ${outputPath}`);
 console.log(`  - ${setOperations.length} set operation cases`);
 console.log(`  - ${mismatchedResolutions.length} mismatched resolution cases`);
 console.log(`  - ${measures.length} measure cases`);

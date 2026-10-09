@@ -20,8 +20,8 @@ import {
   WORLD_CELL
 } from '../core/serialization';
 import {getFaceVertices} from '../core/tiling';
-import {slotRunsToCovering, toCovering} from '../collections/slot-runs';
-import type {SlotRuns} from '../collections/types';
+import {slotRunsToCovering, toCovering} from '../coverings/slot-runs';
+import type {SlotRuns} from '../coverings/types';
 import {descendInCurveOrder, INSIDE, OUTSIDE, SPLIT} from '../traversal/curve-descent';
 import type {CurveDescentClassifier} from '../traversal/curve-descent';
 

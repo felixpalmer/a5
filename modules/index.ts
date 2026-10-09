@@ -20,13 +20,13 @@ export {
 } from './core/serialization';
 export {getNumCells, getNumChildren, cellArea, cellEdgeLengthAvg} from './core/cell-info';
 export {cellToSubcell, cellToSupercell} from './regions/subcell';
-export {compact, uncompact} from './collections/compact';
+export {compact, uncompact} from './coverings/compact';
 export {isCompactionMarker} from './core/compaction-marker';
 
 // Coverings
-export {coveringResolution} from './collections/resolution';
-export {contains, difference, intersect, overlaps, union} from './collections/set-operations';
-export {area, count} from './collections/measures';
+export {coveringResolution} from './coverings/resolution';
+export {contains, difference, intersect, overlaps, union} from './coverings/set-operations';
+export {area, count} from './coverings/measures';
 
 // Migration
 export {migrate} from './core/migrate';

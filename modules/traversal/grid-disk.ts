@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {compactCells, toCovering} from '../collections/slot-runs';
+import {compactCells, toCovering} from '../coverings/slot-runs';
 import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
 import {origins} from '../core/origin';
 import {walkFaces} from '../core/face-adjacency';
