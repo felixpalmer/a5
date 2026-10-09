@@ -41,7 +41,8 @@
       "api-reference/traversal",
       "api-reference/cell-info",
       "api-reference/compaction",
-      "api-reference/coverings"
+      "api-reference/coverings",
+      "api-reference/miscellaneous"
     ]
   },
   {
