@@ -5,6 +5,7 @@ import {contains, difference, intersect, overlaps, union} from 'a5/coverings/set
 import {coveringResolution} from 'a5/coverings/resolution';
 import {isCompactionMarker} from 'a5/core/compaction-marker';
 import {cellToBoundary} from 'a5/core/cell';
+import {isValidCell} from 'a5/core/serialization';
 import {hexToU64} from 'a5/core/hex';
 import fixtures from './fixtures/covering.json';
 
@@ -117,6 +118,21 @@ describe('isCompactionMarker', () => {
     for (const f of fixtures.isCompactionMarker) {
       if (f.expected) expect(cellToBoundary(hexToU64(f.value))).toEqual([]);
     }
+  });
+});
+
+describe('isValidCell', () => {
+  it('should recognize A5 cells and nothing else', () => {
+    for (const f of fixtures.isValidCell) {
+      expect(isValidCell(hexToU64(f.value)), f.value).toBe(f.expected);
+    }
+  });
+
+  it('should refuse values outside 64 bits', () => {
+    expect(isValidCell(-1n)).toBe(false);
+    expect(isValidCell(-(1n << 3n))).toBe(false);
+    expect(isValidCell(1n << 64n)).toBe(false);
+    expect(isValidCell((1n << 64n) | 1n)).toBe(false);
   });
 });
 

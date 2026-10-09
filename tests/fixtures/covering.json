@@ -2328,5 +2328,303 @@
     "ffffffffffffffff",
     "e00000000000002c",
     "80000000000000f0"
+  ],
+  "isValidCell": [
+    {
+      "value": "0",
+      "expected": true
+    },
+    {
+      "value": "200000000000000",
+      "expected": true
+    },
+    {
+      "value": "600000000000000",
+      "expected": true
+    },
+    {
+      "value": "a00000000000000",
+      "expected": true
+    },
+    {
+      "value": "e00000000000000",
+      "expected": true
+    },
+    {
+      "value": "1200000000000000",
+      "expected": true
+    },
+    {
+      "value": "1600000000000000",
+      "expected": true
+    },
+    {
+      "value": "1a00000000000000",
+      "expected": true
+    },
+    {
+      "value": "1e00000000000000",
+      "expected": true
+    },
+    {
+      "value": "2200000000000000",
+      "expected": true
+    },
+    {
+      "value": "2600000000000000",
+      "expected": true
+    },
+    {
+      "value": "2a00000000000000",
+      "expected": true
+    },
+    {
+      "value": "2e00000000000000",
+      "expected": true
+    },
+    {
+      "value": "100000000000000",
+      "expected": true
+    },
+    {
+      "value": "500000000000000",
+      "expected": true
+    },
+    {
+      "value": "900000000000000",
+      "expected": true
+    },
+    {
+      "value": "d00000000000000",
+      "expected": true
+    },
+    {
+      "value": "1100000000000000",
+      "expected": true
+    },
+    {
+      "value": "6397260000000000",
+      "expected": true
+    },
+    {
+      "value": "63d9e00000000000",
+      "expected": true
+    },
+    {
+      "value": "600000003ade68ac",
+      "expected": true
+    },
+    {
+      "value": "800000075bcd1630",
+      "expected": true
+    },
+    {
+      "value": "f000000000000055",
+      "expected": true
+    },
+    {
+      "value": "f400000000000001",
+      "expected": true
+    },
+    {
+      "value": "2e00000000000000",
+      "expected": true
+    },
+    {
+      "value": "ed00000000000000",
+      "expected": true
+    },
+    {
+      "value": "ec80000000000000",
+      "expected": true
+    },
+    {
+      "value": "ec00000000000002",
+      "expected": true
+    },
+    {
+      "value": "1",
+      "expected": true
+    },
+    {
+      "value": "ffffffffffffffff",
+      "expected": true
+    },
+    {
+      "value": "e00000000000002c",
+      "expected": true
+    },
+    {
+      "value": "80000000000000f0",
+      "expected": true
+    },
+    {
+      "value": "ffffffffffffffff",
+      "expected": true
+    },
+    {
+      "value": "1400000000000040",
+      "expected": false
+    },
+    {
+      "value": "400000000000000",
+      "expected": false
+    },
+    {
+      "value": "8000000000000000",
+      "expected": false
+    },
+    {
+      "value": "3200000000000000",
+      "expected": false
+    },
+    {
+      "value": "fe00000000000000",
+      "expected": false
+    },
+    {
+      "value": "f100000000000000",
+      "expected": false
+    },
+    {
+      "value": "fc00000800000000",
+      "expected": false
+    },
+    {
+      "value": "f01f000000000040",
+      "expected": false
+    },
+    {
+      "value": "40",
+      "expected": false
+    },
+    {
+      "value": "f080000000000000",
+      "expected": false
+    },
+    {
+      "value": "f000000000000040",
+      "expected": false
+    },
+    {
+      "value": "f001000000000040",
+      "expected": false
+    },
+    {
+      "value": "f002000000000040",
+      "expected": false
+    },
+    {
+      "value": "f003000000000040",
+      "expected": false
+    },
+    {
+      "value": "f004000000000040",
+      "expected": false
+    },
+    {
+      "value": "f005000000000040",
+      "expected": false
+    },
+    {
+      "value": "f006000000000040",
+      "expected": false
+    },
+    {
+      "value": "f007000000000040",
+      "expected": false
+    },
+    {
+      "value": "f008000000000040",
+      "expected": false
+    },
+    {
+      "value": "f009000000000040",
+      "expected": false
+    },
+    {
+      "value": "f00a000000000040",
+      "expected": false
+    },
+    {
+      "value": "f00b000000000040",
+      "expected": false
+    },
+    {
+      "value": "f00c000000000040",
+      "expected": false
+    },
+    {
+      "value": "f00d000000000040",
+      "expected": false
+    },
+    {
+      "value": "f00e000000000040",
+      "expected": false
+    },
+    {
+      "value": "f00f000000000040",
+      "expected": false
+    },
+    {
+      "value": "f010000000000040",
+      "expected": false
+    },
+    {
+      "value": "f011000000000040",
+      "expected": false
+    },
+    {
+      "value": "f012000000000040",
+      "expected": false
+    },
+    {
+      "value": "f013000000000040",
+      "expected": false
+    },
+    {
+      "value": "f014000000000040",
+      "expected": false
+    },
+    {
+      "value": "f015000000000040",
+      "expected": false
+    },
+    {
+      "value": "f016000000000040",
+      "expected": false
+    },
+    {
+      "value": "f017000000000040",
+      "expected": false
+    },
+    {
+      "value": "f018000000000040",
+      "expected": false
+    },
+    {
+      "value": "f019000000000040",
+      "expected": false
+    },
+    {
+      "value": "f01a000000000040",
+      "expected": false
+    },
+    {
+      "value": "f01b000000000040",
+      "expected": false
+    },
+    {
+      "value": "f01c000000000040",
+      "expected": false
+    },
+    {
+      "value": "f01d000000000040",
+      "expected": false
+    },
+    {
+      "value": "f01e000000000040",
+      "expected": false
+    }
   ]
 }

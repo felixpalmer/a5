@@ -2,12 +2,16 @@ import A5CellInfoBox from 'website-examples/components/a5-cell-info-box';
 
 # Bit Tags
 
-The A5 API passes around 64-bit unsigned integers, almost all of which are [cell IDs](./index-encoding). There are a few exceptions:
+The A5 API passes around 64-bit unsigned integers, which represent:
+
+- [cell IDs](./index-encoding), which are what users will most frequently encounter
+
+and a few special cases:
 
 - the [world cell](./index-encoding#special-case-world-cell),
 - the [compaction marker](../api-reference/compaction#coverings-and-the-compaction-marker) that indicates the compaction resolution of a set of compacted cells
 
-All of them share one rule for telling them apart: the **tag**, inspired by [Tagged Pointers](https://en.wikipedia.org/wiki/Tagged_pointer) used in other programming contexts.
+All of them share one rule for telling them apart: the **tag**, inspired by [Tagged Pointers](https://en.wikipedia.org/wiki/Tagged_pointer) used in other programming contexts. The API provides [`isValidCell`](../api-reference/cell-info#isvalidcell) and [`isCompactionMarker`](../api-reference/compaction#iscompactionmarker) to easily check 64-bit values.
 
 ## The tag
 
