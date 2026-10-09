@@ -36,7 +36,7 @@ jobs:
         run: corepack enable
 
       - name: Upgrade npm for trusted publishing
-        run: npm install -g npm@latest # OIDC trusted publishing needs npm >= 11.5.1
+        run: npm install -g npm@11 # OIDC trusted publishing needs npm >= 11.5.1; npm 12 needs a newer Node than .nvmrc
 
       - name: Verify tag matches package version
         run: |
