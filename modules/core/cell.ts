@@ -272,6 +272,27 @@ function _sphericalToCellBoundary(
   return _acceptCandidate(winner);
 }
 
+/**
+ * The cell at `resolution` containing the center of `cell`:
+ * `sphericalToCell(cellToSpherical(cell), resolution)` without the round trip
+ * through the sphere. A cell's center lies on its own face, so the lookup runs
+ * in that face's frame. A center within float noise of a cell edge, where the
+ * round trip's own noise decides, goes round the sphere so ties resolve exactly
+ * as `sphericalToCell` resolves them.
+ */
+export function cellCenterToCell(cell: bigint, resolution: number): bigint {
+  const a5cell = deserialize(cell);
+  if (resolution >= FIRST_HILBERT_RESOLUTION - 1 && a5cell.resolution >= FIRST_HILBERT_RESOLUTION - 1) {
+    const {quintant, orientation} = segmentToQuintant(a5cell.segment, a5cell.origin);
+    const hilbertResolution = a5cell.resolution - FIRST_HILBERT_RESOLUTION + 1;
+    const {triple, flavor} = sToCell(a5cell.S, hilbertResolution, orientation);
+    const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor) as Face;
+    const best = _lookupInQuintant(center, a5cell.origin, getQuintantPolar(toPolar(center)), resolution);
+    if (best !== null && best.margin > TIE_EPS * 2 ** best.hilbertResolution) return best.cellId;
+  }
+  return sphericalToCell(cellToSpherical(cell), resolution);
+}
+
 // TODO move into tiling.ts
 export function _getPentagon({S, segment, origin, resolution}: A5Cell): PentagonShape {
   const {quintant, orientation} = segmentToQuintant(segment, origin);
