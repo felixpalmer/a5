@@ -8,7 +8,7 @@
 // coarser cell holding its center, so every resolution partitions every coarser
 // one exactly.
 
-import {_getPentagon, cellToSpherical, sphericalToCell} from '../core/cell';
+import {_getPentagon, cellCenterToCell} from '../core/cell';
 import {FACE_ADJACENCY, seamTransform} from '../core/face-adjacency';
 import {
   deserialize,
@@ -55,7 +55,7 @@ export function cellToSupercell(cell: bigint, resolution: number): bigint {
     );
   }
   if (resolution === cellResolution) return cell;
-  return sphericalToCell(cellToSpherical(cell), resolution);
+  return cellCenterToCell(cell, resolution);
 }
 
 /**
