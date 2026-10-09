@@ -3,22 +3,19 @@
 // Copyright (c) A5 contributors
 
 import {bench, describe} from 'vitest';
-import * as a5 from 'a5';
+import {cellToSubcell, cellToSupercell} from 'a5';
 import {BENCH_OPTS, sampleCells} from './utils';
 
 const N = 64;
 const cells8 = sampleCells(8, N);
 const cells15 = sampleCells(15, N);
 
-// Absent from baselines that predate them, which the CI comparison also runs
-const {cellToSubcell, cellToSupercell} = a5 as Partial<typeof a5>;
-
-describe.skipIf(!cellToSubcell || !cellToSupercell)('subcell', () => {
+describe('subcell', () => {
   let i = 0;
   bench(
     'cellToSupercell res 15 -> 8',
     () => {
-      cellToSupercell!(cells15[i++ & (N - 1)], 8);
+      cellToSupercell(cells15[i++ & (N - 1)], 8);
     },
     BENCH_OPTS
   );
@@ -27,7 +24,7 @@ describe.skipIf(!cellToSubcell || !cellToSupercell)('subcell', () => {
   bench(
     'cellToSubcell res 8 -> 11',
     () => {
-      cellToSubcell!(cells8[j++ & (N - 1)], 11);
+      cellToSubcell(cells8[j++ & (N - 1)], 11);
     },
     BENCH_OPTS
   );
@@ -36,7 +33,7 @@ describe.skipIf(!cellToSubcell || !cellToSupercell)('subcell', () => {
   bench(
     'cellToSubcell res 8 -> 16',
     () => {
-      cellToSubcell!(cells8[k++ & (N - 1)], 16);
+      cellToSubcell(cells8[k++ & (N - 1)], 16);
     },
     BENCH_OPTS
   );

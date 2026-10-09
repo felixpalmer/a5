@@ -12,6 +12,22 @@ import type {Degrees, LonLat} from 'a5/core/coordinate-systems';
  */
 export const BENCH_OPTS = {time: Number(process.env.BENCH_TIME) || 200, warmupTime: 50};
 
+/**
+ * Calls per sample for benchmarks of functions that take under ~1µs. Each
+ * sample times one call of the benchmark function, and for a call that short
+ * the timer's granularity (~10ns steps on CI) and the harness's own overhead
+ * dominate: one tick reads as a 15-25% regression. These benchmarks make
+ * BATCH calls per sample, over BATCH different inputs, so the time reported
+ * (per batch, marked "×100" in the name) is the work being measured.
+ */
+export const BATCH = 100;
+
+/**
+ * Where batched benchmarks store their results. A result nothing reads could
+ * be optimized away along with the call that made it; one stored here can't.
+ */
+export const SINK: unknown[] = new Array(BATCH);
+
 /** Deterministic PRNG (mulberry32) so every run benchmarks identical inputs. */
 export function createRandom(seed = 42): () => number {
   let a = seed >>> 0;

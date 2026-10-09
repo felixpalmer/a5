@@ -47,7 +47,7 @@ yarn test              # Run tests (with watch mode)
 yarn test --run        # Run tests once
 yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 yarn bench             # Run performance benchmarks in /benchmarks (~45s, no output assertions); bundles the library first
-yarn bench hilbert     # Run benchmarks for a single file, here `hilbert.bench.ts`
+yarn bench curve       # Run benchmarks for a single file, here `curve.bench.ts`
 ```
 
 ## Development Guidelines
@@ -122,7 +122,7 @@ These are the same checks that run in CI (.github/workflows/test.yml). Run these
 
 Benchmarks run against a bundle of the library, not the source modules: `yarn bench` first bundles `benchmarks/a5-bench.ts` (the public API plus the internals the benchmarks use) into `benchmarks/.build/a5-bench.js`, and `vitest.config.ts` points every `a5` import at it in benchmark mode. Vitest serves source modules through per-module import getters, which keep V8 from inlining small helpers called across files and inflated cross-module benchmarks by 10-40%; the bundle matches what users run. If a benchmark needs another internal, export it from `benchmarks/a5-bench.ts`. Tests still run against the source.
 
-On pull requests, CI also benchmarks the PR against its merge-base with main on the same runner (.github/workflows/bench.yml) and fails on a >15% regression. The comparison keys off each benchmark's **minimum** sample time, not its mean — the min is the least GC/scheduler-perturbed sample and is far more stable run-to-run (means of GC-heavy benches like gridDisk swing 15-40% between identical runs while their minimums agree within a few percent). The PR's `/benchmarks` files drive both runs (only `/modules` is switched to the baseline commit), so benchmarks must be able to run against both versions of the library code. Reproduce locally with `BENCH_OUTPUT_FILE=<file> yarn bench` on each version, then `node scripts/compare-benchmarks.cjs <baseline.json> <current.json> 15`.
+On pull requests, CI also benchmarks the PR against its merge-base with main on the same runner (.github/workflows/bench.yml) and fails on a >15% regression. The comparison keys off each benchmark's **minimum** sample time, not its mean — the min is the least GC/scheduler-perturbed sample and is far more stable run-to-run (means of GC-heavy benches like gridDisk swing 15-40% between identical runs while their minimums agree within a few percent). The PR's `/benchmarks` files drive both runs (only `/modules` is switched to the baseline commit). Write benchmarks against the current API only, with no guards for older versions: a benchmark that throws in the baseline run (e.g. it calls a function the PR adds) records no samples and is reported as new, while one that throws in the PR run fails the comparison. Benchmarks of functions taking under ~1µs make `BATCH` (100) calls per sample, storing results in `SINK` (see `benchmarks/utils.ts`), and are named `×100`: timed one call at a time they measure the timer, and a single ~10ns tick read as a 15-25% regression. Reproduce locally with `BENCH_OUTPUT_FILE=<file> yarn bench` on each version, then `node scripts/compare-benchmarks.cjs <baseline.json> <current.json> 15`.
 
 ## Debugging
 - **DO NOT** use `node -e "..."` for debugging scripts — write them as files instead

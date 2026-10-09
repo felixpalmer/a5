@@ -4,45 +4,45 @@
 
 import {bench, describe} from 'vitest';
 import {cellArea, cellToChildren, cellToParent, getNumCells, getNumChildren, getRes0Cells, getResolution} from 'a5';
-import {BENCH_OPTS, sampleCells} from './utils';
+import {BATCH, BENCH_OPTS, SINK, sampleCells} from './utils';
 
 const N = 256;
-const cells15 = sampleCells(15, N);
+const cells15 = sampleCells(15, BATCH);
 const cells10 = sampleCells(10, N);
 
+// The resolutions read from an array, so the optimizer can't fold the calls into constants
+const res0: number[] = new Array(BATCH).fill(0);
+const res15: number[] = new Array(BATCH).fill(15);
+
 describe('hierarchy', () => {
-  let i = 0;
   bench(
-    'getResolution res 15',
+    'getResolution res 15 ×100',
     () => {
-      getResolution(cells15[i++ & (N - 1)]);
+      for (let i = 0; i < BATCH; i++) SINK[i] = getResolution(cells15[i]);
     },
     BENCH_OPTS
   );
 
-  let j = 0;
   bench(
-    'cellToParent res 15 -> 14',
+    'cellToParent res 15 -> 14 ×100',
     () => {
-      cellToParent(cells15[j++ & (N - 1)]);
+      for (let i = 0; i < BATCH; i++) SINK[i] = cellToParent(cells15[i]);
     },
     BENCH_OPTS
   );
 
-  let k = 0;
   bench(
-    'cellToParent res 15 -> 5',
+    'cellToParent res 15 -> 5 ×100',
     () => {
-      cellToParent(cells15[k++ & (N - 1)], 5);
+      for (let i = 0; i < BATCH; i++) SINK[i] = cellToParent(cells15[i], 5);
     },
     BENCH_OPTS
   );
 
-  let l = 0;
   bench(
-    'cellToChildren res 15 -> 16',
+    'cellToChildren res 15 -> 16 ×100',
     () => {
-      cellToChildren(cells15[l++ & (N - 1)]);
+      for (let i = 0; i < BATCH; i++) SINK[i] = cellToChildren(cells15[i]);
     },
     BENCH_OPTS
   );
@@ -57,9 +57,9 @@ describe('hierarchy', () => {
   );
 
   bench(
-    'getRes0Cells',
+    'getRes0Cells ×100',
     () => {
-      getRes0Cells();
+      for (let i = 0; i < BATCH; i++) SINK[i] = getRes0Cells();
     },
     BENCH_OPTS
   );
@@ -67,25 +67,25 @@ describe('hierarchy', () => {
 
 describe('cell-info', () => {
   bench(
-    'getNumCells res 15',
+    'getNumCells res 15 ×100',
     () => {
-      getNumCells(15);
+      for (let i = 0; i < BATCH; i++) SINK[i] = getNumCells(res15[i]);
     },
     BENCH_OPTS
   );
 
   bench(
-    'getNumChildren res 0 -> 15',
+    'getNumChildren res 0 -> 15 ×100',
     () => {
-      getNumChildren(0, 15);
+      for (let i = 0; i < BATCH; i++) SINK[i] = getNumChildren(res0[i], res15[i]);
     },
     BENCH_OPTS
   );
 
   bench(
-    'cellArea res 15',
+    'cellArea res 15 ×100',
     () => {
-      cellArea(15);
+      for (let i = 0; i < BATCH; i++) SINK[i] = cellArea(res15[i]);
     },
     BENCH_OPTS
   );
