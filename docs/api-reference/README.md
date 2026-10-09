@@ -49,3 +49,7 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [overlaps](./api-reference/coverings#overlaps)
 - [count](./api-reference/coverings#count)
 - [area](./api-reference/coverings#area)
+
+### Miscellaneous
+
+- [migrate](./api-reference/miscellaneous#migrate)
