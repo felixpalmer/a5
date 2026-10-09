@@ -9,9 +9,7 @@
 // one exactly.
 
 import {_getPentagon, cellToSpherical, sphericalToCell} from '../core/cell';
-import type {Face} from '../core/coordinate-systems';
-import {TWO_PI_OVER_5} from '../core/constants';
-import {FACE_ADJACENCY} from '../core/face-adjacency';
+import {FACE_ADJACENCY, seamTransform} from '../core/face-adjacency';
 import {
   deserialize,
   getResolution,
@@ -22,14 +20,10 @@ import {
   WORLD_CELL
 } from '../core/serialization';
 import {getFaceVertices} from '../core/tiling';
-import type {OriginId} from '../core/utils';
-import {DodecahedronProjection} from '../projections/dodecahedron';
 import {slotRunsToCovering, toCovering} from '../collections/slot-runs';
 import type {SlotRuns} from '../collections/types';
 import {descendInCurveOrder, INSIDE, OUTSIDE, SPLIT} from '../traversal/curve-descent';
 import type {CurveDescentClassifier} from '../traversal/curve-descent';
-
-const dodecahedron = new DodecahedronProjection();
 
 // How far the center of any descendant of a cell can lie from the cell's own
 // center, in units of the cell's lattice spacing (face units · 2^hilbertRes). A
@@ -93,7 +87,7 @@ export function cellToSubcell(cell: bigint, resolution: number): BigUint64Array 
 
   // Cells along a dodecahedron edge interlock with the neighboring face's, so a
   // cell's subcells can come from the faces next to its own: search each face
-  // the cell's pentagon reaches into, in that face's frame.
+  // the cell's pentagon reaches into, in that face's frame (see seamTransform).
   const a5cell = deserialize(cell);
   const originId = a5cell.origin.id;
   const vertices = _getPentagon(a5cell).getVertices();
@@ -113,7 +107,8 @@ export function cellToSubcell(cell: bigint, resolution: number): BigUint64Array 
       )
     );
   for (let q = 0; q < 5; q++) {
-    const [adjacentId, map] = unfold(originId, q);
+    const adjacentId = FACE_ADJACENCY[originId][q][0];
+    const map = seamTransform(originId, q);
     const mapped = new Float64Array(10);
     let reaches = false;
     for (let i = 0; i < 10; i += 2) {
@@ -199,60 +194,4 @@ function signedMargin(lines: Float64Array, x: number, y: number): number {
     if (d < margin) margin = d;
   }
   return margin;
-}
-
-// By origin.id * 5 + quintant: the face across that quintant's edge, and the
-// map from this face's frame into that face's, as [a, b, c, d, tx, ty] taking
-// (x, y) to (a x + c y + tx, b x + d y + ty). Beyond its edges a face's frame
-// extends into the neighboring face by unfolding the dodecahedron about the
-// shared edge, so the map is rigid; it is fitted from three points of the
-// neighbor's quintant on that edge. Filled on first use.
-const UNFOLDS: [OriginId, Float64Array][] = [];
-
-function unfold(originId: OriginId, quintant: number): [OriginId, Float64Array] {
-  if (UNFOLDS.length === 0) {
-    for (let o = 0; o < 12; o++) {
-      for (let q = 0; q < 5; q++) {
-        const [adjacentId, adjacentQuintant] = FACE_ADJACENCY[o][q];
-        // Points of the neighbor's quintant (in its frame), and where they land in this one
-        const to: number[] = [];
-        const from: number[] = [];
-        for (const [r, angle] of [
-          [0.3, 0],
-          [0.55, -0.4],
-          [0.55, 0.4]
-        ]) {
-          const gamma = adjacentQuintant * TWO_PI_OVER_5 + angle;
-          const point = [r * Math.cos(gamma), r * Math.sin(gamma)] as Face;
-          const landed = dodecahedron.forward(dodecahedron.inverse(point, adjacentId), o as OriginId);
-          to.push(point[0], point[1]);
-          from.push(landed[0], landed[1]);
-        }
-        // Solve [to1 - to0, to2 - to0] = M [from1 - from0, from2 - from0]
-        const f1x = from[2] - from[0];
-        const f1y = from[3] - from[1];
-        const f2x = from[4] - from[0];
-        const f2y = from[5] - from[1];
-        const det = f1x * f2y - f2x * f1y;
-        const t1x = to[2] - to[0];
-        const t1y = to[3] - to[1];
-        const t2x = to[4] - to[0];
-        const t2y = to[5] - to[1];
-        const a = (t1x * f2y - t2x * f1y) / det;
-        const c = (t2x * f1x - t1x * f2x) / det;
-        const b = (t1y * f2y - t2y * f1y) / det;
-        const d = (t2y * f1x - t1y * f2x) / det;
-        const map = new Float64Array([
-          a,
-          b,
-          c,
-          d,
-          to[0] - a * from[0] - c * from[1],
-          to[1] - b * from[0] - d * from[1]
-        ]);
-        UNFOLDS.push([adjacentId, map]);
-      }
-    }
-  }
-  return UNFOLDS[originId * 5 + quintant];
 }

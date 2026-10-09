@@ -3,9 +3,10 @@
 // Copyright (c) A5 contributors
 
 import type {Triple} from '../lattice';
-import {tripleInBounds} from '../lattice';
+import {tripleFlavor, tripleInBounds} from '../lattice';
 import type {Origin} from '../core/utils';
-import {FACE_ADJACENCY} from '../core/face-adjacency';
+import {FACE_ADJACENCY, seamTriple} from '../core/face-adjacency';
+import {NEIGHBOR_DELTAS} from './neighbors';
 
 /** Neighbor delta: [dx, dy, dz, isEdgeSharing] */
 export type NeighborDelta = [number, number, number, boolean];
@@ -32,16 +33,6 @@ export const RIGHT_EDGE_DELTAS: NeighborDelta[][] = [
   /* parity=0, yOdd  */ [[0, 0, 0, true], [1, 0, 0, false]],
   /* parity=1, yEven */ [[0, -1, 0, true], [-1, 0, 0, false]],
   /* parity=1, yOdd  */ []
-];
-
-/**
- * Cross-face base-edge deltas (source y=maxRow), indexed by parity.
- * Applied to the mirrored position [z, maxRow, x] on the adjacent face.
- */
-// prettier-ignore
-export const CROSS_FACE_DELTAS: NeighborDelta[][] = [
-  /* parity=0 */ [[0, 0, 0, true], [1, 0, 0, true], [1, 0, -1, false]],
-  /* parity=1 */ [[0, 0, -1, true], [0, 0, 0, false]]
 ];
 
 /** The source cell of a boundary-neighbor lookup. */
@@ -136,18 +127,19 @@ export function getBoundaryNeighborTriples(
     );
   }
 
-  // Base edge (y=maxRow): neighbor on adjacent face at mirrored [z, maxRow, x]
+  // Base edge (y=maxRow): across the face seam the lattice continues, so the
+  // neighbors on the adjacent face are those of the cell's image there
   if (triple.y === maxRow) {
     const [adjFaceId, adjQuintant] = FACE_ADJACENCY[origin.id][sourceQuintant];
-    pushDeltas(
-      out,
-      {x: triple.z, y: maxRow, z: triple.x},
-      CROSS_FACE_DELTAS[parity],
-      edgeOnly,
-      adjFaceId,
-      adjQuintant,
-      maxRow
-    );
+    const image = seamTriple(triple, maxRow);
+    // The image's pentagon is the cell's turned half-way round: its flavor's parity bit flipped
+    const deltas = NEIGHBOR_DELTAS[tripleFlavor(triple, maxRow) ^ 1];
+    const list = edgeOnly ? deltas.edge : deltas.all;
+    for (let i = 0; i < list.length; i++) {
+      const d = list[i];
+      // Only steps back towards the seam (dy < 0) can land inside the neighbor quintant
+      if (d.y < 0) pushTriple(out, image.x + d.x, image.y + d.y, image.z + d.z, adjFaceId, adjQuintant, maxRow);
+    }
   }
 
   // Apex [0,0,0]: cells from all 5 quintants meet at the face center
