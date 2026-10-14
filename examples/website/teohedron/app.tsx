@@ -1,8 +1,8 @@
-import React, {Suspense, useState, useMemo} from 'react';
+import React, {Suspense, useState, useMemo, useEffect} from 'react';
 import {createRoot} from 'react-dom/client';
-import {Canvas, useLoader} from '@react-three/fiber';
-import {OrbitControls} from '@react-three/drei';
-import {DoubleSide, TextureLoader, RepeatWrapping, MOUSE, BufferGeometry, BufferAttribute} from 'three';
+import {Canvas, useLoader, type ThreeEvent} from '@react-three/fiber';
+import {Line, OrbitControls} from '@react-three/drei';
+import {DoubleSide, TextureLoader, RepeatWrapping, MOUSE, BufferGeometry, BufferAttribute, Vector3} from 'three';
 import {generateWireframe} from 'a5-internal/wireframe';
 import {lonLatToFace} from 'a5-internal/helpers';
 import type {LonLat} from 'a5/core/coordinate-systems';
@@ -11,6 +11,7 @@ const RESOLUTION = 2;
 const MAX_RESOLUTION = 5;
 const EARTH_TEXTURE = '/textures/bluemarble.jpg';
 const A5_GREEN = '#00aa55';
+const HIGHLIGHT = '#ffdd00';
 
 type Vec3 = [number, number, number];
 const DEG = Math.PI / 180;
@@ -41,8 +42,15 @@ const POLE_LATITUDE = 89.999;
 
 interface Geometries {
   solid: BufferGeometry;
-  edges: BufferGeometry;
+  // Cell outlines as pairs of segment endpoints, drawn as wide lines (WebGL
+  // ignores the width of plain lines)
+  edges: Vec3[];
   net: BufferGeometry;
+  netEdges: Vec3[];
+  // Cell c owns triangles cellTriangles[c] to cellTriangles[c + 1] of both
+  // meshes, and the outline points cellEdges[c] to cellEdges[c + 1]
+  cellTriangles: number[];
+  cellEdges: number[];
 }
 
 // Generated on first use and kept, so revisiting a resolution is instant
@@ -58,7 +66,10 @@ function getGeometries(resolution: number): Geometries {
   const cells = generateWireframe(resolution);
   const solid = {positions: [] as number[], normals: [] as number[], uvs: [] as number[], indices: [] as number[]};
   const net = {positions: [] as number[], indices: [] as number[]};
-  const edges: number[] = [];
+  const edges: Vec3[] = [];
+  const netEdges: Vec3[] = [];
+  const cellTriangles = [0];
+  const cellEdges = [0];
 
   let vertexOffset = 0;
   for (const ring of cells) {
@@ -114,8 +125,13 @@ function getGeometries(resolution: number): Geometries {
       vertexOffset += ((n + 1) * (n + 2)) / 2;
 
       // Outline, pushed slightly off the surface so it is not hidden by the faces
-      edges.push(...vertices[i].map(x => x * 1.002), ...next.map(x => x * 1.002));
+      edges.push(vertices[i].map(x => x * 1.002) as Vec3, next.map(x => x * 1.002) as Vec3);
+      const faceA = lonLatToFace(ring[i], resolution, center);
+      const faceB = lonLatToFace(ring[(i + 1) % ring.length], resolution, center);
+      netEdges.push([faceA[0], 0, -faceA[1]], [faceB[0], 0, -faceB[1]]);
     }
+    cellTriangles.push(solid.indices.length / 3);
+    cellEdges.push(edges.length);
   }
 
   const solidGeometry = new BufferGeometry();
@@ -124,19 +140,90 @@ function getGeometries(resolution: number): Geometries {
   solidGeometry.setAttribute('uv', new BufferAttribute(new Float32Array(solid.uvs), 2));
   solidGeometry.setIndex(new BufferAttribute(new Uint32Array(solid.indices), 1));
 
-  const edgesGeometry = new BufferGeometry();
-  edgesGeometry.setAttribute('position', new BufferAttribute(new Float32Array(edges), 3));
-
   // The net shares the solid's triangles and texture coordinates
   const netGeometry = new BufferGeometry();
   netGeometry.setAttribute('position', new BufferAttribute(new Float32Array(net.positions), 3));
   netGeometry.setAttribute('uv', solidGeometry.getAttribute('uv'));
   netGeometry.setIndex(solidGeometry.getIndex());
-  // Centered, so the camera looks at the middle of the net at every resolution
-  netGeometry.center();
+  // Centered, so the camera looks at the middle of the net at every resolution,
+  // with its outlines moved along
+  netGeometry.computeBoundingBox();
+  const netCenter = netGeometry.boundingBox!.getCenter(new Vector3());
+  netGeometry.translate(-netCenter.x, -netCenter.y, -netCenter.z);
+  for (const p of netEdges) {
+    p[0] -= netCenter.x;
+    p[1] -= netCenter.y;
+    p[2] -= netCenter.z;
+  }
 
-  GEOMETRIES[resolution] = {solid: solidGeometry, edges: edgesGeometry, net: netGeometry};
+  GEOMETRIES[resolution] = {solid: solidGeometry, edges, net: netGeometry, netEdges, cellTriangles, cellEdges};
   return GEOMETRIES[resolution];
+}
+
+/** The cell under the pointer, from the triangle it hit */
+function hitCell(event: ThreeEvent<PointerEvent>, cellTriangles: number[]): number | null {
+  // Only the nearest hit counts, not the cells behind it
+  event.stopPropagation();
+  const triangle = event.faceIndex;
+  if (triangle === undefined || triangle === null) return null;
+  let lo = 0;
+  let hi = cellTriangles.length - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (cellTriangles[mid] <= triangle) lo = mid;
+    else hi = mid;
+  }
+  return lo;
+}
+
+interface HoverProps {
+  hovered: number | null;
+  setHovered: (cell: number | null) => void;
+}
+
+/** The hovered cell's fill and outline, in the solid or the net */
+function Highlight({resolution, net, cell}: {resolution: number; net?: boolean; cell: number}) {
+  const geometries = getGeometries(resolution);
+  const {cellTriangles, cellEdges} = geometries;
+  const geometry = net ? geometries.net : geometries.solid;
+  const edges = net ? geometries.netEdges : geometries.edges;
+  // The net is flat and drawn without depth, but on the solid a cell on the far
+  // side must stay hidden behind the near one (the fill is pulled forward so it
+  // wins against its own face)
+  const depthTest = !net;
+  const fill = useMemo(() => {
+    const index = geometry.getIndex()!.array as Uint32Array;
+    const fillGeometry = new BufferGeometry();
+    fillGeometry.setAttribute('position', geometry.getAttribute('position'));
+    fillGeometry.setIndex(new BufferAttribute(index.slice(3 * cellTriangles[cell], 3 * cellTriangles[cell + 1]), 1));
+    return fillGeometry;
+  }, [geometry, cell]);
+  useEffect(() => () => fill.dispose(), [fill]);
+
+  return (
+    <>
+      <mesh geometry={fill} renderOrder={2} raycast={() => null}>
+        <meshBasicMaterial
+          color={HIGHLIGHT}
+          transparent
+          opacity={0.35}
+          depthTest={depthTest}
+          polygonOffset
+          polygonOffsetFactor={-1}
+          polygonOffsetUnits={-4}
+          side={DoubleSide}
+        />
+      </mesh>
+      <Line
+        points={edges.slice(cellEdges[cell], cellEdges[cell + 1])}
+        segments
+        lineWidth={4}
+        color={HIGHLIGHT}
+        depthTest={depthTest}
+        renderOrder={3}
+      />
+    </>
+  );
 }
 
 function useEarthTexture() {
@@ -146,9 +233,14 @@ function useEarthTexture() {
 }
 
 /** The teohedron as a solid: one flat pentagon per cell, with vertices on the sphere */
-function SolidScene({resolution, showEarth}: {resolution: number; showEarth: boolean}) {
+function SolidScene({
+  resolution,
+  showEarth,
+  hovered,
+  setHovered
+}: {resolution: number; showEarth: boolean} & HoverProps) {
   const texture = useEarthTexture();
-  const {solid, edges} = useMemo(() => getGeometries(resolution), [resolution]);
+  const {solid, edges, cellTriangles} = useMemo(() => getGeometries(resolution), [resolution]);
 
   return (
     <>
@@ -156,7 +248,11 @@ function SolidScene({resolution, showEarth}: {resolution: number; showEarth: boo
       <directionalLight position={[10, 10, 10]} intensity={1.5} />
       <directionalLight position={[-10, -10, -10]} intensity={0.8} />
 
-      <mesh geometry={solid}>
+      <mesh
+        geometry={solid}
+        onPointerMove={e => setHovered(hitCell(e, cellTriangles))}
+        onPointerOut={() => setHovered(null)}
+      >
         {showEarth ? (
           <meshStandardMaterial key="earth" map={texture} roughness={0.6} side={DoubleSide} />
         ) : (
@@ -171,25 +267,43 @@ function SolidScene({resolution, showEarth}: {resolution: number; showEarth: boo
           />
         )}
       </mesh>
-      <lineSegments geometry={edges}>
-        <lineBasicMaterial color="#ffffff" transparent opacity={showEarth ? 0.35 : 0.15} />
-      </lineSegments>
+      <Line points={edges} segments lineWidth={2} color="#ffffff" transparent opacity={showEarth ? 0.5 : 0.25} />
+      {hovered !== null && <Highlight resolution={resolution} cell={hovered} />}
 
       <OrbitControls enableDamping enablePan={false} minDistance={1.5} maxDistance={8} />
     </>
   );
 }
 
-/** The cells laid out flat on the unfolded dodecahedron, textured with the Earth */
-function NetScene({resolution}: {resolution: number}) {
+/** The cells laid out flat on the unfolded dodecahedron */
+function NetScene({resolution, showEarth, hovered, setHovered}: {resolution: number; showEarth: boolean} & HoverProps) {
   const texture = useEarthTexture();
-  const {net} = useMemo(() => getGeometries(resolution), [resolution]);
+  const {net, netEdges, cellTriangles} = useMemo(() => getGeometries(resolution), [resolution]);
 
   return (
     <>
-      <mesh geometry={net}>
-        <meshBasicMaterial map={texture} depthTest={false} side={DoubleSide} />
+      <mesh
+        geometry={net}
+        onPointerMove={e => setHovered(hitCell(e, cellTriangles))}
+        onPointerOut={() => setHovered(null)}
+      >
+        {showEarth ? (
+          <meshBasicMaterial key="earth" map={texture} depthTest={false} side={DoubleSide} />
+        ) : (
+          <meshBasicMaterial key="solid" color={A5_GREEN} depthTest={false} side={DoubleSide} />
+        )}
       </mesh>
+      <Line
+        points={netEdges}
+        segments
+        lineWidth={1.5}
+        color="#ffffff"
+        transparent
+        opacity={0.6}
+        depthTest={false}
+        renderOrder={1}
+      />
+      {hovered !== null && <Highlight resolution={resolution} net cell={hovered} />}
 
       <OrbitControls
         enableDamping
@@ -249,6 +363,8 @@ const Controls: React.FC<{
 const App: React.FC = () => {
   const [resolution, setResolution] = useState(RESOLUTION);
   const [showEarth, setShowEarth] = useState(true);
+  // Index of the cell under the pointer in either view, highlighted in both
+  const [hovered, setHovered] = useState<number | null>(null);
 
   return (
     <div
@@ -267,7 +383,7 @@ const App: React.FC = () => {
       <div style={{position: 'relative', flex: '1 1 0', minHeight: 0}}>
         <Canvas camera={{position: [0, 0.6, 2.1]}}>
           <Suspense fallback={null}>
-            <SolidScene resolution={resolution} showEarth={showEarth} />
+            <SolidScene resolution={resolution} showEarth={showEarth} hovered={hovered} setHovered={setHovered} />
           </Suspense>
         </Canvas>
         <Controls
@@ -280,7 +396,7 @@ const App: React.FC = () => {
       <div style={{position: 'relative', flex: '1 1 0', minHeight: 0, borderTop: '1px solid rgba(255,255,255,0.12)'}}>
         <Canvas camera={NET_CAMERA}>
           <Suspense fallback={null}>
-            <NetScene resolution={resolution} />
+            <NetScene resolution={resolution} showEarth={showEarth} hovered={hovered} setHovered={setHovered} />
           </Suspense>
         </Canvas>
       </div>

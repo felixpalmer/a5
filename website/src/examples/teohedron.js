@@ -15,18 +15,10 @@ class TeohedronDemo extends Component {
     return (
       <div>
         <p>
-          The geometric solids used by A5, above, and below the same cells unfolded onto the faces of the dodecahedron.
+          A5 is built on a spherical polyhedron, that we refer to as the Teohedron. It is a subdivision of the dodecahedron, with aperture 4 where each face is an equal-area pentagon.
         </p>
-        <h3>Resolution levels:</h3>
-        <h4>0: Dodecahedron</h4>
-        <p>12 regular pentagon primitives.</p>
-        <h4>1: Pentagonal Hexecontahedron</h4>
-        <p>60 congruent pentagon primitives, one per quintant of the pentakis dodecahedron.</p>
-        <h4>2+: Teohedron</h4>
-        <p>240+ irregular pentagon primitives.</p>
         <p>
-          The dodecahedron is oriented to place as much land as possible on the first 8 faces, with the remaining 4
-          faces being mostly uninhabited.
+          The orientation is chosen such that the majority of the populated land mass is on the first 8 faces, with the remaining 4 faces being mostly uninhabited.
         </p>
         <p>
           Texture: <a href="https://visibleearth.nasa.gov/collection/1484/blue-marble">NASA Blue Marble</a>
