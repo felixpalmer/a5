@@ -24,9 +24,29 @@ Many of the functions in the A5 API return and accept compacted data, and should
 
 Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells, and appends the [compaction marker](#coverings-and-the-compaction-marker) recording the resolution of the finest input cell. In most cases users will use [polygonToCells](./indexing#polygontocells)
 
+<CodeTabs>
+
 ```ts
 function compact(cells: bigint[] | BigUint64Array): BigUint64Array;
 ```
+
+```python
+def compact(cells: Sequence[int]) -> List[int]
+```
+
+```rust
+pub fn compact(cells: &[u64]) -> Result<Vec<u64>, String>
+```
+
+```sql
+a5_compact(cells UBIGINT[]) -> UBIGINT[]
+```
+
+```r unreleased
+a5_compact(cells, resolution = NULL)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -37,6 +57,8 @@ function compact(cells: bigint[] | BigUint64Array): BigUint64Array;
 - **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](#coverings-and-the-compaction-marker). An empty input returns an empty array.
 
 #### Example
+
+<CodeTabs>
 
 ```ts
 import { compact, uncompact, count, coveringResolution, cellToChildren } from 'a5-js';
@@ -52,13 +74,90 @@ console.log(coveringResolution(compacted));  // 3
 console.log(uncompact(compacted));  // the 4 children again
 ```
 
+```python
+from a5 import compact, uncompact, count, covering_resolution, cell_to_children
+
+# Get 4 sibling cells at resolution 3
+parent = 0x6a80000000000000  # A cell at resolution 2
+children = cell_to_children(parent)
+
+# Compact them: they are stored as their parent, but still stand for 4 cells at resolution 3
+compacted = compact(children)
+print(count(compacted))  # 4
+print(covering_resolution(compacted))  # 3
+print(uncompact(compacted))  # the 4 children again
+```
+
+```rust
+use a5::{cell_to_children, compact, count, covering_resolution, uncompact};
+
+// Get 4 sibling cells at resolution 3
+let parent = 0x6a80000000000000; // A cell at resolution 2
+let children = cell_to_children(parent, None)?;
+
+// Compact them: they are stored as their parent, but still stand for 4 cells at resolution 3
+let compacted = compact(&children)?;
+println!("{}", count(&compacted)?); // 4
+println!("{}", covering_resolution(&compacted)); // 3
+println!("{:?}", uncompact(&compacted)?); // the 4 children again
+```
+
+```sql unreleased
+-- Get 4 sibling cells at resolution 3, the children of a resolution 2 cell, and
+-- compact them: they are stored as their parent, but still stand for 4 cells at resolution 3
+WITH compacted AS (
+  SELECT a5_compact(a5_cell_to_children(a5_hex_to_u64('6a80000000000000'))) AS cells
+)
+SELECT
+  a5_count(cells),                -- 4
+  a5_covering_resolution(cells),  -- 3
+  a5_uncompact(cells)             -- the 4 children again
+FROM compacted;
+```
+
+```r unreleased
+library(a5R)
+
+# Get 4 sibling cells at resolution 3
+parent <- a5_cell("6a80000000000000")  # A cell at resolution 2
+children <- a5_cell_to_children(parent)
+
+# Compact them: they are stored as their parent, but still stand for 4 cells at resolution 3
+compacted <- a5_compact(children)
+a5_count(compacted)                # 4
+a5_covering_resolution(compacted)  # 3
+a5_uncompact(compacted)            # the 4 children again
+```
+
+</CodeTabs>
+
 ### uncompact
 
 Expands a covering to all of its cells at the covering's resolution: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
 
+<CodeTabs>
+
 ```ts
 function uncompact(cells: bigint[] | BigUint64Array): BigUint64Array;
 ```
+
+```python
+def uncompact(cells: Sequence[int]) -> List[int]
+```
+
+```rust
+pub fn uncompact(cells: &[u64]) -> Result<Vec<u64>, String>
+```
+
+```sql unreleased
+a5_uncompact(cells UBIGINT[]) -> UBIGINT[]
+```
+
+```r unreleased
+a5_uncompact(x, resolution = NULL, simplify = TRUE)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -69,6 +168,8 @@ function uncompact(cells: bigint[] | BigUint64Array): BigUint64Array;
 - **(BigUint64Array)** Array of cell identifiers, all at the covering's resolution
 
 #### Example
+
+<CodeTabs>
 
 ```ts
 import { polygonToCells, uncompact, getResolution } from 'a5-js';
@@ -81,6 +182,57 @@ const flat = uncompact(compacted);
 console.log(getResolution(flat[0]));  // 10
 ```
 
+```python
+from a5 import polygon_to_cells, uncompact, get_resolution
+
+ring = [(2.25, 48.81), (2.42, 48.81), (2.42, 48.90), (2.25, 48.90)]
+compacted = polygon_to_cells(ring, 10)
+
+# No resolution needed: the compaction marker records it
+flat = uncompact(compacted)
+print(get_resolution(flat[0]))  # 10
+```
+
+```rust
+use a5::{get_resolution, polygon_to_cells, uncompact, LonLat};
+
+let ring = vec![
+    LonLat::new(2.25, 48.81),
+    LonLat::new(2.42, 48.81),
+    LonLat::new(2.42, 48.90),
+    LonLat::new(2.25, 48.90),
+];
+let compacted = polygon_to_cells(&[ring], 10, None)?;
+
+// No resolution needed: the compaction marker records it
+let flat = uncompact(&compacted)?;
+println!("{}", get_resolution(flat[0])); // 10
+```
+
+```sql unreleased
+-- No resolution needed: the compaction marker records it
+SELECT a5_get_resolution(cell)  -- 10
+FROM (
+  SELECT unnest(a5_uncompact(a5_geometry_to_cells(
+    'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10
+  ))) AS cell
+)
+LIMIT 1;
+```
+
+```r unreleased
+library(a5R)
+
+ring <- wk::wkt("POLYGON ((2.25 48.81, 2.42 48.81, 2.42 48.9, 2.25 48.9, 2.25 48.81))")
+compacted <- a5_polygon_to_cells(ring, resolution = 10)
+
+# No resolution needed: the compaction marker records it
+flat <- a5_uncompact(compacted)
+a5_get_resolution(flat[1])  # 10
+```
+
+</CodeTabs>
+
 #### Notes
 
 - All output cells are at the covering's resolution; the [compaction marker](#coverings-and-the-compaction-marker) is not included
@@ -91,9 +243,29 @@ console.log(getResolution(flat[0]));  // 10
 
 Returns the resolution a covering stands for: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
 
+<CodeTabs>
+
 ```ts
 function coveringResolution(cells: bigint[] | BigUint64Array): number;
 ```
+
+```python
+def covering_resolution(cells: Sequence[int]) -> int
+```
+
+```rust
+pub fn covering_resolution(cells: &[u64]) -> i32
+```
+
+```sql unreleased
+a5_covering_resolution(cells UBIGINT[]) -> INTEGER
+```
+
+```r unreleased
+a5_covering_resolution(x)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -105,6 +277,8 @@ function coveringResolution(cells: bigint[] | BigUint64Array): number;
 
 #### Example
 
+<CodeTabs>
+
 ```ts
 import { compact, coveringResolution, cellToChildren } from 'a5-js';
 
@@ -113,13 +287,62 @@ const compacted = compact(cellToChildren(parent, 4));
 console.log(coveringResolution(compacted));  // 4
 ```
 
+```python
+from a5 import compact, covering_resolution, cell_to_children
+
+parent = 0x6a80000000000000  # resolution 2
+compacted = compact(cell_to_children(parent, 4))
+print(covering_resolution(compacted))  # 4
+```
+
+```rust
+use a5::{cell_to_children, compact, covering_resolution};
+
+let parent = 0x6a80000000000000; // resolution 2
+let compacted = compact(&cell_to_children(parent, Some(4))?)?;
+println!("{}", covering_resolution(&compacted)); // 4
+```
+
+```sql unreleased
+-- Children at resolution 4 of a resolution 2 cell
+SELECT a5_covering_resolution(
+  a5_compact(a5_cell_to_children(a5_hex_to_u64('6a80000000000000'), 4))
+);  -- 4
+```
+
+```r unreleased
+library(a5R)
+
+parent <- a5_cell("6a80000000000000")  # resolution 2
+compacted <- a5_compact(a5_cell_to_children(parent, resolution = 4))
+a5_covering_resolution(compacted)  # 4
+```
+
+</CodeTabs>
+
 ### isCompactionMarker
 
 Checks whether a value is a [compaction marker](#coverings-and-the-compaction-marker), the value at the end of a covering that records its resolution. Most code never needs it: the A5 functions that read coverings handle the [compaction marker](#coverings-and-the-compaction-marker) themselves, and to get a covering's cells one at a time, use [`uncompact`](#uncompact). Always keep the [compaction marker](#coverings-and-the-compaction-marker) when you store or pass on a covering, as without it the compacted cells no longer say which resolution they stand for.
 
+<CodeTabs>
+
 ```ts
 function isCompactionMarker(value: bigint): boolean;
 ```
+
+```python
+def is_compaction_marker(value: int) -> bool
+```
+
+```rust
+pub fn is_compaction_marker(value: u64) -> bool
+```
+
+```sql unreleased
+a5_is_compaction_marker(value UBIGINT) -> BOOLEAN
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -131,11 +354,31 @@ function isCompactionMarker(value: bigint): boolean;
 
 #### Example
 
+<CodeTabs>
+
 ```ts
 import { isCompactionMarker, lonLatToCell } from 'a5-js';
 
 console.log(isCompactionMarker(lonLatToCell([2.35, 48.85], 10)));  // false: a cell
 ```
+
+```python
+from a5 import is_compaction_marker, lonlat_to_cell
+
+print(is_compaction_marker(lonlat_to_cell((2.35, 48.85), 10)))  # False: a cell
+```
+
+```rust
+use a5::{is_compaction_marker, lonlat_to_cell, LonLat};
+
+println!("{}", is_compaction_marker(lonlat_to_cell(LonLat::new(2.35, 48.85), 10)?)); // false: a cell
+```
+
+```sql unreleased
+SELECT a5_is_compaction_marker(a5_lonlat_to_cell(2.35, 48.85, 10));  -- false: a cell
+```
+
+</CodeTabs>
 
 ## Coverings and the compaction marker
 

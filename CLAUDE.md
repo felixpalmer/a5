@@ -48,6 +48,7 @@ yarn test --run        # Run tests once
 yarn test hex          # Run tests just for a given file, here `hex.text.ts`
 yarn bench             # Run performance benchmarks in /benchmarks (~45s, no output assertions); bundles the library first
 yarn bench curve       # Run benchmarks for a single file, here `curve.bench.ts`
+yarn verify-snippets   # Run the <CodeTabs> doc snippets in every language (or e.g. `yarn verify-snippets python`)
 ```
 
 ## Development Guidelines
@@ -60,6 +61,7 @@ yarn bench curve       # Run benchmarks for a single file, here `curve.bench.ts`
 - **Branded Types**: LonLat and other coordinate types are branded - cast with `as LonLat`, not type construction
 - **Build**: Run `yarn build` before testing example CLIs
 - **Documentation**: When adding new documentation pages, update `docs/table-of-contents.json` to add them to the sidebar navigation
+- **Multi-language snippets**: In docs, wrap fenced code blocks (`ts`, `python`, `rust`, `sql` = DuckDB, `r`) in `<CodeTabs>` (`website/src/components/code-tabs.jsx`, registered globally in `website/src/theme/MDXComponents.js`, no import needed) for the switchable language tabs. Leave out a language the integration lacks — its tab shows "Not yet available". Write DuckDB/R snippets against their A5 v1 APIs (DuckDB branch `a5-1.0-beta` of query-farm/a5, a5R `main`) and mark any that don't run on the current release with ```` ```sql unreleased ````: the tab shows `DuckDB*` with a "Not yet available" tooltip, and `verify-snippets` expects it to fail (and says when the marker can go). Examples (not signature blocks, whose `ts` starts with `function `) must run: check with `yarn verify-snippets`, which runs in CI (`.github/workflows/snippets.yml`)
 - **Hot loops**: Prefer indexed `for` loops over `.map()` / `.forEach()` / `.filter()` in performance-sensitive paths (cell-fill, line tracing, dense-sample loops, fixture generators). Two reasons: (1) the closure form is measurably slower in V8 for large inputs (10–15% on country-scale polygons in the polygonToCells PR), and (2) `for (let i = 0; i < n; i++)` ports 1:1 to `for i in range(n)` / `for i in 0..n`, while `.map(fn)` does not.
 
 ## Website Examples

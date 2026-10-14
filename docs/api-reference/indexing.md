@@ -12,9 +12,29 @@ For detailed information about how A5 encodes cells as 64-bit integers, see [Ind
 
 Indexes the coordinate at a given resolution to an A5 cell index.
 
+<CodeTabs>
+
 ```ts
 function lonLatToCell(coordinate: [longitude: number, latitude: number], resolution: number): bigint;
 ```
+
+```python
+def lonlat_to_cell(lon_lat: LonLat, resolution: int) -> int
+```
+
+```rust
+pub fn lonlat_to_cell(lonlat: LonLat, resolution: i32) -> Result<u64, String>
+```
+
+```sql
+a5_lonlat_to_cell(longitude DOUBLE, latitude DOUBLE, resolution INTEGER) -> UBIGINT
+```
+
+```r
+a5_lonlat_to_cell(lon, lat, resolution)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -29,9 +49,32 @@ function lonLatToCell(coordinate: [longitude: number, latitude: number], resolut
 
 Returns the geospatial coordinate at the center of an A5 cell.
 
+<CodeTabs>
+
 ```ts
 function cellToLonLat(cell: bigint): [longitude: number, latitude: number];
 ```
+
+```python
+def cell_to_lonlat(cell_id: int) -> LonLat
+```
+
+```rust
+pub fn cell_to_lonlat(cell: u64) -> Result<LonLat, String>
+```
+
+```sql
+a5_cell_to_lonlat(cell UBIGINT) -> DOUBLE[2]
+
+-- As a GEOMETRY point
+a5_cell_to_point(cell UBIGINT) -> GEOMETRY
+```
+
+```r
+a5_cell_to_lonlat(cell, as_dataframe = FALSE)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -45,12 +88,45 @@ function cellToLonLat(cell: bigint): [longitude: number, latitude: number];
 
 Returns the vertices that define the boundary of an A5 cell.
 
+<CodeTabs>
+
 ```ts
 function cellToBoundary(cell: bigint, options?: {
   closedRing?: boolean;
   segments?: number | 'auto';
 }): [longitude: number, latitude: number][];
 ```
+
+```python
+def cell_to_boundary(cell_id: int, options: Optional[CellToBoundaryOptions] = None) -> List[LonLat]
+
+# options: {'closed_ring': bool, 'segments': int | 'auto'}
+```
+
+```rust
+pub fn cell_to_boundary(cell_id: u64, options: Option<CellToBoundaryOptions>) -> Result<Vec<LonLat>, String>
+
+pub struct CellToBoundaryOptions {
+    pub closed_ring: bool,
+    pub segments: Option<i32>, // None for auto
+}
+```
+
+```sql
+a5_cell_to_boundary(cell UBIGINT) -> DOUBLE[2][]
+a5_cell_to_boundary(cell UBIGINT, closed_ring BOOLEAN) -> DOUBLE[2][]
+a5_cell_to_boundary(cell UBIGINT, closed_ring BOOLEAN, segments INTEGER) -> DOUBLE[2][]
+
+-- As a GEOMETRY polygon
+a5_cell_to_geometry(cell UBIGINT) -> GEOMETRY
+a5_cell_to_geometry(cell UBIGINT, segments INTEGER) -> GEOMETRY
+```
+
+```r
+a5_cell_to_boundary(cell, format = c("wkb", "wkt"), closed = TRUE, segments = NULL)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -78,11 +154,38 @@ The result is a [covering](./coverings) of the polygon, approximating it with `'
 
 Multi-polygons are not supported directly — call `polygonToCells` per polygon and combine the results with [`union`](./coverings#union). Coverings can also be intersected, subtracted and tested for containment without uncompacting, see [Coverings](./coverings).
 
+<CodeTabs>
+
 ```ts
 function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, options?: {
   containment?: 'center' | 'overlapping';
 }): BigUint64Array;
 ```
+
+```python
+def polygon_to_cells(polygon: Sequence[LonLat] | Sequence[Sequence[LonLat]], resolution: int, options: Optional[PolygonToCellsOptions] = None) -> List[int]
+
+# options: {'containment': 'center' | 'overlapping'}
+```
+
+```rust
+pub fn polygon_to_cells(polygon: &[Vec<LonLat>], resolution: i32, options: Option<PolygonToCellsOptions>) -> Result<Vec<u64>, String>
+
+pub struct PolygonToCellsOptions {
+    pub containment: Containment, // Containment::Center (default) or Containment::Overlapping
+}
+```
+
+```sql unreleased
+a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER) -> UBIGINT[]
+a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER, overlapping BOOLEAN) -> UBIGINT[]
+```
+
+```r
+a5_polygon_to_cells(x, resolution, containment = c("centre", "overlapping"))
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -96,6 +199,8 @@ function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, opti
 - **(BigUint64Array)** Compacted cells belonging to the polygon sorted in curve order, then the [compaction marker](./compaction#coverings-and-the-compaction-marker). A polygon with no cells gives just the [compaction marker](./compaction#coverings-and-the-compaction-marker)
 
 #### Example
+
+<CodeTabs>
 
 ```ts
 import { polygonToCells, uncompact } from 'a5-js';
@@ -123,15 +228,131 @@ const withHole = polygonToCells([ring, hole], 10);
 const covering = polygonToCells(ring, 10, { containment: 'overlapping' });
 ```
 
+```python
+from a5 import polygon_to_cells, uncompact
+
+# Bounding box around central Paris
+ring = [
+    (2.25, 48.81),
+    (2.42, 48.81),
+    (2.42, 48.90),
+    (2.25, 48.90),
+]
+compact = polygon_to_cells(ring, 10)
+flat = uncompact(compact)  # all cells at resolution 10
+
+# The same polygon with a hole — cells inside the hole are excluded
+hole = [
+    (2.30, 48.84),
+    (2.37, 48.84),
+    (2.37, 48.87),
+    (2.30, 48.87),
+]
+with_hole = polygon_to_cells([ring, hole], 10)
+
+# Full coverage — every cell overlapping the polygon, with no gaps along the edge
+covering = polygon_to_cells(ring, 10, {'containment': 'overlapping'})
+```
+
+```rust
+use a5::{polygon_to_cells, uncompact, Containment, LonLat, PolygonToCellsOptions};
+
+// Bounding box around central Paris
+let ring = vec![
+    LonLat::new(2.25, 48.81),
+    LonLat::new(2.42, 48.81),
+    LonLat::new(2.42, 48.90),
+    LonLat::new(2.25, 48.90),
+];
+let compact = polygon_to_cells(&[ring.clone()], 10, None)?;
+let flat = uncompact(&compact)?; // all cells at resolution 10
+
+// The same polygon with a hole — cells inside the hole are excluded
+let hole = vec![
+    LonLat::new(2.30, 48.84),
+    LonLat::new(2.37, 48.84),
+    LonLat::new(2.37, 48.87),
+    LonLat::new(2.30, 48.87),
+];
+let with_hole = polygon_to_cells(&[ring.clone(), hole], 10, None)?;
+
+// Full coverage — every cell overlapping the polygon, with no gaps along the edge
+let options = PolygonToCellsOptions { containment: Containment::Overlapping };
+let covering = polygon_to_cells(&[ring], 10, Some(options))?;
+```
+
+```sql unreleased
+-- Bounding box around central Paris
+SELECT a5_geometry_to_cells(
+  'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10
+) AS compact;
+
+-- All cells at resolution 10
+SELECT unnest(a5_uncompact(a5_geometry_to_cells(
+  'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10
+))) AS cell;
+
+-- The same polygon with a hole — cells inside the hole are excluded
+SELECT a5_geometry_to_cells(
+  'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81),
+           (2.30 48.84, 2.37 48.84, 2.37 48.87, 2.30 48.87, 2.30 48.84))'::GEOMETRY, 10
+) AS with_hole;
+
+-- Full coverage — every cell overlapping the polygon, with no gaps along the edge
+SELECT a5_geometry_to_cells(
+  'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10, true
+) AS covering;
+```
+
+```r unreleased
+library(a5R)
+
+# Bounding box around central Paris
+paris <- wk::wkt("POLYGON ((2.25 48.81, 2.42 48.81, 2.42 48.9, 2.25 48.9, 2.25 48.81))")
+compact <- a5_polygon_to_cells(paris, resolution = 10)
+flat <- a5_uncompact(compact)  # all cells at resolution 10
+
+# The same polygon with a hole — cells inside the hole are excluded
+with_hole <- a5_polygon_to_cells(wk::wkt(
+  "POLYGON ((2.25 48.81, 2.42 48.81, 2.42 48.9, 2.25 48.9, 2.25 48.81),
+            (2.3 48.84, 2.37 48.84, 2.37 48.87, 2.3 48.87, 2.3 48.84))"
+), resolution = 10)
+
+# Full coverage — every cell overlapping the polygon, with no gaps along the edge
+covering <- a5_polygon_to_cells(paris, resolution = 10, containment = "overlapping")
+```
+
+</CodeTabs>
+
 ### lineStringToCells
 
 Returns all cells whose pentagons intersect a polyline defined by a sequence of waypoints. Consecutive waypoints are connected with great-circle arcs. For a simple two-point line segment, pass `[start, end]`.
 
 The result is uncompacted at the requested resolution and is not sorted — cells appear roughly in the order they were discovered along the path. Cells at waypoint junctions are deduplicated.
 
+<CodeTabs>
+
 ```ts
 function lineStringToCells(waypoints: LonLat[], resolution: number): bigint[];
 ```
+
+```python
+def line_string_to_cells(waypoints: List[LonLat], resolution: int) -> List[int]
+```
+
+```rust
+pub fn line_string_to_cells(waypoints: &[LonLat], resolution: i32) -> Result<Vec<u64>, String>
+```
+
+```sql
+a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER) -> UBIGINT[]  -- geom a LINESTRING
+```
+
+```r
+a5_linestring_to_cells(x, resolution)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -143,6 +364,8 @@ function lineStringToCells(waypoints: LonLat[], resolution: number): bigint[];
 - **(bigint[])** Array of unique cell identifiers whose pentagons intersect the polyline
 
 #### Example
+
+<CodeTabs>
 
 ```ts
 import { lineStringToCells } from 'a5-js';
@@ -159,6 +382,59 @@ const route = [
 const cells = lineStringToCells(route, 8);
 ```
 
+```python
+from a5 import line_string_to_cells
+
+# Simple segment: Paris → London
+segment = line_string_to_cells([(2.3522, 48.8566), (-0.1276, 51.5074)], 8)
+
+# Multi-waypoint route
+route = [
+    (2.3522, 48.8566),  # Paris
+    (4.8357, 45.7640),  # Lyon
+    (7.2620, 43.7102),  # Nice
+]
+cells = line_string_to_cells(route, 8)
+```
+
+```rust
+use a5::{line_string_to_cells, LonLat};
+
+// Simple segment: Paris → London
+let segment = line_string_to_cells(&[LonLat::new(2.3522, 48.8566), LonLat::new(-0.1276, 51.5074)], 8)?;
+
+// Multi-waypoint route
+let route = [
+    LonLat::new(2.3522, 48.8566), // Paris
+    LonLat::new(4.8357, 45.7640), // Lyon
+    LonLat::new(7.2620, 43.7102), // Nice
+];
+let cells = line_string_to_cells(&route, 8)?;
+```
+
+```sql
+-- Simple segment: Paris → London
+SELECT a5_geometry_to_cells('LINESTRING(2.3522 48.8566, -0.1276 51.5074)'::GEOMETRY, 8) AS segment;
+
+-- Multi-waypoint route: Paris → Lyon → Nice
+SELECT a5_geometry_to_cells(
+  'LINESTRING(2.3522 48.8566, 4.8357 45.7640, 7.2620 43.7102)'::GEOMETRY, 8
+) AS cells;
+```
+
+```r
+library(a5R)
+
+# Simple segment: Paris → London
+segment <- a5_linestring_to_cells(wk::wkt("LINESTRING (2.3522 48.8566, -0.1276 51.5074)"), resolution = 8)
+
+# Multi-waypoint route: Paris → Lyon → Nice
+route <- wk::wkt("LINESTRING (2.3522 48.8566, 4.8357 45.764, 7.262 43.7102)")
+cells <- a5_linestring_to_cells(route, resolution = 8)
+```
+
+</CodeTabs>
+
 ## Cell representation
 
 A5 cells are stored as 64 bit integers, for performance and to provide a compact representation for use in databases. In JavaScript these can be represented as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) values and arrays of cells stored as [BigInt64Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt64Array)s.
@@ -167,9 +443,29 @@ For best performance it is recommened to use this representation, but it is also
 
 ### u64ToHex
 
+<CodeTabs>
+
 ```ts
 function u64ToHex(index: bigint): string;
 ```
+
+```python
+def u64_to_hex(value: int) -> str
+```
+
+```rust
+pub fn u64_to_hex(value: u64) -> String
+```
+
+```sql
+a5_u64_to_hex(cell UBIGINT) -> VARCHAR
+```
+
+```r
+a5_u64_to_hex(x)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -181,9 +477,29 @@ function u64ToHex(index: bigint): string;
 
 ### hexToU64
 
+<CodeTabs>
+
 ```ts
 function hexToU64(hex: string): bigint;
 ```
+
+```python
+def hex_to_u64(hex_str: str) -> int
+```
+
+```rust
+pub fn hex_to_u64(hex: &str) -> Result<u64, String>
+```
+
+```sql
+a5_hex_to_u64(hex VARCHAR) -> UBIGINT
+```
+
+```r
+a5_hex_to_u64(x)  # returns an a5_cell
+```
+
+</CodeTabs>
 
 #### Parameters
 

@@ -41,9 +41,29 @@ Timings measured with the [Rust implementation](https://github.com/felixpalmer/a
 
 Returns the cells in either covering. Both must be at the same resolution, or it throws.
 
+<CodeTabs>
+
 ```ts
 function union(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): BigUint64Array;
 ```
+
+```python
+def union(a: Cells, b: Cells) -> List[int]
+```
+
+```rust
+pub fn union(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
+```
+
+```sql unreleased
+a5_union(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
+```
+
+```r unreleased
+a5_union(x, y = NULL)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -56,6 +76,8 @@ function union(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): BigU
 
 #### Example
 
+<CodeTabs>
+
 ```ts
 import { polygonToCells, union } from 'a5-js';
 
@@ -63,13 +85,68 @@ import { polygonToCells, union } from 'a5-js';
 const coverage = union(polygonToCells(mainland, 10), polygonToCells(island, 10));
 ```
 
+```python
+from a5 import polygon_to_cells, union
+
+# A multi-polygon: the union of its parts
+coverage = union(polygon_to_cells(mainland, 10), polygon_to_cells(island, 10))
+```
+
+```rust
+use a5::{polygon_to_cells, union};
+
+// A multi-polygon: the union of its parts
+let coverage = union(
+    &polygon_to_cells(&[mainland], 10, None)?,
+    &polygon_to_cells(&[island], 10, None)?,
+)?;
+```
+
+```sql unreleased
+-- A multi-polygon: the union of its parts
+SELECT a5_union(a5_geometry_to_cells(mainland, 10), a5_geometry_to_cells(island, 10)) AS coverage
+FROM parts;
+```
+
+```r unreleased
+library(a5R)
+
+# A multi-polygon: the union of its parts
+coverage <- a5_union(
+  a5_polygon_to_cells(mainland, resolution = 10),
+  a5_polygon_to_cells(island, resolution = 10)
+)
+```
+
+</CodeTabs>
+
 ### intersect
 
 Returns the cells in both coverings. Both must be at the same resolution, or it throws.
 
+<CodeTabs>
+
 ```ts
 function intersect(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): BigUint64Array;
 ```
+
+```python
+def intersect(a: Cells, b: Cells) -> List[int]
+```
+
+```rust
+pub fn intersect(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
+```
+
+```sql unreleased
+a5_intersect(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
+```
+
+```r unreleased
+a5_intersect(x, y)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -84,9 +161,29 @@ function intersect(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): 
 
 Returns the cells in the first covering but not in the second. Both must be at the same resolution, or it throws.
 
+<CodeTabs>
+
 ```ts
 function difference(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): BigUint64Array;
 ```
+
+```python
+def difference(a: Cells, b: Cells) -> List[int]
+```
+
+```rust
+pub fn difference(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
+```
+
+```sql unreleased
+a5_difference(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
+```
+
+```r unreleased
+a5_difference(x, y)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -99,6 +196,8 @@ function difference(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array):
 
 #### Example
 
+<CodeTabs>
+
 ```ts
 import { polygonToCells, difference, lonLatToCell, sphericalCap } from 'a5-js';
 
@@ -106,15 +205,74 @@ import { polygonToCells, difference, lonLatToCell, sphericalCap } from 'a5-js';
 const outside = difference(polygonToCells(ring, 10), sphericalCap(lonLatToCell(capital, 10), 50_000));
 ```
 
+```python
+from a5 import polygon_to_cells, difference, lonlat_to_cell, spherical_cap
+
+# A country without the area within 50 km of its capital
+outside = difference(polygon_to_cells(ring, 10), spherical_cap(lonlat_to_cell(capital, 10), 50_000))
+```
+
+```rust
+use a5::{difference, lonlat_to_cell, polygon_to_cells, spherical_cap};
+
+// A country without the area within 50 km of its capital
+let outside = difference(
+    &polygon_to_cells(&[ring], 10, None)?,
+    &spherical_cap(lonlat_to_cell(capital, 10)?, 50_000.0)?,
+)?;
+```
+
+```sql unreleased
+-- A country without the area within 50 km of its capital
+SELECT a5_difference(
+  a5_geometry_to_cells(geom, 10),
+  a5_spherical_cap(a5_lonlat_to_cell(capital_lon, capital_lat, 10), 50000)
+) AS outside
+FROM countries;
+```
+
+```r unreleased
+library(a5R)
+
+# A country without the area within 50 km of its capital
+capital_cell <- a5_lonlat_to_cell(capital_lon, capital_lat, resolution = 10)
+outside <- a5_difference(
+  a5_polygon_to_cells(country, resolution = 10),
+  a5_spherical_cap(capital_cell, radius = 50000)
+)
+```
+
+</CodeTabs>
+
 ## Predicates
 
 ### contains
 
 Checks whether a cell is in a covering. The cell must be at the covering's resolution, or it throws: A5 cells don't nest geometrically across resolutions, so a finer cell isn't guaranteed to lie inside its ancestor. To test a point, index it at the covering's resolution with `lonLatToCell(point, resolution)`.
 
+<CodeTabs>
+
 ```ts
 function contains(cells: bigint[] | BigUint64Array, cell: bigint): boolean;
 ```
+
+```python
+def contains(cells: Cells, cell: int) -> bool
+```
+
+```rust
+pub fn contains(cells: &[u64], cell: u64) -> Result<bool, String>
+```
+
+```sql unreleased
+a5_contains(cells UBIGINT[], cell UBIGINT) -> BOOLEAN
+```
+
+```r unreleased
+a5_contains(x, cell)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -127,6 +285,8 @@ function contains(cells: bigint[] | BigUint64Array, cell: bigint): boolean;
 
 #### Example
 
+<CodeTabs>
+
 ```ts
 import { polygonToCells, contains, lonLatToCell } from 'a5-js';
 
@@ -134,13 +294,61 @@ const coverage = polygonToCells(ring, 12);
 const inside = contains(coverage, lonLatToCell([2.35, 48.85], 12));
 ```
 
+```python
+from a5 import polygon_to_cells, contains, lonlat_to_cell
+
+coverage = polygon_to_cells(ring, 12)
+inside = contains(coverage, lonlat_to_cell((2.35, 48.85), 12))
+```
+
+```rust
+use a5::{contains, lonlat_to_cell, polygon_to_cells, LonLat};
+
+let coverage = polygon_to_cells(&[ring], 12, None)?;
+let inside = contains(&coverage, lonlat_to_cell(LonLat::new(2.35, 48.85), 12)?)?;
+```
+
+```sql unreleased
+SELECT a5_contains(a5_geometry_to_cells(geom, 12), a5_lonlat_to_cell(2.35, 48.85, 12)) AS inside
+FROM countries;
+```
+
+```r unreleased
+library(a5R)
+
+coverage <- a5_polygon_to_cells(country, resolution = 12)
+inside <- a5_contains(coverage, a5_lonlat_to_cell(2.35, 48.85, resolution = 12))
+```
+
+</CodeTabs>
+
 ### overlaps
 
 Checks whether two coverings share any cell. Both must be at the same resolution, or it throws.
 
+<CodeTabs>
+
 ```ts
 function overlaps(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): boolean;
 ```
+
+```python
+def overlaps(a: Cells, b: Cells) -> bool
+```
+
+```rust
+pub fn overlaps(a: &[u64], b: &[u64]) -> Result<bool, String>
+```
+
+```sql unreleased
+a5_overlaps(a UBIGINT[], b UBIGINT[]) -> BOOLEAN
+```
+
+```r unreleased
+a5_overlaps(x, y)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -157,9 +365,29 @@ function overlaps(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): b
 
 Returns the number of cells in a covering, equivalent to the length of `uncompact(cells)` without having to materialize the uncompacted cells. Note that this generally differs from the length of the compacted array.
 
+<CodeTabs>
+
 ```ts
 function count(cells: bigint[] | BigUint64Array): bigint;
 ```
+
+```python
+def count(cells: Sequence[int]) -> int
+```
+
+```rust
+pub fn count(cells: &[u64]) -> Result<u64, String>
+```
+
+```sql unreleased
+a5_count(cells UBIGINT[]) -> UBIGINT
+```
+
+```r unreleased
+a5_count(x)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -171,6 +399,8 @@ function count(cells: bigint[] | BigUint64Array): bigint;
 
 #### Example
 
+<CodeTabs>
+
 ```ts
 import { polygonToCells, count } from 'a5-js';
 
@@ -179,13 +409,66 @@ const france = polygonToCells(franceRing, 16);
 console.log(count(france));  // 67995098n cells at resolution 16
 ```
 
+```python
+from a5 import polygon_to_cells, count
+
+# Stored compactly, as 78929 cells at mixed resolutions
+france = polygon_to_cells(france_ring, 16)
+print(count(france))  # 67995098 cells at resolution 16
+```
+
+```rust
+use a5::{count, polygon_to_cells};
+
+// Stored compactly, as 78929 cells at mixed resolutions
+let france = polygon_to_cells(&[france_ring], 16, None)?;
+println!("{}", count(&france)?); // 67995098 cells at resolution 16
+```
+
+```sql unreleased
+-- Stored compactly, as 78929 cells at mixed resolutions
+SELECT a5_count(a5_geometry_to_cells(geom, 16))  -- 67995098 cells at resolution 16
+FROM countries
+WHERE name = 'France';
+```
+
+```r unreleased
+library(a5R)
+
+# Stored compactly, as 78929 cells at mixed resolutions
+france <- a5_polygon_to_cells(france_polygon, resolution = 16)
+a5_count(france)  # 67995098 cells at resolution 16
+```
+
+</CodeTabs>
+
 ### area
 
 Returns the area of a covering in square meters. As A5 cells are equal-area, this is exact: the number of cells times the [cell area](./cell-info#cellarea) at the covering's resolution.
 
+<CodeTabs>
+
 ```ts
 function area(cells: bigint[] | BigUint64Array): number;
 ```
+
+```python
+def area(cells: Sequence[int]) -> float
+```
+
+```rust
+pub fn area(cells: &[u64]) -> Result<f64, String>
+```
+
+```sql unreleased
+a5_area(cells UBIGINT[]) -> DOUBLE
+```
+
+```r unreleased
+a5_area(x, units = "m^2")
+```
+
+</CodeTabs>
 
 #### Parameters
 

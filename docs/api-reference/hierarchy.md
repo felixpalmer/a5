@@ -16,9 +16,29 @@ The relationship is loosest between resolutions 1 and 2. Each resolution 1 cell 
 
 Returns the resolution of an A5 cell
 
+<CodeTabs>
+
 ```ts
 function getResolution(index: bigint): number;
 ```
+
+```python
+def get_resolution(index: int) -> int
+```
+
+```rust
+pub fn get_resolution(index: u64) -> i32
+```
+
+```sql
+a5_get_resolution(cell UBIGINT) -> INTEGER
+```
+
+```r
+a5_get_resolution(cell)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -32,9 +52,30 @@ function getResolution(index: bigint): number;
 
 Returns the parent cell of an A5 cell. 
 
+<CodeTabs>
+
 ```ts
 function cellToParent(index: bigint, parentResolution?: number): bigint;
 ```
+
+```python
+def cell_to_parent(index: int, parent_resolution: Optional[int] = None) -> int
+```
+
+```rust
+pub fn cell_to_parent(index: u64, parent_resolution: Option<i32>) -> Result<u64, String>
+```
+
+```sql unreleased
+a5_cell_to_parent(cell UBIGINT) -> UBIGINT
+a5_cell_to_parent(cell UBIGINT, parent_resolution INTEGER) -> UBIGINT
+```
+
+```r
+a5_cell_to_parent(cell, resolution = NULL)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -49,9 +90,30 @@ function cellToParent(index: bigint, parentResolution?: number): bigint;
 
 Returns the child cells of an A5 cell.
 
+<CodeTabs>
+
 ```ts
 function cellToChildren(index: bigint, childResolution?: number): bigint[];
 ```
+
+```python
+def cell_to_children(index: int, child_resolution: Optional[int] = None) -> List[int]
+```
+
+```rust
+pub fn cell_to_children(index: u64, child_resolution: Option<i32>) -> Result<Vec<u64>, String>
+```
+
+```sql
+a5_cell_to_children(cell UBIGINT) -> UBIGINT[]
+a5_cell_to_children(cell UBIGINT, child_resolution INTEGER) -> UBIGINT[]
+```
+
+```r unreleased
+a5_cell_to_children(cell, resolution = NULL, simplify = TRUE)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -70,9 +132,29 @@ Where the parent/child relationship groups cells by index, subcells and supercel
 
 Returns the cell at a coarser resolution that contains the center of an A5 cell: the spatial counterpart of `cellToParent`.
 
+<CodeTabs>
+
 ```ts
 function cellToSupercell(index: bigint, resolution: number): bigint;
 ```
+
+```python
+def cell_to_supercell(cell: int, resolution: int) -> int
+```
+
+```rust
+pub fn cell_to_supercell(cell: u64, resolution: i32) -> Result<u64, String>
+```
+
+```sql unreleased
+a5_cell_to_supercell(cell UBIGINT, resolution INTEGER) -> UBIGINT
+```
+
+```r unreleased
+a5_cell_to_supercell(cell, resolution = NULL)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -87,9 +169,29 @@ function cellToSupercell(index: bigint, resolution: number): bigint;
 
 Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `cellToChildren`, and the inverse of `cellToSupercell`. Like the other functions returning a [covering](./coverings), the result is compacted, ending with a [compaction marker](./compaction#coverings-and-the-compaction-marker) recording the resolution.
 
+<CodeTabs>
+
 ```ts
 function cellToSubcell(index: bigint, resolution: number): BigUint64Array;
 ```
+
+```python
+def cell_to_subcell(cell: int, resolution: int) -> List[int]
+```
+
+```rust
+pub fn cell_to_subcell(cell: u64, resolution: i32) -> Result<Vec<u64>, String>
+```
+
+```sql unreleased
+a5_cell_to_subcell(cell UBIGINT, resolution INTEGER) -> UBIGINT[]
+```
+
+```r unreleased
+a5_cell_to_subcell(cell, resolution = NULL)
+```
+
+</CodeTabs>
 
 #### Parameters
 
@@ -102,6 +204,8 @@ function cellToSubcell(index: bigint, resolution: number): BigUint64Array;
 
 #### Example
 
+<CodeTabs>
+
 ```ts
 import { cellToSubcell, cellToSupercell, lonLatToCell, uncompact } from 'a5-js';
 
@@ -110,13 +214,67 @@ const subcells = uncompact(cellToSubcell(cell, 11));
 subcells.every(subcell => cellToSupercell(subcell, 8) === cell); // true
 ```
 
+```python
+from a5 import cell_to_subcell, cell_to_supercell, lonlat_to_cell, uncompact
+
+cell = lonlat_to_cell((2.35, 48.85), 8)
+subcells = uncompact(cell_to_subcell(cell, 11))
+all(cell_to_supercell(subcell, 8) == cell for subcell in subcells)  # True
+```
+
+```rust
+use a5::{cell_to_subcell, cell_to_supercell, lonlat_to_cell, uncompact, LonLat};
+
+let cell = lonlat_to_cell(LonLat::new(2.35, 48.85), 8)?;
+let subcells = uncompact(&cell_to_subcell(cell, 11)?)?;
+subcells.iter().all(|&subcell| cell_to_supercell(subcell, 8) == Ok(cell)); // true
+```
+
+```sql unreleased
+SELECT bool_and(a5_cell_to_supercell(subcell, 8) = cell)  -- true
+FROM (
+  SELECT cell, unnest(a5_uncompact(a5_cell_to_subcell(cell, 11))) AS subcell
+  FROM (SELECT a5_lonlat_to_cell(2.35, 48.85, 8) AS cell)
+);
+```
+
+```r unreleased
+library(a5R)
+
+cell <- a5_lonlat_to_cell(2.35, 48.85, resolution = 8)
+subcells <- a5_uncompact(a5_cell_to_subcell(cell, resolution = 11))
+all(a5_cell_to_supercell(subcells, resolution = 8) == cell)  # TRUE
+```
+
+</CodeTabs>
+
 ### getRes0Cells
 
 Returns resolution 0 cells of the A5 system, which serve as a starting point for all higher-resolution subdivisions in the hierarchy.
 
+<CodeTabs>
+
 ```ts
 function getRes0Cells(): bigint[];
 ```
+
+```python
+def get_res0_cells() -> List[int]
+```
+
+```rust
+pub fn get_res0_cells() -> Result<Vec<u64>, String>
+```
+
+```sql
+a5_get_res0_cells() -> UBIGINT[]
+```
+
+```r
+a5_get_res0_cells()
+```
+
+</CodeTabs>
 
 #### Return value
 
@@ -124,9 +282,42 @@ function getRes0Cells(): bigint[];
 
 #### Example
 
+<CodeTabs>
+
 ```ts
 import { getRes0Cells, cellToChildren } from 'a5-js';
 
 const res0Cells = getRes0Cells();
 const res1Cells = res0Cells.flatMap(cell => cellToChildren(cell, 1))
 ```
+
+```python
+from a5 import get_res0_cells, cell_to_children
+
+res0_cells = get_res0_cells()
+res1_cells = [child for cell in res0_cells for child in cell_to_children(cell, 1)]
+```
+
+```rust
+use a5::{cell_to_children, get_res0_cells};
+
+let res0_cells = get_res0_cells()?;
+let mut res1_cells = Vec::new();
+for cell in res0_cells {
+    res1_cells.extend(cell_to_children(cell, Some(1))?);
+}
+```
+
+```sql
+SELECT unnest(a5_cell_to_children(cell, 1)) AS cell
+FROM (SELECT unnest(a5_get_res0_cells()) AS cell);
+```
+
+```r unreleased
+library(a5R)
+
+res0_cells <- a5_get_res0_cells()
+res1_cells <- a5_cell_to_children(res0_cells, resolution = 1)
+```
+
+</CodeTabs>

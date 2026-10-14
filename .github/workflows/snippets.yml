@@ -1,0 +1,75 @@
+name: snippets
+
+# Run the multi-language example snippets in /docs (the <CodeTabs> blocks) in
+# each language, see scripts/verify-snippets.cjs. Python and Rust run against
+# the a5-py and a5-rs repos, on a same-named branch when there is one, so a
+# coordinated change validates against the in-flight branches, else main.
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-snippets:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ts, python, rust, sql, r]
+    # DuckDB and R are community ports, not yet on the A5 v1 API
+    continue-on-error: ${{ matrix.language == 'sql' || matrix.language == 'r' }}
+    env:
+      HEAD_REF: ${{ github.head_ref }}
+
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies and build
+        if: matrix.language == 'ts'
+        run: |
+          corepack enable
+          yarn install --immutable
+          yarn build
+
+      # Next to this checkout, where the script looks for the ports
+      - name: Check out a5-py
+        if: matrix.language == 'python'
+        run: |
+          git clone --depth 1 --branch "$HEAD_REF" https://github.com/felixpalmer/a5-py ../a5-py ||
+            git clone --depth 1 https://github.com/felixpalmer/a5-py ../a5-py
+
+      - name: Check out a5-rs
+        if: matrix.language == 'rust'
+        run: |
+          git clone --depth 1 --branch "$HEAD_REF" https://github.com/felixpalmer/a5-rs ../a5-rs ||
+            git clone --depth 1 https://github.com/felixpalmer/a5-rs ../a5-rs
+
+      - name: Install DuckDB
+        if: matrix.language == 'sql'
+        run: |
+          curl -fsSL https://install.duckdb.org | sh
+          echo "$HOME/.duckdb/cli/latest" >> "$GITHUB_PATH"
+
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        if: matrix.language == 'r'
+        with:
+          use-public-rspm: true
+
+      # The RSPM binary of units (an a5R dependency) links against libudunits2
+      - name: Install a5R
+        if: matrix.language == 'r'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudunits2-dev
+          Rscript -e 'install.packages("a5R")'
+
+      - name: Verify snippets
+        run: node scripts/verify-snippets.cjs ${{ matrix.language }}
