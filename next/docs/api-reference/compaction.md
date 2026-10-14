@@ -1,8 +1,8 @@
 # Compaction
 
-Compaction is a way to efficiently represent a set of A5 cells by replacing groups of sibling cells with their parent cell. This reduces the number of cells needed to represent a region while maintaining complete coverage.
+Compaction is a way to efficiently represent a set of A5 cells by replacing groups of sibling cells with their parent cell. This reduces the number of cells needed to represent a region, while still standing for exactly the same set of cells.
 
-For example, if you have all 4 children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
+For example, if you have all the children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
 
 The result of a compaction is a [covering](https://a5geo.org/next/docs/api-reference/coverings.md), which automatically stores the resolution of the compacted cells in-band using a [compaction marker](#coverings-and-the-compaction-marker)
 

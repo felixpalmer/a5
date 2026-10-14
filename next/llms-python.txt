@@ -12,13 +12,13 @@ Source: https://a5geo.org/next/docs
   
 A5 is a geospatial index that partitions the world into [pentagonal cells](https://a5geo.org/next/examples/teohedron). The cells are available at [31 different resolution levels](https://a5geo.org/next/examples/hierarchy), with the largest cell covering the whole world, and the smallest less than 30mm². Within each resolution level the cells have [equal area](https://a5geo.org/examples/area), as per the [OGC definition](https://docs.ogc.org/as/20-040r3/20-040r3.html#toc29).
 
-A5 cells provide simple way to represent spatial data as a collection of cells, which together represent regions on the globe. These can be anything, from city districts to parcels of land. Once data is in a cell-based format, it becomes much simpler to perform analysis such as calculating the correlation between different variables - for example elevation and crop yield.
+A5 cells provide a simple way to represent spatial data as a collection of cells, which together represent regions on the globe. These can be anything, from city districts to parcels of land. Once data is in a cell-based format, it becomes much simpler to perform analysis such as calculating the correlation between different variables - for example elevation and crop yield.
 
-Cells can also be used to group (aggregate) point data, to understand how it spatially distributed. For example, the [density of holiday rentals](https://a5geo.org/next/examples/airbnb) across a city.
+Cells can also be used to group (aggregate) point data, to understand how it is spatially distributed. For example, the [density of holiday rentals](https://a5geo.org/next/examples/airbnb) across a city.
 
 To understand how it works, take a look at the [Examples](https://a5geo.org/next/examples).
 
-A5 is implemented in TypeScript and is available as a [library](https://www.npmjs.com/package/a5-js), with [API documentation here](https://a5geo.org/next/docs/api-reference.md). It is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
+A5 is available as a library for [TypeScript](https://a5geo.org/next/docs/quickstart/javascript.md), [Python](https://a5geo.org/next/docs/quickstart/python.md) and [Rust](https://a5geo.org/next/docs/quickstart/rust.md), with [API documentation here](https://a5geo.org/next/docs/api-reference.md). It is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 ## Benefits over alternative systems
 
@@ -348,9 +348,9 @@ cells = line_string_to_cells(route, 8)
 
 ## Cell representation
 
-A5 cells are stored as 64 bit integers, for performance and to provide a compact representation for use in databases. In JavaScript these can be represented as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) values and arrays of cells stored as [BigInt64Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt64Array)s.
+A5 cells are stored as 64 bit integers, for performance and to provide a compact representation for use in databases. In JavaScript these can be represented as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) values and arrays of cells stored as [BigUint64Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigUint64Array)s.
 
-For best performance it is recommened to use this representation, but it is also possible to convert them into hexidecimal, for example to encode them in JSON (which does _not_ support 64 bit integers). Two helper functions are provided for this conversion.
+For best performance it is recommended to use this representation, but it is also possible to convert them into hexadecimal, for example to encode them in JSON (which does _not_ support 64 bit integers). Two helper functions are provided for this conversion.
 
 ### u64_to_hex
 
@@ -387,11 +387,9 @@ Source: https://a5geo.org/next/docs/api-reference/hierarchy
 
 # Hierarchy
 
-The A5 tiling system supports subdividing the world all the way from the 12 dodecahedron faces at resolution 0 to milimeter-scale leaf cells.
+The A5 tiling system supports subdividing the world all the way from the 12 dodecahedron faces at resolution 0 to millimeter-scale leaf cells.
 
-The cells are arranged in a logical hierarchy, with each cell having an integer resolution. Each cell has exactly 4 child cells, at the next resolution level, and one parent cell at the previous resolution level.
-
-Naturally the 12 resolution 0 cells, representing the dodecahedron faces, have no parent and similarly leaf cells no children.
+The cells are arranged in a logical hierarchy, with each cell having an integer resolution. Each cell has one parent cell at the previous resolution level and 4 child cells at the next resolution level, except at the ends of the hierarchy: the 12 resolution 0 cells, representing the dodecahedron faces, have 5 children each and the [world cell](https://a5geo.org/next/docs/technical/index-encoding.md#special-case-world-cell) as their parent, while leaf cells at resolution 30 have no children.
 
 ### Parent and child cells overlap, they do not nest
 
@@ -730,9 +728,9 @@ Source: https://a5geo.org/next/docs/api-reference/compaction
 
 # Compaction
 
-Compaction is a way to efficiently represent a set of A5 cells by replacing groups of sibling cells with their parent cell. This reduces the number of cells needed to represent a region while maintaining complete coverage.
+Compaction is a way to efficiently represent a set of A5 cells by replacing groups of sibling cells with their parent cell. This reduces the number of cells needed to represent a region, while still standing for exactly the same set of cells.
 
-For example, if you have all 4 children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
+For example, if you have all the children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
 
 The result of a compaction is a [covering](https://a5geo.org/next/docs/api-reference/coverings.md), which automatically stores the resolution of the compacted cells in-band using a [compaction marker](#coverings-and-the-compaction-marker)
 

@@ -13,7 +13,7 @@ Note this hierarchy is purely logical, in general a primitive does not split geo
 
 For resolution 0, the globe is divided into **12 cells**, with a [*regular pentagon*](https://en.wikipedia.org/wiki/Regular_polygon) as the **primitive**. Together, these form a **solid** [*regular dodecahedron*](https://en.wikipedia.org/wiki/Regular_dodecahedron), which is a [Platonic solid](https://en.wikipedia.org/wiki/Platonic_solid).
 
-The *regular dodecahedron* is the **Platonic solid** that most closely approximates a sphere, as it has the lowest [angular defect](https://en.wikipedia.org/wiki/Angular_defect) at its vertices. It is this property that allows [A5](https://a5geo.org/) to minimize the variation in cell size at all resolution levels.
+The *regular dodecahedron* is the **Platonic solid** that most closely approximates a sphere, as it has the lowest [angular defect](https://en.wikipedia.org/wiki/Angular_defect) at its vertices. It is this property that allows [A5](https://a5geo.org/) to minimize the variation in cell shape at all resolution levels.
 
 ## Resolution 1
 
@@ -25,9 +25,9 @@ The cells themselves are pentagons, one per quintant. Each is the single cell of
 
 For higher resolution levels the quintant is tiled with ever smaller cells. This is [achieved with a tiling](https://a5geo.org/next/docs/technical/the-pentagon-that-could.md) using an *irregular pentagon* as a **primitive**, where each additional resolution level **quadruples** the number of cells. Thus resolution **level 2** gives **240 cells**, **level 3** gives **960 cells** and so on.
 
-These cells together form a **solid** (technically is it a partitioning of a sphere), which as far as the author is aware, has not yet been described and will be refered to as a *teohedron*.
+These cells together form a **solid** (technically it is a partitioning of a sphere), which as far as the author is aware, has not yet been described and will be referred to as a *teohedron*.
 
-While all the preceding solids have primitives of exactly equal shapes and sizes, the *teohedron* can be thought of as a pseudo-Platonic solid, in that it is constructed from primitives of almost equal shape and area (the area varies by less than 1%).
+While all the preceding solids have primitives of exactly equal shapes and sizes, the *teohedron* can be thought of as a pseudo-Platonic solid, in that it is constructed from primitives of almost equal shape and exactly equal area, as A5's projection is equal-area.
 
 ## Resolution 3+
 

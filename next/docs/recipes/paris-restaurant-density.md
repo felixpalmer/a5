@@ -49,7 +49,7 @@ INSTALL a5 FROM community;
 LOAD a5;
 
 -- Aggregate restaurants by A5 cells at resolution 15 (neighborhood analysis)
--- Resolution 15 provides cells of approximately 2 square kilometers
+-- Resolution 15 provides cells of approximately 0.03 square kilometers
 -- Save the aggregated results to a parquet file
 COPY (
     SELECT
@@ -65,7 +65,7 @@ This produces an aggregated dataset where each row represents an A5 cell and the
 
 ### Optional: JSON output
 
-Note that it would also be possible to write out as JSON, however the cell ids would need to be converted to hexidecimal strings as JSON doesn't support 64-bit integers. This is not recommended, as the file size is 7x the size of Parquet, but for completeness to save as JSON query needs to be modified as follows:
+Note that it would also be possible to write out as JSON, however the cell ids would need to be converted to hexadecimal strings as JSON doesn't support 64-bit integers. This is not recommended, as the file size is 7x the size of Parquet, but for completeness to save as JSON query needs to be modified as follows:
 
 ```sql
 -- Save to JSON with a5 as hex string
@@ -88,11 +88,11 @@ SELECT * FROM 'restaurants_paris_aggregated.parquet' LIMIT 5;
 │         a5          │ count │
 │       uint64        │ int32 │
 ├─────────────────────┼───────┤
-│ 7188322375052558336 │    14 │
-│ 7188321642760634368 │    13 │
-│ 7188322431960875008 │    12 │
-│ 7188322455583195136 │    12 │
-│ 7188321635244441600 │    11 │
+│ 7195048109154500608 │    14 │
+│ 7195047899774844928 │    13 │
+│ 7195048086605922304 │    12 │
+│ 7195048196127588352 │    12 │
+│ 7195047905143554048 │    11 │
 ├─────────────────────┴───────┤
 │ 5 rows            2 columns │
 └─────────────────────────────┘
@@ -109,13 +109,13 @@ The visualization clearly shows:
 
 ### Source
 
-Below is a the source for the above visualization. It is written as a standalone deck.gl [Scripting App](https://deck.gl/docs/get-started/using-standalone#using-the-scripting-api), so it just needs to be hosted on a static web server - no build step necessary. Just copy the code to a file called `index.html` in the same directory as the data files produced above and then run in a terminal:
+Below is the source for the above visualization. It is written as a standalone deck.gl [Scripting App](https://deck.gl/docs/get-started/using-standalone#using-the-scripting-api), so it just needs to be hosted on a static web server - no build step necessary. Just copy the code to a file called `index.html` in the same directory as the data files produced above and then run in a terminal:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-The app will then be accessible in a web broswer at `http://localhost:8000`.
+The app will then be accessible in a web browser at `http://localhost:8000`.
 
 ```html
 <!DOCTYPE html>
