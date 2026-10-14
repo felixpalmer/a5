@@ -1,3 +1,7 @@
+---
+description: "Store sets of cells efficiently: compact, uncompact, and the compaction marker that records a covering's resolution."
+---
+
 # Compaction
 
 Compaction is a way to efficiently represent a set of A5 cells by replacing groups of sibling cells with their parent cell. This reduces the number of cells needed to represent a region while maintaining complete coverage.

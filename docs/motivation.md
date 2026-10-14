@@ -1,3 +1,7 @@
+---
+description: "Why A5 exists: the search for a pentagonal tiling of the sphere."
+---
+
 # Motivation
 
 ## Tiling the plane

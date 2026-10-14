@@ -1,3 +1,7 @@
+---
+description: "Fetch Overture Maps restaurants, aggregate them into A5 cells with DuckDB and visualize the density."
+---
+
 # Paris Restaurant Density
 
 This recipe demonstrates how to use A5 to fetch, aggregate, and visualize geospatial data from [Overture Maps](https://overturemaps.org/). We'll work with restaurant locations in Paris, showing how A5 enables efficient spatial aggregation and visualization.

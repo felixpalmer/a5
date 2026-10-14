@@ -1,3 +1,7 @@
+---
+description: "What a Discrete Global Grid System is, and the steps for constructing one."
+---
+
 # Discrete Global Grid Systems
 
 There exist many different ways to partition our world into:

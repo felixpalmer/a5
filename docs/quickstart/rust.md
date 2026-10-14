@@ -1,3 +1,7 @@
+---
+description: "Add the a5 crate and generate A5 cells as GeoJSON in Rust."
+---
+
 # Rust Quickstart
 
 Get started with A5 in Rust by installing the [crate](https://crates.io/crates/a5) and running a simple example.
@@ -8,14 +12,14 @@ Add the [A5 crate](https://crates.io/crates/a5) to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-a5 = "0.1.0"
+a5 = "{{A5_VERSION}}"
 serde_json = "1.0"
 ```
 
 Or using cargo:
 
 ```bash
-cargo add a5 serde_json
+cargo add a5@{{A5_VERSION}} serde_json
 ```
 
 ## Code Example: Generate A5 Cells

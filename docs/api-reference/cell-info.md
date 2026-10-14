@@ -1,3 +1,7 @@
+---
+description: "Cell counts, areas and edge lengths per resolution, and cell validation."
+---
+
 # Cell Info
 
 Functions for obtaining information about A5 cells.

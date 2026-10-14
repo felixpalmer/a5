@@ -1,3 +1,7 @@
+---
+description: "How A5 builds its grid from a dodecahedron, and the solid and cell shape at each resolution."
+---
+
 import SolidGlobe from '/images/solid-globe.png';
 import SolidDodecahedron from '/images/solid-dodecahedron.png';
 import SolidPentakis from '/images/solid-pentakis.png';

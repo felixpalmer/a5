@@ -1,6 +1,12 @@
+---
+description: "Index of all A5 functions, with how their names differ between TypeScript, Python, Rust, DuckDB and R."
+---
+
 # Overview
 
-The reference implementation of A5 is written in Typescript, with the following functions available.
+A5 has the same API in every language, with the following functions available. They are listed by their TypeScript names: Python and Rust use `snake_case` (`lonlat_to_cell`), and DuckDB and R add an `a5_` prefix (`a5_lonlat_to_cell`).
+
+AI coding agents can read these docs as Markdown, with code samples in a single language: see [llms.txt](pathname:///llms.txt).
 
 For examples on how to use the code, see the [example code on Github](https://github.com/felixpalmer/a5/tree/main/examples)
 
@@ -19,6 +25,9 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [getResolution](./api-reference/hierarchy#getresolution)
 - [cellToParent](./api-reference/hierarchy#celltoparent)
 - [cellToChildren](./api-reference/hierarchy#celltochildren)
+- [cellToSupercell](./api-reference/hierarchy#celltosupercell)
+- [cellToSubcell](./api-reference/hierarchy#celltosubcell)
+- [getRes0Cells](./api-reference/hierarchy#getres0cells)
 
 ### Cell Info
 

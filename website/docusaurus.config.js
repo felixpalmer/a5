@@ -5,6 +5,7 @@ const lightCodeTheme = prismThemes.nightOwlLight;
 const darkCodeTheme = prismThemes.nightOwl;
 
 const {resolve} = require('path');
+const {VERSIONS, remarkA5Version} = require('./a5-version');
 
 // The maintainer preview of `main`, served from a5geo.org/next (see
 // .github/workflows/website-next.yml). It is a standalone build of the same
@@ -27,6 +28,8 @@ const config = {
   organizationName: 'felixpalmer', // Usually your GitHub org/user name.
   projectName: 'a5', // Usually your repo name.
   trailingSlash: false,
+  // For the homepage install commands
+  customFields: {versions: VERSIONS},
 
   presets: [
     [
@@ -36,6 +39,8 @@ const config = {
         docs: {
           path: '../docs',
           sidebarPath: resolve('./src/docs-sidebar.js'),
+          // Fills in {{A5_VERSION}} in install commands
+          remarkPlugins: [remarkA5Version],
           // Point to to the website directory in your repo.
           editUrl: 'https://github.com/felixpalmer/a5/tree/master/website'
         },
@@ -59,6 +64,16 @@ const config = {
             }
           ]
         ]),
+    [
+      './llms-docusaurus-plugin',
+      {
+        docsDir: resolve('../docs'),
+        sidebar: require('../docs/table-of-contents.json'),
+        summary:
+          'A5 is a discrete global grid system (DGGS) that divides the Earth into equal-area pentagonal ' +
+          'cells, at 31 resolutions from the whole world down to 30mm², each identified by a 64-bit integer.'
+      }
+    ],
     [
       './ocular-docusaurus-plugin',
       {

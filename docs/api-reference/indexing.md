@@ -1,3 +1,7 @@
+---
+description: "Convert between coordinates and A5 cells: lonLatToCell, cellToLonLat, cellToBoundary, polygonToCells, lineStringToCells and hex conversion."
+---
+
 # Indexing
 
 Functions for converting between geospatial coordinates and A5 indices.

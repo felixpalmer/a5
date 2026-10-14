@@ -1,3 +1,7 @@
+---
+description: "Official A5 libraries for TypeScript, Python and Rust, community libraries, and integrations such as DuckDB, deck.gl and QGIS."
+---
+
 # Libraries & Integrations
 
 The A5 project maintains official implementations in TypeScript, Python, and Rust using [polyglot mirroring](polyglot-mirroring.md) to ensure feature parity and consistency. The wider ecosystem includes community-contributed libraries and integrations in additional languages and platforms. Contributions are welcome!

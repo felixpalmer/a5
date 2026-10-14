@@ -1,3 +1,7 @@
+---
+description: "Install the pya5 package and generate A5 cells as GeoJSON in Python."
+---
+
 # Python Quickstart
 
 Get started with A5 in Python by installing the [package](https://pypi.org/project/pya5/) and running a simple example.
@@ -7,13 +11,13 @@ Get started with A5 in Python by installing the [package](https://pypi.org/proje
 Install the [A5 package](https://pypi.org/project/pya5/) using pip:
 
 ```bash
-pip install pya5
+pip install pya5=={{A5_PYPI_VERSION}}
 ```
 
 Or using uv:
 
 ```bash
-uv add pya5
+uv add pya5=={{A5_PYPI_VERSION}}
 ```
 
 ## Example: Generate A5 Cells

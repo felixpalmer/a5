@@ -1,3 +1,7 @@
+---
+description: "The equilateral, irregular pentagon that tiles the plane with five-fold symmetry, which A5 cells are based on."
+---
+
 import PentagonImage from '/images/pentagon-that-could.png';
 import PentagonTiling from '/images/pentagon-tiling.png';
 
