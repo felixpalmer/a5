@@ -37,7 +37,7 @@ The 64 bits are organized into several distinct sections:
 1. **Bits 63-58 (6 bits)**: origin or quintant
    - Encodes which of the 12 pentagonal faces (**origins**) and/or which of the 60 **quintants** the cell is in
    - For resolution 0: directly encodes origin ID (0-11)
-   - For resolution ≥ 1: encodes quintant `5 × origin_id + segment` (0-59)
+   - For resolution ≥ 1: encodes quintant `5 × origin_id + k` (0-59), where `k` (0-4) is the segment's position within its origin
 
 2. **Curve Position**: Variable length, 0 to 58 bits
    - For resolution ≥ 2: encodes position along the [teohedral curve](../../examples/teohedral-curve/), A5's space-filling curve
@@ -69,7 +69,7 @@ Notice how all bits are <span style={{color: '#999999', fontWeight: 'bold'}}>zer
 
 ### Resolution 1: Quintant (Origin & segment)
 
-At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment as (<span style={{color: '#0066FF', fontWeight: 'bold'}}>011000 = 24</span>). This can be decomposed into <span style={{color: '#0066FF', fontWeight: 'bold'}}>5 x 4 + 0 = 24</span>, thus like with resolution 0, we are in origin 4 and in the first segment (as the count starts with 0).
+At resolution 1, each pentagon is divided into 5 segments, giving 60 total cells. The <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode both origin and segment as (<span style={{color: '#0066FF', fontWeight: 'bold'}}>011000 = 24</span>). This can be decomposed into <span style={{color: '#0066FF', fontWeight: 'bold'}}>5 x 4 + 0 = 24</span>, thus like with resolution 0, we are in origin 4, and in the first of its 5 quintants (as the count starts with 0).
 
 The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution tag is now '01'</span>, again followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
@@ -79,7 +79,7 @@ The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution tag is now '
 
 From resolution 2 onwards, cells are subdivided along the teohedral curve. At resolution 5, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode the **quintant**, just like in resolution level 1.
 
-They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit curve value 11010011</span> encoding position along the space-filling curve.
+They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit curve value 11101100</span> encoding position along the space-filling curve.
 
 Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution tag</span>, followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
@@ -119,7 +119,7 @@ The trick above exploits the fact that the indexing scheme has some unused value
 
 ### Quintants beyond 41
 
-Resolution 30 supports only quintants 0–41, as there isn't room for the remaining quintants in the index space. Any quintant value above 41 falls back to resolution 29, gracefully losing one level of precision rather than failing. The A5 index is designed so that more than 99% of the land mass is [contained in the first 41 quintants](../../examples/teohedron/), thus providing the highest resoution on land.
+Resolution 30 supports only quintants 0–41, as there isn't room for the remaining quintants in the index space. Any quintant value above 41 falls back to resolution 29, gracefully losing one level of precision rather than failing. See the [teohedron example](../../examples/teohedron/) for where the quintants lie.
 
 ## Special Case: World Cell
 
@@ -146,14 +146,14 @@ Conversely, for completeness `cellToLonLat(0n)` will return `[0, 0]`. While this
 
 Parent and child relationships can be computed efficiently:
 
-- **Parent**: Right-shift to remove child-specific bits
-- **Children**: Left-shift and add child indices
+- **Parent**: Clear the last two curve bits and move the resolution tag up two positions
+- **Children**: Append each 2-bit child index and move the resolution tag down two positions
 
 Example (resolution 5 → resolution 4 parent):
 ```
-Child:  011101 01100100 01 0101 00000...  (res 5)
-Parent: 011101 011001   01 0001 00000...  (res 4)
-                └─ Last 2 bits removed (one curve level)
+Child:  011000 11101100 10 00000...  (res 5)
+Parent: 011000 111011   10 00000...  (res 4)
+                     └─ Last 2 curve bits removed (one curve level)
 ```
 
 ### 2. Spatial Locality

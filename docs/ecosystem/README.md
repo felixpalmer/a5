@@ -75,4 +75,4 @@ The [DGGS Plugin](https://geolibre.app/user-guide/plugins/) renders and identifi
 - [geotoolkit](https://github.com/Geomatys/geotoolkit) Java language library for developing geospatial applications with support for [A5](https://github.com/Geomatys/geotoolkit/tree/main/geotk-dggs/src/main/java/org/geotoolkit/dggs/a5)
 - [vgrid libraries](https://github.com/opengeoshub) A5 tools & utilies for [MapLibre](https://gishub.vn/pages/dggs/a5/), [pandas](https://vgridpandas.gishub.vn/notebooks/03_a5/), [QGIS](https://github.com/opengeoshub/vgridtools) & more
 
-_Have a library you like to share? Make an [Issue](https://github.com/felixpalmer/a5/issues)_
+_Have a library you would like to share? Make an [Issue](https://github.com/felixpalmer/a5/issues)_

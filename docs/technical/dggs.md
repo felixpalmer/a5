@@ -21,7 +21,7 @@ At a high level, in constructing a DGGS, we are trying to split a sphere into a 
 
 - The cells are as uniform as possible in shape and area.
 - The perimeter of each cell is minimized. In other words, the cells are as close to a circle as possible.
-- The are no overlaps or gaps between cells, meaning that we can assign a unique cell to each point on the sphere.
+- There are no overlaps or gaps between cells, meaning that we can assign a unique cell to each point on the sphere.
 
 We proceed as follows:
 
@@ -32,7 +32,7 @@ We proceed as follows:
 
 ## The Ideal Cell
 
-It can be shown that any polygon that has 7 or more sides cannot be used to tile a plane, so we need to consider polygons with 6 or fewer sides. This leaves us with the following options:
+It can be shown that no convex polygon with 7 or more sides can tile a plane, so we need to consider polygons with 6 or fewer sides. This leaves us with the following options:
 
 - Triangles
 - Squares

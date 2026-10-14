@@ -14,7 +14,7 @@ A5 is developed using a technique called **Polyglot Mirroring** - maintaining fu
 
 3 versions of the codebase: [TypeScript](https://github.com/felixpalmer/a5), [Python](https://github.com/felixpalmer/a5-py) & [Rust](https://github.com/felixpalmer/a5-rs), are currently maintained. Every time a change is made in one, the change is propagated to the others using LLM tools.
 
-Becuase all the mirror codebases share the same high-level structure (function names, variables etc), LLM tools are very effective at adding new code or making changes as they have an example of a working implementation and an established set of patterns to match against.
+Because all the mirror codebases share the same high-level structure (function names, variables etc), LLM tools are very effective at adding new code or making changes as they have an example of a working implementation and an established set of patterns to match against.
 
 import PolyglotDiagram from './polyglot-mirroring.png';
 
@@ -49,7 +49,7 @@ The **Polyglot Mirroring** technique relies on using LLMs to keep multiple mirro
 ### Minimal dependencies
 
 - The codebase should not have any large external dependencies, as this will create friction with the ports
-- An exception is if the dependencies are also available in all the mirror langauges
+- An exception is if the dependencies are also available in all the mirror languages
 
 ### Clear source file hierarchy
 
