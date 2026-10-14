@@ -2,7 +2,7 @@
 
 > A5 is a discrete global grid system (DGGS) that divides the Earth into equal-area pentagonal cells, at 31 resolutions from the whole world down to 30mm², each identified by a 64-bit integer.
 
-Documentation for A5 1.0.0-beta.2. The API is the same in every language, with names in each language's style: `lonLatToCell` in TypeScript, `lonlat_to_cell` in Python and Rust, `a5_lonlat_to_cell` in DuckDB and R. Read the file for the language you are using: it holds the introduction, quickstart and full API reference, with code samples in that language only.
+Documentation for A5 1.0.0-beta.3. The API is the same in every language, with names in each language's style: `lonLatToCell` in TypeScript, `lonlat_to_cell` in Python and Rust, `a5_lonlat_to_cell` in DuckDB and R. Read the file for the language you are using: it holds the introduction, quickstart and full API reference, with code samples in that language only.
 
 ## Docs by language
 

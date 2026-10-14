@@ -7,13 +7,13 @@ Get started with A5 in Python by installing the [package](https://pypi.org/proje
 Install the [A5 package](https://pypi.org/project/pya5/) using pip:
 
 ```bash
-pip install pya5==1.0.0b2
+pip install pya5==1.0.0b3
 ```
 
 Or using uv:
 
 ```bash
-uv add pya5==1.0.0b2
+uv add pya5==1.0.0b3
 ```
 
 ## Example: Generate A5 Cells

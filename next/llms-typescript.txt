@@ -2,7 +2,7 @@
 
 > A5 is a discrete global grid system (DGGS) that divides the Earth into equal-area pentagonal cells, at 31 resolutions from the whole world down to 30mm², each identified by a 64-bit integer.
 
-This is the A5 1.0.0-beta.2 documentation for the `a5-js` npm package. Cell IDs are `bigint`. Code samples are in TypeScript / JavaScript only, and function headings use the TypeScript / JavaScript names. Parameter names and types in the descriptions follow the TypeScript API: `bigint` is a cell ID, and `camelCase` parameters are `snake_case` in Python, Rust, DuckDB and R. Documentation for other languages is listed at https://a5geo.org/next/llms.txt.
+This is the A5 1.0.0-beta.3 documentation for the `a5-js` npm package. Cell IDs are `bigint`. Code samples are in TypeScript / JavaScript only, and function headings use the TypeScript / JavaScript names. Parameter names and types in the descriptions follow the TypeScript API: `bigint` is a cell ID, and `camelCase` parameters are `snake_case` in Python, Rust, DuckDB and R. Documentation for other languages is listed at https://a5geo.org/next/llms.txt.
 
 ---
 
@@ -52,13 +52,13 @@ Get started with A5 in JavaScript by installing the [package](https://www.npmjs.
 Install the [A5 package](https://www.npmjs.com/package/a5-js) using npm:
 
 ```bash
-npm install a5-js@1.0.0-beta.2
+npm install a5-js@1.0.0-beta.3
 ```
 
 Or using yarn:
 
 ```bash
-yarn add a5-js@1.0.0-beta.2
+yarn add a5-js@1.0.0-beta.3
 ```
 
 ## Code Example: Generate A5 Cells

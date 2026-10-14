@@ -8,14 +8,14 @@ Add the [A5 crate](https://crates.io/crates/a5) to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-a5 = "1.0.0-beta.2"
+a5 = "1.0.0-beta.3"
 serde_json = "1.0"
 ```
 
 Or using cargo:
 
 ```bash
-cargo add a5@1.0.0-beta.2 serde_json
+cargo add a5@1.0.0-beta.3 serde_json
 ```
 
 ## Code Example: Generate A5 Cells

@@ -2,7 +2,7 @@
 
 > A5 is a discrete global grid system (DGGS) that divides the Earth into equal-area pentagonal cells, at 31 resolutions from the whole world down to 30mm², each identified by a 64-bit integer.
 
-This is the A5 1.0.0-beta.2 documentation for the `a5R` CRAN package (docs: https://belian-earth.github.io/a5R/). Cell IDs are `a5_cell` vectors. Code samples are in R only, and function headings use the R names. Parameter names and types in the descriptions follow the TypeScript API: `bigint` is a cell ID, and `camelCase` parameters are `snake_case` in Python, Rust, DuckDB and R. Documentation for other languages is listed at https://a5geo.org/next/llms.txt.
+This is the A5 1.0.0-beta.3 documentation for the `a5R` CRAN package (docs: https://belian-earth.github.io/a5R/). Cell IDs are `a5_cell` vectors. Code samples are in R only, and function headings use the R names. Parameter names and types in the descriptions follow the TypeScript API: `bigint` is a cell ID, and `camelCase` parameters are `snake_case` in Python, Rust, DuckDB and R. Documentation for other languages is listed at https://a5geo.org/next/llms.txt.
 
 ---
 
