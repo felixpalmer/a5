@@ -115,7 +115,7 @@ The trick above exploits the fact that the indexing scheme has some unused value
 
 ### Quintants beyond 41
 
-Resolution 30 supports only quintants 0–41, as there isn't room for the remaining quintants in the index space. Any quintant value above 41 falls back to resolution 29, gracefully losing one level of precision rather than failing. The A5 index is designed so that more than 99% of the land mass is [contained in the first 41 quintants](../../examples/globe/), thus providing the highest resoution on land.
+Resolution 30 supports only quintants 0–41, as there isn't room for the remaining quintants in the index space. Any quintant value above 41 falls back to resolution 29, gracefully losing one level of precision rather than failing. The A5 index is designed so that more than 99% of the land mass is [contained in the first 41 quintants](../../examples/teohedron/), thus providing the highest resoution on land.
 
 ## Special Case: World Cell
 
