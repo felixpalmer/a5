@@ -6,7 +6,7 @@ import {A5Cell} from './utils';
 import {Origin} from './utils';
 import {origins} from './origin';
 
-export const FIRST_HILBERT_RESOLUTION = 2;
+export const FIRST_CURVE_RESOLUTION = 2;
 export const MAX_RESOLUTION = 30;
 // IDs below res 30 start with a 6-bit origin (res 0) or quintant, above S
 export const QUINTANT_SHIFT = 58n;
@@ -48,7 +48,7 @@ function slotToRes30(slot: bigint): bigint {
 //
 // A cell at resolution r occupies 4^(30-r) consecutive slots, an aligned block
 // starting at its first slot, and the cells of a resolution step along the
-// slots in strides of that size, as the Hilbert curve does. Unlike cell IDs,
+// slots in strides of that size, as the curve does. Unlike cell IDs,
 // whose layout differs at resolutions 0, 1 and 30, slots put every cell on one
 // integer line in curve order, including all 60 quintants at resolution 30.
 // A leaf slot is not a cell ID.
@@ -72,7 +72,7 @@ for (let r = 0; r <= MAX_RESOLUTION; r++) {
 export const RES30_TAG_BITS = 0b10101n;
 
 /** The tags of resolutions 2-29: the odd bits 55 down to 1 */
-const HILBERT_TAG_BITS = RESOLUTION_TAGS.slice(FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION).reduce(
+const CURVE_TAG_BITS = RESOLUTION_TAGS.slice(FIRST_CURVE_RESOLUTION, MAX_RESOLUTION).reduce(
   (bits, tag) => bits | tag,
   0n
 );
@@ -89,7 +89,7 @@ export function cellFirstSlot(cell: bigint): bigint {
   if (tag < RESOLUTION_TAGS[1]) {
     if ((tag & RES30_TAG_BITS) !== 0n) return res30ToSlot(cell);
     // Resolutions 2-29, in quintants 0-59: the first slot is the ID without its tag
-    if ((tag & HILBERT_TAG_BITS) !== 0n && cell < WORLD_SLOTS) return cell - tag;
+    if ((tag & CURVE_TAG_BITS) !== 0n && cell < WORLD_SLOTS) return cell - tag;
     if (tag === 0n) return 0n;
   } else {
     // Resolution 0 (tag bit 57) starts its origin's 5 quintants, 1 (bit 56) its quintant
@@ -207,7 +207,7 @@ export function deserialize(index: bigint): A5Cell {
   if (resolution === 0) return {origin, segment: 0, S: 0n, resolution};
 
   const segment = (quintant + origin.firstQuintant) % 5;
-  const S = resolution < FIRST_HILBERT_RESOLUTION ? 0n : (slot & S_MASK) / SLOT_COUNTS[resolution];
+  const S = resolution < FIRST_CURVE_RESOLUTION ? 0n : (slot & S_MASK) / SLOT_COUNTS[resolution];
   return {origin, segment, S, resolution};
 }
 
@@ -221,7 +221,7 @@ export function serialize(cell: A5Cell): bigint {
   if (resolution === 0) return slotToCell(BigInt(5 * origin.id) * QUINTANT_SLOTS, 0);
 
   // The cell's first slot: its quintant, then S cells of this resolution into it
-  const offset = resolution >= FIRST_HILBERT_RESOLUTION ? BigInt(S) * SLOT_COUNTS[resolution] : 0n;
+  const offset = resolution >= FIRST_CURVE_RESOLUTION ? BigInt(S) * SLOT_COUNTS[resolution] : 0n;
   if (offset >= QUINTANT_SLOTS) {
     throw new Error(`S (${S}) is too large for resolution level ${resolution}`);
   }
@@ -266,7 +266,7 @@ export function cellToChildren(index: bigint, childResolution?: number): bigint[
   }
   const allSegments = (currentResolution === -1 && newResolution > 0) || currentResolution === 0;
 
-  const resolutionDiff = newResolution - Math.max(currentResolution, FIRST_HILBERT_RESOLUTION - 1);
+  const resolutionDiff = newResolution - Math.max(currentResolution, FIRST_CURVE_RESOLUTION - 1);
   const childrenCount = Math.pow(4, resolutionDiff);
   const children: bigint[] = [];
   const shiftedS = S << BigInt(2 * resolutionDiff);
@@ -303,8 +303,8 @@ function normalizeRes30(index: bigint): bigint {
  * Walk a cell up the hierarchy to a coarser resolution.
  *
  * Implemented as pure bit ops over the encoded index — no deserialize /
- * serialize round-trip. The three encoding regimes (non-Hilbert res 0/1,
- * Hilbert res 2..29, variable-width res 30) all reduce to the same shape
+ * serialize round-trip. The three encoding regimes (non-curve res 0/1,
+ * curve res 2..29, variable-width res 30) all reduce to the same shape
  * after a small amount of normalization.
  */
 export function cellToParent(index: bigint, parentResolution?: number): bigint {
@@ -320,7 +320,7 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
   }
 
   // Normalize res-30 children to the standard res-29 layout. After this,
-  // the fast paths below treat the cell as a Hilbert-range cell.
+  // the fast paths below treat the cell as a curve-range cell.
   let c = index;
   if (isMaxResolution(index)) {
     if (parentResolution === MAX_RESOLUTION) return index; // identity (already res 30)
@@ -328,8 +328,8 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
     if (parentResolution === MAX_RESOLUTION - 1) return c;
   }
 
-  if (parentResolution >= FIRST_HILBERT_RESOLUTION) {
-    // Hilbert-range parent: clear bits below the parent tag, set the tag.
+  if (parentResolution >= FIRST_CURVE_RESOLUTION) {
+    // Curve-range parent: clear bits below the parent tag, set the tag.
     // Identity (parent res === child res) falls out for free: the tag lands
     // in the same position and bits below the keep cut are already zero.
     const keepShift = BigInt(60 - 2 * parentResolution);
@@ -366,16 +366,16 @@ export function getRes0Cells(): bigint[] {
 /**
  * Bit-level descendant test: is `child` the same cell as `parent`, or one of
  * its descendants at any deeper resolution? Compares the high (quintant +
- * parent's Hilbert) bits in a single shift, no deserialize needed.
+ * parent's curve) bits in a single shift, no deserialize needed.
  *
- * Restricted to the Hilbert range: `parentResolution` must be in
- * [FIRST_HILBERT_RESOLUTION .. MAX_RESOLUTION - 1], and `child` must not be
+ * Restricted to the curve range: `parentResolution` must be in
+ * [FIRST_CURVE_RESOLUTION .. MAX_RESOLUTION - 1], and `child` must not be
  * a resolution-30 cell (whose encoding uses a variable quintant shift).
  * Callers handling those cases should fall back to `cellToParent` equality.
  */
 export function isChildOf(child: bigint, parent: bigint, parentResolution: number): boolean {
   // Parent's identifying bits occupy positions 63..(60-2P): 6 quintant bits
-  // + 2(P-1) Hilbert bits. Bit (59-2P) is the tag, below that is zero.
+  // + 2(P-1) curve bits. Bit (59-2P) is the tag, below that is zero.
   // Shifting both right by (60-2P) keeps exactly those identifying bits and
   // discards the tag, so a descendant matches iff the high bits match.
   const shift = BigInt(60 - 2 * parentResolution);

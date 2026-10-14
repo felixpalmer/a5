@@ -44,7 +44,7 @@ const QUINTANT_ORIENTATIONS: Orientation[][] = [
 // Within each face, these are the indices of the first quintant
 const QUINTANT_FIRST = [4, 2, 2, 2, 0, 4, 3, 2, 1, 0, 3, 0];
 
-// Placements of dodecahedron faces along the Hilbert curve
+// Placements of dodecahedron faces along the curve
 const ORIGIN_ORDER = [0, 1, 2, 4, 3, 5, 7, 8, 6, 11, 10, 9];
 
 const origins: Origin[] = [];
@@ -85,7 +85,7 @@ function addOrigin(axis: Spherical, angle: Radians, quaternion: Quat) {
 }
 generateOrigins();
 
-// Reorder origins to match the order of the hilbert curve
+// Reorder origins to match the order of the curve
 origins.sort((a, b) => ORIGIN_ORDER.indexOf(a.id) - ORIGIN_ORDER.indexOf(b.id));
 origins.forEach((origin, i) => (origin.id = i as OriginId));
 

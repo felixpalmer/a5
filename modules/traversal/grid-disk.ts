@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import {compactCells, toCovering} from '../coverings/slot-runs';
-import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {deserialize, serialize, FIRST_CURVE_RESOLUTION} from '../core/serialization';
 import {origins} from '../core/origin';
 import {walkFaces} from '../core/face-adjacency';
 import type {TripleCellVisitor} from './triple-cells';
@@ -33,9 +33,9 @@ function addCell(
 }
 
 /** Encode a ring's cells as cell IDs, appending them to `out`. */
-function pushCellIds(out: bigint[], cells: number[], hilbertRes: number, resolution: number): void {
+function pushCellIds(out: bigint[], cells: number[], curveLevel: number, resolution: number): void {
   for (let c = 0; c < cells.length; c += 5) {
-    out.push(tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], hilbertRes, resolution));
+    out.push(tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], curveLevel, resolution));
   }
 }
 
@@ -62,8 +62,8 @@ function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array
       0
     );
   }
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const maxRow = (1 << hilbertRes) - 1;
+  const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
+  const maxRow = (1 << curveLevel) - 1;
   const [originId, quintant, x, y, z] = cellIdsToTriples([cellId]);
 
   // The seed is `cellId` already, so it goes straight to the output
@@ -86,7 +86,7 @@ function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array
 
     // Evict prevFrontier — these cells are ≥2 rings behind the new frontier
     // and can never be re-discovered by BFS
-    pushCellIds(interior, prevFrontier.cells, hilbertRes, resolution);
+    pushCellIds(interior, prevFrontier.cells, curveLevel, resolution);
 
     // Progressively compact interior to reduce memory pressure
     if (interior.length > 100) {
@@ -98,8 +98,8 @@ function _gridDisk(cellId: bigint, k: number, edgeOnly: boolean): BigUint64Array
   }
 
   // Merge remaining boundary rings with compacted interior
-  pushCellIds(interior, prevFrontier.cells, hilbertRes, resolution);
-  pushCellIds(interior, frontier.cells, hilbertRes, resolution);
+  pushCellIds(interior, prevFrontier.cells, curveLevel, resolution);
+  pushCellIds(interior, frontier.cells, curveLevel, resolution);
 
   return toCovering(interior, resolution);
 }

@@ -10,7 +10,7 @@ const {
   sToTriple,
   compatTripleToS,
   u64ToHex,
-  FIRST_HILBERT_RESOLUTION
+  FIRST_CURVE_RESOLUTION
 } = require('../../a5-test.cjs');
 
 // Pairs of (v0 id, v1 id) for the same cell. The v1 id comes from lonLatToCell;
@@ -41,16 +41,16 @@ const V0_LAYOUTS = [
 
 function toV0(cell) {
   const {origin, segment, S, resolution} = deserialize(cell);
-  if (resolution < FIRST_HILBERT_RESOLUTION - 1) return cell;
+  if (resolution < FIRST_CURVE_RESOLUTION - 1) return cell;
   const {quintant, orientation} = segmentToQuintant(segment, origin);
   const v0 = V0_LAYOUTS[origin.id];
   const v0FaceRelativeQuintant = (faceStep(origin) * (quintant - v0.firstQuintant) + 10) % 5;
   // serialize() stores the face-relative quintant against the v1 firstQuintant
   const v0Segment = (origin.firstQuintant + v0FaceRelativeQuintant) % 5;
-  if (resolution < FIRST_HILBERT_RESOLUTION) return serialize({origin, segment: v0Segment, S: 0n, resolution});
-  const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-  const triple = sToTriple(S, hilbertResolution, orientation);
-  const oldS = compatTripleToS(triple, hilbertResolution, v0.orientation[v0FaceRelativeQuintant]);
+  if (resolution < FIRST_CURVE_RESOLUTION) return serialize({origin, segment: v0Segment, S: 0n, resolution});
+  const curveLevel = 1 + resolution - FIRST_CURVE_RESOLUTION;
+  const triple = sToTriple(S, curveLevel, orientation);
+  const oldS = compatTripleToS(triple, curveLevel, v0.orientation[v0FaceRelativeQuintant]);
   return serialize({origin, segment: v0Segment, S: oldS, resolution});
 }
 

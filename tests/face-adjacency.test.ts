@@ -38,8 +38,8 @@ describe('face seam', () => {
   });
 
   it('seamTriple is seamTransform on cells', () => {
-    for (const hilbertRes of [1, 2, 5]) {
-      const maxRow = (1 << hilbertRes) - 1;
+    for (const curveLevel of [1, 2, 5]) {
+      const maxRow = (1 << curveLevel) - 1;
       for (let q = 0; q < 5; q++) {
         const map = seamTransform(0, q);
         const adjacentQuintant = FACE_ADJACENCY[0][q][1];
@@ -52,8 +52,8 @@ describe('face seam', () => {
               const flavor = tripleFlavor(triple, maxRow);
               const image = seamTriple(triple, maxRow);
               expect(tripleFlavor(image, maxRow)).toBe(flavor ^ 1);
-              const center = apply(map, getPentagonCenter(hilbertRes, q, triple, flavor));
-              const imageCenter = getPentagonCenter(hilbertRes, adjacentQuintant, image, flavor ^ 1);
+              const center = apply(map, getPentagonCenter(curveLevel, q, triple, flavor));
+              const imageCenter = getPentagonCenter(curveLevel, adjacentQuintant, image, flavor ^ 1);
               expect(center[0]).toBeCloseTo(imageCenter[0], 10);
               expect(center[1]).toBeCloseTo(imageCenter[1], 10);
             }

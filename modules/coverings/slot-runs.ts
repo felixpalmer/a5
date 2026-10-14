@@ -133,7 +133,7 @@ export function slotRunsToCells(runs: SlotRuns): bigint[] {
           continue;
         }
       }
-      // The coarsest Hilbert-level cell that starts at lo and fits: its span is
+      // The coarsest curve-level cell that starts at lo and fits: its span is
       // 4^k slots, at most the alignment of lo and the length of the run (the
       // float log2 can round up, so shrink until it fits)
       const offset = lo & S_MASK;

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import {deserialize, getResolution, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {deserialize, getResolution, serialize, FIRST_CURVE_RESOLUTION} from '../core/serialization';
 import {origins} from '../core/origin';
 import {FACE_ADJACENCY} from '../core/face-adjacency';
 import {compareBigint} from '../utils/bigint';
@@ -25,12 +25,12 @@ export function getGlobalCellNeighbors(cellId: bigint, options?: {edgeOnly?: boo
       neighbors.add(serialize({origin: origins[face], segment: 0, S: 0n, resolution: 0}));
     }
   } else {
-    const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+    const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
     const [originId, quintant, x, y, z] = cellIdsToTriples([cellId]);
-    const maxRow = (1 << hilbertRes) - 1;
+    const maxRow = (1 << curveLevel) - 1;
     const edgeOnly = options?.edgeOnly ?? false;
     forEachTripleNeighbor(originId, quintant, x, y, z, maxRow, edgeOnly, (o, q, nx, ny, nz) => {
-      neighbors.add(tripleCellToId(o, q, nx, ny, nz, hilbertRes, resolution));
+      neighbors.add(tripleCellToId(o, q, nx, ny, nz, curveLevel, resolution));
     });
   }
   return Array.from(neighbors).sort(compareBigint);

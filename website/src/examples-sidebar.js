@@ -13,7 +13,7 @@ const sidebars = {
     {
       type: 'category',
       label: 'Technical',
-      items: ['teohedron', 'projection', 'lattice', 'hilbert']
+      items: ['teohedron', 'projection', 'lattice', 'teohedral-curve']
     },
     {
       type: 'category',

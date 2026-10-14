@@ -4,7 +4,7 @@
 
 // The A5 space-filling curve, a turtle L-system on the triangular lattice.
 //
-// This replaces the earlier `shiftDigits` Hilbert construction. shiftDigits was an
+// This replaces the earlier `shiftDigits` construction. shiftDigits was an
 // approximation of this curve: they agree exactly through resolution 4, but
 // shiftDigits self-intersects from resolution 5 on, whereas this curve never
 // crosses itself at any resolution while tiling the exact same cells with the same

@@ -6,7 +6,7 @@ const {
   forEachLatticeNeighbor,
   tripleCellToId,
   getResolution,
-  FIRST_HILBERT_RESOLUTION,
+  FIRST_CURVE_RESOLUTION,
   lonLatToCell,
   u64ToHex
 } = require('../../a5-test.cjs');
@@ -19,11 +19,11 @@ const sortHex = a => [...a].map(u64ToHex).sort();
 /** The lattice neighbors of a cell — the flood fill's connectivity — as cell IDs. */
 function latticeNeighbors(cell) {
   const resolution = getResolution(cell);
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
   const [originId, quintant, x, y, z] = cellIdsToTriples([cell]);
   const out = [];
-  forEachLatticeNeighbor(originId, quintant, x, y, z, (1 << hilbertRes) - 1, (o, q, nx, ny, nz) => {
-    out.push(tripleCellToId(o, q, nx, ny, nz, hilbertRes, resolution));
+  forEachLatticeNeighbor(originId, quintant, x, y, z, (1 << curveLevel) - 1, (o, q, nx, ny, nz) => {
+    out.push(tripleCellToId(o, q, nx, ny, nz, curveLevel, resolution));
   });
   return out;
 }

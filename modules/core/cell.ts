@@ -25,7 +25,7 @@ import type {Triple} from '../lattice';
 import {
   deserialize,
   serialize,
-  FIRST_HILBERT_RESOLUTION,
+  FIRST_CURVE_RESOLUTION,
   MAX_RESOLUTION,
   RES30_QUINTANTS,
   WORLD_CELL
@@ -139,7 +139,7 @@ interface CellCandidate {
   triple: Triple;
   flavor: number;
   quintant: number;
-  hilbertResolution: number;
+  curveLevel: number;
   originId: OriginId;
   resolution: number;
 }
@@ -173,13 +173,13 @@ function _lookupInQuintant(
     mat2.fromRotation(rotation, -2 * PI_OVER_5 * quintant);
     vec2.transformMat2(_scaledPoint, _scaledPoint, rotation);
   }
-  const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-  const scale = 2 ** hilbertResolution;
+  const curveLevel = 1 + resolution - FIRST_CURVE_RESOLUTION;
+  const scale = 2 ** curveLevel;
   const px = _scaledPoint[0] * scale;
   const py = _scaledPoint[1] * scale;
   const ij = FaceToIJ([px, py] as Face);
 
-  const base = roundToTriple(ij, hilbertResolution);
+  const base = roundToTriple(ij, curveLevel);
   let triple = base;
   const maxRow = scale - 1;
   let flavor = tripleFlavor(base, maxRow);
@@ -202,17 +202,17 @@ function _lookupInQuintant(
       }
     }
   }
-  const S = tripleToS(triple, hilbertResolution, orientation);
+  const S = tripleToS(triple, curveLevel, orientation);
   if (S === null) return null;
   const cellId = serialize({S, segment, origin, resolution});
-  return {margin, cellId, triple, flavor, quintant, hilbertResolution, originId: origin.id, resolution};
+  return {margin, cellId, triple, flavor, quintant, curveLevel, originId: origin.id, resolution};
 }
 
 /** Cache the winning pentagon for the dense-sample fast accept and return its id. */
 function _acceptCandidate(c: CellCandidate): bigint {
   _lastResult = {
     cellId: c.cellId,
-    pentagon: getPentagonVertices(c.hilbertResolution, c.quintant, c.triple, c.flavor),
+    pentagon: getPentagonVertices(c.curveLevel, c.quintant, c.triple, c.flavor),
     originId: c.originId,
     resolution: c.resolution
   };
@@ -220,8 +220,8 @@ function _acceptCandidate(c: CellCandidate): bigint {
 }
 
 // Tie margin tolerance: containment margins are cross products of unit-scale
-// pentagon edges against coordinates of magnitude up to 2^hilbertResolution,
-// so their float noise is ~2^(hilbertResolution - 52); 2^-44 gives a wide
+// pentagon edges against coordinates of magnitude up to 2^curveLevel,
+// so their float noise is ~2^(curveLevel - 52); 2^-44 gives a wide
 // safety factor while staying geometrically negligible (cells are unit-size
 // in the scaled frame).
 const TIE_EPS = 2 ** -44;
@@ -263,7 +263,7 @@ function _sphericalToCellBoundary(
   }
   let best = -Infinity;
   for (const c of candidates) if (c.margin > best) best = c.margin;
-  const eps = TIE_EPS * 2 ** (1 + resolution - FIRST_HILBERT_RESOLUTION);
+  const eps = TIE_EPS * 2 ** (1 + resolution - FIRST_CURVE_RESOLUTION);
   let winner: CellCandidate | null = null;
   for (const c of candidates) {
     if (c.margin >= best - eps && (winner === null || c.cellId < winner.cellId)) winner = c;
@@ -282,13 +282,13 @@ function _sphericalToCellBoundary(
  */
 export function cellCenterToCell(cell: bigint, resolution: number): bigint {
   const a5cell = deserialize(cell);
-  if (resolution >= FIRST_HILBERT_RESOLUTION - 1 && a5cell.resolution >= FIRST_HILBERT_RESOLUTION - 1) {
+  if (resolution >= FIRST_CURVE_RESOLUTION - 1 && a5cell.resolution >= FIRST_CURVE_RESOLUTION - 1) {
     const {quintant, orientation} = segmentToQuintant(a5cell.segment, a5cell.origin);
-    const hilbertResolution = a5cell.resolution - FIRST_HILBERT_RESOLUTION + 1;
-    const {triple, flavor} = sToCell(a5cell.S, hilbertResolution, orientation);
-    const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor) as Face;
+    const curveLevel = a5cell.resolution - FIRST_CURVE_RESOLUTION + 1;
+    const {triple, flavor} = sToCell(a5cell.S, curveLevel, orientation);
+    const center = getPentagonCenter(curveLevel, quintant, triple, flavor) as Face;
     const best = _lookupInQuintant(center, a5cell.origin, getQuintantPolar(toPolar(center)), resolution);
-    if (best !== null && best.margin > TIE_EPS * 2 ** best.hilbertResolution) return best.cellId;
+    if (best !== null && best.margin > TIE_EPS * 2 ** best.curveLevel) return best.cellId;
   }
   return sphericalToCell(cellToSpherical(cell), resolution);
 }
@@ -296,24 +296,24 @@ export function cellCenterToCell(cell: bigint, resolution: number): bigint {
 // TODO move into tiling.ts
 export function _getPentagon({S, segment, origin, resolution}: A5Cell): PentagonShape {
   const {quintant, orientation} = segmentToQuintant(segment, origin);
-  if (resolution === FIRST_HILBERT_RESOLUTION - 2) {
+  if (resolution === FIRST_CURVE_RESOLUTION - 2) {
     return getFaceVertices();
   }
 
-  const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
-  return getPentagonVertices(hilbertResolution, quintant, triple, flavor);
+  const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
+  const {triple, flavor} = sToCell(S, curveLevel, orientation);
+  return getPentagonVertices(curveLevel, quintant, triple, flavor);
 }
 
 export function cellToSpherical(cell: bigint): Spherical {
   const {S, segment, origin, resolution} = deserialize(cell);
-  if (resolution >= FIRST_HILBERT_RESOLUTION - 1) {
+  if (resolution >= FIRST_CURVE_RESOLUTION - 1) {
     // Fast path: the pentagon center is O(1) from (triple, flavor) — no need
     // to construct the pentagon itself.
     const {quintant, orientation} = segmentToQuintant(segment, origin);
-    const hilbertResolution = resolution - FIRST_HILBERT_RESOLUTION + 1;
-    const {triple, flavor} = sToCell(S, hilbertResolution, orientation);
-    const center = getPentagonCenter(hilbertResolution, quintant, triple, flavor);
+    const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
+    const {triple, flavor} = sToCell(S, curveLevel, orientation);
+    const center = getPentagonCenter(curveLevel, quintant, triple, flavor);
     return dodecahedron.inverse(center as Face, origin.id);
   }
   const pentagon = _getPentagon({S, segment, origin, resolution});

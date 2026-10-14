@@ -8,7 +8,7 @@
 
 import type {Cartesian} from '../core/coordinate-systems';
 import {toCartesian} from '../core/coordinate-transforms';
-import {FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {FIRST_CURVE_RESOLUTION} from '../core/serialization';
 import {getNumCells} from '../core/cell-info';
 import {tripleSpaceFloodFill} from '../traversal/lattice-flood-fill';
 import {forEachLatticeNeighbor, tripleCellCenter, tripleCellToId} from '../traversal/triple-cells';
@@ -42,8 +42,8 @@ export function prefersFlood(
  * unsorted.
  */
 export function fillByFlood(boundary: Boundary, triples: number[], resolution: number, overlapping: boolean): bigint[] {
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const maxRow = (1 << hilbertRes) - 1;
+  const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
+  const maxRow = (1 << curveLevel) - 1;
   const out = boundaryOutput(boundary, overlapping);
 
   // The shell: the flood's own moves out of the boundary (each an edge
@@ -55,14 +55,14 @@ export function fillByFlood(boundary: Boundary, triples: number[], resolution: n
   const firewall: number[] = triples.slice();
   for (let c = 0; c < shell.length; c += 5) {
     const s = shell;
-    const center = toCartesian(tripleCellCenter(s[c], s[c + 1], s[c + 2], s[c + 3], s[c + 4], hilbertRes, maxRow));
+    const center = toCartesian(tripleCellCenter(s[c], s[c + 1], s[c + 2], s[c + 3], s[c + 4], curveLevel, maxRow));
     const side = insideNextTo(boundary, center, parents[c / 5]) ? seeds : firewall;
     for (let k = 0; k < 5; k++) side.push(s[c + k]);
   }
   if (seeds.length > 0) {
     for (let c = 0; c < seeds.length; c += 5) {
       out.push(
-        tripleCellToId(seeds[c], seeds[c + 1], seeds[c + 2], seeds[c + 3], seeds[c + 4], hilbertRes, resolution)
+        tripleCellToId(seeds[c], seeds[c + 1], seeds[c + 2], seeds[c + 3], seeds[c + 4], curveLevel, resolution)
       );
     }
     const {interiorCells} = tripleSpaceFloodFill(firewall, seeds, resolution);

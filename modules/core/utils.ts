@@ -27,7 +27,7 @@ export type A5Cell = {
    */
   segment: number;
   /**
-   * Position along Hilbert curve within triangular segment
+   * Position along the curve within triangular segment
    */
   S: bigint;
   /**

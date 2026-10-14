@@ -8,7 +8,7 @@ import {fromLonLat, toCartesian} from '../core/coordinate-transforms';
 import {
   cellToChildren,
   getResolution,
-  FIRST_HILBERT_RESOLUTION,
+  FIRST_CURVE_RESOLUTION,
   MAX_RESOLUTION,
   WORLD_CELL
 } from '../core/serialization';
@@ -105,7 +105,7 @@ export function polygonToCells(
   // Resolutions 0 and 1 have no lattice (a quintant is a single cell): every
   // cell off the boundary is in or out by its center, and there are at most 60
   // of them.
-  if (resolution < FIRST_HILBERT_RESOLUTION) {
+  if (resolution < FIRST_CURVE_RESOLUTION) {
     const out = boundaryOutput(boundary, overlapping);
     for (const cell of cellToChildren(WORLD_CELL, resolution)) {
       if (!boundary.set.has(cell) && pointInPreparedPolygon(toCartesian(cellToSpherical(cell)), prep)) out.push(cell);

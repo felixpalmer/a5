@@ -8,7 +8,7 @@ const {
   lonLatToCell,
   u64ToHex,
   origins,
-  FIRST_HILBERT_RESOLUTION
+  FIRST_CURVE_RESOLUTION
 } = require('../../a5-test.cjs');
 
 const MAX_RESOLUTION = 30;

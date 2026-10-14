@@ -188,7 +188,7 @@ export function netCells(resolution: number): NetCells {
 // ---------- the dual curve ----------
 // The A5 curve is a turtle L-system on the triangular lattice: the turtle walks
 // vertex to vertex, each unit step hosting one cell. That walk is the dual
-// curve. Within a quintant it is the axiom motif expanded once per hilbert
+// curve. Within a quintant it is the axiom motif expanded once per curve level
 // resolution, then rendered to draw symbols.
 
 const AXIOMS: Record<Orientation, {axiom: string; reverse: boolean; isB: boolean}> = {
@@ -201,10 +201,10 @@ const AXIOMS: Record<Orientation, {axiom: string; reverse: boolean; isB: boolean
 };
 
 /** Turtle positions of the walk filling a quintant, in curve order: 4^R steps, so 4^R + 1 points */
-function quintantWalk(hilbertResolution: number, orientation: Orientation): AB[] {
+function quintantWalk(curveLevel: number, orientation: Orientation): AB[] {
   const {axiom, reverse, isB} = AXIOMS[orientation];
   let symbols = axiom;
-  for (let i = 0; i < hilbertResolution; i++) symbols = expandOnce(symbols, RULES);
+  for (let i = 0; i < curveLevel; i++) symbols = expandOnce(symbols, RULES);
   symbols = expandOnce(symbols, DRAWS);
   const positions: AB[] = [{a: 0, b: 0}];
   walk(symbols, {a: 0, b: 0}, 0, (sym, from, heading) => {
@@ -213,16 +213,16 @@ function quintantWalk(hilbertResolution: number, orientation: Orientation): AB[]
   });
   // The B motif fills the quintant corner to corner, so it is translated onto it
   // (by (-p, p, 0) in triple units, p = 2^R)
-  const p = 2 ** hilbertResolution;
+  const p = 2 ** curveLevel;
   const placed = isB ? positions.map(q => ({a: q.a + 4 * p, b: q.b - 4 * p})) : positions;
   return reverse ? placed.reverse() : placed;
 }
 
 /** Turtle (a,b) position -> face coordinates in quintant q's place */
-function turtleToFace({a, b}: AB, hilbertResolution: number, q: number): V2 {
+function turtleToFace({a, b}: AB, curveLevel: number, q: number): V2 {
   const j = -b / 4;
   const i = a / 4 + b / 4;
-  const [x, y] = IJToFace([i, j] as IJ).map(c => c / 2 ** hilbertResolution);
+  const [x, y] = IJToFace([i, j] as IJ).map(c => c / 2 ** curveLevel);
   const angle = ((2 * Math.PI) / 5) * q;
   return [x * Math.cos(angle) - y * Math.sin(angle), x * Math.sin(angle) + y * Math.cos(angle)];
 }
@@ -244,15 +244,15 @@ const DUALS: DualCurve[] = [];
 export function dualCurve(resolution: number): DualCurve {
   if (!DUALS[resolution]) {
     const curve: DualCurve = {net: [], lonLat: [], faces: [], index: []};
-    const hilbertResolution = resolution - 1;
-    if (hilbertResolution >= 0) {
-      const steps = 4 ** hilbertResolution;
+    const curveLevel = resolution - 1;
+    if (curveLevel >= 0) {
+      const steps = 4 ** curveLevel;
       origins.forEach(origin => {
         for (let j = 0; j < 5; j++) {
           const {quintant, orientation} = segmentToQuintant((origin.firstQuintant + j) % 5, origin);
           const first = (origin.id * 5 + j) * steps;
-          quintantWalk(hilbertResolution, orientation).forEach((position, i) => {
-            const face = turtleToFace(position, hilbertResolution, quintant);
+          quintantWalk(curveLevel, orientation).forEach((position, i) => {
+            const face = turtleToFace(position, curveLevel, quintant);
             curve.net.push(FACE_TO_NET[origin.id](face));
             curve.lonLat.push(toLonLat(dodecahedron.inverse(face as Face, origin.id)) as unknown as [number, number]);
             curve.faces.push(origin.id);

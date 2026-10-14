@@ -14,7 +14,7 @@ export type Orientation = 'uv' | 'vu' | 'uw' | 'wu' | 'vw' | 'wv';
  *
  * Neighbors differ by ±1 in exactly one coordinate while the other two stay constant.
  * Triple coordinates are orientation-independent — the same geometric cell always has
- * the same triple coords regardless of Hilbert curve orientation.
+ * the same triple coords regardless of curve orientation.
  */
 export type Triple = {
   readonly x: number;

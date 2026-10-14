@@ -19,7 +19,7 @@ Docs: docs/api-reference/README.md
 
 ## Typescript Project Structure
 - `/modules` - TypeScript source code (NOT `/src`)
-  - `/core` - Core geospatial functionality (cell, hex, hilbert, serialization, leaf slots, compaction marker, etc.)
+  - `/core` - Core geospatial functionality (cell, hex, serialization, leaf slots, compaction marker, etc.)
   - `/coverings` - Coverings (sets of cells at one resolution): compact/uncompact, set operations, measures (depends only on `/core`)
   - `/geometry` - Geometric calculations (pentagon, spherical_triangle, spherical_polygon)
   - `/projections` - Map projection implementations (dodecahedron, authalic, gnomonic, etc.)

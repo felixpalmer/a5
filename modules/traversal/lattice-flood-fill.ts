@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import {tripleInBounds} from '../lattice';
-import {FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {FIRST_CURVE_RESOLUTION} from '../core/serialization';
 import {tripleCellKey, tripleCellToId} from './triple-cells';
 
 /** Flood state, reusable across calls at one resolution: the keys of every cell visited so far. */
@@ -33,8 +33,8 @@ export function tripleSpaceFloodFill(
   resolution: number,
   maxLayers?: number
 ): {interiorCells: bigint[]; frontierCellIds: bigint[]; frontier: number[]; state: FloodState} {
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const maxRow = (1 << hilbertRes) - 1;
+  const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
+  const maxRow = (1 << curveLevel) - 1;
 
   const state = Array.isArray(firewall) ? {visited: new Set<number>()} : firewall.state;
   const {visited} = state;
@@ -77,7 +77,7 @@ export function tripleSpaceFloodFill(
     const ids: bigint[] = [];
     for (let c = 0; c < cells.length; c += 5) {
       ids.push(
-        tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], hilbertRes, resolution)
+        tripleCellToId(cells[c], cells[c + 1], cells[c + 2], cells[c + 3], cells[c + 4], curveLevel, resolution)
       );
     }
     return ids;

@@ -3,7 +3,7 @@ import {
   getResolution,
   serialize,
   deserialize,
-  FIRST_HILBERT_RESOLUTION,
+  FIRST_CURVE_RESOLUTION,
   MAX_RESOLUTION,
   getRes0Cells,
   isChildOf,
@@ -27,7 +27,7 @@ describe('serialize', () => {
 
   test('encodes resolution correctly for different values', () => {
     const testCases = RESOLUTION_MASKS.map((_, i) =>
-      // Origin 0 has first quintant 4, so start use segment 4 to obtain start of Hilbert curve
+      // Origin 0 has first quintant 4, so start use segment 4 to obtain start of the curve
       ({origin: origin0, segment: 4, S: 0n, resolution: i})
     );
 
@@ -48,7 +48,7 @@ describe('serialize', () => {
   });
 
   test('encodes origin, segment and S correctly', () => {
-    // Origin 0 has first quintant 4, so start use segment 4 to obtain start of Hilbert curve
+    // Origin 0 has first quintant 4, so start use segment 4 to obtain start of the curve
     const cell: A5Cell = {origin: origin0, segment: 4, S: 0n, resolution: MAX_RESOLUTION - 1};
     const serialized = serialize(cell);
     expect(serialized).toBe(0b10n);
@@ -90,7 +90,7 @@ describe('serialize', () => {
       const originSegmentId = (5 * n).toString(2).padStart(6, '0');
       test(`resolution masks with origin ${n} (${originSegmentId})`, () => {
         // Exclude res 30 as it has a different bit layout (5-bit quintant)
-        RESOLUTION_MASKS.slice(FIRST_HILBERT_RESOLUTION, MAX_RESOLUTION).forEach(binary => {
+        RESOLUTION_MASKS.slice(FIRST_CURVE_RESOLUTION, MAX_RESOLUTION).forEach(binary => {
           const serialized = BigInt(`0b${originSegmentId}${binary.slice(6)}`);
           const deserialized = deserialize(serialized);
           const reserialized = serialize(deserialized);
@@ -165,8 +165,8 @@ describe('hierarchy', () => {
     }
   });
 
-  test('non-Hilbert to non-Hilbert hierarchy', () => {
-    // Test resolution 0 to 1 (both non-Hilbert)
+  test('non-curve to non-curve hierarchy', () => {
+    // Test resolution 0 to 1 (both non-curve)
     const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 0});
     const children = cellToChildren(cell);
     expect(children.length).toBe(5);
@@ -176,8 +176,8 @@ describe('hierarchy', () => {
     });
   });
 
-  test('non-Hilbert to Hilbert hierarchy', () => {
-    // Test resolution 1 to 2 (non-Hilbert to Hilbert)
+  test('non-curve to curve hierarchy', () => {
+    // Test resolution 1 to 2 (non-curve to curve)
     const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 1});
     const children = cellToChildren(cell);
     expect(children.length).toBe(4);
@@ -187,8 +187,8 @@ describe('hierarchy', () => {
     });
   });
 
-  test('Hilbert to non-Hilbert hierarchy', () => {
-    // Test resolution 2 to 1 (Hilbert to non-Hilbert)
+  test('curve to non-curve hierarchy', () => {
+    // Test resolution 2 to 1 (curve to non-curve)
     const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: 2});
     const parent = cellToParent(cell, 1);
     const children = cellToChildren(parent);
@@ -235,15 +235,15 @@ describe('hierarchy', () => {
 });
 
 describe('isChildOf', () => {
-  test('returns true for self at same resolution (Hilbert range)', () => {
-    for (let res = FIRST_HILBERT_RESOLUTION; res < MAX_RESOLUTION; res++) {
+  test('returns true for self at same resolution (curve range)', () => {
+    for (let res = FIRST_CURVE_RESOLUTION; res < MAX_RESOLUTION; res++) {
       const cell = serialize({origin: origin0, segment: 0, S: 0n, resolution: res});
       expect(isChildOf(cell, cell, res)).toBe(true);
     }
   });
 
   test('returns true for direct children', () => {
-    for (let res = FIRST_HILBERT_RESOLUTION; res < MAX_RESOLUTION - 1; res++) {
+    for (let res = FIRST_CURVE_RESOLUTION; res < MAX_RESOLUTION - 1; res++) {
       const parent = serialize({origin: origin0, segment: 0, S: 0n, resolution: res});
       const children = cellToChildren(parent);
       for (const child of children) {

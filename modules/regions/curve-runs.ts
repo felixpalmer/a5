@@ -19,7 +19,7 @@ import {
   QUINTANT_SHIFT,
   S_MASK,
   SLOT_COUNTS,
-  FIRST_HILBERT_RESOLUTION
+  FIRST_CURVE_RESOLUTION
 } from '../core/serialization';
 import {appendSlotRun} from '../coverings/slot-runs';
 import type {SlotRuns} from '../coverings/types';
@@ -46,11 +46,11 @@ function tripleSlot(
   x: number,
   y: number,
   z: number,
-  hilbertRes: number,
+  curveLevel: number,
   unitShift: bigint
 ): bigint {
   const i = originId * 5 + quintant;
-  return QUINTANT_PREFIX[i] | (tripleToS({x, y, z}, hilbertRes, QUINTANT_ORIENTATION[i])! << unitShift);
+  return QUINTANT_PREFIX[i] | (tripleToS({x, y, z}, curveLevel, QUINTANT_ORIENTATION[i])! << unitShift);
 }
 
 /**
@@ -66,8 +66,8 @@ export function fillByCurveRuns(
   overlapping: boolean,
   capHoldsQuintant: boolean
 ): SlotRuns {
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const maxRow = (1 << hilbertRes) - 1;
+  const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
+  const maxRow = (1 << curveLevel) - 1;
   // One ring of neighbors (edge and vertex, across quintant edges too), edge neighbors first
   const {cells: ringCells, parents} = boundaryNeighbors(triples, [
     (b, c, visit) => forEachTripleNeighbor(b[c], b[c + 1], b[c + 2], b[c + 3], b[c + 4], maxRow, true, visit),
@@ -76,7 +76,7 @@ export function fillByCurveRuns(
 
   fillQuintantTables();
   const unit = SLOT_COUNTS[resolution];
-  const unitShift = BigInt(58 - 2 * hilbertRes);
+  const unitShift = BigInt(58 - 2 * curveLevel);
 
   // Band slots carry two flags: EMIT (the cell is in the output) and RING. Below
   // resolution 30 a slot has zero low bits to hold them; at 30 a map does.
@@ -103,11 +103,11 @@ export function fillByCurveRuns(
   const ringInside = new Uint8Array(ringCells.length / 5);
   for (let c = 0, i = nBoundary; c < ringCells.length; c += 5, i++) {
     const r = ringCells;
-    const center = toCartesian(tripleCellCenter(r[c], r[c + 1], r[c + 2], r[c + 3], r[c + 4], hilbertRes, maxRow));
+    const center = toCartesian(tripleCellCenter(r[c], r[c + 1], r[c + 2], r[c + 3], r[c + 4], curveLevel, maxRow));
     const inside = insideNextTo(boundary, center, parents[c / 5]);
     if (inside) ringInside[c / 5] = 1;
     const slot = withFlags(
-      tripleSlot(r[c], r[c + 1], r[c + 2], r[c + 3], r[c + 4], hilbertRes, unitShift),
+      tripleSlot(r[c], r[c + 1], r[c + 2], r[c + 3], r[c + 4], curveLevel, unitShift),
       inside ? EMIT | RING : RING
     );
     slots[i] = slot;
@@ -122,7 +122,7 @@ export function fillByCurveRuns(
     if ((flagsOf(ringSlot) & RING) === 0) return undefined;
     const c = ringBySlot.get(ringSlot)!;
     const q = Number(slot >> QUINTANT_SHIFT);
-    const t = sToTriple((slot & S_MASK) >> unitShift, hilbertRes, QUINTANT_ORIENTATION[TRIPLE_QUINTANT_BY_ID_ORDER[q]]);
+    const t = sToTriple((slot & S_MASK) >> unitShift, curveLevel, QUINTANT_ORIENTATION[TRIPLE_QUINTANT_BY_ID_ORDER[q]]);
     const r = ringCells;
     const dx = t.x - r[c + 2];
     const dy = t.y - r[c + 3];

@@ -9,7 +9,7 @@
 // come out as sorted slot runs, with no cell IDs to encode and nothing to sort.
 
 import type {Face} from '../core/coordinate-systems';
-import {FIRST_HILBERT_RESOLUTION, SLOT_COUNTS} from '../core/serialization';
+import {FIRST_CURVE_RESOLUTION, SLOT_COUNTS} from '../core/serialization';
 import {getPentagonCenter} from '../core/tiling';
 import * as vec2 from '../math/vec2';
 import type {OriginId} from '../core/utils';
@@ -39,7 +39,7 @@ export type CurveDescentClassifier = (originId: OriginId, resolution: number, ce
 // level's are only overwritten once its cell's children are done)
 interface Descent {
   classify: CurveDescentClassifier;
-  /** Hilbert level of the target resolution */
+  /** Curve level of the target resolution */
   targetLevel: number;
   originId: OriginId;
   quintant: number;
@@ -52,7 +52,7 @@ interface Descent {
 }
 
 /**
- * Descend from `starts` — non-overlapping cells at one Hilbert level, as flat
+ * Descend from `starts` — non-overlapping cells at one curve level, as flat
  * triples (originId, quintant, x, y, z), in any order — to `resolution`,
  * appending the cells of the region `classify` describes to `runs`, as slot
  * runs in curve order.
@@ -80,7 +80,7 @@ export function descendInCurveOrder(
   for (let i = 0; i < count; i++) order[i] = i;
   order.sort((a, b) => (slots[a] < slots[b] ? -1 : slots[a] > slots[b] ? 1 : 0));
 
-  const targetLevel = resolution - FIRST_HILBERT_RESOLUTION + 1;
+  const targetLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
   const d: Descent = {
     classify,
     targetLevel,
@@ -117,9 +117,9 @@ export function descendInCurveOrder(
   }
 }
 
-/** Visit the cell at Hilbert `level` (its triple and descent state in the scratch) with the given flavor and first slot. */
+/** Visit the cell at curve `level` (its triple and descent state in the scratch) with the given flavor and first slot. */
 function descend(d: Descent, level: number, flavor: number, slot: bigint): void {
-  const resolution = level + FIRST_HILBERT_RESOLUTION - 1;
+  const resolution = level + FIRST_CURVE_RESOLUTION - 1;
   getPentagonCenter(level, d.quintant, d.triples[level], flavor, d.center);
   const kind = d.classify(d.originId, resolution, d.center, slot);
   if (kind === INSIDE) {

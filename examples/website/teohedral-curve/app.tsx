@@ -170,7 +170,7 @@ const App: React.FC = () => {
 
   const layer = new PathLayer({
     ...commonLayerProps,
-    id: 'hilbert',
+    id: 'curve',
     dataTransform: ((data: LonLat[][]) => {
       const centers = data.map(cellCenter);
       const segments = centers.slice(0, -1).map((center, i) => ({
