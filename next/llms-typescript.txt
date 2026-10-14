@@ -1,0 +1,1111 @@
+# A5 for TypeScript / JavaScript
+
+> A5 is a discrete global grid system (DGGS) that divides the Earth into equal-area pentagonal cells, at 31 resolutions from the whole world down to 30mm², each identified by a 64-bit integer.
+
+This is the A5 1.0.0-beta.2 documentation for the `a5-js` npm package. Cell IDs are `bigint`. Code samples are in TypeScript / JavaScript only, and function headings use the TypeScript / JavaScript names. Parameter names and types in the descriptions follow the TypeScript API: `bigint` is a cell ID, and `camelCase` parameters are `snake_case` in Python, Rust, DuckDB and R. Documentation for other languages is listed at https://a5geo.org/next/llms.txt.
+
+---
+
+Source: https://a5geo.org/next/docs
+
+# Introduction
+  
+A5 is a geospatial index that partitions the world into [pentagonal cells](https://a5geo.org/next/examples/teohedron). The cells are available at [31 different resolution levels](https://a5geo.org/next/examples/hierarchy), with the largest cell covering the whole world, and the smallest less than 30mm². Within each resolution level the cells have [equal area](https://a5geo.org/examples/area), as per the [OGC definition](https://docs.ogc.org/as/20-040r3/20-040r3.html#toc29).
+
+A5 cells provide simple way to represent spatial data as a collection of cells, which together represent regions on the globe. These can be anything, from city districts to parcels of land. Once data is in a cell-based format, it becomes much simpler to perform analysis such as calculating the correlation between different variables - for example elevation and crop yield.
+
+Cells can also be used to group (aggregate) point data, to understand how it spatially distributed. For example, the [density of holiday rentals](https://a5geo.org/next/examples/airbnb) across a city.
+
+To understand how it works, take a look at the [Examples](https://a5geo.org/next/examples).
+
+A5 is implemented in TypeScript and is available as a [library](https://www.npmjs.com/package/a5-js), with [API documentation here](https://a5geo.org/next/docs/api-reference.md). It is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+## Benefits over alternative systems
+
+Like other [DGGSs](https://a5geo.org/next/docs/technical/dggs.md), A5 can be used for indexing, spatial joins, and other spatial operations. The appropriate choice of DGGS will depend on the use case, the key strengths of A5 over other similar indexing systems are:
+
+- Equal area cells group spatial features without introducing bias.
+- Very high resolution of 30mm² at final resolution level, encoded as a 64-bit integer. 
+- Single cell topology type, with minimal shape distortion across the globe.
+
+For an in-depth comparison to H3, see [A5 vs H3](https://a5geo.org/next/docs/recipes/a5-vs-h3.md)
+
+## Geometric Construction
+
+[DGGSs](https://a5geo.org/next/docs/technical/dggs.md) are generally based on a planar cell tiling which is applied to the sides of a [platonic solid](https://a5geo.org/next/docs/technical/platonic-solids.md), before being projected onto a sphere.
+
+A5 is unique in that it uses a pentagonal tiling of a dodecahedron. The [pentagon chosen](https://a5geo.org/next/docs/technical/the-pentagon-that-could.md) for the tiling is equilateral, but not regular - unlike other common DGGSs which use regular polygons, for example [HTM](https://www.microsoft.com/en-us/research/wp-content/uploads/2005/09/tr-2005-123.pdf) uses triangles, [S2](https://s2geometry.io/) uses squares, and [H3](https://h3geo.org/) uses hexagons.
+
+The benefit of choosing a dodecahedron is that it is the platonic solid with the lowest vertex curvature, and by this measure it is the most spherical of all the platonic solids. This is key for minimizing cell distortion as the process of projecting a platonic solid onto a sphere involves warping the cell geometry to force the vertex curvature to approach zero. Thus, the lower the original vertex curvature, the less distortion will be introduced by the projection.
+
+
+---
+
+Source: https://a5geo.org/next/docs/quickstart/javascript
+
+# JavaScript Quickstart
+
+Get started with A5 in JavaScript by installing the [package](https://www.npmjs.com/package/a5-js) and running a simple example.
+
+## Installation
+
+Install the [A5 package](https://www.npmjs.com/package/a5-js) using npm:
+
+```bash
+npm install a5-js@1.0.0-beta.2
+```
+
+Or using yarn:
+
+```bash
+yarn add a5-js@1.0.0-beta.2
+```
+
+## Code Example: Generate A5 Cells
+
+Here's a complete example that generates A5 cells at a specified resolution and outputs them as GeoJSON:
+
+```javascript
+import { cellToBoundary, u64ToHex, cellToChildren } from "a5-js";
+
+// Generate all cells at the specified resolution
+const resolution = 2;
+const cells = [];
+const cellIds = cellToChildren(0n, resolution);
+
+// Generate boundary for each cell
+for (let cellId of cellIds) {
+  const cellIdHex = u64ToHex(cellId);
+  const boundary = cellToBoundary(cellId);
+
+  cells.push({
+    type: "Feature",
+    geometry: { type: "Polygon", coordinates: [boundary] },
+    properties: { cellIdHex }
+  });
+}
+
+// Create GeoJSON FeatureCollection
+const geojson = { type: "FeatureCollection", features: cells };
+```
+
+## Example Output
+
+The above code will produce a collection of cells that cover the whole world.
+
+_Note that the cells all have the same area, they are just warped by the map projection_
+
+## CLI Usage
+
+The code above in CLI form is available [here](https://github.com/felixpalmer/a5/tree/main/examples/cli/wireframe).
+
+```bash
+node index.js 2 a5.geojson
+```
+
+This will generate A5 cells at resolution 2 and save them as GeoJSON in `a5.geojson`.
+
+## Next Steps
+
+- Learn more about [A5 indexing](https://a5geo.org/next/docs/api-reference/indexing.md)
+- Explore [cell hierarchy](https://a5geo.org/next/docs/api-reference/hierarchy.md)
+- Check out more [examples](https://a5geo.org/next/examples)
+
+
+---
+
+Source: https://a5geo.org/next/docs/api-reference
+
+# Overview
+
+A5 has the same API in every language, with the following functions available. They are listed by their TypeScript names: Python and Rust use `snake_case` (`lonlat_to_cell`), and DuckDB and R add an `a5_` prefix (`a5_lonlat_to_cell`).
+
+AI coding agents can read these docs as Markdown, with code samples in a single language: see [llms.txt](https://a5geo.org/next/llms.txt).
+
+For examples on how to use the code, see the [example code on Github](https://github.com/felixpalmer/a5/tree/main/examples)
+
+### Indexing
+
+- [lonLatToCell](https://a5geo.org/next/docs/api-reference/indexing.md#lonlattocell)
+- [cellToLonLat](https://a5geo.org/next/docs/api-reference/indexing.md#celltolonlat)
+- [cellToBoundary](https://a5geo.org/next/docs/api-reference/indexing.md#celltoboundary)
+- [polygonToCells](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells)
+- [lineStringToCells](https://a5geo.org/next/docs/api-reference/indexing.md#linestringtocells)
+- [u64ToHex](https://a5geo.org/next/docs/api-reference/indexing.md#u64tohex)
+- [hexToU64](https://a5geo.org/next/docs/api-reference/indexing.md#hextou64)
+
+### Hierarchy
+
+- [getResolution](https://a5geo.org/next/docs/api-reference/hierarchy.md#getresolution)
+- [cellToParent](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltoparent)
+- [cellToChildren](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltochildren)
+- [cellToSupercell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosupercell)
+- [cellToSubcell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell)
+- [getRes0Cells](https://a5geo.org/next/docs/api-reference/hierarchy.md#getres0cells)
+
+### Cell Info
+
+- [getNumCells](https://a5geo.org/next/docs/api-reference/cell-info.md#getnumcells)
+- [cellArea](https://a5geo.org/next/docs/api-reference/cell-info.md#cellarea)
+- [cellEdgeLengthAvg](https://a5geo.org/next/docs/api-reference/cell-info.md#celledgelengthavg)
+- [isValidCell](https://a5geo.org/next/docs/api-reference/cell-info.md#isvalidcell)
+
+### Traversal
+
+- [gridDisk](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk)
+- [gridDiskVertex](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex)
+- [sphericalCap](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap)
+
+### Compaction
+
+- [compact](https://a5geo.org/next/docs/api-reference/compaction.md#compact)
+- [uncompact](https://a5geo.org/next/docs/api-reference/compaction.md#uncompact)
+- [coveringResolution](https://a5geo.org/next/docs/api-reference/compaction.md#coveringresolution)
+- [isCompactionMarker](https://a5geo.org/next/docs/api-reference/compaction.md#iscompactionmarker)
+
+### Coverings
+
+- [union](https://a5geo.org/next/docs/api-reference/coverings.md#union)
+- [intersect](https://a5geo.org/next/docs/api-reference/coverings.md#intersect)
+- [difference](https://a5geo.org/next/docs/api-reference/coverings.md#difference)
+- [contains](https://a5geo.org/next/docs/api-reference/coverings.md#contains)
+- [overlaps](https://a5geo.org/next/docs/api-reference/coverings.md#overlaps)
+- [count](https://a5geo.org/next/docs/api-reference/coverings.md#count)
+- [area](https://a5geo.org/next/docs/api-reference/coverings.md#area)
+
+### Miscellaneous
+
+- [migrate](https://a5geo.org/next/docs/api-reference/miscellaneous.md#migrate)
+
+
+---
+
+Source: https://a5geo.org/next/docs/api-reference/indexing
+
+# Indexing
+
+Functions for converting between geospatial coordinates and A5 indices.
+
+Coordinates are specified as per the [GeoJSON spec](https://www.rfc-editor.org/rfc/rfc7946#section-3.1.1), namely: `[longitude, latitude]`.
+
+:::info
+For detailed information about how A5 encodes cells as 64-bit integers, see [Index Encoding](https://a5geo.org/next/docs/technical/index-encoding.md).
+:::
+
+### lonLatToCell
+
+Indexes the coordinate at a given resolution to an A5 cell index.
+
+```ts
+function lonLatToCell(coordinate: [longitude: number, latitude: number], resolution: number): bigint;
+```
+
+#### Parameters
+
+- `coordinate` **(number[])** coordinate as `[longitude, latitude]`
+- `resolution` **(number)** The resolution level to index at
+
+#### Return value
+
+- **(bigint)** The A5 cell identifier
+
+### cellToLonLat
+
+Returns the geospatial coordinate at the center of an A5 cell.
+
+```ts
+function cellToLonLat(cell: bigint): [longitude: number, latitude: number];
+```
+
+#### Parameters
+
+- `cell` **(bigint)** A5 cell identifier
+
+#### Return value
+
+- **(number[])** The center coordinate as `[longitude, latitude]`
+
+### cellToBoundary
+
+Returns the vertices that define the boundary of an A5 cell.
+
+```ts
+function cellToBoundary(cell: bigint, options?: {
+  closedRing?: boolean;
+  segments?: number | 'auto';
+}): [longitude: number, latitude: number][];
+```
+
+#### Parameters
+
+- `cell` **(bigint)** A5 cell identifier
+- `options` **(object)** Optional configuration object
+  - `closedRing` **(boolean)** Whether to close the ring by repeating the first point at the end. Defaults to `true`.
+  - `segments` **(number | 'auto')** Number of segments to use for each edge. When set to 'auto', uses a resolution-appropriate value. Defaults to 'auto'.
+
+#### Return value
+
+- **(number[][])** Array of coordinates defining the cell boundary, each as `[longitude, latitude]`
+
+### polygonToCells
+
+Returns all cells within a polygon, defined either by a single ring of `[longitude, latitude]` vertices or by GeoJSON-style rings `[outer, ...holes]`. Cells inside a hole are excluded.
+
+Rings may be open or closed (GeoJSON-style, with the first vertex repeated at the end) — closure is automatic either way. Either winding order is accepted; the orientation is detected from the ring geometry. Hole rings with fewer than 3 distinct vertices are ignored.
+
+The `containment` option controls which cells count as belonging to the polygon:
+
+- `'center'` (default) — a cell is included only if its center lies inside the polygon. Adjacent polygons that share an edge produce disjoint coverings, so this is the right choice for partitioning.
+- `'overlapping'` — additionally includes every cell that overlaps the polygon boundary. The result is a superset of `'center'` that fully covers the polygon with no gaps, at the cost of some overlap with adjacent polygons. Use this when a query must not miss any cell touching the polygon (for example, filtering database rows by cell before applying an exact geometry test).
+
+The result is a [covering](https://a5geo.org/next/docs/api-reference/coverings.md) of the polygon, approximating it with `'center'` and containing it with `'overlapping'`: compacted cells, then a [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording the resolution. Use [`uncompact`](https://a5geo.org/next/docs/api-reference/compaction.md#uncompact) to expand it to the input resolution. The compacted form is intended for storage, transfer and set operations: cell boundaries of different resolutions do not nest geometrically, so the mixed-resolution cells of a covering will show overlaps and gaps when rendered. Uncompact to a single resolution before drawing cells on a map.
+
+Multi-polygons are not supported directly — call `polygonToCells` per polygon and combine the results with [`union`](https://a5geo.org/next/docs/api-reference/coverings.md#union). Coverings can also be intersected, subtracted and tested for containment without uncompacting, see [Coverings](https://a5geo.org/next/docs/api-reference/coverings.md).
+
+```ts
+function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, options?: {
+  containment?: 'center' | 'overlapping';
+}): BigUint64Array;
+```
+
+#### Parameters
+
+- `polygon` **(LonLat[] | LonLat[][])** Either a single ring of `[longitude, latitude]` vertices, or an array of rings where the first ring is the outer boundary and subsequent rings are holes. The outer ring must contain at least 3 vertices.
+- `resolution` **(number)** Target resolution (0–30)
+- `options` **(object)** Optional configuration object
+  - `containment` **('center' | 'overlapping')** Which cells to include relative to the polygon. `'center'` includes a cell only if its center is inside; `'overlapping'` also includes cells that touch the polygon, for gap-free coverage. Defaults to `'center'`.
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells belonging to the polygon sorted in curve order, then the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker). A polygon with no cells gives just the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
+
+#### Example
+
+```ts
+import { polygonToCells, uncompact } from 'a5-js';
+
+// Bounding box around central Paris
+const ring = [
+  [2.25, 48.81],
+  [2.42, 48.81],
+  [2.42, 48.90],
+  [2.25, 48.90]
+];
+const compact = polygonToCells(ring, 10);
+const flat = uncompact(compact); // all cells at resolution 10
+
+// The same polygon with a hole — cells inside the hole are excluded
+const hole = [
+  [2.30, 48.84],
+  [2.37, 48.84],
+  [2.37, 48.87],
+  [2.30, 48.87]
+];
+const withHole = polygonToCells([ring, hole], 10);
+
+// Full coverage — every cell overlapping the polygon, with no gaps along the edge
+const covering = polygonToCells(ring, 10, { containment: 'overlapping' });
+```
+
+### lineStringToCells
+
+Returns all cells whose pentagons intersect a polyline defined by a sequence of waypoints. Consecutive waypoints are connected with great-circle arcs. For a simple two-point line segment, pass `[start, end]`.
+
+The result is uncompacted at the requested resolution and is not sorted — cells appear roughly in the order they were discovered along the path. Cells at waypoint junctions are deduplicated.
+
+```ts
+function lineStringToCells(waypoints: LonLat[], resolution: number): bigint[];
+```
+
+#### Parameters
+
+- `waypoints` **(LonLat[])** Polyline vertices, each as `[longitude, latitude]`
+- `resolution` **(number)** Target resolution (0–30)
+
+#### Return value
+
+- **(bigint[])** Array of unique cell identifiers whose pentagons intersect the polyline
+
+#### Example
+
+```ts
+import { lineStringToCells } from 'a5-js';
+
+// Simple segment: Paris → London
+const segment = lineStringToCells([[2.3522, 48.8566], [-0.1276, 51.5074]], 8);
+
+// Multi-waypoint route
+const route = [
+  [2.3522, 48.8566], // Paris
+  [4.8357, 45.7640], // Lyon
+  [7.2620, 43.7102]  // Nice
+];
+const cells = lineStringToCells(route, 8);
+```
+
+## Cell representation
+
+A5 cells are stored as 64 bit integers, for performance and to provide a compact representation for use in databases. In JavaScript these can be represented as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) values and arrays of cells stored as [BigInt64Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt64Array)s.
+
+For best performance it is recommened to use this representation, but it is also possible to convert them into hexidecimal, for example to encode them in JSON (which does _not_ support 64 bit integers). Two helper functions are provided for this conversion.
+
+### u64ToHex
+
+```ts
+function u64ToHex(index: bigint): string;
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+
+#### Return value
+
+- **(string)** Hexadecimal string representation of the cell identifier
+
+### hexToU64
+
+```ts
+function hexToU64(hex: string): bigint;
+```
+
+#### Parameters
+
+- `hex` **(string)** Hexadecimal string representation of an A5 cell identifier
+
+#### Return value
+
+- **(bigint)** The A5 cell identifier
+
+
+---
+
+Source: https://a5geo.org/next/docs/api-reference/hierarchy
+
+# Hierarchy
+
+The A5 tiling system supports subdividing the world all the way from the 12 dodecahedron faces at resolution 0 to milimeter-scale leaf cells.
+
+The cells are arranged in a logical hierarchy, with each cell having an integer resolution. Each cell has exactly 4 child cells, at the next resolution level, and one parent cell at the previous resolution level.
+
+Naturally the 12 resolution 0 cells, representing the dodecahedron faces, have no parent and similarly leaf cells no children.
+
+### Parent and child cells overlap, they do not nest
+
+The hierarchy is a logical grouping rather than an exact geometric containment. Pentagons cannot be subdivided into smaller pentagons, so a child cell overlaps its parent without lying entirely inside it: on average about 63% of a child's area falls within its parent, and at least about 7%, so no child ever lies entirely outside its parent. Treat `cellToParent`, `cellToChildren` and [compaction](https://a5geo.org/next/docs/api-reference/compaction.md) as a way of grouping nearby cells, not as an exact containment test.
+
+The relationship is loosest between resolutions 1 and 2. Each resolution 1 cell is the single pentagon of its [quintant](https://a5geo.org/next/docs/technical/platonic-solids.md#resolution-1), anchored at the center and a corner of the dodecahedron face and reaching into the neighboring quintants, while its four children are the resolution 2 cells that tile the quintant itself. On average about 58% of a child falls within its parent, rather than 63%, while the least-covered child still has about 7%, as at every other resolution. This is the price of keeping every cell a pentagon: the alternative, triangular resolution 1 cells, nests more closely but breaks the single cell shape and gives resolution 1 cells many awkward vertex-only neighbors.
+
+### getResolution
+
+Returns the resolution of an A5 cell
+
+```ts
+function getResolution(index: bigint): number;
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+
+#### Return value
+
+- **(number)** The resolution level of the cell
+
+### cellToParent
+
+Returns the parent cell of an A5 cell. 
+
+```ts
+function cellToParent(index: bigint, parentResolution?: number): bigint;
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `parentResolution` **(number, optional)** By default one level coarser than input resolution.
+
+#### Return value
+
+- **(bigint)** The parent cell identifier
+
+### cellToChildren
+
+Returns the child cells of an A5 cell.
+
+```ts
+function cellToChildren(index: bigint, childResolution?: number): bigint[];
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `childResolution` **(number, optional)** By default one level finer than input resolution.
+
+#### Return value
+
+- **(bigint[])** Array of child cell identifiers
+
+### Spatial hierarchy: subcells and supercells
+
+Where the parent/child relationship groups cells by index, subcells and supercells group them by location: a finer cell belongs to the coarser cell that contains its center. Every cell at one resolution is then the subcell of exactly one cell at each coarser resolution, so aggregating fine data by supercell attributes each value to the coarse cell it actually lies in. This costs more than `cellToParent` / `cellToChildren`, which are pure bit operations.
+
+### cellToSupercell
+
+Returns the cell at a coarser resolution that contains the center of an A5 cell: the spatial counterpart of `cellToParent`.
+
+```ts
+function cellToSupercell(index: bigint, resolution: number): bigint;
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `resolution` **(number)** Target resolution, at most the cell's own
+
+#### Return value
+
+- **(bigint)** The cell at `resolution` containing the center of `index`
+
+### cellToSubcell
+
+Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `cellToChildren`, and the inverse of `cellToSupercell`. Like the other functions returning a [covering](https://a5geo.org/next/docs/api-reference/coverings.md), the result is compacted, ending with a [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording the resolution.
+
+```ts
+function cellToSubcell(index: bigint, resolution: number): BigUint64Array;
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `resolution` **(number)** Target resolution, at least the cell's own
+
+#### Return value
+
+- **(BigUint64Array)** Compacted subcells sorted in curve order, then the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) — use [`uncompact`](https://a5geo.org/next/docs/api-reference/compaction.md#uncompact) to expand them. Resolution 30 covers only part of the world, so for a cell reaching past it the subcells are given at resolution 29.
+
+#### Example
+
+```ts
+import { cellToSubcell, cellToSupercell, lonLatToCell, uncompact } from 'a5-js';
+
+const cell = lonLatToCell([2.35, 48.85], 8);
+const subcells = uncompact(cellToSubcell(cell, 11));
+subcells.every(subcell => cellToSupercell(subcell, 8) === cell); // true
+```
+
+### getRes0Cells
+
+Returns resolution 0 cells of the A5 system, which serve as a starting point for all higher-resolution subdivisions in the hierarchy.
+
+```ts
+function getRes0Cells(): bigint[];
+```
+
+#### Return value
+
+- **(bigint[])** Array of 12 A5 cell identifiers
+
+#### Example
+
+```ts
+import { getRes0Cells, cellToChildren } from 'a5-js';
+
+const res0Cells = getRes0Cells();
+const res1Cells = res0Cells.flatMap(cell => cellToChildren(cell, 1))
+```
+
+
+---
+
+Source: https://a5geo.org/next/docs/api-reference/traversal
+
+# Traversal
+
+Functions for finding neighboring cells and collecting cells within a range. See the [Traversal](https://a5geo.org/next/examples/traversal) example.
+
+Each A5 cell has exactly 5 edge neighbors, which can be obtained using the `gridDisk` function. If the vertex neighbors are required, `gridDiskVertex` can be used. For broader range queries `sphericalCap` provides all the cells within a great-circle radius. To trace cells along a path, use [`lineStringToCells`](https://a5geo.org/next/docs/api-reference/indexing.md#linestringtocells).
+
+In order to save memory, the returned cells from `gridDisk`, `gridDiskVertex` and `sphericalCap` are [compacted](https://a5geo.org/next/docs/api-reference/compaction.md) into a [covering](https://a5geo.org/next/docs/api-reference/coverings.md): the cells, then a [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording their resolution. Coverings can be combined with the [set operations](https://a5geo.org/next/docs/api-reference/coverings.md).
+
+### gridDisk
+
+Returns all cells within `k` edge-sharing hops of a center cell.
+
+At each step, only edge-sharing neighbors (5 per cell) are followed.
+
+The result is compacted — use [`uncompact`](https://a5geo.org/next/docs/api-reference/compaction.md#uncompact) to expand it to the resolution of the center cell.
+
+```ts
+function gridDisk(cellId: bigint, k: number): BigUint64Array;
+```
+
+#### Parameters
+
+- `cellId` **(bigint)** Center A5 cell identifier
+- `k` **(number)** Number of hops (0 returns just the center cell)
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
+
+#### Example
+
+```ts
+import { lonLatToCell, gridDisk, uncompact } from 'a5-js';
+
+const cell = lonLatToCell([2.3522, 48.8566], 10);
+const ring1 = gridDisk(cell, 1); // center + 5 edge neighbors (compacted)
+const ring2 = uncompact(gridDisk(cell, 2)); // center + ring 1 + ring 2 (uncompacted)
+```
+
+### gridDiskVertex
+
+Returns all cells within `k` hops of a center cell, following both edge-sharing and vertex-sharing neighbors.
+
+The result is compacted — use [`uncompact`](https://a5geo.org/next/docs/api-reference/compaction.md#uncompact) to expand it to the resolution of the center cell.
+
+```ts
+function gridDiskVertex(cellId: bigint, k: number): BigUint64Array;
+```
+
+#### Parameters
+
+- `cellId` **(bigint)** Center A5 cell identifier
+- `k` **(number)** Number of hops (0 returns just the center cell)
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
+
+### sphericalCap
+
+Computes all cells whose centers fall within a great-circle radius from the center of a given cell.
+
+The result is compacted — use [`uncompact`](https://a5geo.org/next/docs/api-reference/compaction.md#uncompact) to expand it to the resolution of the center cell.
+
+```ts
+function sphericalCap(cellId: bigint, radius: number): BigUint64Array;
+```
+
+#### Parameters
+
+- `cellId` **(bigint)** Center A5 cell identifier
+- `radius` **(number)** Radius in meters
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
+
+#### Example
+
+```ts
+import { lonLatToCell, sphericalCap, uncompact } from 'a5-js';
+
+const cell = lonLatToCell([2.3522, 48.8566], 10);
+const compact = sphericalCap(cell, 500_000); // 500 km
+const flat = uncompact(compact); // all cells at resolution 10
+```
+
+
+---
+
+Source: https://a5geo.org/next/docs/api-reference/cell-info
+
+# Cell Info
+
+Functions for obtaining information about A5 cells.
+
+### getNumCells
+
+Returns the number of cells at a given resolution level.
+
+```ts
+function getNumCells(resolution: number): number;
+```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
+
+#### Return value
+
+- **(number)** Number of cells at the given resolution
+
+#### Example
+
+```ts
+import { getNumCells } from 'a5-js';
+
+console.log(getNumCells(0)); // 12
+console.log(getNumCells(1)); // 60
+console.log(getNumCells(2)); // 240
+console.log(getNumCells(3)); // 960
+```
+
+### cellArea
+
+Returns the area of a cell at a given resolution in square meters. Within a resolution level, all cells
+have exactly the same area.
+
+```ts
+function cellArea(resolution: number): number;
+```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
+
+#### Return value
+
+- **(number)** Area of a cell in square meters
+
+#### Example
+
+```ts
+import { cellArea } from 'a5-js';
+
+console.log(cellArea(20)); // ~30 m²
+```
+
+### cellEdgeLengthAvg
+
+Returns the average edge length of a cell at a given resolution in meters. Individual
+edge lengths vary from the average by roughly ±10%, depending on the cell's
+shape and its position on the globe.
+
+```ts
+function cellEdgeLengthAvg(resolution: number): number;
+```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
+
+#### Return value
+
+- **(number)** Average edge length of a cell in meters
+
+#### Example
+
+```ts
+import { cellEdgeLengthAvg } from 'a5-js';
+
+console.log(cellEdgeLengthAvg(2)); // ~1,190,000 m
+console.log(cellEdgeLengthAvg(10)); // ~4,680 m
+```
+
+### isValidCell
+
+Checks whether a 64-bit value is an A5 cell. Use it to validate cell IDs from outside sources, such as a file or a database, before passing them to other A5 functions. The [world cell](https://a5geo.org/next/docs/technical/index-encoding.md#special-case-world-cell) is a valid cell: it has no boundary, but `cellToParent` returns it as the parent of the resolution 0 cells. A [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) is not a cell.
+
+```ts
+function isValidCell(index: bigint): boolean;
+```
+
+#### Parameters
+
+- `index` **(bigint)** Value to check
+
+#### Return value
+
+- **(boolean)** Whether the value is an A5 cell identifier
+
+#### Example
+
+```ts
+import { isValidCell, lonLatToCell, hexToU64 } from 'a5-js';
+
+console.log(isValidCell(lonLatToCell([2.35, 48.85], 10)));  // true
+console.log(isValidCell(hexToU64('fd00000000000000')));     // false: resolution 1 has no quintant 63
+```
+
+
+---
+
+Source: https://a5geo.org/next/docs/api-reference/compaction
+
+# Compaction
+
+Compaction is a way to efficiently represent a set of A5 cells by replacing groups of sibling cells with their parent cell. This reduces the number of cells needed to represent a region while maintaining complete coverage.
+
+For example, if you have all 4 children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
+
+The result of a compaction is a [covering](https://a5geo.org/next/docs/api-reference/coverings.md), which automatically stores the resolution of the compacted cells in-band using a [compaction marker](#coverings-and-the-compaction-marker)
+
+## Functions supporting compacted data
+
+Many of the functions in the A5 API return and accept compacted data, and should be used whenever possible rather than using the more low-level functions below. See [here](https://a5geo.org/next/docs/api-reference/coverings.md#example-processing-flow) for an example.
+
+- Indexing: [`polygonToCells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells)
+- Hierarchy: [`cellToSubcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell)
+- Traversal: [`gridDisk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`gridDiskVertex`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`sphericalCap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap)
+- Set operations: [`union`](https://a5geo.org/next/docs/api-reference/coverings.md#union), [`intersect`](https://a5geo.org/next/docs/api-reference/coverings.md#intersect), [`difference`](https://a5geo.org/next/docs/api-reference/coverings.md#difference)
+- Predicates: [`contains`](https://a5geo.org/next/docs/api-reference/coverings.md#contains), [`overlaps`](https://a5geo.org/next/docs/api-reference/coverings.md#overlaps)
+- Measures: [`count`](https://a5geo.org/next/docs/api-reference/coverings.md#count), [`area`](https://a5geo.org/next/docs/api-reference/coverings.md#area)
+
+## Compaction helpers
+
+### compact
+
+Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells, and appends the [compaction marker](#coverings-and-the-compaction-marker) recording the resolution of the finest input cell. In most cases users will use [polygonToCells](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells)
+
+```ts
+function compact(cells: bigint[] | BigUint64Array): BigUint64Array;
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** Array of A5 cell identifiers to compact
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](#coverings-and-the-compaction-marker). An empty input returns an empty array.
+
+#### Example
+
+```ts
+import { compact, uncompact, count, coveringResolution, cellToChildren } from 'a5-js';
+
+// Get 4 sibling cells at resolution 3
+const parent = 0x6a80000000000000n;  // A cell at resolution 2
+const children = cellToChildren(parent);
+
+// Compact them: they are stored as their parent, but still stand for 4 cells at resolution 3
+const compacted = compact(children);
+console.log(count(compacted));  // 4n
+console.log(coveringResolution(compacted));  // 3
+console.log(uncompact(compacted));  // the 4 children again
+```
+
+### uncompact
+
+Expands a covering to all of its cells at the covering's resolution: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
+
+```ts
+function uncompact(cells: bigint[] | BigUint64Array): BigUint64Array;
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** A covering, as returned by `compact` or `polygonToCells`
+
+#### Return value
+
+- **(BigUint64Array)** Array of cell identifiers, all at the covering's resolution
+
+#### Example
+
+```ts
+import { polygonToCells, uncompact, getResolution } from 'a5-js';
+
+const ring = [[2.25, 48.81], [2.42, 48.81], [2.42, 48.90], [2.25, 48.90]];
+const compacted = polygonToCells(ring, 10);
+
+// No resolution needed: the compaction marker records it
+const flat = uncompact(compacted);
+console.log(getResolution(flat[0]));  // 10
+```
+
+#### Notes
+
+- All output cells are at the covering's resolution; the [compaction marker](#coverings-and-the-compaction-marker) is not included
+- The expansion is complete - every descendant cell at that resolution is included
+- **Ordering property**: If the input is sorted in curve order (as `compact` returns it), the output is too. All children of a cell form a contiguous, ordered block on the curve, so `uncompact` on a covering produces sorted output without requiring a re-sort, which is useful for large result sets
+
+### coveringResolution
+
+Returns the resolution a covering stands for: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
+
+```ts
+function coveringResolution(cells: bigint[] | BigUint64Array): number;
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** A covering, or any array of cells
+
+#### Return value
+
+- **(number)** Resolution (0–30), or -1 for an empty array or the [world cell](https://a5geo.org/next/docs/technical/index-encoding.md#special-case-world-cell)
+
+#### Example
+
+```ts
+import { compact, coveringResolution, cellToChildren } from 'a5-js';
+
+const parent = 0x6a80000000000000n;  // resolution 2
+const compacted = compact(cellToChildren(parent, 4));
+console.log(coveringResolution(compacted));  // 4
+```
+
+### isCompactionMarker
+
+Checks whether a value is a [compaction marker](#coverings-and-the-compaction-marker), the value at the end of a covering that records its resolution. Most code never needs it: the A5 functions that read coverings handle the [compaction marker](#coverings-and-the-compaction-marker) themselves, and to get a covering's cells one at a time, use [`uncompact`](#uncompact). Always keep the [compaction marker](#coverings-and-the-compaction-marker) when you store or pass on a covering, as without it the compacted cells no longer say which resolution they stand for.
+
+```ts
+function isCompactionMarker(value: bigint): boolean;
+```
+
+#### Parameters
+
+- `value` **(bigint)** Value from a covering
+
+#### Return value
+
+- **(boolean)** Whether the value is a [compaction marker](#coverings-and-the-compaction-marker)
+
+#### Example
+
+```ts
+import { isCompactionMarker, lonLatToCell } from 'a5-js';
+
+console.log(isCompactionMarker(lonLatToCell([2.35, 48.85], 10)));  // false: a cell
+```
+
+## Coverings and the compaction marker
+
+A compacted array holds cells at mixed resolutions, but it stands for a set of cells at **one** resolution: compacting 8 cells at resolution 4 may leave 2 cells at resolution 3, which still mean those 8 cells. To keep that resolution, every compacted array ends with a **compaction marker**: a value in quintant 60 (only 0–59 exist), which no cell can take, recording the resolution of the set — for example `0xf00a000000000040` for resolution 10. We call such an array a *covering*, see [Coverings](https://a5geo.org/next/docs/api-reference/coverings.md) for the functions that combine, query and measure them.
+
+- `uncompact` reads the compaction marker, so it needs no resolution argument.
+- The array is still a plain `BigUint64Array` of 64-bit values, so a covering stores as a single list column in a database, Parquet or Arrow — the resolution travels with it.
+- `cellToBoundary` returns `[]` for the compaction marker, so rendering a covering draws only its cells.
+- An array without a compaction marker is a covering too: its resolution is that of its finest cell.
+
+Read coverings only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`count`](https://a5geo.org/next/docs/api-reference/coverings.md#count) and [`area`](https://a5geo.org/next/docs/api-reference/coverings.md#area) measure a covering, [`contains`](https://a5geo.org/next/docs/api-reference/coverings.md#contains) tests a cell, [`uncompact`](#uncompact) lists its cells at its resolution, and [`coveringResolution`](#coveringresolution) gives that resolution.
+
+`compact`, [`polygonToCells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells), [`gridDisk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`gridDiskVertex`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`sphericalCap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap), [`cellToSubcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell) and the [set operations](https://a5geo.org/next/docs/api-reference/coverings.md) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
+
+See [Bit Tags](https://a5geo.org/next/docs/technical/bit-tags.md#compaction-marker-encoding) for how the compaction marker is encoded.
+
+
+---
+
+Source: https://a5geo.org/next/docs/api-reference/coverings
+
+# Coverings
+
+A **covering** is a set of cells at one resolution, standing for an area of the globe, possibly in disjoint parts, such as the output of [`polygonToCells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells) or [`sphericalCap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap). It is stored [compacted](https://a5geo.org/next/docs/api-reference/compaction.md), and in general should be used with methods expecting compacted data. If the actual cells are required (for example for a JOIN operation) a covering should be [uncompacted](https://a5geo.org/next/docs/api-reference/compaction.md#uncompact) first (warning: could use a huge amount of memory).
+
+The functions on this page combine, query and measure coverings:
+
+- [Set operations](#set-operations): [`union`](#union), [`intersect`](#intersect), [`difference`](#difference)
+- [Predicates](#predicates): [`contains`](#contains), [`overlaps`](#overlaps)
+- [Measures](#measures): [`count`](#count), [`area`](#area)
+
+## Example processing flow
+
+```rust
+// Construct coverings
+let france = polygon_to_cells(&france_polygon, 18, None)?; // 944ms -> 1.09 billion cells
+let germany = polygon_to_cells(&germany_polygon, 18, None)?; // 708ms -> 718 million cells
+let near_bern = spherical_cap(bern, 400_000.0)?; // 302ms -> 1.02 billion cells
+let near_luxembourg = spherical_cap(luxembourg, 150_000.0)?; // 113ms -> 143 million cells
+
+// Set operations
+let france_and_germany = union(&france, &germany)?; // 7.0ms -> 1.81 billion cells
+let also_close_to_bern = intersect(&france_and_germany, &near_bern)?; // 5.4ms -> 646 million cells
+let but_far_from_luxembourg = difference(&also_close_to_bern, &near_luxembourg)?; // 3.2ms -> 545 million cells
+
+// Area of covering, to the nearest resolution 18 cell (~500m²)
+println!("{} km²", area(&but_far_from_luxembourg)? / 1e6); // 1.4ms -> 269516 km²
+
+// Point in polygon
+println!("{}", contains(&but_far_from_luxembourg, munich)?); // 50ns -> true
+```
+
+Timings measured with the [Rust implementation](https://github.com/felixpalmer/a5-rs) on an Apple M1 Pro.
+
+## Set operations
+
+### union
+
+Returns the cells in either covering. Both must be at the same resolution, or it throws.
+
+```ts
+function union(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): BigUint64Array;
+```
+
+#### Parameters
+
+- `a` **(bigint[] | BigUint64Array)** First covering
+- `b` **(bigint[] | BigUint64Array)** Second covering
+
+#### Return value
+
+- **(BigUint64Array)** Combined covering of both input coverings
+
+#### Example
+
+```ts
+import { polygonToCells, union } from 'a5-js';
+
+// A multi-polygon: the union of its parts
+const coverage = union(polygonToCells(mainland, 10), polygonToCells(island, 10));
+```
+
+### intersect
+
+Returns the cells in both coverings. Both must be at the same resolution, or it throws.
+
+```ts
+function intersect(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): BigUint64Array;
+```
+
+#### Parameters
+
+- `a` **(bigint[] | BigUint64Array)** First covering
+- `b` **(bigint[] | BigUint64Array)** Second covering
+
+#### Return value
+
+- **(BigUint64Array)** Covering of cell present in both input coverings
+
+### difference
+
+Returns the cells in the first covering but not in the second. Both must be at the same resolution, or it throws.
+
+```ts
+function difference(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): BigUint64Array;
+```
+
+#### Parameters
+
+- `a` **(bigint[] | BigUint64Array)** Covering to subtract from
+- `b` **(bigint[] | BigUint64Array)** Covering to subtract
+
+#### Return value
+
+- **(BigUint64Array)** Covering of cell present in first coverings, but not the second
+
+#### Example
+
+```ts
+import { polygonToCells, difference, lonLatToCell, sphericalCap } from 'a5-js';
+
+// A country without the area within 50 km of its capital
+const outside = difference(polygonToCells(ring, 10), sphericalCap(lonLatToCell(capital, 10), 50_000));
+```
+
+## Predicates
+
+### contains
+
+Checks whether a cell is in a covering. The cell must be at the covering's resolution, or it throws: A5 cells don't nest geometrically across resolutions, so a finer cell isn't guaranteed to lie inside its ancestor. To test a point, index it at the covering's resolution with `lonLatToCell(point, resolution)`.
+
+```ts
+function contains(cells: bigint[] | BigUint64Array, cell: bigint): boolean;
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** Sorted covering
+- `cell` **(bigint)** Cell to test, at the covering's resolution
+
+#### Return value
+
+- **(boolean)** Whether the cell is in the covering
+
+#### Example
+
+```ts
+import { polygonToCells, contains, lonLatToCell } from 'a5-js';
+
+const coverage = polygonToCells(ring, 12);
+const inside = contains(coverage, lonLatToCell([2.35, 48.85], 12));
+```
+
+### overlaps
+
+Checks whether two coverings share any cell. Both must be at the same resolution, or it throws.
+
+```ts
+function overlaps(a: bigint[] | BigUint64Array, b: bigint[] | BigUint64Array): boolean;
+```
+
+#### Parameters
+
+- `a` **(bigint[] | BigUint64Array)** First covering
+- `b` **(bigint[] | BigUint64Array)** Second covering
+
+#### Return value
+
+- **(boolean)** Whether some cell is in both coverings
+
+## Measures
+
+### count
+
+Returns the number of cells in a covering, equivalent to the length of `uncompact(cells)` without having to materialize the uncompacted cells. Note that this generally differs from the length of the compacted array.
+
+```ts
+function count(cells: bigint[] | BigUint64Array): bigint;
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** A covering
+
+#### Return value
+
+- **(bigint)** Number of cells at the covering's resolution. A `bigint`, as it can exceed `Number.MAX_SAFE_INTEGER` at high resolutions
+
+#### Example
+
+```ts
+import { polygonToCells, count } from 'a5-js';
+
+// Stored compactly, as 78929 cells at mixed resolutions
+const france = polygonToCells(franceRing, 16);
+console.log(count(france));  // 67995098n cells at resolution 16
+```
+
+### area
+
+Returns the area of a covering in square meters. As A5 cells are equal-area, this is exact: the number of cells times the [cell area](https://a5geo.org/next/docs/api-reference/cell-info.md#cellarea) at the covering's resolution.
+
+```ts
+function area(cells: bigint[] | BigUint64Array): number;
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** A covering
+
+#### Return value
+
+- **(number)** Area in square meters
+
+
+---
+
+Source: https://a5geo.org/next/docs/api-reference/miscellaneous
+
+# Miscellaneous
+
+### migrate
+
+Converts a cell ID from the legacy v0 A5 index to the format supported by A5 v1+. The mapping is fast because it only operates on the bit representation. The shape and positions of the cells do not change, so there is no need to re-index data from its original coordinates.
+
+**Note this function will be retired in a future version, there is no plan to support the legacy v0 A5 index going forward**
+
+```ts
+function migrate(cell: bigint): bigint;
+```
+
+#### Parameters
+
+- `cell` **(bigint)** A cell ID from the legacy v0 A5 index
+
+#### Return value
+
+- **(bigint)** The ID of the same cell in the v1 index
+
+#### Example
+
+```ts
+import { migrate, hexToU64, u64ToHex } from 'a5-js';
+
+const v0Cell = hexToU64('59c4780000000000'); // Resolution 8 cell in the legacy v0 A5 index
+console.log(u64ToHex(migrate(v0Cell)));      // '59c4280000000000'
+```
