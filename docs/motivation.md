@@ -6,7 +6,7 @@ description: "Why A5 exists: the search for a pentagonal tiling of the sphere."
 
 ## Tiling the plane
 
-Tiling patterns have fascinated humans for millenia, and can be observed in many different context all over the world. It can be shown that no regular polygon that has 7 or more sides can tile the plane by itself without gaps between the tiles.
+Tiling patterns have fascinated humans for millennia, and can be observed in many different contexts all over the world. It can be shown that no regular polygon that has 7 or more sides can tile the plane by itself without gaps between the tiles.
 
 Thus we only have the triangle, square, pentagon and hexagon to choose from. These all neatly tile, except for the regular pentagon, which does not.
 

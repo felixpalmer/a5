@@ -8,13 +8,13 @@ import A5Preview from '/images/a5-preview.png';
   
 A5 is a geospatial index that partitions the world into [pentagonal cells](/examples/teohedron). The cells are available at [31 different resolution levels](/examples/hierarchy), with the largest cell covering the whole world, and the smallest less than 30mm². Within each resolution level the cells have [equal area](https://a5geo.org/examples/area), as per the [OGC definition](https://docs.ogc.org/as/20-040r3/20-040r3.html#toc29).
 
-A5 cells provide simple way to represent spatial data as a collection of cells, which together represent regions on the globe. These can be anything, from city districts to parcels of land. Once data is in a cell-based format, it becomes much simpler to perform analysis such as calculating the correlation between different variables - for example elevation and crop yield.
+A5 cells provide a simple way to represent spatial data as a collection of cells, which together represent regions on the globe. These can be anything, from city districts to parcels of land. Once data is in a cell-based format, it becomes much simpler to perform analysis such as calculating the correlation between different variables - for example elevation and crop yield.
 
-Cells can also be used to group (aggregate) point data, to understand how it spatially distributed. For example, the [density of holiday rentals](/examples/airbnb) across a city.
+Cells can also be used to group (aggregate) point data, to understand how it is spatially distributed. For example, the [density of holiday rentals](/examples/airbnb) across a city.
 
 To understand how it works, take a look at the [Examples](/examples).
 
-A5 is implemented in TypeScript and is available as a [library](https://www.npmjs.com/package/a5-js), with [API documentation here](/docs/api-reference/). It is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
+A5 is available as a library for [TypeScript](/docs/quickstart/javascript), [Python](/docs/quickstart/python) and [Rust](/docs/quickstart/rust), with [API documentation here](/docs/api-reference/). It is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
 <img src={A5Preview} style={{width: "100%", maxWidth: "800px"}}/>
 

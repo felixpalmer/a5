@@ -438,7 +438,7 @@ const ECOSYSTEM = [
 
 const LINKS = [
   ['Introduction', 'A5 overview and how to use', '/docs'],
-  ['Quickstart', 'Get up a running in a variety of languages', '/docs/quickstart/javascript'],
+  ['Quickstart', 'Get up and running in a variety of languages', '/docs/quickstart/javascript'],
   ['Examples', 'Interactive maps and visualizations', '/examples'],
   ['API Reference', 'Functions for working with A5', '/docs/api-reference']
 ];

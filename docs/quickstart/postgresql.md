@@ -45,12 +45,12 @@ CREATE EXTENSION postgis;
 ```sql
 -- Get the A5 Cell for London
 SELECT a5_lonlat_to_cell(-0.1276, 51.50735, 10) AS cell;
--- Result: 7161034019553935360
+-- Result: 7176244663412588544
 
 -- Get the center of the A5 cell previously returned
 -- since cells cover a greater area, the returned lon/lat
 -- will be different.
-SELECT a5_cell_to_lonlat(7161034019553935360) AS lonlat;
+SELECT a5_cell_to_lonlat(7176244663412588544) AS lonlat;
 -- Result: {-0.15971839880376137, 51.511842921513406}
 ```
 
@@ -59,7 +59,7 @@ SELECT a5_cell_to_lonlat(7161034019553935360) AS lonlat;
 To generate a GeoJSON polygon for the A5 cell above, use this SQL along with PostGIS:
 
 ```sql
-SELECT ST_AsGeoJSON(a5_cell_to_geom(7161034019553935360)) AS geojson;
+SELECT ST_AsGeoJSON(a5_cell_to_geom(7176244663412588544)) AS geojson;
 ```
 
 This produces:
@@ -83,7 +83,7 @@ Visualizing that A5 cell shows:
 import WireframeDemo from 'website-examples/wireframe/app';
 
 <div style={{margin: '20px 0'}}>
-  <WireframeDemo cellIds={[7161034019553935360n]}/>
+  <WireframeDemo cellIds={[7176244663412588544n]}/>
 </div>
 
 Alternatively, using the boundary function directly:
@@ -100,9 +100,9 @@ SELECT
         )
     ) AS geojson
 FROM (
-    SELECT a5_cell_to_boundary(7161034019553935360) AS coords
+    SELECT a5_cell_to_boundary(7176244663412588544) AS coords
 ) AS boundary,
-generate_series(1, array_length((SELECT a5_cell_to_boundary(7161034019553935360)), 1)) AS i;
+generate_series(1, array_length((SELECT a5_cell_to_boundary(7176244663412588544)), 1)) AS i;
 ```
 
 ## Example: Generate A5 Cells
@@ -110,14 +110,14 @@ generate_series(1, array_length((SELECT a5_cell_to_boundary(7161034019553935360)
 Here's a complete example that generates A5 cells at a specified resolution:
 
 ```sql
-SELECT unnest(a5_cell_to_children(7161034019553935360, 13)) AS cell_id;
+SELECT unnest(a5_cell_to_children(7176244663412588544, 13)) AS cell_id;
 -- Returns 64 child cells at resolution 13
 ```
 
 import {cellToChildren} from 'a5';
 
 <div style={{margin: '20px 0'}}>
-  <WireframeDemo cellIds={cellToChildren(7161034019553935360n, 13)}/>
+  <WireframeDemo cellIds={cellToChildren(7176244663412588544n, 13)}/>
 </div>
 
 ## Example: Elephant Shape with A5 Cells
@@ -151,29 +151,9 @@ The input polygon geometry:
 
 <img src={PostgresInputPolygon} style={{width: "100%", maxWidth: "800px"}}/>
 
-### Step 2: Generate A5 Cells from Polygon Vertices
+### Step 2: Fill the Polygon Space with A5 Cells
 
-```sql
--- Extract vertices and convert to A5 cells at resolution 11
-WITH vertices AS (
-  SELECT
-    part,
-    (ST_DumpPoints(geom)).geom::geometry(Point, 4326) AS pt
-  FROM elephant_features
-  WHERE GeometryType(geom) LIKE 'POLYGON%'
-),
-cells AS (
-  SELECT DISTINCT
-    part,
-    a5_lonlat_to_cell(ST_X(pt), ST_Y(pt), 11) AS cell_id
-  FROM vertices
-)
-SELECT * INTO elephant_cells FROM cells;
-```
-
-### Step 3: Fill the Polygon Space with A5 Cells
-
-For complete coverage, generate cells throughout the polygon area:
+Generate cells from points on the boundary and throughout the polygon area:
 
 ```sql
 WITH poly AS (
@@ -219,7 +199,7 @@ INTO elephant_cells
 FROM pts;
 ```
 
-### Step 4: Export as GeoJSON
+### Step 3: Export as GeoJSON
 
 ```sql
 -- Create GeoJSON FeatureCollection
