@@ -63,9 +63,13 @@ jobs:
         with:
           use-public-rspm: true
 
+      # The RSPM binary of units (an a5R dependency) links against libudunits2
       - name: Install a5R
         if: matrix.language == 'r'
-        run: Rscript -e 'install.packages("a5R")'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudunits2-dev
+          Rscript -e 'install.packages("a5R")'
 
       - name: Verify snippets
         run: node scripts/verify-snippets.cjs ${{ matrix.language }}
