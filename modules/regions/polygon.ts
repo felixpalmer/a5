@@ -5,13 +5,7 @@
 import type {LonLat, Cartesian} from '../core/coordinate-systems';
 import {cellToSpherical} from '../core/cell';
 import {fromLonLat, toCartesian} from '../core/coordinate-transforms';
-import {
-  cellToChildren,
-  getResolution,
-  FIRST_CURVE_RESOLUTION,
-  MAX_RESOLUTION,
-  WORLD_CELL
-} from '../core/serialization';
+import {cellToChildren, getResolution, FIRST_CURVE_RESOLUTION, MAX_RESOLUTION, WORLD_CELL} from '../core/serialization';
 import {slotRunsToCovering, toCovering} from '../coverings/slot-runs';
 import {preparePolygon, pointInPreparedPolygon} from '../geometry/prepared-polygon';
 import {cellIdsToTriples} from '../traversal/triple-cells';
