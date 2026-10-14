@@ -15,10 +15,12 @@ class TeohedronDemo extends Component {
     return (
       <div>
         <p>
-          A5 is built on a spherical polyhedron, that we refer to as the Teohedron. It is a subdivision of the dodecahedron, with aperture 4 where each face is an equal-area pentagon.
+          A5 is built on a spherical polyhedron, that we refer to as the Teohedron. It is a subdivision of the
+          dodecahedron, with aperture 4 where each face is an equal-area pentagon.
         </p>
         <p>
-          The orientation is chosen such that the majority of the populated land mass is on the first 8 faces, with the remaining 4 faces being mostly uninhabited.
+          The orientation is chosen such that the majority of the populated land mass is on the first 8 faces, with the
+          remaining 4 faces being mostly uninhabited.
         </p>
         <p>
           Texture: <a href="https://visibleearth.nasa.gov/collection/1484/blue-marble">NASA Blue Marble</a>
