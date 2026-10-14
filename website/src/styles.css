@@ -69,6 +69,15 @@ html:has(.a5-homepage) .navbar {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
+/* backdrop-filter makes the navbar the containing block for the fixed mobile
+   sidebar, trapping it inside the navbar's height, so drop it while open */
+html:has(.a5-homepage) .navbar.navbar-sidebar--show {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html:has(.a5-homepage) .navbar-sidebar {
+  --ifm-navbar-background-color: #0a0a12;
+}
 html:has(.a5-homepage) .navbar__title,
 html:has(.a5-homepage) .navbar .clean-btn,
 html:has(.a5-homepage) .navbar__toggle {
