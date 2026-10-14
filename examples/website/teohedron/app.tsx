@@ -8,7 +8,8 @@ import {lonLatToFace} from 'a5-internal/helpers';
 import type {LonLat} from 'a5/core/coordinate-systems';
 
 const RESOLUTION = 2;
-const MAX_RESOLUTION = 5;
+// Beyond this the cells are only a few pixels across and their outlines shimmer
+const MAX_RESOLUTION = 3;
 const EARTH_TEXTURE = '/textures/bluemarble.jpg';
 const A5_GREEN = '#00aa55';
 const HIGHLIGHT = '#ffdd00';
@@ -51,6 +52,26 @@ interface Geometries {
   // meshes, and the outline points cellEdges[c] to cellEdges[c + 1]
   cellTriangles: number[];
   cellEdges: number[];
+  // The same outlines with each edge shared by two cells drawn once: two
+  // coincident transparent lines fight over depth and shimmer as the view moves
+  outline: Vec3[];
+  netOutline: Vec3[];
+}
+
+/** The segments of `points` (pairs of endpoints), without repeats in either direction */
+function uniqueSegments(points: Vec3[]): Vec3[] {
+  const key = (p: Vec3) => p.map(x => x.toFixed(6)).join(',');
+  const seen = new Set<string>();
+  const unique: Vec3[] = [];
+  for (let i = 0; i < points.length; i += 2) {
+    const a = key(points[i]);
+    const b = key(points[i + 1]);
+    const segment = a < b ? `${a};${b}` : `${b};${a}`;
+    if (seen.has(segment)) continue;
+    seen.add(segment);
+    unique.push(points[i], points[i + 1]);
+  }
+  return unique;
 }
 
 // Generated on first use and kept, so revisiting a resolution is instant
@@ -156,7 +177,16 @@ function getGeometries(resolution: number): Geometries {
     p[2] -= netCenter.z;
   }
 
-  GEOMETRIES[resolution] = {solid: solidGeometry, edges, net: netGeometry, netEdges, cellTriangles, cellEdges};
+  GEOMETRIES[resolution] = {
+    solid: solidGeometry,
+    edges,
+    net: netGeometry,
+    netEdges,
+    cellTriangles,
+    cellEdges,
+    outline: uniqueSegments(edges),
+    netOutline: uniqueSegments(netEdges)
+  };
   return GEOMETRIES[resolution];
 }
 
@@ -219,6 +249,7 @@ function Highlight({resolution, net, cell}: {resolution: number; net?: boolean; 
         segments
         lineWidth={4}
         color={HIGHLIGHT}
+        alphaToCoverage
         depthTest={depthTest}
         renderOrder={3}
       />
@@ -240,7 +271,7 @@ function SolidScene({
   setHovered
 }: {resolution: number; showEarth: boolean} & HoverProps) {
   const texture = useEarthTexture();
-  const {solid, edges, cellTriangles} = useMemo(() => getGeometries(resolution), [resolution]);
+  const {solid, outline, cellTriangles} = useMemo(() => getGeometries(resolution), [resolution]);
 
   return (
     <>
@@ -267,7 +298,15 @@ function SolidScene({
           />
         )}
       </mesh>
-      <Line points={edges} segments lineWidth={2} color="#ffffff" transparent opacity={showEarth ? 0.5 : 0.25} />
+      <Line
+        points={outline}
+        segments
+        lineWidth={2}
+        color="#ffffff"
+        transparent
+        opacity={showEarth ? 0.5 : 0.25}
+        alphaToCoverage
+      />
       {hovered !== null && <Highlight resolution={resolution} cell={hovered} />}
 
       <OrbitControls enableDamping enablePan={false} minDistance={1.5} maxDistance={8} />
@@ -278,7 +317,7 @@ function SolidScene({
 /** The cells laid out flat on the unfolded dodecahedron */
 function NetScene({resolution, showEarth, hovered, setHovered}: {resolution: number; showEarth: boolean} & HoverProps) {
   const texture = useEarthTexture();
-  const {net, netEdges, cellTriangles} = useMemo(() => getGeometries(resolution), [resolution]);
+  const {net, netOutline, cellTriangles} = useMemo(() => getGeometries(resolution), [resolution]);
 
   return (
     <>
@@ -294,12 +333,13 @@ function NetScene({resolution, showEarth, hovered, setHovered}: {resolution: num
         )}
       </mesh>
       <Line
-        points={netEdges}
+        points={netOutline}
         segments
         lineWidth={1.5}
         color="#ffffff"
         transparent
         opacity={0.6}
+        alphaToCoverage
         depthTest={false}
         renderOrder={1}
       />
