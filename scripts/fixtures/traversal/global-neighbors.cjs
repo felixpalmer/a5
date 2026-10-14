@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {getRes0Cells, cellToChildren, cellToBoundary, u64ToHex, FIRST_HILBERT_RESOLUTION} = require('../../a5-test.cjs');
+const {getRes0Cells, cellToChildren, cellToBoundary, u64ToHex, FIRST_CURVE_RESOLUTION} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'global-neighbors.json');
@@ -83,7 +83,7 @@ function generateForResolution(resolution, cellsPerCategory) {
     }
     // Also add cells near face boundaries (every 64th cell per quintant at res 5
     // is the first/last cell in each quintant)
-    const cellsPerQuintant = Math.pow(4, resolution - FIRST_HILBERT_RESOLUTION + 1);
+    const cellsPerQuintant = Math.pow(4, resolution - FIRST_CURVE_RESOLUTION + 1);
     for (let faceIdx = 0; faceIdx < 60; faceIdx++) {
       // First and last cells in each quintant
       const base = cells[faceIdx * cellsPerQuintant];

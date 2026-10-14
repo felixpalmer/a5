@@ -4,7 +4,7 @@
 
 import type {Spherical} from '../core/coordinate-systems';
 import type {OriginId} from '../core/utils';
-import {getResolution, cellToParent, deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {getResolution, cellToParent, deserialize, serialize, FIRST_CURVE_RESOLUTION} from '../core/serialization';
 import {cellToSpherical} from '../core/cell';
 import {cellArea} from '../core/cell-info';
 import {slotRunsToCovering, toCovering} from '../coverings/slot-runs';
@@ -67,7 +67,7 @@ export function pickCoarseResolution(radius: number, targetRes: number): number 
   const halfAngleSin = Math.sin(radius / (2 * AUTHALIC_RADIUS_EARTH));
   const capAreaM2 = 4 * Math.PI * AUTHALIC_RADIUS_EARTH * AUTHALIC_RADIUS_EARTH * halfAngleSin * halfAngleSin;
 
-  for (let res = FIRST_HILBERT_RESOLUTION; res <= targetRes; res++) {
+  for (let res = FIRST_CURVE_RESOLUTION; res <= targetRes; res++) {
     const cArea = cellArea(res);
     if (capAreaM2 / cArea >= MIN_CELLS_FOR_SUBDIVISION) {
       return res;
@@ -86,11 +86,11 @@ export function pickCoarseResolution(radius: number, targetRes: number): number 
  * delta tables, and a cell's center straight from its triple.
  */
 function coarseCapCells(startCell: bigint, center: Spherical, hExpanded: number): number[] {
-  const hilbertRes = getResolution(startCell) - FIRST_HILBERT_RESOLUTION + 1;
-  const maxRow = (1 << hilbertRes) - 1;
+  const curveLevel = getResolution(startCell) - FIRST_CURVE_RESOLUTION + 1;
+  const maxRow = (1 << curveLevel) - 1;
   const cells = cellIdsToTriples([startCell]);
   walkTripleCells(cells.slice(), maxRow, (originId, q, x, y, z) => {
-    const within = haversine(center, tripleCellCenter(originId, q, x, y, z, hilbertRes, maxRow)) <= hExpanded;
+    const within = haversine(center, tripleCellCenter(originId, q, x, y, z, curveLevel, maxRow)) <= hExpanded;
     if (within) cells.push(originId, q, x, y, z);
     return within;
   });
@@ -157,7 +157,7 @@ export function sphericalCap(cellId: bigint, radius: number): BigUint64Array {
   const runs: SlotRuns = [];
   descendInCurveOrder(
     coarseCapCells(startCell, center, hExpanded),
-    coarseRes - FIRST_HILBERT_RESOLUTION + 1,
+    coarseRes - FIRST_CURVE_RESOLUTION + 1,
     targetRes,
     (originId, res, face) => {
       const h = haversine(center, dodecahedron.inverse(face, originId));

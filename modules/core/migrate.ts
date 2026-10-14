@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import {faceStep, quintantToSegment} from './origin';
-import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from './serialization';
+import {deserialize, serialize, FIRST_CURVE_RESOLUTION} from './serialization';
 import {compatSToTriple, tripleToS} from '../lattice';
 import type {Orientation} from '../lattice';
 
@@ -40,7 +40,7 @@ const V0_LAYOUTS: {orientation: Orientation[]; firstQuintant: number}[] = [
  */
 export function migrate(cell: bigint): bigint {
   const {origin, segment, S, resolution} = deserialize(cell);
-  if (resolution < FIRST_HILBERT_RESOLUTION - 1) return cell;
+  if (resolution < FIRST_CURVE_RESOLUTION - 1) return cell;
 
   // Locate the cell's quintant in the v0 layout. Windings are unchanged, so
   // the v0 face shares the v1 face's direction of travel.
@@ -49,12 +49,12 @@ export function migrate(cell: bigint): bigint {
   const faceRelativeQuintant = (segment - origin.firstQuintant + 5) % 5;
   const quintant = (v0.firstQuintant + step * faceRelativeQuintant + 5) % 5;
   const target = quintantToSegment(quintant, origin);
-  if (resolution === FIRST_HILBERT_RESOLUTION - 1) {
+  if (resolution === FIRST_CURVE_RESOLUTION - 1) {
     return serialize({origin, segment: target.segment, S: 0n, resolution});
   }
 
-  const hilbertResolution = 1 + resolution - FIRST_HILBERT_RESOLUTION;
-  const triple = compatSToTriple(S, hilbertResolution, v0.orientation[faceRelativeQuintant]);
-  const newS = tripleToS(triple, hilbertResolution, target.orientation)!;
+  const curveLevel = 1 + resolution - FIRST_CURVE_RESOLUTION;
+  const triple = compatSToTriple(S, curveLevel, v0.orientation[faceRelativeQuintant]);
+  const newS = tripleToS(triple, curveLevel, target.orientation)!;
   return serialize({origin, segment: target.segment, S: newS, resolution});
 }

@@ -4,7 +4,7 @@
 
 import type {LonLat} from '../core/coordinate-systems';
 import {cellToBoundary} from '../core/cell';
-import {cellToChildren, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {cellToChildren, FIRST_CURVE_RESOLUTION} from '../core/serialization';
 
 // TODO find a nicer way to expose this
 export function generateWireframe(resolution: number, {segments = 1}: {segments?: number} = {}): LonLat[][] {
@@ -22,7 +22,7 @@ export function generateWireframe(resolution: number, {segments = 1}: {segments?
   for (let i = 0; i < baseCells; i++) {
     const segment = BigInt(i) << 58n; // 6 bits for segment, numbered incrementally
     const index = segment | stamp;
-    if (resolution < FIRST_HILBERT_RESOLUTION) {
+    if (resolution < FIRST_CURVE_RESOLUTION) {
       cells.push(cellToBoundary(index, {closedRing: false, segments}));
     } else {
       const children = cellToChildren(index, resolution);

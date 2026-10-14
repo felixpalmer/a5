@@ -14,7 +14,7 @@ import {
   deserialize,
   getResolution,
   slotToCell,
-  FIRST_HILBERT_RESOLUTION,
+  FIRST_CURVE_RESOLUTION,
   MAX_RESOLUTION,
   RES30_QUINTANTS,
   WORLD_CELL
@@ -26,7 +26,7 @@ import {descendInCurveOrder, INSIDE, OUTSIDE, SPLIT} from '../traversal/curve-de
 import type {CurveDescentClassifier} from '../traversal/curve-descent';
 
 // How far the center of any descendant of a cell can lie from the cell's own
-// center, in units of the cell's lattice spacing (face units · 2^hilbertRes). A
+// center, in units of the cell's lattice spacing (face units · 2^curveLevel). A
 // child's center is within 0.342 of its parent's (the max over every flavor and
 // child), and the offsets halve each level down, so all descendants lie within
 // 2 · 0.342 (observed: 0.648).
@@ -138,7 +138,7 @@ export function cellToSubcell(cell: bigint, resolution: number): BigUint64Array 
   // its descendants' to; none at the target, where each cell decides for itself
   const target = resolution;
   const reaches = new Float64Array(target + 1);
-  for (let res = 1; res < target; res++) reaches[res] = DESCENDANT_REACH / 2 ** (res - FIRST_HILBERT_RESOLUTION + 1);
+  for (let res = 1; res < target; res++) reaches[res] = DESCENDANT_REACH / 2 ** (res - FIRST_CURVE_RESOLUTION + 1);
   const classify: CurveDescentClassifier = (id, res, center, slot) => {
     const margin = signedMargin(linesByOrigin[id], center[0], center[1]);
     const reach = reaches[res] + EDGE_EPS;

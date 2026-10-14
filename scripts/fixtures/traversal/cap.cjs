@@ -6,7 +6,7 @@ const {
   cellToSpherical,
   u64ToHex,
   haversine,
-  FIRST_HILBERT_RESOLUTION,
+  FIRST_CURVE_RESOLUTION,
   metersToH,
   estimateCellRadius,
   pickCoarseResolution
@@ -50,7 +50,7 @@ console.log(`\nResolution ${resolution}:`);
 const cells = getRes0Cells().flatMap(c => cellToChildren(c, resolution));
 console.log(`  ${cells.length} total cells`);
 
-const cellsPerQuintant = Math.pow(4, resolution - FIRST_HILBERT_RESOLUTION + 1);
+const cellsPerQuintant = Math.pow(4, resolution - FIRST_CURVE_RESOLUTION + 1);
 const testCellIndices = new Set();
 for (let faceIdx = 0; faceIdx < 60; faceIdx += 5) {
   const base = faceIdx * cellsPerQuintant;
@@ -86,7 +86,7 @@ console.log(`\nGenerating sphericalCapCompact fixtures at res ${compactResolutio
 const compactCells = getRes0Cells().flatMap(c => cellToChildren(c, compactResolution));
 console.log(`  ${compactCells.length} total cells at res ${compactResolution}`);
 
-const compactCellsPerQuintant = Math.pow(4, compactResolution - FIRST_HILBERT_RESOLUTION + 1);
+const compactCellsPerQuintant = Math.pow(4, compactResolution - FIRST_CURVE_RESOLUTION + 1);
 const compactTestIndices = new Set();
 for (let faceIdx = 0; faceIdx < 60; faceIdx += 20) {
   const base = faceIdx * compactCellsPerQuintant;
@@ -147,7 +147,7 @@ const pickCases = [
   {radius: 1_000_000, targetRes: 12},
   {radius: 5_000_000, targetRes: 15},
   {radius: 10_000_000, targetRes: 10},
-  {radius: 500_000, targetRes: FIRST_HILBERT_RESOLUTION}
+  {radius: 500_000, targetRes: FIRST_CURVE_RESOLUTION}
 ];
 helperFixtures.pickCoarseResolution = pickCases.map(({radius, targetRes}) => ({
   radius,

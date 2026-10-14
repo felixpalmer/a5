@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const {getRes0Cells, cellToChildren, cellToBoundary, u64ToHex, FIRST_HILBERT_RESOLUTION} = require('../../a5-test.cjs');
+const {getRes0Cells, cellToChildren, cellToBoundary, u64ToHex, FIRST_CURVE_RESOLUTION} = require('../../a5-test.cjs');
 
 const outputDir = path.join(__dirname, '../../../tests/fixtures/traversal');
 const outputPath = path.join(outputDir, 'grid-disk.json');
@@ -105,7 +105,7 @@ for (const cell of cells) {
 }
 
 // Select diverse test cells: sample across faces/quintants
-const cellsPerQuintant = Math.pow(4, resolution - FIRST_HILBERT_RESOLUTION + 1);
+const cellsPerQuintant = Math.pow(4, resolution - FIRST_CURVE_RESOLUTION + 1);
 const testCellIndices = new Set();
 for (let faceIdx = 0; faceIdx < 60; faceIdx += 10) {
   const base = faceIdx * cellsPerQuintant;

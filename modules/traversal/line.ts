@@ -7,7 +7,7 @@ import type {Triple} from '../lattice';
 import {tripleFlavor} from '../lattice';
 import {lonLatToCell, sphericalToCell, cellIntersectsSegment, lastCellShape, lastProjection} from '../core/cell';
 import {fromLonLat, toCartesian, toSpherical, toLonLat} from '../core/coordinate-transforms';
-import {deserialize, serialize, FIRST_HILBERT_RESOLUTION} from '../core/serialization';
+import {deserialize, serialize, FIRST_CURVE_RESOLUTION} from '../core/serialization';
 import {walkFaces} from '../core/face-adjacency';
 import {origins} from '../core/origin';
 import type {OriginId} from '../core/utils';
@@ -77,8 +77,8 @@ export function tracePath(
   exact = true
 ): void {
   const sampleInterval = estimateCellRadius(resolution) * 0.5;
-  const hilbertRes = resolution - FIRST_HILBERT_RESOLUTION + 1;
-  const maxRow = (1 << hilbertRes) - 1;
+  const curveLevel = resolution - FIRST_CURVE_RESOLUTION + 1;
+  const maxRow = (1 << curveLevel) - 1;
 
   // Each point once: on the sphere, as a vector, and its cell
   const n = points.length;
@@ -122,7 +122,7 @@ export function tracePath(
     }
   };
   const pentagonOf = (quintant: number, triple: Triple) =>
-    getPentagonVertices(hilbertRes, quintant, triple, tripleFlavor(triple, maxRow));
+    getPentagonVertices(curveLevel, quintant, triple, tripleFlavor(triple, maxRow));
   const touches = (originId: number, quintant: number, triple: Triple): boolean => {
     project(originId);
     return pentagonOf(quintant, triple).intersectsSegment(faceA[originId]!, faceB[originId]!);
@@ -175,7 +175,7 @@ export function tracePath(
   const searchSubsegment = (cellA: bigint, cellB: bigint, arc: number) => {
     walkTripleCells(cellIdsToTriples([cellA, cellB]), maxRow, (originId, quintant, x, y, z) => {
       if (!touches(originId, quintant, {x, y, z})) return false;
-      visit(tripleCellToId(originId, quintant, x, y, z, hilbertRes, resolution), arc);
+      visit(tripleCellToId(originId, quintant, x, y, z, curveLevel, resolution), arc);
       return true;
     });
   };

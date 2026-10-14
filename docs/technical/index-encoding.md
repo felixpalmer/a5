@@ -22,7 +22,7 @@ The 64 bits are organized into several distinct sections:
 ```
 ┌────────────────────────────────────────────────────────┐
 │  6 bits  │ Variable bits │   2 bits   │ Trailing zeros │
-│  Origin/ │ Hilbert Curve │ resolution │                │
+│  Origin/ │  Curve index  │ resolution │                │
 │ Quintant │               │    tag     │                │
 └────────────────────────────────────────────────────────┘
   63 - 58       57 - ...        ..          ... - 0
@@ -35,8 +35,8 @@ The 64 bits are organized into several distinct sections:
    - For resolution 0: directly encodes origin ID (0-11)
    - For resolution ≥ 1: encodes quintant `5 × origin_id + segment` (0-59)
 
-2. **Hilbert Curve Position**: Variable length, 0 to 58 bits
-   - For resolution ≥ 2: encodes position along the Hilbert space-filling curve
+2. **Curve Position**: Variable length, 0 to 58 bits
+   - For resolution ≥ 2: encodes position along the [teohedral curve](../../examples/teohedral-curve/), A5's space-filling curve
    - Length = 2 × (resolution - 1) bits
    - Not present for resolution 0 and 1
 
@@ -44,7 +44,7 @@ The 64 bits are organized into several distinct sections:
    - A tag is the bit pattern read first when processing an index: it says how to interpret the remaining bits (see [Bit Tags](./bit-tags))
    - The position of these bits encodes the resolution level
    - For resolution 0: `10`, resolution 1: `01` (`1` shifts by one bit)
-   - For resolution ≥ 2: shifts by 2 bits per resolution (accounts for Hilbert curve)
+   - For resolution ≥ 2: shifts by 2 bits per resolution (two bits per curve level)
 
 4. **Trailing Zeros**: All remaining bits
    - Pads the integer to 64 bits
@@ -71,11 +71,11 @@ The <span style={{color: '#FF0066', fontWeight: 'bold'}}>resolution tag is now '
 
 <A5CellInfoBox location={[-0.1276, 51.5074]} resolution={1}/>
 
-### Resolution 5: Hilbert Subdivision
+### Resolution 5: Curve Subdivision
 
-From resolution 2 onwards, cells use a Hilbert curve for subdivision. At resolution 5, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode the **quintant**, just like in resolution level 1.
+From resolution 2 onwards, cells are subdivided along the teohedral curve. At resolution 5, the <span style={{color: '#0066FF', fontWeight: 'bold'}}>top 6 bits</span> encode the **quintant**, just like in resolution level 1.
 
-They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit Hilbert value 11010011</span> encoding position along the space-filling curve.
+They are followed by the <span style={{color: '#000000', fontWeight: 'bold'}}>8-bit curve value 11010011</span> encoding position along the space-filling curve.
 
 Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}>'10' resolution tag</span>, followed by <span style={{color: '#999999', fontWeight: 'bold'}}>zeros</span>.
 
@@ -83,7 +83,7 @@ Finally, there is again the <span style={{color: '#FF0066', fontWeight: 'bold'}}
 
 ## Index explorer
 
-Click on the interactive map below to change the location to index, and zoom to change the resolution. Notice how the indices of nearby locations are similar, sharing many bits. Likewise, when zooming in most of the bits remain the same, just more bits are added to the <span style={{color: '#000000', fontWeight: 'bold'}}>Hilbert S value</span>.
+Click on the interactive map below to change the location to index, and zoom to change the resolution. Notice how the indices of nearby locations are similar, sharing many bits. Likewise, when zooming in most of the bits remain the same, just more bits are added to the <span style={{color: '#000000', fontWeight: 'bold'}}>curve S value</span>.
 
 import HierarchyDemo from 'website-examples/hierarchy/app';
 
@@ -93,7 +93,7 @@ import HierarchyDemo from 'website-examples/hierarchy/app';
 
 ## Special Case: Resolution 30
 
-At resolution 30 the Hilbert curve requires 2 × 29 = 58 bits, and combined with 6 quintant bits that's already 64 — leaving no room for the resolution tag.
+At resolution 30 the curve requires 2 × 29 = 58 bits, and combined with 6 quintant bits that's already 64 — leaving no room for the resolution tag.
 
 The solution is a **virtual 66-bit layout**: when the final 1, 3 or 5 bits of the 64-bit index are set to a special value - before interpreting the index it must be first shifted right and then treated as a *66* bit integer, where the last two bits are `10` as usual.
 
@@ -149,7 +149,7 @@ Example (resolution 5 → resolution 4 parent):
 ```
 Child:  011101 01100100 01 0101 00000...  (res 5)
 Parent: 011101 011001   01 0001 00000...  (res 4)
-                └─ Last 2 bits removed (one Hilbert level)
+                └─ Last 2 bits removed (one curve level)
 ```
 
 ### 2. Spatial Locality
@@ -166,4 +166,4 @@ All cell IDs are exactly 64 bits (8 bytes), making them:
 
 ### 4. High resolution
 
-By storing the resolution implicitly and effectively using 6 bits for the quintant, A5 dedicates the remaining 58 bits to the Hilbert curve at its highest resolution. The [virtual 66-bit encoding](#special-case-resolution-30) at resolution 30 squeezes every last bit out of the 64-bit integer, achieving cell areas of around 30mm² — better than S2 (~1cm²) and H3 (~1m²).
+By storing the resolution implicitly and effectively using 6 bits for the quintant, A5 dedicates the remaining 58 bits to the curve at its highest resolution. The [virtual 66-bit encoding](#special-case-resolution-30) at resolution 30 squeezes every last bit out of the 64-bit integer, achieving cell areas of around 30mm² — better than S2 (~1cm²) and H3 (~1m²).

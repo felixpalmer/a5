@@ -10,7 +10,7 @@ import type {Face, Spherical} from '../core/coordinate-systems';
 import type {OriginId} from '../core/utils';
 import type {Orientation, Triple} from '../lattice';
 import {sToTriple, tripleFlavor, tripleInBounds, tripleToS} from '../lattice';
-import {deserialize, serialize, FIRST_HILBERT_RESOLUTION, QUINTANT_SHIFT} from '../core/serialization';
+import {deserialize, serialize, FIRST_CURVE_RESOLUTION, QUINTANT_SHIFT} from '../core/serialization';
 import {origins, quintantToSegment, segmentToQuintant} from '../core/origin';
 import {getPentagonCenter} from '../core/tiling';
 import {DodecahedronProjection} from '../projections/dodecahedron';
@@ -21,7 +21,7 @@ const dodecahedron = new DodecahedronProjection();
 
 // A cell's key packs the quintant (origin.id * 5 + quintant, < 60), parity,
 // and the low KEY_BITS bits of -x and -z (y follows) into 51 bits, exact as a
-// JS number. Up to Hilbert resolution 21 the coordinates fit whole; above it,
+// JS number. Up to curve level 21 the coordinates fit whole; above it,
 // two cells of one quintant share a key only if they are 2^22 rows apart, and a
 // walk holding both would need ~2^21 steps (~10^12 cells for a disk) — far past
 // what fits in memory. Keys are only built, never decoded (division and modulo
@@ -74,12 +74,12 @@ export function tripleCellToId(
   x: number,
   y: number,
   z: number,
-  hilbertRes: number,
+  curveLevel: number,
   resolution: number
 ): bigint {
   if (QUINTANT_SEGMENT.length === 0) fillQuintantTables();
   const q = originId * 5 + quintant;
-  const s = tripleToS({x, y, z}, hilbertRes, QUINTANT_ORIENTATION[q])!;
+  const s = tripleToS({x, y, z}, curveLevel, QUINTANT_ORIENTATION[q])!;
   return serialize({origin: origins[originId], segment: QUINTANT_SEGMENT[q], S: s, resolution});
 }
 
@@ -91,7 +91,7 @@ export function cellIdsToTriples(cellIds: Iterable<bigint>, out: number[] = []):
   for (const cellId of cellIds) {
     const {origin, segment, S, resolution} = deserialize(cellId);
     const {quintant, orientation} = segmentToQuintant(segment, origin);
-    const t = sToTriple(S, resolution - FIRST_HILBERT_RESOLUTION + 1, orientation);
+    const t = sToTriple(S, resolution - FIRST_CURVE_RESOLUTION + 1, orientation);
     out.push(origin.id, quintant, t.x, t.y, t.z);
   }
   return out;
@@ -104,11 +104,11 @@ export function tripleCellCenter(
   x: number,
   y: number,
   z: number,
-  hilbertRes: number,
+  curveLevel: number,
   maxRow: number
 ): Spherical {
   const triple = {x, y, z};
-  const face = getPentagonCenter(hilbertRes, quintant, triple, tripleFlavor(triple, maxRow));
+  const face = getPentagonCenter(curveLevel, quintant, triple, tripleFlavor(triple, maxRow));
   return dodecahedron.inverse(face as Face, originId as OriginId);
 }
 

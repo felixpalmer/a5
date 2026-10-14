@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import {AUTHALIC_AREA_EARTH} from './constants';
-import {FIRST_HILBERT_RESOLUTION} from './serialization';
+import {FIRST_CURVE_RESOLUTION} from './serialization';
 
 /**
  * Returns the number of cells at a given resolution.
@@ -41,12 +41,12 @@ export function getNumChildren(parentResolution: number | bigint, childResolutio
     const child = BigInt(childResolution);
     if (child < parent) return 0n;
     if (child === parent) return 1n;
-    if (parent >= BigInt(FIRST_HILBERT_RESOLUTION)) return 4n ** (child - parent);
+    if (parent >= BigInt(FIRST_CURVE_RESOLUTION)) return 4n ** (child - parent);
     return getNumCells(child) / (parent < 0n ? 1n : getNumCells(parent));
   }
   if (childResolution < parentResolution) return 0;
   if (childResolution === parentResolution) return 1;
-  if (parentResolution >= FIRST_HILBERT_RESOLUTION) {
+  if (parentResolution >= FIRST_CURVE_RESOLUTION) {
     // Between levels of constant aperture of 4, relation simplifies
     return 4 ** (childResolution - parentResolution);
   }
