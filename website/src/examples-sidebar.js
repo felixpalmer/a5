@@ -13,12 +13,12 @@ const sidebars = {
     {
       type: 'category',
       label: 'Technical',
-      items: ['pentagon', 'teohedron-dodecahedron', 'spherical-polygon', 'projection', 'lattice', 'hilbert', 'globe']
+      items: ['teohedron', 'projection', 'lattice', 'hilbert']
     },
     {
       type: 'category',
       label: 'Inspection',
-      items: ['accuracy', 'area', 'cells', 'compaction', 'coverings', 'hierarchy', 'polygons', 'traversal']
+      items: ['accuracy', 'area', 'cells', 'coverings', 'hierarchy', 'polygons', 'traversal']
     },
     {
       type: 'category',

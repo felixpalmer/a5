@@ -1,20 +1,22 @@
 import React, {Component} from 'react';
 import {GITHUB_TREE} from '../constants/defaults';
-import App from 'website-examples/teohedron-dodecahedron/app';
+import App from 'website-examples/teohedron/app';
 
 import {makeExample} from '../components';
 
-class TeohedronDodecahedronDemo extends Component {
-  static title = 'Teohedron & Dodecahedron';
+class TeohedronDemo extends Component {
+  static title = 'Teohedron';
 
-  static code = `${GITHUB_TREE}/examples/website/teohedron-dodecahedron`;
+  static code = `${GITHUB_TREE}/examples/website/teohedron`;
 
   static parameters = {};
 
   static renderInfo(meta) {
     return (
       <div>
-        <p>Geometric solids used by the A5 system.</p>
+        <p>
+          The geometric solids used by A5, above, and below the same cells unfolded onto the faces of the dodecahedron.
+        </p>
         <h3>Resolution levels:</h3>
         <h4>0: Dodecahedron</h4>
         <p>12 regular pentagon primitives.</p>
@@ -22,6 +24,13 @@ class TeohedronDodecahedronDemo extends Component {
         <p>60 congruent pentagon primitives, one per quintant of the pentakis dodecahedron.</p>
         <h4>2+: Teohedron</h4>
         <p>240+ irregular pentagon primitives.</p>
+        <p>
+          The dodecahedron is oriented to place as much land as possible on the first 8 faces, with the remaining 4
+          faces being mostly uninhabited.
+        </p>
+        <p>
+          Texture: <a href="https://visibleearth.nasa.gov/collection/1484/blue-marble">NASA Blue Marble</a>
+        </p>
       </div>
     );
   }
@@ -35,4 +44,4 @@ class TeohedronDodecahedronDemo extends Component {
   }
 }
 
-export default makeExample(TeohedronDodecahedronDemo);
+export default makeExample(TeohedronDemo);
