@@ -1,3 +1,7 @@
+---
+description: "Install the a5-js npm package and generate A5 cells as GeoJSON in JavaScript or TypeScript."
+---
+
 # JavaScript Quickstart
 
 Get started with A5 in JavaScript by installing the [package](https://www.npmjs.com/package/a5-js) and running a simple example.
@@ -7,13 +11,13 @@ Get started with A5 in JavaScript by installing the [package](https://www.npmjs.
 Install the [A5 package](https://www.npmjs.com/package/a5-js) using npm:
 
 ```bash
-npm install a5-js
+npm install a5-js@{{A5_VERSION}}
 ```
 
 Or using yarn:
 
 ```bash
-yarn add a5-js
+yarn add a5-js@{{A5_VERSION}}
 ```
 
 ## Code Example: Generate A5 Cells

@@ -1,3 +1,7 @@
+---
+description: "Combine, test and measure coverings: union, intersect, difference, contains, overlaps, count and area."
+---
+
 import Coverings from '/images/coverings.png';
 
 # Coverings

@@ -1,3 +1,7 @@
+---
+description: "migrate: convert legacy v0 cell IDs to the A5 v1 format."
+---
+
 # Miscellaneous
 
 ### migrate

@@ -1,3 +1,7 @@
+---
+description: "Ranking Airbnb listing density worldwide with A5 and H3, showing the bias H3's unequal cell areas introduce."
+---
+
 # A5 vs H3 Comparison
 
 This analysis ranks locations worldwide to identify which have the highest density of Airbnb listings. It extends the concept illustrated in the [Airbnb example](/examples/airbnb).

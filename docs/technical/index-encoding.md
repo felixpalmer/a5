@@ -1,3 +1,7 @@
+---
+description: "How an A5 cell is encoded as a 64-bit integer: origin, curve position and resolution tag."
+---
+
 import A5CellInfoBox from 'website-examples/components/a5-cell-info-box';
 
 # Index Encoding

@@ -1,3 +1,7 @@
+---
+description: "How the trailing-zero tag of a 64-bit value tells cells, the world cell and compaction markers apart."
+---
+
 import A5CellInfoBox from 'website-examples/components/a5-cell-info-box';
 
 # Bit Tags

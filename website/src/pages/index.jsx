@@ -5,6 +5,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Home} from '../components';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styled from 'styled-components';
 import Layout from '@theme/Layout';
 import {Highlight, themes} from 'prism-react-renderer';
@@ -379,13 +380,14 @@ function FeatureFlower() {
 
 const LANGUAGE = {JavaScript: 'javascript', Python: 'python', Rust: 'rust', R: 'r', DuckDB: 'sql'};
 
-const INSTALL = {
-  JavaScript: 'npm install a5-js',
-  Python: 'pip install pya5',
-  Rust: 'cargo add a5',
+// Install the version the site documents (see website/a5-version.js)
+const getInstall = ({A5_VERSION, A5_PYPI_VERSION}) => ({
+  JavaScript: `npm install a5-js@${A5_VERSION}`,
+  Python: `pip install pya5==${A5_PYPI_VERSION}`,
+  Rust: `cargo add a5@${A5_VERSION}`,
   R: 'install.packages("a5R")',
   DuckDB: 'INSTALL a5 FROM community;'
-};
+});
 
 // Same order as ECOSYSTEM
 const CODE = {
@@ -444,8 +446,9 @@ const LINKS = [
 function CodeSample() {
   const [language, setLanguage] = useState(Object.keys(CODE)[0]);
   const [copied, setCopied] = useState(false);
+  const install = getInstall(useDocusaurusContext().siteConfig.customFields.versions)[language];
   const copy = async () => {
-    await navigator.clipboard.writeText(INSTALL[language]);
+    await navigator.clipboard.writeText(install);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -458,7 +461,7 @@ function CodeSample() {
           </button>
         ))}
         <Install>
-          <code>{INSTALL[language]}</code>
+          <code>{install}</code>
           <button onClick={copy}>{copied ? 'Copied' : 'Copy'}</button>
         </Install>
       </Tabs>

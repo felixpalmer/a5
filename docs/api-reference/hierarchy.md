@@ -1,3 +1,7 @@
+---
+description: "Move between resolutions: getResolution, cellToParent, cellToChildren, cellToSupercell, cellToSubcell and getRes0Cells."
+---
+
 # Hierarchy
 
 The A5 tiling system supports subdividing the world all the way from the 12 dodecahedron faces at resolution 0 to milimeter-scale leaf cells.

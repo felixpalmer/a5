@@ -1,3 +1,7 @@
+---
+description: "End-to-end workflows using A5 for real-world geospatial analysis."
+---
+
 # Overview
 
 A collection of practical examples demonstrating how to use A5 for real-world geospatial analysis tasks.

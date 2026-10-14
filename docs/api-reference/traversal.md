@@ -1,3 +1,7 @@
+---
+description: "Find nearby cells: gridDisk, gridDiskVertex and sphericalCap."
+---
+
 # Traversal
 
 Functions for finding neighboring cells and collecting cells within a range. See the [Traversal](../../examples/traversal) example.

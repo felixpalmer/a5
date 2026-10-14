@@ -1,3 +1,7 @@
+---
+description: "A5 divides the world into equal-area pentagonal cells at 31 resolutions, each identified by a 64-bit integer. What it is for, and how it is constructed."
+---
+
 import A5Preview from '/images/a5-preview.png';
 
 # Introduction

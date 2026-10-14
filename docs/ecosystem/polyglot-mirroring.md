@@ -1,3 +1,7 @@
+---
+description: "How A5 keeps its TypeScript, Python and Rust implementations identical, with LLM-assisted porting."
+---
+
 # Polyglot Mirroring
 
 A5 is developed using a technique called **Polyglot Mirroring** - maintaining functionally equivalent implementations across multiple programming languages with automated synchronization of changes using LLMs.
