@@ -14,11 +14,10 @@ class TilingDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
+        <p>A5 tiles each face of a dodecahedron with a single pentagon shape.</p>
         <p>
-          A5 tiles each face of a dodecahedron with a single pentagon shape.
-        </p>
-        <p>
-          When assembled and <a href="./projection">projected</a> onto a sphere completely covers the surface without any gaps or kinks.
+          When assembled and <a href="./projection">projected</a> onto a sphere completely covers the surface without
+          any gaps or kinks.
         </p>
       </div>
     );

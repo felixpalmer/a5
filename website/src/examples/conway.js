@@ -16,10 +16,15 @@ class ConwayDemo extends Component {
       <div>
         <p>
           The <a href="./teohedron">Teohedron</a> A5 is built on can be succintly represented using{' '}
-          <a href="https://en.wikipedia.org/wiki/Conway_polyhedron_notation">Conway polyhedron notation</a>, which decsribes the topology of the system.
+          <a href="https://en.wikipedia.org/wiki/Conway_polyhedron_notation">Conway polyhedron notation</a>, which
+          decsribes the topology of the system.
         </p>
         <p>
-          It relates the topology of the system to the well-known{' '}<a href="https://en.wikipedia.org/wiki/Goldberg%E2%80%93Coxeter_construction">Goldberg–Coxeter construction</a>, which produces a triangular or hexagonal subdivision.
+          It relates the topology of the system to the well-known{' '}
+          <a href="https://en.wikipedia.org/wiki/Goldberg%E2%80%93Coxeter_construction">
+            Goldberg–Coxeter construction
+          </a>
+          , which produces a triangular or hexagonal subdivision.
         </p>
       </div>
     );

@@ -15,8 +15,9 @@ class TeohedronDemo extends Component {
     return (
       <div>
         <p>
-          A5 is built on a spherical polyhedron, that we refer to as the Teohedron. It is a <a href="./conway">subdivision</a> of the
-          dodecahedron, with aperture 4 where each face is an equal-area pentagon.
+          A5 is built on a spherical polyhedron, that we refer to as the Teohedron. It is a{' '}
+          <a href="./conway">subdivision</a> of the dodecahedron, with aperture 4 where each face is an equal-area
+          pentagon.
         </p>
         <p>
           The orientation is chosen such that the majority of the populated land mass is on the first 8 faces, with the
