@@ -5,6 +5,7 @@ const lightCodeTheme = prismThemes.nightOwlLight;
 const darkCodeTheme = prismThemes.nightOwl;
 
 const {resolve} = require('path');
+const {readdirSync, readFileSync} = require('fs');
 const {VERSIONS, remarkA5Version} = require('./a5-version');
 
 // The maintainer preview of `main`, served from a5geo.org/next (see
@@ -13,6 +14,12 @@ const {VERSIONS, remarkA5Version} = require('./a5-version');
 const isNext = process.env.NEXT_SITE === 'true';
 
 const baseUrl = isNext ? '/next/' : '/';
+
+// Drafts (`draft: true`) are left out of builds, so the blog only gets a
+// navbar link once a post is published
+const hasPublishedPosts = readdirSync(resolve('./blog'), {recursive: true}).some(
+  file => /\.mdx?$/.test(file) && !/^draft:\s*true\s*$/m.test(readFileSync(resolve('./blog', file), 'utf8'))
+);
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -43,6 +50,23 @@ const config = {
           remarkPlugins: [remarkA5Version],
           // Point to to the website directory in your repo.
           editUrl: 'https://github.com/felixpalmer/a5/tree/master/website'
+        },
+        // Posts and authors.yml live in website/blog. A post marked
+        // `draft: true` shows in `yarn start` but is left out of builds
+        blog: {
+          blogTitle: 'A5 Blog',
+          blogDescription: 'Releases and news from the A5 project',
+          blogSidebarTitle: 'All posts',
+          blogSidebarCount: 'ALL',
+          showReadingTime: true,
+          remarkPlugins: [remarkA5Version],
+          editUrl: 'https://github.com/felixpalmer/a5/tree/main/website',
+          feedOptions: {
+            type: ['rss', 'atom'],
+            copyright: `Copyright © ${new Date().getFullYear()} A5 contributors`
+          },
+          onInlineAuthors: 'throw',
+          onUntruncatedBlogPosts: 'throw'
         },
         theme: {
           customCss: [resolve('./src/styles.css'), resolve('./node_modules/maplibre-gl/dist/maplibre-gl.css')]
@@ -157,6 +181,15 @@ const config = {
             position: 'left',
             label: 'Examples'
           },
+          ...(hasPublishedPosts
+            ? [
+                {
+                  to: '/blog',
+                  position: 'left',
+                  label: 'Blog'
+                }
+              ]
+            : []),
           {
             href: 'https://github.com/felixpalmer/a5',
             label: 'GitHub',
