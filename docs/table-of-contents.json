@@ -2,7 +2,7 @@
   {
     "type": "category",
     "label": "Overview",
-    "items": ["README", "motivation"]
+    "items": ["README", "motivation", "upgrade-guide"]
   },
   {
     "type": "category",
