@@ -1,0 +1,404 @@
+{
+  "points": [
+    [
+      0,
+      90
+    ],
+    [
+      0,
+      -90
+    ]
+  ],
+  "sequences": [
+    {
+      "resolution": 1,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "100000000000000",
+        "b900000000000000",
+        "100000000000000"
+      ]
+    },
+    {
+      "resolution": 2,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "380000000000000",
+        "b880000000000000",
+        "380000000000000"
+      ]
+    },
+    {
+      "resolution": 3,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3e0000000000000",
+        "b820000000000000",
+        "3e0000000000000"
+      ]
+    },
+    {
+      "resolution": 4,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3f8000000000000",
+        "b808000000000000",
+        "3f8000000000000"
+      ]
+    },
+    {
+      "resolution": 5,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fe000000000000",
+        "b802000000000000",
+        "3fe000000000000"
+      ]
+    },
+    {
+      "resolution": 6,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ff800000000000",
+        "b800800000000000",
+        "3ff800000000000"
+      ]
+    },
+    {
+      "resolution": 7,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffe00000000000",
+        "b800200000000000",
+        "3ffe00000000000"
+      ]
+    },
+    {
+      "resolution": 8,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fff80000000000",
+        "b800080000000000",
+        "3fff80000000000"
+      ]
+    },
+    {
+      "resolution": 9,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffe0000000000",
+        "b800020000000000",
+        "3fffe0000000000"
+      ]
+    },
+    {
+      "resolution": 10,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffff8000000000",
+        "b800008000000000",
+        "3ffff8000000000"
+      ]
+    },
+    {
+      "resolution": 11,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffe000000000",
+        "b800002000000000",
+        "3ffffe000000000"
+      ]
+    },
+    {
+      "resolution": 12,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffff800000000",
+        "b800000800000000",
+        "3fffff800000000"
+      ]
+    },
+    {
+      "resolution": 13,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffe00000000",
+        "b800000200000000",
+        "3fffffe00000000"
+      ]
+    },
+    {
+      "resolution": 14,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffff80000000",
+        "b800000080000000",
+        "3ffffff80000000"
+      ]
+    },
+    {
+      "resolution": 15,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffffe0000000",
+        "b800000020000000",
+        "3ffffffe0000000"
+      ]
+    },
+    {
+      "resolution": 16,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffff8000000",
+        "b800000008000000",
+        "3fffffff8000000"
+      ]
+    },
+    {
+      "resolution": 17,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffffe000000",
+        "b800000002000000",
+        "3fffffffe000000"
+      ]
+    },
+    {
+      "resolution": 18,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffffff800000",
+        "b800000000800000",
+        "3ffffffff800000"
+      ]
+    },
+    {
+      "resolution": 19,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffffffe00000",
+        "b800000000200000",
+        "3ffffffffe00000"
+      ]
+    },
+    {
+      "resolution": 20,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffffff80000",
+        "b800000000080000",
+        "3fffffffff80000"
+      ]
+    },
+    {
+      "resolution": 21,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffffffe0000",
+        "b800000000020000",
+        "3fffffffffe0000"
+      ]
+    },
+    {
+      "resolution": 22,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffffffff8000",
+        "b800000000008000",
+        "3ffffffffff8000"
+      ]
+    },
+    {
+      "resolution": 23,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffffffffe000",
+        "b800000000002000",
+        "3ffffffffffe000"
+      ]
+    },
+    {
+      "resolution": 24,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffffffff800",
+        "b800000000000800",
+        "3fffffffffff800"
+      ]
+    },
+    {
+      "resolution": 25,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffffffffe00",
+        "b800000000000200",
+        "3fffffffffffe00"
+      ]
+    },
+    {
+      "resolution": 26,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffffffffff80",
+        "b800000000000080",
+        "3ffffffffffff80"
+      ]
+    },
+    {
+      "resolution": 27,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3ffffffffffffe0",
+        "b800000000000020",
+        "3ffffffffffffe0"
+      ]
+    },
+    {
+      "resolution": 28,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffffffffff8",
+        "b800000000000008",
+        "3fffffffffffff8"
+      ]
+    },
+    {
+      "resolution": 29,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "3fffffffffffffe",
+        "b800000000000002",
+        "3fffffffffffffe"
+      ]
+    },
+    {
+      "resolution": 30,
+      "lookups": [
+        0,
+        1,
+        0
+      ],
+      "cells": [
+        "7ffffffffffffff",
+        "b800000000000002",
+        "7ffffffffffffff"
+      ]
+    }
+  ]
+}

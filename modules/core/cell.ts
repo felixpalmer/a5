@@ -12,6 +12,8 @@ import {
   clockwiseStep,
   findNearestOrigin,
   findNearestOrigins,
+  haversine,
+  origins,
   quintantToSegment,
   segmentToQuintant
 } from './origin';
@@ -75,6 +77,10 @@ export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
   return sphericalToCell(fromLonLat(lonLat), resolution);
 }
 
+// Haversine of the angle from a face center to its edge midpoints, atan(2)/2:
+// a point closer than that to a face center is on that face.
+const FACE_INRADIUS_HAVERSINE = 0.07467459582398002;
+
 // Scratch for the fast path's scaled quintant-frame point
 const _scaledPoint = vec2.create();
 
@@ -102,12 +108,21 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
 
   // Try the cached pentagon first — skips the full lookup when consecutive
   // calls land in the same cell (common in dense-sample loops).
+  let nearestOrigin: Origin | null = null;
   if (_lastResult && _lastResult.resolution === resolution) {
-    const projected = dodecahedron.forward(spherical, _lastResult.originId);
-    _lastPoint = spherical;
-    _lastPointOrigin = _lastResult.originId;
-    _lastPointFace = projected;
-    if (_lastResult.pentagon.containsPoint(projected as Face) > 0) return _lastResult.cellId;
+    // The projection maps points from other faces into this face's frame
+    // too (the antipodal face center onto this one's center), so the cached
+    // pentagon only answers for points on its own face: the nearest origin.
+    if (haversine(spherical, origins[_lastResult.originId].axis) >= FACE_INRADIUS_HAVERSINE) {
+      nearestOrigin = findNearestOrigin(spherical);
+    }
+    if (nearestOrigin === null || nearestOrigin.id === _lastResult.originId) {
+      const projected = dodecahedron.forward(spherical, _lastResult.originId);
+      _lastPoint = spherical;
+      _lastPointOrigin = _lastResult.originId;
+      _lastPointFace = projected;
+      if (_lastResult.pentagon.containsPoint(projected as Face) > 0) return _lastResult.cellId;
+    }
   }
 
   // Fast path: locate the containing pentagon directly. Round to the leaf
@@ -116,7 +131,7 @@ export function sphericalToCell(spherical: Spherical, resolution: number): bigin
   // not congruent, but the containing pentagon is always the triangle's cell
   // or one of its fixed neighbor deltas (verified exhaustively), so at most
   // one 7-candidate walk resolves it — then a single curve encode.
-  const origin = findNearestOrigin(spherical);
+  const origin = nearestOrigin ?? findNearestOrigin(spherical);
   const dodecPoint = dodecahedron.forward(spherical, origin.id);
   _lastPoint = spherical;
   _lastPointOrigin = origin.id;
