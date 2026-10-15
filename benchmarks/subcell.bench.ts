@@ -3,7 +3,7 @@
 // Copyright (c) A5 contributors
 
 import {bench, describe} from 'vitest';
-import {cellToSubcell, cellToSupercell} from 'a5';
+import {cellToSubcells, cellToSupercell} from 'a5';
 import {BENCH_OPTS, sampleCells} from './utils';
 
 const N = 64;
@@ -22,18 +22,18 @@ describe('subcell', () => {
 
   let j = 0;
   bench(
-    'cellToSubcell res 8 -> 11',
+    'cellToSubcells res 8 -> 11',
     () => {
-      cellToSubcell(cells8[j++ & (N - 1)], 11);
+      cellToSubcells(cells8[j++ & (N - 1)], 11);
     },
     BENCH_OPTS
   );
 
   let k = 0;
   bench(
-    'cellToSubcell res 8 -> 16',
+    'cellToSubcells res 8 -> 16',
     () => {
-      cellToSubcell(cells8[k++ & (N - 1)], 16);
+      cellToSubcells(cells8[k++ & (N - 1)], 16);
     },
     BENCH_OPTS
   );

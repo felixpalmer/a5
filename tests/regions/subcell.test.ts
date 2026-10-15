@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {
-  cellToSubcell,
+  cellToSubcells,
   cellToSupercell,
   coveringResolution,
   count,
@@ -24,12 +24,12 @@ type SupercellFixture = {
   supercell: string;
 };
 
-describe('cellToSubcell', () => {
+describe('cellToSubcells', () => {
   const cases = fixtures.subcell as SubcellFixture[];
 
   for (const f of cases) {
     it(`should give the subcells of ${f.cell} at resolution ${f.resolution}`, () => {
-      const result = cellToSubcell(hexToU64(f.cell), f.resolution);
+      const result = cellToSubcells(hexToU64(f.cell), f.resolution);
       expect(Array.from(result).map(c => u64ToHex(c))).toEqual(f.cells);
       expect(count(result)).toBe(BigInt(f.count));
     });
@@ -39,7 +39,7 @@ describe('cellToSubcell', () => {
     for (const f of cases) {
       const cell = hexToU64(f.cell);
       const cellResolution = getResolution(cell);
-      for (const subcell of uncompact(cellToSubcell(cell, f.resolution))) {
+      for (const subcell of uncompact(cellToSubcells(cell, f.resolution))) {
         expect(cellToSupercell(subcell, cellResolution)).toBe(cell);
       }
     }
@@ -47,14 +47,14 @@ describe('cellToSubcell', () => {
 
   it('should return the cell itself at its own resolution', () => {
     const cell = hexToU64(cases[5].cell);
-    const result = cellToSubcell(cell, getResolution(cell));
+    const result = cellToSubcells(cell, getResolution(cell));
     expect(Array.from(uncompact(result))).toEqual([cell]);
     expect(coveringResolution(result)).toBe(getResolution(cell));
   });
 
   it('should throw for a coarser resolution', () => {
     const cell = hexToU64(cases[5].cell);
-    expect(() => cellToSubcell(cell, getResolution(cell) - 1)).toThrow();
+    expect(() => cellToSubcells(cell, getResolution(cell) - 1)).toThrow();
   });
 });
 

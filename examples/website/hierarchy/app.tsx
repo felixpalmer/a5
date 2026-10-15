@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import {Map} from 'react-map-gl/maplibre';
 import {ScatterplotLayer} from '@deck.gl/layers';
 import {A5Layer} from '@deck.gl/geo-layers';
-import {lonLatToCell, cellToChildren, cellToParent, cellToSubcell, cellToSupercell, uncompact} from 'a5';
+import {lonLatToCell, cellToChildren, cellToParent, cellToSubcells, cellToSupercell, uncompact} from 'a5';
 import DeckGL from '@deck.gl/react';
 import {MapView} from '@deck.gl/core';
 import A5CellInfoBox from '../components/a5-cell-info-box';
@@ -57,7 +57,7 @@ const App: React.FC<{showCellId?: boolean; height?: string}> = ({showCellId = tr
       cellId,
       children: showChildren ? cellToChildren(cellId, finer) : [],
       parent: showParent && coarser < resolution ? [cellToParent(cellId, coarser)] : [],
-      subcells: showSubcells ? uncompact(cellToSubcell(cellId, finer)) : [],
+      subcells: showSubcells ? uncompact(cellToSubcells(cellId, finer)) : [],
       supercell: showSupercell && coarser < resolution ? [cellToSupercell(cellId, coarser)] : []
     };
   }, [resolution, cellLocation, showChildren, showParent, showSubcells, showSupercell, relativeResolution]);
