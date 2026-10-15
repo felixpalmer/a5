@@ -11,7 +11,7 @@ Generally the term **cell** is used to describe the pentagonal region that the A
 - Resolution 2+ cells are just **cells**
 - There is a [world cell](#special-case-world-cell) which can be thought of as having resolution -1
 
-See [Teohedron](https://a5geo.org/next/docs/technical/teohedron.md) for more details.
+See [Teohedron](https://a5geo.org/next/docs/technical/teohedron.md) for how the cells are constructed.
 
 ## 64-Bit Structure
 
@@ -47,7 +47,7 @@ The 64 bits are organized into several distinct sections:
 4. **Trailing Zeros**: All remaining bits
    - Pads the integer to 64 bits
    - Allows efficient computation of parents (right-shift) and children (left-shift)
-   - Unambigiously determines which bits are the resolution tag bits
+   - Unambiguously determines which bits are the resolution tag bits
 
 ## Examples
 
@@ -83,11 +83,11 @@ At resolution 30 the curve requires 2 × 29 = 58 bits, and combined with 6 quint
 
 The solution is a **virtual 66-bit layout**: when the final 1, 3 or 5 bits of the 64-bit index are set to a special value - before interpreting the index it must be first shifted right and then treated as a *66* bit integer, where the last two bits are `10` as usual.
 
-Depending on the mask, the quintant value is also offset.
+Depending on the pattern, the quintant value is also offset.
 
 | Pattern    | Pattern bits | Shift  | Quintant offset | Quintant range |
 |------------|--------------|--------|-----------------|----------------|
-| `...1`     | 1            | 1 bits | 0               | 0–31           |
+| `...1`     | 1            | 1 bit  | 0               | 0–31           |
 | `...100`   | 3            | 3 bits | 32              | 32–39          |
 | `...10000` | 5            | 5 bits | 40              | 40–41          |
 

@@ -16,13 +16,13 @@
 
 ## Conference Talks & Presentations
 
-### Open Visualization Collaborator Summit 2025 Seattle, USA
+### Open Visualization Collaborator Summit 2025, Seattle, USA
 
 #### A5: developing a new spatial index in 2025 with deck.gl | Felix Palmer
 
 📺 [YouTube](https://www.youtube.com/watch?v=SXv2m_hVUOM) • 📊 [Slides](https://docs.google.com/presentation/d/1bKdEBoAW2K5npfLEpuknsT8_LCs4UQ2FXk_JvD31Thg)
 
-### FOSS4G 2025 Auckland, New Zealand
+### FOSS4G 2025, Auckland, New Zealand
 
 #### A5: Rethinking Spatial Indexing
 

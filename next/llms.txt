@@ -47,7 +47,7 @@ Documentation for A5 1.0.0-beta.3. The API is the same in every language, with n
 
 - [Bit Tags](https://a5geo.org/next/docs/technical/bit-tags.md): How the trailing-zero tag of a 64-bit value tells cells, the world cell and compaction markers apart.
 - [Index Encoding](https://a5geo.org/next/docs/technical/index-encoding.md): How an A5 cell is encoded as a 64-bit integer: origin, curve position and resolution tag.
-- [Teohedron](https://a5geo.org/next/docs/technical/teohedron.md): How A5 builds its grid from a dodecahedron, and the solid and cell shape at each resolution.
+- [Teohedron](https://a5geo.org/next/docs/technical/teohedron.md): The pentagonal tiling behind A5, and how Conway notation relates the Teohedron to geodesic and Goldberg polyhedra.
 
 ## Ecosystem
 

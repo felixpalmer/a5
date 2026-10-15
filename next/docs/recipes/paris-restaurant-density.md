@@ -65,7 +65,7 @@ This produces an aggregated dataset where each row represents an A5 cell and the
 
 ### Optional: JSON output
 
-Note that it would also be possible to write out as JSON, however the cell ids would need to be converted to hexadecimal strings as JSON doesn't support 64-bit integers. This is not recommended, as the file size is 7x the size of Parquet, but for completeness to save as JSON query needs to be modified as follows:
+Note that it would also be possible to write out as JSON, however the cell ids would need to be converted to hexadecimal strings as JSON doesn't support 64-bit integers. This is not recommended, as the file size is 7x the size of Parquet, but for completeness, to save as JSON the query needs to be modified as follows:
 
 ```sql
 -- Save to JSON with a5 as hex string

@@ -12,7 +12,7 @@ Once data is in cells, very different datasets can be joined, aggregated and com
 ## Where to start
 
 - [Quickstart](https://a5geo.org/next/docs/quickstart/javascript.md): index your first cell in your language of choice
-- [DuckDB playground](https://a5geo.org/next/examples/duckdb-playground): Use DuckDB to experiment with A5
+- [DuckDB playground](https://a5geo.org/next/examples/duckdb-playground): use DuckDB to experiment with A5
 - [Examples](https://a5geo.org/next/examples): interactive examples showcasing the system
 - [API Reference](https://a5geo.org/next/docs/api-reference.md): every function, with snippets in each language
 - [What's new](https://a5geo.org/next/docs/whats-new.md): the changes in v1.0

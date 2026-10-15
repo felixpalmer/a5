@@ -22,7 +22,7 @@ Once data is in cells, very different datasets can be joined, aggregated and com
 ## Where to start
 
 - [Quickstart](https://a5geo.org/next/docs/quickstart/javascript.md): index your first cell in your language of choice
-- [DuckDB playground](https://a5geo.org/next/examples/duckdb-playground): Use DuckDB to experiment with A5
+- [DuckDB playground](https://a5geo.org/next/examples/duckdb-playground): use DuckDB to experiment with A5
 - [Examples](https://a5geo.org/next/examples): interactive examples showcasing the system
 - [API Reference](https://a5geo.org/next/docs/api-reference.md): every function, with snippets in each language
 - [What's new](https://a5geo.org/next/docs/whats-new.md): the changes in v1.0
@@ -40,7 +40,7 @@ A5 has the same API in every language, with the following functions available. T
 
 AI coding agents can read these docs as Markdown, with code samples in a single language: see [llms.txt](https://a5geo.org/next/llms.txt).
 
-For examples on how to use the code, see the [example code on Github](https://github.com/felixpalmer/a5/tree/main/examples)
+For examples of how to use the code, see the [example code on GitHub](https://github.com/felixpalmer/a5/tree/main/examples).
 
 ### Indexing
 
@@ -295,7 +295,7 @@ The cells are arranged in a logical hierarchy, with each cell having an integer 
 
 The hierarchy is a logical grouping rather than an exact geometric containment. Pentagons cannot be subdivided into smaller pentagons, so a child cell overlaps its parent without lying entirely inside it: on average about 63% of a child's area falls within its parent, and at least about 7%, so no child ever lies entirely outside its parent. Treat `a5_cell_to_parent`, `a5_cell_to_children` and [compaction](https://a5geo.org/next/docs/api-reference/compaction.md) as a way of grouping nearby cells, not as an exact containment test.
 
-The relationship is loosest between resolutions 1 and 2. Each resolution 1 cell is the single pentagon of its [quintant](https://a5geo.org/next/docs/technical/teohedron.md#resolution-1), anchored at the center and a corner of the dodecahedron face and reaching into the neighboring quintants, while its four children are the resolution 2 cells that tile the quintant itself. On average about 58% of a child falls within its parent, rather than 63%, while the least-covered child still has about 7%, as at every other resolution. This is the price of keeping every cell a pentagon: the alternative, triangular resolution 1 cells, nests more closely but breaks the single cell shape and gives resolution 1 cells many awkward vertex-only neighbors.
+The relationship is loosest between resolutions 1 and 2. Each resolution 1 cell is the single pentagon of its [quintant](https://a5geo.org/next/docs/technical/index-encoding.md#terminology), anchored at the center and a corner of the dodecahedron face and reaching into the neighboring quintants, while its four children are the resolution 2 cells that tile the quintant itself. On average about 58% of a child falls within its parent, rather than 63%, while the least-covered child still has about 7%, as at every other resolution. This is the price of keeping every cell a pentagon: the alternative, triangular resolution 1 cells, nests more closely but breaks the single cell shape and gives resolution 1 cells many awkward vertex-only neighbors.
 
 ### a5_get_resolution
 
@@ -893,7 +893,7 @@ a5_intersect(x, y)
 
 #### Return value
 
-- **(BigUint64Array)** Covering of cell present in both input coverings
+- **(BigUint64Array)** Covering of cells present in both input coverings
 
 ### a5_difference
 
@@ -912,7 +912,7 @@ a5_difference(x, y)
 
 #### Return value
 
-- **(BigUint64Array)** Covering of cell present in first coverings, but not the second
+- **(BigUint64Array)** Covering of cells present in the first covering but not the second
 
 #### Example
 

@@ -14,7 +14,7 @@ Because all the mirror codebases share the same high-level structure (function n
 
 ## Benefits
 
-- **Consistent user experience** - all mirrors have same familiar API
+- **Consistent user experience** - all mirrors have the same familiar API
 - **Inclusive ecosystem** - contributions can come from any language
 - **Faster feature propagation** - improvements reach all users quickly
 - **Reduced maintenance burden** - changes don't need to be manually ported

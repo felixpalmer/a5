@@ -6,7 +6,7 @@ At the heart of A5 is a specific pentagonal tiling. The cells are irregular pent
 
 A curious property of this tiling is that 12 copies can be arranged in 3D space to form a dodecahedron, which can then be [projected](https://a5geo.org/next/examples/projection) onto a sphere.
 
-## Teohedron
+## Conway notation
 
 We call the resulting spherical polyhedron the Teohedron, although it is technically a sequence of ever-refined Teohedra. An alternate way to generate it is by starting with the dodecahedron and applying modifiers to the faces in order to obtain the equivalent topology.
 
