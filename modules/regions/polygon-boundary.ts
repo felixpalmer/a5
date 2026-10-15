@@ -48,15 +48,12 @@ export interface Boundary {
 }
 
 /**
- * The boundary cells, each recorded with the ring segments (outer ring and
- * holes) that reached it: with `exact`, every cell a segment touches; without,
- * the cells holding samples along the segments at half-cell-radius spacing,
- * which can miss a cell whose corner a segment clips between samples.
+ * The boundary cells: every cell a ring segment (outer ring or hole) touches,
+ * each recorded with every segment touching it.
  */
 export function sampleBoundary(
   rings: LonLat[][],
-  resolution: number,
-  exact: boolean
+  resolution: number
 ): {cells: bigint[]; set: Set<bigint>; segmentMap: SegmentMap} {
   const cells: bigint[] = [];
   const set = new Set<bigint>();
@@ -77,7 +74,7 @@ export function sampleBoundary(
 
   let segOffset = 0;
   for (let r = 0; r < rings.length; r++) {
-    tracePath(rings[r], true, resolution, (cell, arc) => recordCell(cell, segOffset + arc), exact);
+    tracePath(rings[r], true, resolution, (cell, arc) => recordCell(cell, segOffset + arc), true);
     segOffset += rings[r].length;
   }
 
