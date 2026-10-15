@@ -44,13 +44,32 @@ v1 is the first stable release of A5. If you are upgrading from `0.x`, see the [
 
 ### Performance
 
-<img src={Perf} style={{width: "100%", maxWidth: "600px"}}/>
+Large performance gains across all APIs, in part thanks to the new **teohedral curve**, in part due to many targeted optimizations. Selected benchmarks are shown below; note in particular the performance of `polygonToCells` for high resolutions.
 
-Large performance gains across all APIs, in part thanks to the new **teohedral curve**, in part due to many targeted optimizations:
-
-TODO performance table
+| API | Benchmark | v0.10 | v1.0 | Speedup |
+|---|---|--:|--:|--:|
+| `polygonToCells` | Brazil res 6 | 2.66 ms | 1.55 ms | 1.72× |
+| `polygonToCells` | Brazil res 8 | 14.29 ms | 4.86 ms | 2.94× |
+| `polygonToCells` | Brazil res 10 | 131.26 ms | 15.00 ms | 8.75× |
+| `polygonToCells` | Brazil res 12 | 1.96 s | 49.84 ms | **39.40×** |
+| `lineStringToCells` | London–Paris res 9 | 590.70 µs | 47.00 µs | **12.57×** |
+| `lineStringToCells` | round-the-world res 6 | 5.11 ms | 472.90 µs | **10.81×** |
+| `compact` | UK res 10 | 320.32 µs | 29.37 µs | **10.91×** |
+| `gridDisk` | k=1 | 1.55 µs | 1.16 µs | 1.34× |
+| `gridDisk` | k=5 | 71.22 µs | 19.83 µs | 3.59× |
+| `gridDisk` | k=20 | 1.64 ms | 397.75 µs | 4.12× |
+| `gridDiskVertex` | k=5 | 143.27 µs | 35.79 µs | 4.00× |
+| `sphericalCap` | res 12, 5 km | 201.07 µs | 54.09 µs | 3.72× |
+| `lonLatToCell` | res 5 | 1.87 µs | 848.5 ns | 2.20× |
+| `lonLatToCell` | res 15 | 2.37 µs | 966.1 ns | 2.46× |
+| `lonLatToCell` | res 30 | 5.50 µs | 1.15 µs | 4.77× |
+| `cellToLonLat` | res 5 | 290.8 ns | 228.2 ns | 1.27× |
+| `cellToLonLat` | res 15 | 348.5 ns | 283.8 ns | 1.23× |
+| `cellToLonLat` | res 30 | 524.0 ns | 337.1 ns | 1.55× |
 
 ### Website
+
+<img src={Perf} style={{width: "100%", maxWidth: "600px"}}/>
 
 - New landing page
 - All documentation reviewed and rewritten
