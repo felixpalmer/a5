@@ -13,7 +13,7 @@ Today I'm excited to announce that the `v1.0` version of A5 is out, bringing a [
 
 <!-- truncate -->
 
-If you're new to A5, in a nutshell it is a grid system that allows the representation of any position, line or polygon region on the globe as a compact 64-bit integer. The industry term for this is a DGGS, and there are already a number of other systems out there which are powering some of the world's largest companies and data analytics pipelines. For a concrete example of an application, take a look at the [FIRMS Explorer](https://portolan-mirrors.github.io/firms-catalog/) which uses A5 to aggregate 631 million fires worldwide since November 2000.
+If you're new to A5, in a nutshell it is a grid system that allows the representation of any position, line or polygon region on the globe as a compact 64-bit integer. The industry term for this is a DGGS, and there are already a number of other systems out there which are powering some of the world's largest companies and data analytics pipelines. For a concrete example of an application, take a look at the [FIRMS Explorer](https://portolan-mirrors.github.io/firms-catalog/) which uses A5 to aggregate 631 million fires worldwide since 2000.
 
 <img src={require('./firms.jpg').default} alt="FIRMS Explorer: fire detections worldwide aggregated to A5 cells" style={{width: "100%", maxWidth: "600px"}}/>
 
@@ -27,7 +27,7 @@ New in `v1.0` is a whole new set of functions for working with collections of ce
 
 ### Spatial hierarchy functions
 
-A common request was how to break down an A5 cell into finer cells that fill that cell. Geometrically, it is impossible to split a pentagon into more pentagons in such a manner that the result exactly overlaps, the same is true of hexagons - only quadrilaterals and triangles can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
+A common request was how to break down an A5 cell into finer cells that fill that cell. Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - only quadrilaterals and triangles can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
 
 In order to support resampling and other operations, a new function `cellToSubcells` has been added. While this is slower than the `cellToChildren` API it produces a correct covering of the cell. The inverse, `cellToSupercell` is also available.
 
@@ -35,14 +35,13 @@ In order to support resampling and other operations, a new function `cellToSubce
 
 ### Equal area
 
-One of the key strengths of A5 has always been the guarantee that every cell is **exactly** the same area at a given resolution, which means that any analysis run using the system is [free of bias](/docs/recipes/a5-vs-h3) due to unequal cell sizes. Newly in `v1.0`, all the cells at all resolutions have the same pentagonal topology - unlike a common limitation of hexagon-cell systems which must include 12 pentagonal cells, which complicate the topology and break the pure equal-area guarantee.
-
+One of the key strengths of A5 has always been the guarantee that every cell is **exactly** the same area at a given resolution, which means that any analysis run using the system is [free of bias](/docs/recipes/a5-vs-h3) due to unequal cell sizes. New in `v1.0`, all the cells at all resolutions have the same pentagonal topology - unlike a common limitation of hexagon-cell systems which must include 12 pentagonal cells, which complicate the topology and break the pure equal-area guarantee.
 
 ### Vibrant ecosystem
 
-One of the important characteristics of a grid system is its support across a range of tools and software, both in industry and academia. By standardizing on a definition of the grid and cell identifiers, it is easy to move data between systems and applications. For example, the FIRMS explorer above was built using:
+One of the important characteristics of a grid system is its support across a range of tools and software, both in industry and academia. By standardizing on a definition of the grid and cell identifiers, it is easy to move data between systems and applications. For example, the FIRMS Explorer above was built using:
 
-- [Geoparquet.io](https://geoparquet.io/) to [aggregate](https://geoparquet.io/concepts/spatial-indices/?h=a5#a5-cells) the data: `gpio add a5 input.parquet output.parquet --resolution 15`
+- [Geoparquet.io](https://geoparquet.io/) to [aggregate](https://geoparquet.io/concepts/spatial-indices/?h=a5#a5-cells) the data: `gpio add a5 input.parquet output.parquet --resolution 5`
 - [Portolan](https://www.portolan-sdi.org/) to host
 - a5-js and the [A5Layer](https://deck.gl/docs/api-reference/geo-layers/a5-layer) in deck.gl to visualize
 
@@ -52,11 +51,11 @@ Along with a raft of implementations in popular systems, such as [DuckDB](https:
 
 Over the past 18 months, the design of A5 has been refined - both from the point of view of internals, low-level geometry and algorithms as well as the APIs exposed to make the life of developers easier.
 
-The key change that the majority of the other improvements flow from is the implementation (and well, discovery!) of a [new space-filling curve](/examples/teohedral-curve), which defines the order in which the cells are indexed. The new curve passes around the whole world, without ever intersecting itself while also grouping cells such that they form a spatial hierarchy.
+The key change that the majority of the other improvements flow from is the implementation (and well, discovery!) of a [new space-filling curve](/examples/teohedral-curve), which defines the order in which the cells are indexed. The new curve passes around the whole world, without ever intersecting itself, while also grouping cells such that they form a spatial hierarchy.
 
 ![The teohedral curve touring the 12 faces of the dodecahedron](./teohedral-curve.jpg)
 
-The fact that it doesn't self-intersect is crucial to some of the algorithms that can be built on top. For example when filling a polygon with cells we can immediately deduce which cells are on the interior of the region without having to perform a costly flood fill. The benchmarks below are instructive:
+The fact that it doesn't self-intersect is crucial to some of the algorithms that can be built on top. For example, when filling a polygon with cells we can immediately deduce which cells are on the interior of the region without having to perform a costly flood fill. The benchmarks below are instructive:
 
 ![polygonToCells time against the number of cells in the result, for old and new A5, H3 and S2](./polygon-perf.jpg)
 
