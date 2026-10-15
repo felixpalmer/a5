@@ -107,7 +107,7 @@ function loadPages(docsDir, sidebar, siteUrl) {
       const {frontMatter, body} = splitFrontMatter(source);
       // README is the category index: docs/api-reference/README.md is served at /docs/api-reference
       const route = `docs/${id}`.replace(/\/?README$/, '');
-      const title = body.match(/^# (.+)$/m)?.[1] ?? id;
+      const title = body.match(/^# (.+)$/m)?.[1] ?? frontMatter.title ?? id;
       pages.push({id, route, category: label, title, url: siteUrl + route, body, description: frontMatter.description});
     }
   }

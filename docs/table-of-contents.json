@@ -2,7 +2,7 @@
   {
     "type": "category",
     "label": "Overview",
-    "items": ["README", "motivation", "whats-new", "upgrade-guide"]
+    "items": ["README", "whats-new", "upgrade-guide"]
   },
   {
     "type": "category",
@@ -22,17 +22,6 @@
   },
   {
     "type": "category",
-    "label": "Technical Details",
-    "items": [
-      "technical/dggs",
-      "technical/the-pentagon-that-could",
-      "technical/teohedron",
-      "technical/index-encoding",
-      "technical/bit-tags"
-    ]
-  },
-  {
-    "type": "category",
     "label": "API Reference",
     "items": [
       "api-reference/README",
@@ -44,6 +33,11 @@
       "api-reference/coverings",
       "api-reference/miscellaneous"
     ]
+  },
+  {
+    "type": "category",
+    "label": "Technical Details",
+    "items": ["technical/bit-tags", "technical/index-encoding", "technical/teohedron"]
   },
   {
     "type": "category",
