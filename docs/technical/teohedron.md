@@ -1,5 +1,5 @@
 ---
-description: "How A5 builds its grid from a dodecahedron, and the solid and cell shape at each resolution."
+description: "The pentagonal tiling behind A5, and how Conway notation relates the Teohedron to geodesic and Goldberg polyhedra."
 ---
 
 # Teohedron
@@ -14,7 +14,7 @@ A curious property of this tiling is that 12 copies can be arranged in 3D space 
 
 <TilingDemo embed="dodecahedron" />
 
-## Teohedron
+## Conway notation
 
 We call the resulting spherical polyhedron the Teohedron, although it is technically a sequence of ever-refined Teohedra. An alternate way to generate it is by starting with the dodecahedron and applying modifiers to the faces in order to obtain the equivalent topology.
 

@@ -20,7 +20,7 @@ class AreaDemo extends Component {
           H3 cells vary in size across the globe, with the ratio between the largest and smallest cell areas being{' '}
           <a href="https://h3geo.org/docs/core-library/restable/#hexagon-min-and-max-areas">roughly 2</a>.
         </p>
-        <p>A5 cells areas are exactly equal for all cells at a given resolution.</p>
+        <p>A5 cell areas are exactly equal for all cells at a given resolution.</p>
       </div>
     );
   }

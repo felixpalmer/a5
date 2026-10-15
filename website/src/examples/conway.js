@@ -15,9 +15,9 @@ class ConwayDemo extends Component {
     return (
       <div>
         <p>
-          The <a href="./teohedron">Teohedron</a> A5 is built on can be succintly represented using{' '}
+          The <a href="./teohedron">Teohedron</a> A5 is built on can be succinctly represented using{' '}
           <a href="https://en.wikipedia.org/wiki/Conway_polyhedron_notation">Conway polyhedron notation</a>, which
-          decsribes the topology of the system.
+          describes the topology of the system.
         </p>
         <p>
           It relates the topology of the system to the well-known{' '}

@@ -14,9 +14,9 @@ Once data is in cells, very different datasets can be joined, aggregated and com
 ## Where to start
 
 - [Quickstart](https://a5geo.org/docs/quickstart/javascript): index your first cell in your language of choice
-- [DuckDB playground](https://a5geo.org/examples/duckdb-playground): Use DuckDB to experiment with A5
+- [DuckDB playground](https://a5geo.org/examples/duckdb-playground): use DuckDB to experiment with A5
 - [Examples](https://a5geo.org/examples): interactive examples showcasing the system
-- [API Reference](https://a5geo.org/docs/api-reference/): every function, with snippets in each language
+- [API Reference](https://a5geo.org/docs/api-reference): every function, with snippets in each language
 - [What's new](https://a5geo.org/docs/whats-new): the changes in v1.0
 
 A5 is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).

@@ -263,7 +263,7 @@ const Links = styled.div`
 const FEATURES = [
   {
     title: 'Strong ecosystem',
-    text: 'Robust base libraries in TypeScript, Python and Rust, with DuckDB, R, QGIS deck.gl and more built on top. All interoperable via a cell index that is frozen from v1.0, so stored IDs stay valid.'
+    text: 'Robust base libraries in TypeScript, Python and Rust, with DuckDB, R, QGIS, deck.gl and more built on top. All interoperable via a cell index that is frozen from v1.0, so stored IDs stay valid.'
   },
   {
     title: 'Fast & rich API',

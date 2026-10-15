@@ -14,12 +14,12 @@ class AirbnbDemo extends Component {
   static renderInfo(meta) {
     return (
       <div>
-        <p>Aggregated AirBnb listing in Malta vs Oslo.</p>
+        <p>Aggregated Airbnb listings in Malta vs Oslo.</p>
         <p>
           Due to the unequal cell sizes, H3 incorrectly suggests that in Malta the density of rental apartments is twice
           that of Oslo.
         </p>
-        <p>It can also been seen how the cell sizes are different for H3, while with A5 they are equal.</p>
+        <p>It can also be seen how the cell sizes are different for H3, while with A5 they are equal.</p>
         <p>
           Data: <a href="https://insideairbnb.com/get-the-data/">Inside Airbnb</a>
         </p>

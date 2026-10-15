@@ -42,7 +42,7 @@ For more information on the index encoding, see [64-Bit Structure](./index-encod
 
 ### Why this works
 
-A5 has an aperture of 4, in other words the number of cells quadruples in general at every resolution level. Thus two more bits of storage are needed to represent each level. By appending a tag of the form `100...000` after the bit needed to store the cell index we generally end up with an *odd* number of zeroes following the final `1`. Thus binary values that have an even number of zeros are available for specific use cases.
+A5 has an aperture of 4, in other words the number of cells quadruples in general at every resolution level. Thus two more bits of storage are needed to represent each level. By appending a tag of the form `100...000` after the bits needed to store the cell index we generally end up with an *odd* number of zeroes following the final `1`. Thus binary values that have an even number of zeros are available for specific use cases.
 
 
 ## World Cell Encoding
@@ -57,7 +57,7 @@ The [world cell](./index-encoding#special-case-world-cell) is the value `0`. As 
 
 ## Compaction Marker Encoding
 
-A [covering](../api-reference/compaction#coverings-and-the-compaction-marker) represents a set of cells at given resolution `R` by grouping them into parent cells at a coarser resolution. In order to correctly interpret such a covering it is necessary to supply the resolution `R`, which has been effectively stripped by the compaction procedure. The *compaction marker* is a special 64bit value that encodes the resolution `R` for this purpose.
+A [covering](../api-reference/compaction#coverings-and-the-compaction-marker) represents a set of cells at a given resolution `R` by grouping them into parent cells at a coarser resolution. In order to correctly interpret such a covering it is necessary to supply the resolution `R`, which has been effectively stripped by the compaction procedure. The *compaction marker* is a special 64-bit value that encodes the resolution `R` for this purpose.
 
 The resolution is encoded in the 2nd byte of the 64bit value, with the tag value of `6`. As no cell can be in quintant 60 (only 0–59 exist), a value of `60` is written into the bits normally reserved for the [origin and quintant](./index-encoding#terminology).
 

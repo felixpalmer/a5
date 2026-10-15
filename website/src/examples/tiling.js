@@ -16,7 +16,7 @@ class TilingDemo extends Component {
       <div>
         <p>A5 tiles each face of a dodecahedron with a single pentagon shape.</p>
         <p>
-          When assembled and <a href="./projection">projected</a> onto a sphere completely covers the surface without
+          When assembled and <a href="./projection">projected</a> onto a sphere, it completely covers the surface without
           any gaps or kinks.
         </p>
       </div>

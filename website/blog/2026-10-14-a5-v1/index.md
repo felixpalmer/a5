@@ -43,7 +43,7 @@ By using compacted data and these operations, it is possible to process billions
 
 Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - unlike quadrilaterals and triangles, which can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
 
-In order to support resampling and other operations, a new function [`cellToSubcells`](/docs/api-reference/hierarchy#celltosubcells) has been added. While this is slower than the `cellToChildren` API it produces a correct covering (by centroid) of the cell. The inverse, [`cellToSupercell`](/docs/api-reference/hierarchy#celltosupercell), is also available.
+In order to support resampling and other operations, a new function [`cellToSubcells`](/docs/api-reference/hierarchy#celltosubcells) has been added. While this is slower than the `cellToChildren` API, it produces a correct covering (by centroid) of the cell. The inverse, [`cellToSupercell`](/docs/api-reference/hierarchy#celltosupercell), is also available.
 
 <img src={require('./spatial-hierarchy.jpg').default} alt="The subcells of an A5 cell: the finer cells whose centers lie inside it" style={{width: "100%", maxWidth: "600px"}}/>
 
@@ -67,7 +67,7 @@ Over the past 18 months, both A5's internals and its APIs have been refined.
 
 ### Teohedral space-filling curve
 
-The key change that the majority of the other improvements flow from is the implementation (and well, discovery!) of a new [teohedral](/docs/technical/teohedron) [space-filling curve](/examples/teohedral-curve), which defines the order in which the cells are indexed. The new curve passes around the whole world, without ever intersecting itself, while also grouping cells such that they form an (approximate) spatial hierarchy.
+The key change that the majority of the other improvements flow from is the implementation (and, well, discovery!) of a new [teohedral](/docs/technical/teohedron) [space-filling curve](/examples/teohedral-curve), which defines the order in which the cells are indexed. The new curve passes around the whole world, without ever intersecting itself, while also grouping cells such that they form an (approximate) spatial hierarchy.
 
 ![The teohedral curve touring the 12 faces of the dodecahedron](./teohedral-curve.jpg)
 
