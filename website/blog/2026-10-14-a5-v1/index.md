@@ -23,9 +23,9 @@ For a concrete example of an application leveraging A5, take a look at the [FIRM
 
 ## Stable platform for the future
 
-With the `v1.0` we are commiting to keeping the grid layout and the cell IDs frozen going forward. While the system will evolve and grow, for example by adding more utility functions, the fundamentals will stay fixed so applications, database and workflows will be able to rely on an A5 cell representing a specific geographic location into the future.
+With `v1.0` we are committing to keeping the grid layout and the cell IDs frozen going forward. While the system will evolve and grow, for example by adding more utility functions, the fundamentals will stay fixed so applications, databases and workflows will be able to rely on an A5 cell representing a specific geographic location into the future.
 
-The community around the project has grown, in particular with the implementations in [DuckDB](https://query.farm/products/extensions/a5/), [R](https://belian-earth.github.io/a5R/dev/index.html) which have beautiful sites which arguably even put the official A5 site to shame! As such, going forward, the documentation on the A5 website will present code snippets and API documentation in these languages, as well as the officially supported TypeScript, Rust and Python libraries.
+The community around the project has grown, in particular with the [DuckDB](https://query.farm/products/extensions/a5/) and [R](https://belian-earth.github.io/a5R/dev/index.html) implementations, whose beautiful sites arguably even put the official A5 site to shame! As such, going forward, the documentation on the A5 website will present code snippets and API documentation in these languages, as well as the officially supported TypeScript, Rust and Python libraries.
 
 ## What's new
 
@@ -90,8 +90,8 @@ A necessary consequence of changing the curve is that the cell IDs change. See t
 
 ## Future
 
-It has been a challenge and a lot of fun to work on A5, it has led to some great conversations with many smart people. A big thank you to all the people who have got involved, by building libraries on top of A5, reporting bugs or just spreading the word.
+It has been a challenge and a lot of fun to work on A5, and it has led to some great conversations with many smart people. A big thank you to all the people who have got involved, by building libraries on top of A5, reporting bugs or just spreading the word.
 
-In general, I find the topic fascinating and I hope you find the system useful in your work and the examples on the site help you understand how a DGGS can be put together. We are currently working on a paper which will explain the design of A5 more rigorously as well as provide comparisons to other DGGS libraries.
+I find the topic fascinating. I hope you find A5 useful in your work, and that the examples on the site help show how a DGGS is put together. I am currently working (with a few others) on a paper which will explain the design of A5 more rigorously as well as provide comparisons to other DGGS libraries.
 
-If you would like to get involved, join us on our [Slack channel](https://join.slack.com/t/a5-3ap4392/shared_invite/zt-35rpdc904-2vcsoikrJKFRJF7ncN1fmw) and if you build anything with A5, please share!
+If you would like to get involved, join us on our [Slack channel](https://join.slack.com/t/a5-3ap4392/shared_invite/zt-35rpdc904-2vcsoikrJKFRJF7ncN1fmw), and if you build anything with A5, please share!
