@@ -146,7 +146,7 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [cell_to_parent](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltoparent)
 - [cell_to_children](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltochildren)
 - [cell_to_supercell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosupercell)
-- [cell_to_subcell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell)
+- [cell_to_subcells](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
 - [get_res0_cells](https://a5geo.org/next/docs/api-reference/hierarchy.md#getres0cells)
 
 ### Cell Info
@@ -476,12 +476,12 @@ pub fn cell_to_supercell(cell: u64, resolution: i32) -> Result<u64, String>
 
 - **(bigint)** The cell at `resolution` containing the center of `index`
 
-### cell_to_subcell
+### cell_to_subcells
 
 Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `cell_to_children`, and the inverse of `cell_to_supercell`. Like the other functions returning a [covering](https://a5geo.org/next/docs/api-reference/coverings.md), the result is compacted, ending with a [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording the resolution.
 
 ```rust
-pub fn cell_to_subcell(cell: u64, resolution: i32) -> Result<Vec<u64>, String>
+pub fn cell_to_subcells(cell: u64, resolution: i32) -> Result<Vec<u64>, String>
 ```
 
 #### Parameters
@@ -496,10 +496,10 @@ pub fn cell_to_subcell(cell: u64, resolution: i32) -> Result<Vec<u64>, String>
 #### Example
 
 ```rust
-use a5::{cell_to_subcell, cell_to_supercell, lonlat_to_cell, uncompact, LonLat};
+use a5::{cell_to_subcells, cell_to_supercell, lonlat_to_cell, uncompact, LonLat};
 
 let cell = lonlat_to_cell(LonLat::new(2.35, 48.85), 8)?;
-let subcells = uncompact(&cell_to_subcell(cell, 11)?)?;
+let subcells = uncompact(&cell_to_subcells(cell, 11)?)?;
 subcells.iter().all(|&subcell| cell_to_supercell(subcell, 8) == Ok(cell)); // true
 ```
 
@@ -750,7 +750,7 @@ The result of a compaction is a [covering](https://a5geo.org/next/docs/api-refer
 Many of the functions in the A5 API return and accept compacted data, and should be used whenever possible rather than using the more low-level functions below. See [here](https://a5geo.org/next/docs/api-reference/coverings.md#example-processing-flow) for an example.
 
 - Indexing: [`polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells)
-- Hierarchy: [`cell_to_subcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell)
+- Hierarchy: [`cell_to_subcells`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
 - Traversal: [`grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`grid_disk_vertex`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap)
 - Set operations: [`union`](https://a5geo.org/next/docs/api-reference/coverings.md#union), [`intersect`](https://a5geo.org/next/docs/api-reference/coverings.md#intersect), [`difference`](https://a5geo.org/next/docs/api-reference/coverings.md#difference)
 - Predicates: [`contains`](https://a5geo.org/next/docs/api-reference/coverings.md#contains), [`overlaps`](https://a5geo.org/next/docs/api-reference/coverings.md#overlaps)
@@ -891,7 +891,7 @@ A compacted array holds cells at mixed resolutions, but it stands for a set of c
 
 Read coverings only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`count`](https://a5geo.org/next/docs/api-reference/coverings.md#count) and [`area`](https://a5geo.org/next/docs/api-reference/coverings.md#area) measure a covering, [`contains`](https://a5geo.org/next/docs/api-reference/coverings.md#contains) tests a cell, [`uncompact`](#uncompact) lists its cells at its resolution, and [`covering_resolution`](#coveringresolution) gives that resolution.
 
-`compact`, [`polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells), [`grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`grid_disk_vertex`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap), [`cell_to_subcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell) and the [set operations](https://a5geo.org/next/docs/api-reference/coverings.md) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
+`compact`, [`polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells), [`grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`grid_disk_vertex`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap), [`cell_to_subcells`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells) and the [set operations](https://a5geo.org/next/docs/api-reference/coverings.md) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
 See [Bit Tags](https://a5geo.org/next/docs/technical/bit-tags.md#compaction-marker-encoding) for how the compaction marker is encoded.
 

@@ -67,7 +67,7 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [a5_cell_to_parent](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltoparent)
 - [a5_cell_to_children](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltochildren)
 - [a5_cell_to_supercell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosupercell)
-- [a5_cell_to_subcell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell)
+- [a5_cell_to_subcell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
 - [a5_get_res0_cells](https://a5geo.org/next/docs/api-reference/hierarchy.md#getres0cells)
 
 ### Cell Info
@@ -666,7 +666,7 @@ The result of a compaction is a [covering](https://a5geo.org/next/docs/api-refer
 Many of the functions in the A5 API return and accept compacted data, and should be used whenever possible rather than using the more low-level functions below. See [here](https://a5geo.org/next/docs/api-reference/coverings.md#example-processing-flow) for an example.
 
 - Indexing: [`a5_polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells)
-- Hierarchy: [`a5_cell_to_subcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell)
+- Hierarchy: [`a5_cell_to_subcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
 - Traversal: [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`a5_spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap)
 - Set operations: [`a5_union`](https://a5geo.org/next/docs/api-reference/coverings.md#union), [`a5_intersect`](https://a5geo.org/next/docs/api-reference/coverings.md#intersect), [`a5_difference`](https://a5geo.org/next/docs/api-reference/coverings.md#difference)
 - Predicates: [`a5_contains`](https://a5geo.org/next/docs/api-reference/coverings.md#contains), [`a5_overlaps`](https://a5geo.org/next/docs/api-reference/coverings.md#overlaps)
@@ -808,7 +808,7 @@ A compacted array holds cells at mixed resolutions, but it stands for a set of c
 
 Read coverings only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`a5_count`](https://a5geo.org/next/docs/api-reference/coverings.md#count) and [`a5_area`](https://a5geo.org/next/docs/api-reference/coverings.md#area) measure a covering, [`a5_contains`](https://a5geo.org/next/docs/api-reference/coverings.md#contains) tests a cell, [`a5_uncompact`](#uncompact) lists its cells at its resolution, and [`a5_covering_resolution`](#coveringresolution) gives that resolution.
 
-`a5_compact`, [`a5_polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`a5_spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap), [`a5_cell_to_subcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell) and the [set operations](https://a5geo.org/next/docs/api-reference/coverings.md) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
+`a5_compact`, [`a5_polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`a5_spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap), [`a5_cell_to_subcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells) and the [set operations](https://a5geo.org/next/docs/api-reference/coverings.md) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
 See [Bit Tags](https://a5geo.org/next/docs/technical/bit-tags.md#compaction-marker-encoding) for how the compaction marker is encoded.
 

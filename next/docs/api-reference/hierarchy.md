@@ -187,26 +187,26 @@ a5_cell_to_supercell(cell, resolution = NULL)
 
 - **(bigint)** The cell at `resolution` containing the center of `index`
 
-### cellToSubcell
+### cellToSubcells
 
 Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `cellToChildren`, and the inverse of `cellToSupercell`. Like the other functions returning a [covering](https://a5geo.org/next/docs/api-reference/coverings.md), the result is compacted, ending with a [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording the resolution.
 
 TypeScript / JavaScript:
 
 ```ts
-function cellToSubcell(index: bigint, resolution: number): BigUint64Array;
+function cellToSubcells(index: bigint, resolution: number): BigUint64Array;
 ```
 
 Python:
 
 ```python
-def cell_to_subcell(cell: int, resolution: int) -> List[int]
+def cell_to_subcells(cell: int, resolution: int) -> List[int]
 ```
 
 Rust:
 
 ```rust
-pub fn cell_to_subcell(cell: u64, resolution: i32) -> Result<Vec<u64>, String>
+pub fn cell_to_subcells(cell: u64, resolution: i32) -> Result<Vec<u64>, String>
 ```
 
 DuckDB (not yet released):
@@ -235,30 +235,30 @@ a5_cell_to_subcell(cell, resolution = NULL)
 TypeScript / JavaScript:
 
 ```ts
-import { cellToSubcell, cellToSupercell, lonLatToCell, uncompact } from 'a5-js';
+import { cellToSubcells, cellToSupercell, lonLatToCell, uncompact } from 'a5-js';
 
 const cell = lonLatToCell([2.35, 48.85], 8);
-const subcells = uncompact(cellToSubcell(cell, 11));
+const subcells = uncompact(cellToSubcells(cell, 11));
 subcells.every(subcell => cellToSupercell(subcell, 8) === cell); // true
 ```
 
 Python:
 
 ```python
-from a5 import cell_to_subcell, cell_to_supercell, lonlat_to_cell, uncompact
+from a5 import cell_to_subcells, cell_to_supercell, lonlat_to_cell, uncompact
 
 cell = lonlat_to_cell((2.35, 48.85), 8)
-subcells = uncompact(cell_to_subcell(cell, 11))
+subcells = uncompact(cell_to_subcells(cell, 11))
 all(cell_to_supercell(subcell, 8) == cell for subcell in subcells)  # True
 ```
 
 Rust:
 
 ```rust
-use a5::{cell_to_subcell, cell_to_supercell, lonlat_to_cell, uncompact, LonLat};
+use a5::{cell_to_subcells, cell_to_supercell, lonlat_to_cell, uncompact, LonLat};
 
 let cell = lonlat_to_cell(LonLat::new(2.35, 48.85), 8)?;
-let subcells = uncompact(&cell_to_subcell(cell, 11)?)?;
+let subcells = uncompact(&cell_to_subcells(cell, 11)?)?;
 subcells.iter().all(|&subcell| cell_to_supercell(subcell, 8) == Ok(cell)); // true
 ```
 

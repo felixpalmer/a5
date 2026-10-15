@@ -22,7 +22,7 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [cellToParent](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltoparent)
 - [cellToChildren](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltochildren)
 - [cellToSupercell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosupercell)
-- [cellToSubcell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcell)
+- [cellToSubcells](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
 - [getRes0Cells](https://a5geo.org/next/docs/api-reference/hierarchy.md#getres0cells)
 
 ### Cell Info

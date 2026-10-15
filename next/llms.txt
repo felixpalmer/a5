@@ -43,7 +43,7 @@ Documentation for A5 1.0.0-beta.3. The API is the same in every language, with n
 
 - [Overview](https://a5geo.org/next/docs/api-reference.md): Index of all A5 functions, with how their names differ between TypeScript, Python, Rust, DuckDB and R.
 - [Indexing](https://a5geo.org/next/docs/api-reference/indexing.md): Convert between coordinates and A5 cells: lonLatToCell, cellToLonLat, cellToBoundary, polygonToCells, lineStringToCells and hex conversion.
-- [Hierarchy](https://a5geo.org/next/docs/api-reference/hierarchy.md): Move between resolutions: getResolution, cellToParent, cellToChildren, cellToSupercell, cellToSubcell and getRes0Cells.
+- [Hierarchy](https://a5geo.org/next/docs/api-reference/hierarchy.md): Move between resolutions: getResolution, cellToParent, cellToChildren, cellToSupercell, cellToSubcells and getRes0Cells.
 - [Traversal](https://a5geo.org/next/docs/api-reference/traversal.md): Find nearby cells: gridDisk, gridDiskVertex and sphericalCap.
 - [Cell Info](https://a5geo.org/next/docs/api-reference/cell-info.md): Cell counts, areas and edge lengths per resolution, and cell validation.
 - [Compaction](https://a5geo.org/next/docs/api-reference/compaction.md): Store sets of cells efficiently: compact, uncompact, and the compaction marker that records a covering's resolution.
