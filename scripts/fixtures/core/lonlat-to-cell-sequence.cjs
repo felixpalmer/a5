@@ -1,44 +1,26 @@
 const fs = require('fs');
 const path = require('path');
 
-const {lonLatToCell, origins, toLonLat, u64ToHex} = require('../../a5-test.cjs');
+const {lonLatToCell, u64ToHex} = require('../../a5-test.cjs');
 
 // A lookup's result must not depend on the lookups before it. lonLatToCell
 // reuses the previous lookup's cell when the point projects inside it, and the
-// face projection maps points from other faces into the face's frame too (a
-// face center onto the antipodal face's center), so the south pole used to come
-// back as the north pole's cell. The fixture is a sequence of lookups, to be
-// made in order, each with the cell a cold lookup of that point gives.
+// face projection maps the antipodal face center exactly onto a face's center,
+// a vertex of the cells around it: the south pole used to come back as the
+// north pole's cell. The fixture is a sequence of lookups, to be made in order,
+// each with the cell a cold lookup of that point gives.
 
 const MAX_RESOLUTION = 30;
 
-// The poles, then the face centers
-const points = [[0, 90], [0, -90], ...origins.map(o => toLonLat(o.axis))];
-const FIRST_CENTER = 2;
-const numCenters = origins.length;
+// The poles. The other face centers trigger the same bug, but as cell vertices
+// their cold lookups are last-ULP tie-breaks that differ between languages
+const points = [
+  [0, 90],
+  [0, -90]
+];
 
-/**
- * A walk through the face centers taking every ordered pair (a, b), a = b
- * included, as consecutive lookups: an Eulerian circuit of the complete
- * directed graph with self-loops (Hierholzer's algorithm).
- */
-function everyOrderedPair(n) {
-  const next = new Array(n).fill(0);
-  const stack = [0];
-  const walk = [];
-  while (stack.length > 0) {
-    const v = stack[stack.length - 1];
-    if (next[v] < n) {
-      stack.push(next[v]++);
-    } else {
-      walk.push(stack.pop());
-    }
-  }
-  return walk.reverse();
-}
-
-const centerWalk = everyOrderedPair(numCenters).map(i => FIRST_CENTER + i);
-const lookups = [0, 1, ...centerWalk];
+// North, south, north
+const lookups = [0, 1, 0];
 
 // A lookup at another resolution leaves nothing for this one to reuse
 const cold = (point, resolution) => {
