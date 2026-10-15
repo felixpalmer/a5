@@ -1,5 +1,5 @@
 ---
-title: Overview
+title: Introduction
 hide_title: true
 description: "A5 divides the world into exactly equal-area pentagonal cells at 31 resolutions, each identified by a stable 64-bit integer. What it is for and where to start."
 ---
@@ -22,7 +22,8 @@ Once data is in cells, very different datasets can be joined, aggregated and com
 ## Where to start
 
 - [Quickstart](/docs/quickstart/javascript): index your first cell in your language of choice
-- [Examples](/examples): interactive maps showing A5 in action
+- [DuckDB playground](/examples/duckdb-playground): Use DuckDB to experiment with A5
+- [Examples](/examples): interactive examples showcasing the system
 - [API Reference](/docs/api-reference/): every function, with snippets in each language
 - [What's new](/docs/whats-new): the changes in v1.0
 

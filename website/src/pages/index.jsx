@@ -434,8 +434,8 @@ const ECOSYSTEM = [
 ];
 
 const LINKS = [
-  ['Overview', 'What A5 is and where to start', '/docs'],
   ['Quickstart', 'Get up and running in a variety of languages', '/docs/quickstart/javascript'],
+  ['Playground', 'Experiment with live data using DuckDB', '/examples/duckdb-playground'],
   ['Examples', 'Interactive maps and visualizations', '/examples'],
   ['API Reference', 'Functions for working with A5', '/docs/api-reference']
 ];
