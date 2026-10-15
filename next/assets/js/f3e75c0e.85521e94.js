@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkproject_website=self.webpackChunkproject_website||[]).push([[7739],{9482:e=>{e.exports=JSON.parse('{"authors":[{"name":"Felix Palmer","title":"Creator of A5","url":"https://github.com/felixpalmer","socials":{"github":"https://github.com/felixpalmer"},"imageURL":"https://github.com/felixpalmer.png","key":"felixpalmer","page":null,"count":1}]}')}}]);

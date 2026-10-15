@@ -37,7 +37,7 @@ Documentation for A5 1.0.0-beta.3. The API is the same in every language, with n
 
 - [Discrete Global Grid Systems](https://a5geo.org/next/docs/technical/dggs.md): What a Discrete Global Grid System is, and the steps for constructing one.
 - [The Pentagon That Could](https://a5geo.org/next/docs/technical/the-pentagon-that-could.md): The equilateral, irregular pentagon that tiles the plane with five-fold symmetry, which A5 cells are based on.
-- [Platonic Solids](https://a5geo.org/next/docs/technical/platonic-solids.md): How A5 builds its grid from a dodecahedron, and the solid and cell shape at each resolution.
+- [Teohedron](https://a5geo.org/next/docs/technical/teohedron.md): How A5 builds its grid from a dodecahedron, and the solid and cell shape at each resolution.
 - [Index Encoding](https://a5geo.org/next/docs/technical/index-encoding.md): How an A5 cell is encoded as a 64-bit integer: origin, curve position and resolution tag.
 - [Bit Tags](https://a5geo.org/next/docs/technical/bit-tags.md): How the trailing-zero tag of a 64-bit value tells cells, the world cell and compaction markers apart.
 

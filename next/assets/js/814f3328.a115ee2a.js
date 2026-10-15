@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkproject_website=self.webpackChunkproject_website||[]).push([[7472],{5513:e=>{e.exports=JSON.parse('{"title":"All posts","items":[{"title":"A5 v1.0","permalink":"/next/blog/2026/10/14/a5-v1","unlisted":false,"date":"2026-10-14T00:00:00.000Z"}]}')}}]);

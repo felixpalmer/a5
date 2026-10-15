@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkproject_website=self.webpackChunkproject_website||[]).push([[9296],{4540:e=>{e.exports=JSON.parse('{"metadata":{"permalink":"/next/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":1,"blogDescription":"Releases and news from the A5 project","blogTitle":"A5 Blog"}}')}}]);
