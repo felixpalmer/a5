@@ -300,7 +300,8 @@ function normalizeRes30(index: bigint): bigint {
 }
 
 /**
- * Walk a cell up the hierarchy to a coarser resolution.
+ * Walk a cell up the hierarchy to a coarser resolution (or its own, giving the
+ * cell). A finer resolution is an error.
  *
  * Implemented as pure bit ops over the encoded index — no deserialize /
  * serialize round-trip. The three encoding regimes (non-curve res 0/1,
@@ -308,6 +309,9 @@ function normalizeRes30(index: bigint): bigint {
  * after a small amount of normalization.
  */
 export function cellToParent(index: bigint, parentResolution?: number): bigint {
+  // The immediate parent (undefined) is never finer than the cell: only an
+  // explicit target needs the check below.
+  const check = parentResolution !== undefined;
   if (parentResolution === undefined) parentResolution = getResolution(index) - 1;
 
   // Special case: parent of resolution 0 cells is the world cell
@@ -315,9 +319,10 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
   if (parentResolution < -1 || parentResolution > MAX_RESOLUTION) {
     throw new Error(`Target resolution (${parentResolution}) is out of range`);
   }
-  if (index === WORLD_CELL) {
-    throw new Error(`Target resolution (${parentResolution}) must be equal to or less than current resolution (-1)`);
-  }
+  // A cell coarser than the target has no parent there. Each branch below
+  // detects that from bits it already reads, so the common case never pays
+  // for getResolution.
+  if (index === WORLD_CELL) finerTarget(index, parentResolution);
 
   // Normalize res-30 children to the standard res-29 layout. After this,
   // the fast paths below treat the cell as a curve-range cell.
@@ -332,11 +337,21 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
     // Curve-range parent: clear bits below the parent tag, set the tag.
     // Identity (parent res === child res) falls out for free: the tag lands
     // in the same position and bits below the keep cut are already zero.
+    // A cell at the parent resolution or finer has its tag below the cut;
+    // a coarser cell has no bits there (at resolution 30 the cut is bit 0,
+    // so every cell not already res 30 is coarser).
     const keepShift = BigInt(60 - 2 * parentResolution);
-    return ((c >> keepShift) << keepShift) | (1n << BigInt(59 - 2 * parentResolution));
+    const kept = (c >> keepShift) << keepShift;
+    if (check && kept === c) finerTarget(index, parentResolution);
+    return kept | (1n << BigInt(59 - 2 * parentResolution));
   }
 
+  // A res-0 cell has bit 57 set with all lower bits zero — equivalently, all
+  // bottom 57 bits are zero.
+  const isRes0 = (c & ((1n << 57n) - 1n)) === 0n;
+
   if (parentResolution === 1) {
+    if (isRes0) finerTarget(index, parentResolution);
     // Top 6 bits already encode 5*originId + segmentN; only the tag moves.
     // Identity (cell already at res 1) is preserved.
     return ((c >> 58n) << 58n) | (1n << 56n);
@@ -344,10 +359,16 @@ export function cellToParent(index: bigint, parentResolution?: number): bigint {
 
   // parentResolution === 0: top 6 bits change from quintant (0-59) to originId (0-11).
   // Identity (cell already at res 0) needs an explicit guard since dividing
-  // an originId by 5 would corrupt it. A res-0 cell has bit 57 set with all
-  // lower bits zero — equivalently, all bottom 57 bits are zero.
-  if ((c & ((1n << 57n) - 1n)) === 0n) return c;
+  // an originId by 5 would corrupt it.
+  if (isRes0) return c;
   return (((c >> 58n) / 5n) << 58n) | (1n << 57n);
+}
+
+/** Throws the error for a target resolution finer than the cell's own. */
+function finerTarget(index: bigint, parentResolution: number): never {
+  throw new Error(
+    `Target resolution (${parentResolution}) must be equal to or less than current resolution (${getResolution(index)})`
+  );
 }
 
 /**

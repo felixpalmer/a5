@@ -5,9 +5,11 @@ const {
   serialize,
   deserialize,
   getResolution,
+  cellToParent,
   lonLatToCell,
   u64ToHex,
   origins,
+  WORLD_CELL,
   FIRST_CURVE_RESOLUTION
 } = require('../../a5-test.cjs');
 
@@ -102,11 +104,33 @@ if (outOfBounds.length === 0) {
   console.warn('WARNING: No res 30 locations fell back to res 29 — add more Antarctic points');
 }
 
+// --- cellToParent targets finer than the cell ---
+// Each must throw: a cell has no parent at a finer resolution. One cell per
+// resolution 0-29, asked for the next resolution and for 30 (resolutions 0, 1
+// and 30 have their own encodings), plus the world cell asked for 0.
+const finerParentTargets = [{cell: u64ToHex(WORLD_CELL), resolution: 0}];
+for (let res = 0; res < MAX_RESOLUTION; res++) {
+  const hex = testIds.find(id => getResolution(BigInt('0x' + id)) === res);
+  for (const resolution of new Set([res + 1, MAX_RESOLUTION])) {
+    finerParentTargets.push({cell: hex, resolution});
+  }
+}
+for (const {cell, resolution} of finerParentTargets) {
+  let threw = false;
+  try {
+    cellToParent(BigInt('0x' + cell), resolution);
+  } catch {
+    threw = true;
+  }
+  if (!threw) console.warn(`WARNING: cellToParent(${cell}, ${resolution}) did not throw`);
+}
+
 // --- Write fixture ---
 const fixtures = {
   resolutionMasks,
   testIds,
-  res30Locations
+  res30Locations,
+  finerParentTargets
 };
 
 const outputPath = path.join(__dirname, '../../../tests/fixtures/serialization.json');

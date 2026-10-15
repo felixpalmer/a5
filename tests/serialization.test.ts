@@ -157,6 +157,14 @@ describe('hierarchy', () => {
     });
   });
 
+  test('cellToParent throws for a resolution finer than the cell', () => {
+    for (const {cell, resolution} of FIXTURES.finerParentTargets) {
+      expect(() => cellToParent(BigInt(`0x${cell}`), resolution), `${cell} -> ${resolution}`).toThrow(
+        'must be equal to or less than current resolution'
+      );
+    }
+  });
+
   test('cellToChildren returns children in ascending ID order', () => {
     const ascending = (cells: bigint[]) => cells.every((cell, i) => i === 0 || cells[i - 1] < cell);
     for (const res of [0, 1, 2]) expect(ascending(cellToChildren(WORLD_CELL, res))).toBe(true);

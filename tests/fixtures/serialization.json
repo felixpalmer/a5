@@ -342,5 +342,247 @@
       "hex": "c392ece2bd963256",
       "resolution": 29
     }
+  ],
+  "finerParentTargets": [
+    {
+      "cell": "0",
+      "resolution": 0
+    },
+    {
+      "cell": "e00000000000000",
+      "resolution": 1
+    },
+    {
+      "cell": "e00000000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "8900000000000000",
+      "resolution": 2
+    },
+    {
+      "cell": "8900000000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "7180000000000000",
+      "resolution": 3
+    },
+    {
+      "cell": "7180000000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "5320000000000000",
+      "resolution": 4
+    },
+    {
+      "cell": "5320000000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "31b8000000000000",
+      "resolution": 5
+    },
+    {
+      "cell": "31b8000000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "64d6000000000000",
+      "resolution": 6
+    },
+    {
+      "cell": "64d6000000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "2156800000000000",
+      "resolution": 7
+    },
+    {
+      "cell": "2156800000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "80b1600000000000",
+      "resolution": 8
+    },
+    {
+      "cell": "80b1600000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "66cbc80000000000",
+      "resolution": 9
+    },
+    {
+      "cell": "66cbc80000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "c0be720000000000",
+      "resolution": 10
+    },
+    {
+      "cell": "c0be720000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "2918df8000000000",
+      "resolution": 11
+    },
+    {
+      "cell": "2918df8000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "ae13ee2000000000",
+      "resolution": 12
+    },
+    {
+      "cell": "ae13ee2000000000",
+      "resolution": 30
+    },
+    {
+      "cell": "1a90fa0800000000",
+      "resolution": 13
+    },
+    {
+      "cell": "1a90fa0800000000",
+      "resolution": 30
+    },
+    {
+      "cell": "b6b896ee00000000",
+      "resolution": 14
+    },
+    {
+      "cell": "b6b896ee00000000",
+      "resolution": 30
+    },
+    {
+      "cell": "ab09512080000000",
+      "resolution": 15
+    },
+    {
+      "cell": "ab09512080000000",
+      "resolution": 30
+    },
+    {
+      "cell": "d254793ea0000000",
+      "resolution": 16
+    },
+    {
+      "cell": "d254793ea0000000",
+      "resolution": 30
+    },
+    {
+      "cell": "3a35903c98000000",
+      "resolution": 17
+    },
+    {
+      "cell": "3a35903c98000000",
+      "resolution": 30
+    },
+    {
+      "cell": "58c31e29f2000000",
+      "resolution": 18
+    },
+    {
+      "cell": "58c31e29f2000000",
+      "resolution": 30
+    },
+    {
+      "cell": "41c9565363800000",
+      "resolution": 19
+    },
+    {
+      "cell": "41c9565363800000",
+      "resolution": 30
+    },
+    {
+      "cell": "1323057c23e00000",
+      "resolution": 20
+    },
+    {
+      "cell": "1323057c23e00000",
+      "resolution": 30
+    },
+    {
+      "cell": "b6d3fe5fc780000",
+      "resolution": 21
+    },
+    {
+      "cell": "b6d3fe5fc780000",
+      "resolution": 30
+    },
+    {
+      "cell": "671d8de2b6fe0000",
+      "resolution": 22
+    },
+    {
+      "cell": "671d8de2b6fe0000",
+      "resolution": 30
+    },
+    {
+      "cell": "bbe15465b55d8000",
+      "resolution": 23
+    },
+    {
+      "cell": "bbe15465b55d8000",
+      "resolution": 30
+    },
+    {
+      "cell": "7bd86cdb0fca6000",
+      "resolution": 24
+    },
+    {
+      "cell": "7bd86cdb0fca6000",
+      "resolution": 30
+    },
+    {
+      "cell": "316be7f8dc62d800",
+      "resolution": 25
+    },
+    {
+      "cell": "316be7f8dc62d800",
+      "resolution": 30
+    },
+    {
+      "cell": "e73fdd6c4ada7600",
+      "resolution": 26
+    },
+    {
+      "cell": "e73fdd6c4ada7600",
+      "resolution": 30
+    },
+    {
+      "cell": "8754be9d9de57180",
+      "resolution": 27
+    },
+    {
+      "cell": "8754be9d9de57180",
+      "resolution": 30
+    },
+    {
+      "cell": "8c47e04703f2eae0",
+      "resolution": 28
+    },
+    {
+      "cell": "8c47e04703f2eae0",
+      "resolution": 30
+    },
+    {
+      "cell": "3f4dbddb41558fa8",
+      "resolution": 29
+    },
+    {
+      "cell": "3f4dbddb41558fa8",
+      "resolution": 30
+    },
+    {
+      "cell": "1f9fe764dc33871a",
+      "resolution": 30
+    }
   ]
 }
