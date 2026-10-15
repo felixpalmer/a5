@@ -2,57 +2,38 @@
 description: "How A5 builds its grid from a dodecahedron, and the solid and cell shape at each resolution."
 ---
 
-import SolidGlobe from '/images/solid-globe.png';
-import SolidDodecahedron from '/images/solid-dodecahedron.png';
-import SolidPentakis from '/images/solid-pentakis.png';
-import SolidTeohedron from '/images/solid-teohedron.png';
-import SolidTeohedron2 from '/images/solid-teohedron-2.png';
-import SolidTeohedron3 from '/images/solid-teohedron-3.png';
-
 # Teohedron
 
-In order to create a uniform grid of cells that covers the globe at different resolutions, the A5 system uses at each level:
+## Pentagonal tiling
 
-- A **solid**, which is the 3D shape of the whole grid,
-- A **primitive**, which is the shape of the cell used to construct the **solid**.
+At the heart of A5 is a specific pentagonal tiling. The cells are irregular pentagons which together form a regular pentagon.
 
-The **primitives** form a logical hierarchy, in that each primitive at a resolution level *r + 1*, has a parent primitive in the resolution level above it, *r*.
+DEMO examples/tiling with res4 side by side levels only
 
-Note this hierarchy is purely logical, in general a primitive does not split geometrically into its children exactly. There is a high level of spatial coherence though, with children being co-located with their parents.
+A curious property of this tiling is that 12 copies can be arranged in 3D space to form a dodecahedron, which can then be [projected](./examples/projection) onto a sphere.
 
-## Resolution 0
+DEMO examples/tiling with res4 side by side levels only
 
-For resolution 0, the globe is divided into **12 cells**, with a [*regular pentagon*](https://en.wikipedia.org/wiki/Regular_polygon) as the **primitive**. Together, these form a **solid** [*regular dodecahedron*](https://en.wikipedia.org/wiki/Regular_dodecahedron), which is a [Platonic solid](https://en.wikipedia.org/wiki/Platonic_solid).
+## Teohedron
 
-The *regular dodecahedron* is the **Platonic solid** that most closely approximates a sphere, as it has the lowest [angular defect](https://en.wikipedia.org/wiki/Angular_defect) at its vertices. It is this property that allows [A5](https://a5geo.org/) to minimize the variation in cell shape at all resolution levels.
+We call the resulting spherical polyhedron the Teohedron, although it is technically a sequence of ever-refined Teohedra. An alternate way to generate it is by starting with the dodecahedron and applying modifiers to the faces in order to obtain the equivalent topology.
 
-<img src={SolidDodecahedron} style={{width: "100%", maxWidth: "360px"}}/>
+A succinct way to describe these operations is by the use of [Conway Polyhedral notation](https://en.wikipedia.org/wiki/Conway_polyhedron_notation). For the Teohedron we use:
 
-## Resolution 1
+- `D`: the **dodecahedron**
+- `o`: the **ortho** operator, which adds extra vertices at face centers and edge midpoints, producing new quadtralateral faces
+- `g`: the **gyro** operator, which is similar to **ortho** but it adds one more vertex along the face edge
 
-The next resolution level divides each *regular pentagon* face into 5 [*isosceles triangles*](https://en.wikipedia.org/wiki/Isosceles_triangle), yielding a total of **60 quintants**, which together form a [*pentakis dodecahedron*](https://en.wikipedia.org/wiki/Pentakis_dodecahedron). The term **quintant** is used as each forms a fifth of a dodecahedron face. The quintants are the units the cell index is organized by: every cell at resolution 1 and beyond belongs to exactly one quintant.
+By convention, the operators are applied right to left, like with matrix multiplication, yeiliding a progression of: `gD`, `goD`, `gooD`, `goooD` for the A5 series of Teohedra.
 
-<img src={SolidPentakis} style={{width: "100%", maxWidth: "360px"}}/>
+DEMO examples/conway teohedron row only
 
-The cells themselves are pentagons, one per quintant. Each is the single cell of the pentagon tiling at its coarsest scale: anchored at the center of the dodecahedron face and at a corner of the face, it covers most of its quintant and reaches into the neighboring ones. It has the same orientation as the cell touching that corner at every finer resolution. Together the **60 cells** form a [*pentagonal hexecontahedron*](https://en.wikipedia.org/wiki/Pentagonal_hexecontahedron), whose faces are all congruent. As at every other resolution, each cell is a pentagon with 5 edge neighbors. Note that because the cell reaches beyond its quintant, while its children tile the quintant, the [parent-child relationship](../api-reference/hierarchy#parent-and-child-cells-overlap-they-do-not-nest) is loosest at this level.
+## Relation to other polyhedral subdivisions
 
-## Resolution 2
+Conway notation gives us an intuitive framework to understand how the A5 grid relates to other grids defined on the sphere, which can be constructed analogously using similar operators:
 
-For higher resolution levels the quintant is tiled with ever smaller cells. This is achieved with a tiling using an *irregular pentagon* as a **primitive**, where each additional resolution level **quadruples** the number of cells. Thus resolution **level 2** gives **240 cells**, **level 3** gives **960 cells** and so on.
+- `k`: the **kis** operator, which adds one vertex at each face center, producing new triangular faces
+- `u`: the **subdivide** operator, which adds extra vertices at edge midpoints, producing new faces (maps one triangle face to 4 triangles)
+- `d`: the **dual** operator, which swaps faces for vertices and vice versa
 
-These cells together form a **solid** (technically it is a partitioning of a sphere), which as far as the author is aware, has not yet been described and will be referred to as a *teohedron*.
-
-While all the preceding solids have primitives of exactly equal shapes and sizes, the *teohedron* can be thought of as a pseudo-Platonic solid, in that it is constructed from primitives of almost equal shape and exactly equal area, as A5's projection is equal-area.
-
-<img src={SolidTeohedron} style={{width: "100%", maxWidth: "360px"}}/>
-
-## Resolution 3+
-
-All higher resolution levels are generated by using an ever-finer tiling using the *irregular pentagon* as a primitive. Even though the tiling forms a jagged edge (see [example](/examples/lattice)) along each side of the *quintant*, these edges perfectly mesh into each other, resulting in complete and uninterrupted coverage of the globe.
-
-Two higher order *teohedrons* are shown below, which correspond to resolution levels 3 and 4.
-
-<img src={SolidTeohedron2} style={{width: "100%", maxWidth: "360px"}}/>
-<img src={SolidTeohedron3} style={{width: "100%", maxWidth: "360px"}}/>
-
-In principle there is no limit to the resolution of a *teohedron*, however the A5 tiling system only uses finite number of resolution levels in order to store the cell identifier as a 64-bit integer.
+DEMO examples/conway geodesic & goldberg rows only
