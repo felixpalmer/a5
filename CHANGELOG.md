@@ -19,6 +19,14 @@ Ref: http://keepachangelog.com/en/0.3.0/
 
 ## A5
 
+#### A5 [v1.0.0-beta.4] - October 15 2026
+
+- fix: cellToParent errors for a finer target resolution (#180)
+- fix: check the face before reusing the cached cell in lonlat_to_cell (#179)
+- fix: trace the polygon boundary exactly for center containment (#178)
+- chore: README revamp (#176)
+- chore: rename cellToSubcell -> cellToSubcells (#172)
+
 #### A5 [v1.0.0-beta.3] - October 14 2026
 
 - Chore: refactor to avoid using Hilbert name (#166)
