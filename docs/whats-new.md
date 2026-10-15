@@ -18,7 +18,7 @@ v1 is the first stable release of A5. If you are upgrading from `0.x`, see the [
 <img src={Teohedron} style={{width: "100%", maxWidth: "600px"}}/>
 
 - **New teohedral space-filling curve** which [does not self-intersect](../examples/teohedral-curve), greatly improving performance
-- As a consequence, while cell geometry is unchanged, **cell IDs** change. Cell IDs and are now frozen and will not change in future versions
+- As a consequence, while cell geometry is unchanged, **cell IDs** change. Cell IDs are now frozen and will not change in future versions
 - Resolution 1 cells are now also pentagons, so the system has a single **cell topology** throughout
 
 ### Coverings
