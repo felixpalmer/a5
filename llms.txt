@@ -1,0 +1,56 @@
+# A5
+
+> A5 is a discrete global grid system (DGGS) that divides the Earth into equal-area pentagonal cells, at 31 resolutions from the whole world down to 30mm², each identified by a 64-bit integer.
+
+Documentation for A5 1.0.0. The API is the same in every language, with names in each language's style: `lonLatToCell` in TypeScript, `lonlat_to_cell` in Python and Rust, `a5_lonlat_to_cell` in DuckDB and R. Read the file for the language you are using: it holds the introduction, quickstart and full API reference, with code samples in that language only.
+
+## Docs by language
+
+- [TypeScript / JavaScript](https://a5geo.org/llms-typescript.txt): the `a5-js` npm package. Cell IDs are `bigint`
+- [Python](https://a5geo.org/llms-python.txt): the `pya5` PyPI package, imported as `a5`. Cell IDs are `int`
+- [Rust](https://a5geo.org/llms-rust.txt): the `a5` crate. Cell IDs are `u64`, and fallible functions return `Result`
+- [DuckDB](https://a5geo.org/llms-duckdb.txt): the `a5` DuckDB community extension (`INSTALL a5 FROM community; LOAD a5;`). Cell IDs are `UBIGINT`
+- [R](https://a5geo.org/llms-r.txt): the `a5R` CRAN package (docs: https://belian-earth.github.io/a5R/). Cell IDs are `a5_cell` vectors
+
+## Overview
+
+- [Introduction](https://a5geo.org/docs.md): A5 divides the world into exactly equal-area pentagonal cells at 31 resolutions, each identified by a stable 64-bit integer. What it is for and where to start.
+- [What's New](https://a5geo.org/docs/whats-new.md): What's new in A5 v1: permanent cell IDs, coverings and set operations, spatial hierarchy functions and faster traversal and polygon filling.
+- [Upgrade Guide](https://a5geo.org/docs/upgrade-guide.md): Upgrading to A5 v1: the new cell IDs, migrating stored v0 data, coverings and API changes, and using A5 with deck.gl.
+
+## Quickstart
+
+- [DuckDB Quickstart](https://a5geo.org/docs/quickstart/duckdb.md): Install the A5 DuckDB community extension and index, aggregate and export cells with SQL.
+- [JavaScript Quickstart](https://a5geo.org/docs/quickstart/javascript.md): Install the a5-js npm package and generate A5 cells as GeoJSON in JavaScript or TypeScript.
+- [PostgreSQL Quickstart](https://a5geo.org/docs/quickstart/postgresql.md): Build and install the a5pg PostgreSQL extension and work with A5 cells in SQL, with PostGIS.
+- [Python Quickstart](https://a5geo.org/docs/quickstart/python.md): Install the pya5 package and generate A5 cells as GeoJSON in Python.
+- [Rust Quickstart](https://a5geo.org/docs/quickstart/rust.md): Add the a5 crate and generate A5 cells as GeoJSON in Rust.
+
+## Recipes
+
+- [Overview](https://a5geo.org/docs/recipes.md): End-to-end workflows using A5 for real-world geospatial analysis.
+- [A5 vs H3 Comparison](https://a5geo.org/docs/recipes/a5-vs-h3.md): Ranking Airbnb listing density worldwide with A5 and H3, showing the bias H3's unequal cell areas introduce.
+- [Paris Restaurant Density](https://a5geo.org/docs/recipes/paris-restaurant-density.md): Fetch Overture Maps restaurants, aggregate them into A5 cells with DuckDB and visualize the density.
+
+## API Reference
+
+- [Overview](https://a5geo.org/docs/api-reference.md): Index of all A5 functions, with how their names differ between TypeScript, Python, Rust, DuckDB and R.
+- [Indexing](https://a5geo.org/docs/api-reference/indexing.md): Convert between coordinates and A5 cells: lonLatToCell, cellToLonLat, cellToBoundary, polygonToCells, lineStringToCells and hex conversion.
+- [Hierarchy](https://a5geo.org/docs/api-reference/hierarchy.md): Move between resolutions: getResolution, cellToParent, cellToChildren, cellToSupercell, cellToSubcells and getRes0Cells.
+- [Traversal](https://a5geo.org/docs/api-reference/traversal.md): Find nearby cells: gridDisk, gridDiskVertex and sphericalCap.
+- [Cell Info](https://a5geo.org/docs/api-reference/cell-info.md): Cell counts, areas and edge lengths per resolution, and cell validation.
+- [Compaction](https://a5geo.org/docs/api-reference/compaction.md): Store sets of cells efficiently: compact, uncompact, and the compaction marker that records a covering's resolution.
+- [Coverings](https://a5geo.org/docs/api-reference/coverings.md): Combine, test and measure coverings: union, intersect, difference, contains, overlaps, count and area.
+- [Miscellaneous](https://a5geo.org/docs/api-reference/miscellaneous.md): migrate: convert legacy v0 cell IDs to the A5 v1 format.
+
+## Technical Details
+
+- [Bit Tags](https://a5geo.org/docs/technical/bit-tags.md): How the trailing-zero tag of a 64-bit value tells cells, the world cell and compaction markers apart.
+- [Index Encoding](https://a5geo.org/docs/technical/index-encoding.md): How an A5 cell is encoded as a 64-bit integer: origin, curve position and resolution tag.
+- [Teohedron](https://a5geo.org/docs/technical/teohedron.md): The pentagonal tiling behind A5, and how Conway notation relates the Teohedron to geodesic and Goldberg polyhedra.
+
+## Ecosystem
+
+- [Libraries & Integrations](https://a5geo.org/docs/ecosystem.md): Official A5 libraries for TypeScript, Python and Rust, community libraries, and integrations such as DuckDB, deck.gl and QGIS.
+- [Podcasts & Talks](https://a5geo.org/docs/ecosystem/podcasts-and-talks.md): Podcasts and conference talks about A5.
+- [Polyglot Mirroring](https://a5geo.org/docs/ecosystem/polyglot-mirroring.md): How A5 keeps its TypeScript, Python and Rust implementations identical, with LLM-assisted porting.

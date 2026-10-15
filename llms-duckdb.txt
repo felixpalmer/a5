@@ -1,0 +1,1239 @@
+# A5 for DuckDB
+
+> A5 is a discrete global grid system (DGGS) that divides the Earth into equal-area pentagonal cells, at 31 resolutions from the whole world down to 30mm², each identified by a 64-bit integer.
+
+This is the A5 1.0.0 documentation for the `a5` DuckDB community extension (`INSTALL a5 FROM community; LOAD a5;`). Cell IDs are `UBIGINT`. Code samples are in DuckDB only, and function headings use the DuckDB names. Parameter names and types in the descriptions follow the TypeScript API: `bigint` is a cell ID, and `camelCase` parameters are `snake_case` in Python, Rust, DuckDB and R. Documentation for other languages is listed at https://a5geo.org/llms.txt.
+
+---
+
+Source: https://a5geo.org/docs
+
+A5 is a geospatial index that partitions the world into [pentagonal cells](https://a5geo.org/examples/teohedron). The cells are available at [31 resolution levels](https://a5geo.org/examples/hierarchy), from a handful covering the whole world down to less than 30mm², and every cell at a given resolution has [exactly the same area](https://a5geo.org/examples/area). Each cell is identified by a 64-bit integer, which is frozen from v1.0: an A5 cell ID stored today will refer to the same place in the future.
+
+Once data is in cells, very different datasets can be joined, aggregated and compared directly: points can be counted per cell, as with the [density of holiday rentals](https://a5geo.org/examples/airbnb) across a city, and regions such as countries or parcels of land become [coverings](https://a5geo.org/docs/api-reference/coverings.md), sets of cells which support union, intersection and difference.
+
+## Key strengths
+
+- **Equal area, single topology**: every cell is an exactly equal-area pentagon with 5 neighbors, so aggregates are free of bias from unequal cell sizes. See [A5 vs H3](https://a5geo.org/docs/recipes/a5-vs-h3.md).
+- **Built for big data**: cell IDs follow a [space-filling curve](https://a5geo.org/examples/teohedral-curve) that never crosses itself, so polygons and coverings are compact ID ranges. Billions of cells can be filled, combined and counted in seconds.
+- **Fast & rich API**: high-level functions for [indexing](https://a5geo.org/docs/api-reference/indexing.md), [hierarchy](https://a5geo.org/docs/api-reference/hierarchy.md), [traversal](https://a5geo.org/docs/api-reference/traversal.md) and [coverings](https://a5geo.org/docs/api-reference/coverings.md), with a native Rust core.
+- **Strong ecosystem**: official libraries for [TypeScript](https://a5geo.org/docs/quickstart/javascript.md), [Python](https://a5geo.org/docs/quickstart/python.md) and [Rust](https://a5geo.org/docs/quickstart/rust.md), with [DuckDB](https://a5geo.org/docs/quickstart/duckdb.md), [PostgreSQL](https://a5geo.org/docs/quickstart/postgresql.md), R, QGIS and deck.gl integrations. See the [Ecosystem](https://a5geo.org/docs/ecosystem.md).
+
+## Where to start
+
+- [Quickstart](https://a5geo.org/docs/quickstart/javascript.md): index your first cell in your language of choice
+- [DuckDB playground](https://a5geo.org/examples/duckdb-playground): use DuckDB to experiment with A5
+- [Examples](https://a5geo.org/examples): interactive examples showcasing the system
+- [API Reference](https://a5geo.org/docs/api-reference.md): every function, with snippets in each language
+- [What's new](https://a5geo.org/docs/whats-new.md): the changes in v1.0
+
+A5 is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
+
+
+---
+
+Source: https://a5geo.org/docs/quickstart/duckdb
+
+# DuckDB Quickstart
+
+Get started with A5 in DuckDB by installing the [extension](https://query.farm/duckdb_extension_a5.html) and running a simple example.
+
+## Installation
+
+Install and load the [A5](https://query.farm/duckdb_extension_a5.html) extension with this SQL:
+
+```sql
+INSTALL a5 from community;
+LOAD a5;
+
+-- Optional: Install spatial extension for geometry operations
+INSTALL spatial;
+LOAD spatial;
+```
+
+## Example: Translate Lat/Lon to A5 Cell and back
+
+```sql
+-- Get the A5 Cell for London
+SELECT a5_lonlat_to_cell(-0.1276, 51.50735, 10) as cell;
+┌─────────────────────┐
+│        cell         │
+│       uint64        │
+├─────────────────────┤
+│ 7176244663412588544 │
+└─────────────────────┘
+
+-- Get the center of the A5 cell previously returned
+-- since cells cover a greater area, the returned lon/lat
+-- will be different.
+SELECT a5_cell_to_lonlat(7176244663412588544) AS lonlat;
+┌───────────────────────────────────────────┐
+│                  lonlat                   │
+│                 double[2]                 │
+├───────────────────────────────────────────┤
+│ [-0.15971839880376137, 51.511842921513406]│
+└───────────────────────────────────────────┘
+```
+
+## Example: Generate GeoJSON for Cell
+
+To generate a GeoJSON polygon for the A5 cell above use this SQL along with DuckDB's spatial extension:
+
+```sql
+SELECT
+    ST_AsGeoJSON(
+        ST_MakePolygon(
+            ST_MakeLine(
+                list_transform(
+                    a5_cell_to_boundary(7176244663412588544),
+                    x -> ST_Point(x[1], x[2])
+                )
+            )
+        )
+    ) as g
+```
+
+This produces:
+
+```
+{
+  "type":"Polygon",
+  "coordinates":[
+    [
+      [-0.19250141916919006, 51.51946462334752],
+      [-0.20078615946991363, 51.47558191837641],
+      [-0.13985206278343298, 51.48472345047163],
+      [-0.11104984728311251, 51.52438151810816],
+      [-0.15436577597120050, 51.55503847320052],
+      [-0.19250141916919006, 51.51946462334752]
+    ]
+  ]
+}
+```
+
+Visualizing that A5 cell shows:
+
+## Example: Generate A5 Cells
+
+Here's a complete example that generates the A5 cells at a specified resolution.
+
+```sql
+
+SELECT unnest(a5_cell_to_children(7176244663412588544, 13)) AS cell_id;
+┌─────────────────────┐
+│       cell_id       │
+│       uint64        │
+├─────────────────────┤
+│ 7176244122246709248 │
+│ 7176244139426578432 │
+│ 7176244156606447616 │
+│ 7176244173786316800 │
+│ 7176244190966185984 │
+│ 7176244208146055168 │
+│ ...                 │
+├─────────────────────┤
+│ 64 rows             │
+└─────────────────────┘
+```
+
+## Example: Compare Cell Areas
+
+This example shows how to obtain the cell area, cross-checking against the value from `ST_Area_Spheroid()`.
+
+_Note that all cells at the same resolution have the exact same area. In general `a5_cell_area()` should always be used rather than manually computing the area_
+
+```sql
+-- Compare the exact area (from a5_cell_area) with the estimated area
+-- calculated from the cell boundary using ST_Area_Spheroid
+WITH cells AS (
+  SELECT
+    unnest(generate_series(0, 10))::INTEGER AS resolution
+),
+areas AS (
+  SELECT
+    resolution,
+    a5_lonlat_to_cell(-0.1276, 51.50735, resolution) AS cell,
+    a5_cell_area(resolution) AS exact_area, -- Area constant within resolution level
+    ST_Area_Spheroid(
+      ST_MakePolygon(
+        ST_MakeLine(
+          list_transform(
+            a5_cell_to_boundary(a5_lonlat_to_cell(-0.1276, 51.50735, resolution)),
+            x-> ST_Point(x[2], x[1]) -- Swap to [lat, lon] for ST_Area_Spheroid
+          )
+        )
+      )
+    ) as estimated_area -- Quantized boundary will yield only estimate of area
+  FROM cells
+)
+SELECT
+  resolution,
+  cell,
+  exact_area,
+  estimated_area,
+  printf('%.4g%%', 100 * (estimated_area - exact_area) / exact_area) as area_error
+FROM areas;
+┌────────────┬─────────────────────┬────────────────────┬────────────────────┬─────────────┐
+│ resolution │        cell         │     exact_area     │   estimated_area   │ area_error  │
+│   int32    │       uint64        │       double       │       double       │   varchar   │
+├────────────┼─────────────────────┼────────────────────┼────────────────────┼─────────────┤
+│          0 │ 1297036692682702848 │  42505468731619.93 │  42505469418157.65 │ 1.615e-06%  │
+│          1 │ 6989586621679009792 │  8501093746323.985 │  8501093267808.199 │ -5.629e-06% │
+│          2 │ 7169730606773829632 │ 2125273436580.9963 │  2125259982148.427 │ -0.0006331% │
+│          3 │ 7178737806028570624 │  531318359145.2491 │ 531312733699.80804 │ -0.001059%  │
+│          4 │ 7176486006214885376 │ 132829589786.31229 │ 132841421743.74396 │ 0.008908%   │
+│          5 │ 7183804355609362432 │ 33207397446.578068 │ 33204356296.555916 │ -0.009158%  │
+│          6 │ 7184226568074428416 │  8301849361.644517 │  8300133697.437225 │ -0.02067%   │
+│          7 │ 7176239715610263552 │ 2075462340.4111292 │ 2075718617.1494904 │ 0.01235%    │
+│          8 │ 7176248511703285760 │  518865585.1027823 │ 518895962.34988785 │ 0.005855%   │
+│          9 │ 7176246312680030208 │ 129716396.27569558 │ 129712619.13629723 │ -0.002912%  │
+│         10 │ 7176244663412588544 │ 32429099.068923894 │  32428626.05546379 │ -0.001459%  │
+├────────────┴─────────────────────┴────────────────────┴────────────────────┴─────────────┤
+│ 11 rows                                                                        5 columns │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Next Steps
+
+- Review the full [A5 SQL API](https://query.farm/duckdb_extension_a5.html)
+- Learn more about [A5 indexing](https://a5geo.org/docs/api-reference/indexing.md)
+- Explore [cell hierarchy](https://a5geo.org/docs/api-reference/hierarchy.md)
+- Check out more [examples](https://a5geo.org/examples)
+
+
+---
+
+Source: https://a5geo.org/docs/api-reference
+
+# Overview
+
+A5 has the same API in every language, with the following functions available. They are listed by their TypeScript names: Python and Rust use `snake_case` (`lonlat_to_cell`), and DuckDB and R add an `a5_` prefix (`a5_lonlat_to_cell`).
+
+AI coding agents can read these docs as Markdown, with code samples in a single language: see [llms.txt](https://a5geo.org/llms.txt).
+
+For examples of how to use the code, see the [example code on GitHub](https://github.com/felixpalmer/a5/tree/main/examples).
+
+### Indexing
+
+- [a5_lonlat_to_cell](https://a5geo.org/docs/api-reference/indexing.md#lonlattocell)
+- [a5_cell_to_lonlat](https://a5geo.org/docs/api-reference/indexing.md#celltolonlat)
+- [a5_cell_to_boundary](https://a5geo.org/docs/api-reference/indexing.md#celltoboundary)
+- [a5_geometry_to_cells](https://a5geo.org/docs/api-reference/indexing.md#polygontocells)
+- [a5_geometry_to_cells](https://a5geo.org/docs/api-reference/indexing.md#linestringtocells)
+- [a5_u64_to_hex](https://a5geo.org/docs/api-reference/indexing.md#u64tohex)
+- [a5_hex_to_u64](https://a5geo.org/docs/api-reference/indexing.md#hextou64)
+
+### Hierarchy
+
+- [a5_get_resolution](https://a5geo.org/docs/api-reference/hierarchy.md#getresolution)
+- [a5_cell_to_parent](https://a5geo.org/docs/api-reference/hierarchy.md#celltoparent)
+- [a5_cell_to_children](https://a5geo.org/docs/api-reference/hierarchy.md#celltochildren)
+- [a5_cell_to_supercell](https://a5geo.org/docs/api-reference/hierarchy.md#celltosupercell)
+- [a5_cell_to_subcell](https://a5geo.org/docs/api-reference/hierarchy.md#celltosubcells)
+- [a5_get_res0_cells](https://a5geo.org/docs/api-reference/hierarchy.md#getres0cells)
+
+### Cell Info
+
+- [a5_get_num_cells](https://a5geo.org/docs/api-reference/cell-info.md#getnumcells)
+- [a5_cell_area](https://a5geo.org/docs/api-reference/cell-info.md#cellarea)
+- [a5_cell_edge_length_avg](https://a5geo.org/docs/api-reference/cell-info.md#celledgelengthavg)
+- [a5_is_valid_cell](https://a5geo.org/docs/api-reference/cell-info.md#isvalidcell)
+
+### Traversal
+
+- [a5_grid_disk](https://a5geo.org/docs/api-reference/traversal.md#griddisk)
+- [a5_grid_disk_vertex](https://a5geo.org/docs/api-reference/traversal.md#griddiskvertex)
+- [a5_spherical_cap](https://a5geo.org/docs/api-reference/traversal.md#sphericalcap)
+
+### Compaction
+
+- [a5_compact](https://a5geo.org/docs/api-reference/compaction.md#compact)
+- [a5_uncompact](https://a5geo.org/docs/api-reference/compaction.md#uncompact)
+- [a5_covering_resolution](https://a5geo.org/docs/api-reference/compaction.md#coveringresolution)
+- [a5_is_compaction_marker](https://a5geo.org/docs/api-reference/compaction.md#iscompactionmarker)
+
+### Coverings
+
+- [a5_union](https://a5geo.org/docs/api-reference/coverings.md#union)
+- [a5_intersect](https://a5geo.org/docs/api-reference/coverings.md#intersect)
+- [a5_difference](https://a5geo.org/docs/api-reference/coverings.md#difference)
+- [a5_contains](https://a5geo.org/docs/api-reference/coverings.md#contains)
+- [a5_overlaps](https://a5geo.org/docs/api-reference/coverings.md#overlaps)
+- [a5_count](https://a5geo.org/docs/api-reference/coverings.md#count)
+- [a5_area](https://a5geo.org/docs/api-reference/coverings.md#area)
+
+### Miscellaneous
+
+- [a5_migrate](https://a5geo.org/docs/api-reference/miscellaneous.md#migrate)
+
+
+---
+
+Source: https://a5geo.org/docs/api-reference/indexing
+
+# Indexing
+
+Functions for converting between geospatial coordinates and A5 indices.
+
+Coordinates are specified as per the [GeoJSON spec](https://www.rfc-editor.org/rfc/rfc7946#section-3.1.1), namely: `[longitude, latitude]`.
+
+:::info
+For detailed information about how A5 encodes cells as 64-bit integers, see [Index Encoding](https://a5geo.org/docs/technical/index-encoding.md).
+:::
+
+### a5_lonlat_to_cell
+
+Indexes the coordinate at a given resolution to an A5 cell index.
+
+```sql
+a5_lonlat_to_cell(longitude DOUBLE, latitude DOUBLE, resolution INTEGER) -> UBIGINT
+```
+
+#### Parameters
+
+- `coordinate` **(number[])** coordinate as `[longitude, latitude]`
+- `resolution` **(number)** The resolution level to index at
+
+#### Return value
+
+- **(bigint)** The A5 cell identifier
+
+### a5_cell_to_lonlat
+
+Returns the geospatial coordinate at the center of an A5 cell.
+
+```sql
+a5_cell_to_lonlat(cell UBIGINT) -> DOUBLE[2]
+
+-- As a GEOMETRY point
+a5_cell_to_point(cell UBIGINT) -> GEOMETRY
+```
+
+#### Parameters
+
+- `cell` **(bigint)** A5 cell identifier
+
+#### Return value
+
+- **(number[])** The center coordinate as `[longitude, latitude]`
+
+### a5_cell_to_boundary
+
+Returns the vertices that define the boundary of an A5 cell.
+
+```sql
+a5_cell_to_boundary(cell UBIGINT) -> DOUBLE[2][]
+a5_cell_to_boundary(cell UBIGINT, closed_ring BOOLEAN) -> DOUBLE[2][]
+a5_cell_to_boundary(cell UBIGINT, closed_ring BOOLEAN, segments INTEGER) -> DOUBLE[2][]
+
+-- As a GEOMETRY polygon
+a5_cell_to_geometry(cell UBIGINT) -> GEOMETRY
+a5_cell_to_geometry(cell UBIGINT, segments INTEGER) -> GEOMETRY
+```
+
+#### Parameters
+
+- `cell` **(bigint)** A5 cell identifier
+- `options` **(object)** Optional configuration object
+  - `closedRing` **(boolean)** Whether to close the ring by repeating the first point at the end. Defaults to `true`.
+  - `segments` **(number | 'auto')** Number of segments to use for each edge. When set to 'auto', uses a resolution-appropriate value. Defaults to 'auto'.
+
+#### Return value
+
+- **(number[][])** Array of coordinates defining the cell boundary, each as `[longitude, latitude]`
+
+### a5_geometry_to_cells
+
+Returns all cells within a polygon, defined either by a single ring of `[longitude, latitude]` vertices or by GeoJSON-style rings `[outer, ...holes]`. Cells inside a hole are excluded.
+
+Rings may be open or closed (GeoJSON-style, with the first vertex repeated at the end) — closure is automatic either way. Either winding order is accepted; the orientation is detected from the ring geometry. Hole rings with fewer than 3 distinct vertices are ignored.
+
+The `containment` option controls which cells count as belonging to the polygon:
+
+- `'center'` (default) — a cell is included only if its center lies inside the polygon. Adjacent polygons that share an edge produce disjoint coverings, so this is the right choice for partitioning.
+- `'overlapping'` — additionally includes every cell that overlaps the polygon boundary. The result is a superset of `'center'` that fully covers the polygon with no gaps, at the cost of some overlap with adjacent polygons. Use this when a query must not miss any cell touching the polygon (for example, filtering database rows by cell before applying an exact geometry test).
+
+The result is a [covering](https://a5geo.org/docs/api-reference/coverings.md) of the polygon, approximating it with `'center'` and containing it with `'overlapping'`: compacted cells, then a [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording the resolution. Use [`a5_uncompact`](https://a5geo.org/docs/api-reference/compaction.md#uncompact) to expand it to the input resolution. The compacted form is intended for storage, transfer and set operations: cell boundaries of different resolutions do not nest geometrically, so the mixed-resolution cells of a covering will show overlaps and gaps when rendered. Uncompact to a single resolution before drawing cells on a map.
+
+Multi-polygons are not supported directly — call `a5_geometry_to_cells` per polygon and combine the results with [`a5_union`](https://a5geo.org/docs/api-reference/coverings.md#union). Coverings can also be intersected, subtracted and tested for containment without uncompacting, see [Coverings](https://a5geo.org/docs/api-reference/coverings.md).
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER) -> UBIGINT[]
+a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER, overlapping BOOLEAN) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `polygon` **(LonLat[] | LonLat[][])** Either a single ring of `[longitude, latitude]` vertices, or an array of rings where the first ring is the outer boundary and subsequent rings are holes. The outer ring must contain at least 3 vertices.
+- `resolution` **(number)** Target resolution (0–30)
+- `options` **(object)** Optional configuration object
+  - `containment` **('center' | 'overlapping')** Which cells to include relative to the polygon. `'center'` includes a cell only if its center is inside; `'overlapping'` also includes cells that touch the polygon, for gap-free coverage. Defaults to `'center'`.
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells belonging to the polygon sorted in curve order, then the [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker). A polygon with no cells gives just the [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- Bounding box around central Paris
+SELECT a5_geometry_to_cells(
+  'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10
+) AS compact;
+
+-- All cells at resolution 10
+SELECT unnest(a5_uncompact(a5_geometry_to_cells(
+  'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10
+))) AS cell;
+
+-- The same polygon with a hole — cells inside the hole are excluded
+SELECT a5_geometry_to_cells(
+  'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81),
+           (2.30 48.84, 2.37 48.84, 2.37 48.87, 2.30 48.87, 2.30 48.84))'::GEOMETRY, 10
+) AS with_hole;
+
+-- Full coverage — every cell overlapping the polygon, with no gaps along the edge
+SELECT a5_geometry_to_cells(
+  'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10, true
+) AS covering;
+```
+
+### a5_geometry_to_cells
+
+Returns all cells whose pentagons intersect a polyline defined by a sequence of waypoints. Consecutive waypoints are connected with great-circle arcs. For a simple two-point line segment, pass `[start, end]`.
+
+The result is uncompacted at the requested resolution and is not sorted — cells appear roughly in the order they were discovered along the path. Cells at waypoint junctions are deduplicated.
+
+```sql
+a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER) -> UBIGINT[]  -- geom a LINESTRING
+```
+
+#### Parameters
+
+- `waypoints` **(LonLat[])** Polyline vertices, each as `[longitude, latitude]`
+- `resolution` **(number)** Target resolution (0–30)
+
+#### Return value
+
+- **(bigint[])** Array of unique cell identifiers whose pentagons intersect the polyline
+
+#### Example
+
+```sql
+-- Simple segment: Paris → London
+SELECT a5_geometry_to_cells('LINESTRING(2.3522 48.8566, -0.1276 51.5074)'::GEOMETRY, 8) AS segment;
+
+-- Multi-waypoint route: Paris → Lyon → Nice
+SELECT a5_geometry_to_cells(
+  'LINESTRING(2.3522 48.8566, 4.8357 45.7640, 7.2620 43.7102)'::GEOMETRY, 8
+) AS cells;
+```
+
+## Cell representation
+
+A5 cells are stored as 64 bit integers, for performance and to provide a compact representation for use in databases. In JavaScript these can be represented as [BigInt](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt) values and arrays of cells stored as [BigUint64Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigUint64Array)s.
+
+For best performance it is recommended to use this representation, but it is also possible to convert them into hexadecimal, for example to encode them in JSON (which does _not_ support 64 bit integers). Two helper functions are provided for this conversion.
+
+### a5_u64_to_hex
+
+```sql
+a5_u64_to_hex(cell UBIGINT) -> VARCHAR
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+
+#### Return value
+
+- **(string)** Hexadecimal string representation of the cell identifier
+
+### a5_hex_to_u64
+
+```sql
+a5_hex_to_u64(hex VARCHAR) -> UBIGINT
+```
+
+#### Parameters
+
+- `hex` **(string)** Hexadecimal string representation of an A5 cell identifier
+
+#### Return value
+
+- **(bigint)** The A5 cell identifier
+
+
+---
+
+Source: https://a5geo.org/docs/api-reference/hierarchy
+
+# Hierarchy
+
+The A5 tiling system supports subdividing the world all the way from the 12 dodecahedron faces at resolution 0 to millimeter-scale leaf cells.
+
+The cells are arranged in a logical hierarchy, with each cell having an integer resolution. Each cell has one parent cell at the previous resolution level and 4 child cells at the next resolution level, except at the ends of the hierarchy: the 12 resolution 0 cells, representing the dodecahedron faces, have 5 children each and the [world cell](https://a5geo.org/docs/technical/index-encoding.md#special-case-world-cell) as their parent, while leaf cells at resolution 30 have no children.
+
+### Parent and child cells overlap, they do not nest
+
+The hierarchy is a logical grouping rather than an exact geometric containment. Pentagons cannot be subdivided into smaller pentagons, so a child cell overlaps its parent without lying entirely inside it: on average about 63% of a child's area falls within its parent, and at least about 7%, so no child ever lies entirely outside its parent. Treat `a5_cell_to_parent`, `a5_cell_to_children` and [compaction](https://a5geo.org/docs/api-reference/compaction.md) as a way of grouping nearby cells, not as an exact containment test.
+
+The relationship is loosest between resolutions 1 and 2. Each resolution 1 cell is the single pentagon of its [quintant](https://a5geo.org/docs/technical/index-encoding.md#terminology), anchored at the center and a corner of the dodecahedron face and reaching into the neighboring quintants, while its four children are the resolution 2 cells that tile the quintant itself. On average about 58% of a child falls within its parent, rather than 63%, while the least-covered child still has about 7%, as at every other resolution. This is the price of keeping every cell a pentagon: the alternative, triangular resolution 1 cells, nests more closely but breaks the single cell shape and gives resolution 1 cells many awkward vertex-only neighbors.
+
+### a5_get_resolution
+
+Returns the resolution of an A5 cell
+
+```sql
+a5_get_resolution(cell UBIGINT) -> INTEGER
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+
+#### Return value
+
+- **(number)** The resolution level of the cell
+
+### a5_cell_to_parent
+
+Returns the parent cell of an A5 cell. 
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_cell_to_parent(cell UBIGINT) -> UBIGINT
+a5_cell_to_parent(cell UBIGINT, parent_resolution INTEGER) -> UBIGINT
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `parentResolution` **(number, optional)** By default one level coarser than input resolution.
+
+#### Return value
+
+- **(bigint)** The parent cell identifier
+
+### a5_cell_to_children
+
+Returns the child cells of an A5 cell.
+
+```sql
+a5_cell_to_children(cell UBIGINT) -> UBIGINT[]
+a5_cell_to_children(cell UBIGINT, child_resolution INTEGER) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `childResolution` **(number, optional)** By default one level finer than input resolution.
+
+#### Return value
+
+- **(bigint[])** Array of child cell identifiers
+
+### Spatial hierarchy: subcells and supercells
+
+Where the parent/child relationship groups cells by index, subcells and supercells group them by location: a finer cell belongs to the coarser cell that contains its center. Every cell at one resolution is then the subcell of exactly one cell at each coarser resolution, so aggregating fine data by supercell attributes each value to the coarse cell it actually lies in. This costs more than `a5_cell_to_parent` / `a5_cell_to_children`, which are pure bit operations.
+
+### a5_cell_to_supercell
+
+Returns the cell at a coarser resolution that contains the center of an A5 cell: the spatial counterpart of `a5_cell_to_parent`.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_cell_to_supercell(cell UBIGINT, resolution INTEGER) -> UBIGINT
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `resolution` **(number)** Target resolution, at most the cell's own
+
+#### Return value
+
+- **(bigint)** The cell at `resolution` containing the center of `index`
+
+### a5_cell_to_subcell
+
+Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `a5_cell_to_children`, and the inverse of `a5_cell_to_supercell`. Like the other functions returning a [covering](https://a5geo.org/docs/api-reference/coverings.md), the result is compacted, ending with a [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording the resolution.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_cell_to_subcell(cell UBIGINT, resolution INTEGER) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `index` **(bigint)** A5 cell identifier
+- `resolution` **(number)** Target resolution, at least the cell's own
+
+#### Return value
+
+- **(BigUint64Array)** Compacted subcells sorted in curve order, then the [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) — use [`a5_uncompact`](https://a5geo.org/docs/api-reference/compaction.md#uncompact) to expand them. Resolution 30 covers only part of the world, so for a cell reaching past it the subcells are given at resolution 29.
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+SELECT bool_and(a5_cell_to_supercell(subcell, 8) = cell)  -- true
+FROM (
+  SELECT cell, unnest(a5_uncompact(a5_cell_to_subcell(cell, 11))) AS subcell
+  FROM (SELECT a5_lonlat_to_cell(2.35, 48.85, 8) AS cell)
+);
+```
+
+### a5_get_res0_cells
+
+Returns resolution 0 cells of the A5 system, which serve as a starting point for all higher-resolution subdivisions in the hierarchy.
+
+```sql
+a5_get_res0_cells() -> UBIGINT[]
+```
+
+#### Return value
+
+- **(bigint[])** Array of 12 A5 cell identifiers
+
+#### Example
+
+```sql
+SELECT unnest(a5_cell_to_children(cell, 1)) AS cell
+FROM (SELECT unnest(a5_get_res0_cells()) AS cell);
+```
+
+
+---
+
+Source: https://a5geo.org/docs/api-reference/traversal
+
+# Traversal
+
+Functions for finding neighboring cells and collecting cells within a range. See the [Traversal](https://a5geo.org/examples/traversal) example.
+
+Each A5 cell has exactly 5 edge neighbors, which can be obtained using the `a5_grid_disk` function. If the vertex neighbors are required, `a5_grid_disk_vertex` can be used. For broader range queries `a5_spherical_cap` provides all the cells within a great-circle radius. To trace cells along a path, use [`a5_geometry_to_cells`](https://a5geo.org/docs/api-reference/indexing.md#linestringtocells).
+
+In order to save memory, the returned cells from `a5_grid_disk`, `a5_grid_disk_vertex` and `a5_spherical_cap` are [compacted](https://a5geo.org/docs/api-reference/compaction.md) into a [covering](https://a5geo.org/docs/api-reference/coverings.md): the cells, then a [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording their resolution. Coverings can be combined with the [set operations](https://a5geo.org/docs/api-reference/coverings.md).
+
+### a5_grid_disk
+
+Returns all cells within `k` edge-sharing hops of a center cell.
+
+At each step, only edge-sharing neighbors (5 per cell) are followed.
+
+The result is compacted — use [`a5_uncompact`](https://a5geo.org/docs/api-reference/compaction.md#uncompact) to expand it to the resolution of the center cell.
+
+```sql
+a5_grid_disk(cell UBIGINT, k INTEGER) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `cellId` **(bigint)** Center A5 cell identifier
+- `k` **(number)** Number of hops (0 returns just the center cell)
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- center + 5 edge neighbors (compacted)
+SELECT a5_grid_disk(a5_lonlat_to_cell(2.3522, 48.8566, 10), 1) AS ring1;
+
+-- center + ring 1 + ring 2 (uncompacted)
+SELECT a5_uncompact(a5_grid_disk(a5_lonlat_to_cell(2.3522, 48.8566, 10), 2)) AS ring2;
+```
+
+### a5_grid_disk_vertex
+
+Returns all cells within `k` hops of a center cell, following both edge-sharing and vertex-sharing neighbors.
+
+The result is compacted — use [`a5_uncompact`](https://a5geo.org/docs/api-reference/compaction.md#uncompact) to expand it to the resolution of the center cell.
+
+```sql
+a5_grid_disk_vertex(cell UBIGINT, k INTEGER) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `cellId` **(bigint)** Center A5 cell identifier
+- `k` **(number)** Number of hops (0 returns just the center cell)
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
+
+### a5_spherical_cap
+
+Computes all cells whose centers fall within a great-circle radius from the center of a given cell.
+
+The result is compacted — use [`a5_uncompact`](https://a5geo.org/docs/api-reference/compaction.md#uncompact) to expand it to the resolution of the center cell.
+
+```sql
+a5_spherical_cap(cell UBIGINT, radius DOUBLE) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `cellId` **(bigint)** Center A5 cell identifier
+- `radius` **(number)** Radius in meters
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- 500 km
+SELECT a5_spherical_cap(a5_lonlat_to_cell(2.3522, 48.8566, 10), 500000) AS compact;
+
+-- All cells at resolution 10
+SELECT unnest(a5_uncompact(a5_spherical_cap(a5_lonlat_to_cell(2.3522, 48.8566, 10), 500000))) AS cell;
+```
+
+
+---
+
+Source: https://a5geo.org/docs/api-reference/cell-info
+
+# Cell Info
+
+Functions for obtaining information about A5 cells.
+
+### a5_get_num_cells
+
+Returns the number of cells at a given resolution level.
+
+```sql
+a5_get_num_cells(resolution INTEGER) -> UBIGINT
+```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
+
+#### Return value
+
+- **(number)** Number of cells at the given resolution
+
+#### Example
+
+```sql
+SELECT a5_get_num_cells(0);  -- 12
+SELECT a5_get_num_cells(1);  -- 60
+SELECT a5_get_num_cells(2);  -- 240
+SELECT a5_get_num_cells(3);  -- 960
+```
+
+### a5_cell_area
+
+Returns the area of a cell at a given resolution in square meters. Within a resolution level, all cells
+have exactly the same area.
+
+```sql
+a5_cell_area(resolution INTEGER) -> DOUBLE
+```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
+
+#### Return value
+
+- **(number)** Area of a cell in square meters
+
+#### Example
+
+```sql
+SELECT a5_cell_area(20);  -- ~30 m²
+```
+
+### a5_cell_edge_length_avg
+
+Returns the average edge length of a cell at a given resolution in meters. Individual
+edge lengths vary from the average by roughly ±10%, depending on the cell's
+shape and its position on the globe.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_cell_edge_length_avg(resolution INTEGER) -> DOUBLE
+```
+
+#### Parameters
+
+- `resolution` **(number)** The resolution level
+
+#### Return value
+
+- **(number)** Average edge length of a cell in meters
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+SELECT a5_cell_edge_length_avg(2);   -- ~1,190,000 m
+SELECT a5_cell_edge_length_avg(10);  -- ~4,680 m
+```
+
+### a5_is_valid_cell
+
+Checks whether a 64-bit value is an A5 cell. Use it to validate cell IDs from outside sources, such as a file or a database, before passing them to other A5 functions. The [world cell](https://a5geo.org/docs/technical/index-encoding.md#special-case-world-cell) is a valid cell: it has no boundary, but `a5_cell_to_parent` returns it as the parent of the resolution 0 cells. A [compaction marker](https://a5geo.org/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) is not a cell.
+
+```sql
+a5_is_valid_cell(cell UBIGINT) -> BOOLEAN
+```
+
+#### Parameters
+
+- `index` **(bigint)** Value to check
+
+#### Return value
+
+- **(boolean)** Whether the value is an A5 cell identifier
+
+#### Example
+
+```sql
+SELECT a5_is_valid_cell(a5_lonlat_to_cell(2.35, 48.85, 10));  -- true
+SELECT a5_is_valid_cell(a5_hex_to_u64('fd00000000000000'));   -- false: resolution 1 has no quintant 63
+```
+
+
+---
+
+Source: https://a5geo.org/docs/api-reference/compaction
+
+# Compaction
+
+Compaction is a way to efficiently represent a set of A5 cells by replacing groups of sibling cells with their parent cell. This reduces the number of cells needed to represent a region, while still standing for exactly the same set of cells.
+
+For example, if you have all the children of a cell, you can represent them with just their parent cell. The `compact()` function performs this optimization, and `uncompact()` reverses it by expanding parent cells back into their children.
+
+The result of a compaction is a [covering](https://a5geo.org/docs/api-reference/coverings.md), which automatically stores the resolution of the compacted cells in-band using a [compaction marker](#coverings-and-the-compaction-marker)
+
+## Functions supporting compacted data
+
+Many of the functions in the A5 API return and accept compacted data, and should be used whenever possible rather than using the more low-level functions below. See [here](https://a5geo.org/docs/api-reference/coverings.md#example-processing-flow) for an example.
+
+- Indexing: [`a5_geometry_to_cells`](https://a5geo.org/docs/api-reference/indexing.md#polygontocells)
+- Hierarchy: [`a5_cell_to_subcell`](https://a5geo.org/docs/api-reference/hierarchy.md#celltosubcells)
+- Traversal: [`a5_grid_disk`](https://a5geo.org/docs/api-reference/traversal.md#griddisk), [`a5_grid_disk_vertex`](https://a5geo.org/docs/api-reference/traversal.md#griddiskvertex), [`a5_spherical_cap`](https://a5geo.org/docs/api-reference/traversal.md#sphericalcap)
+- Set operations: [`a5_union`](https://a5geo.org/docs/api-reference/coverings.md#union), [`a5_intersect`](https://a5geo.org/docs/api-reference/coverings.md#intersect), [`a5_difference`](https://a5geo.org/docs/api-reference/coverings.md#difference)
+- Predicates: [`a5_contains`](https://a5geo.org/docs/api-reference/coverings.md#contains), [`a5_overlaps`](https://a5geo.org/docs/api-reference/coverings.md#overlaps)
+- Measures: [`a5_count`](https://a5geo.org/docs/api-reference/coverings.md#count), [`a5_area`](https://a5geo.org/docs/api-reference/coverings.md#area)
+
+## Compaction helpers
+
+### a5_compact
+
+Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells, and appends the [compaction marker](#coverings-and-the-compaction-marker) recording the resolution of the finest input cell. In most cases users will use [a5_geometry_to_cells](https://a5geo.org/docs/api-reference/indexing.md#polygontocells)
+
+```sql
+a5_compact(cells UBIGINT[]) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** Array of A5 cell identifiers to compact
+
+#### Return value
+
+- **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](#coverings-and-the-compaction-marker). An empty input returns an empty array.
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- Get 4 sibling cells at resolution 3, the children of a resolution 2 cell, and
+-- compact them: they are stored as their parent, but still stand for 4 cells at resolution 3
+WITH compacted AS (
+  SELECT a5_compact(a5_cell_to_children(a5_hex_to_u64('6a80000000000000'))) AS cells
+)
+SELECT
+  a5_count(cells),                -- 4
+  a5_covering_resolution(cells),  -- 3
+  a5_uncompact(cells)             -- the 4 children again
+FROM compacted;
+```
+
+### a5_uncompact
+
+Expands a covering to all of its cells at the covering's resolution: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_uncompact(cells UBIGINT[]) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** A covering, as returned by `a5_compact` or `a5_geometry_to_cells`
+
+#### Return value
+
+- **(BigUint64Array)** Array of cell identifiers, all at the covering's resolution
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- No resolution needed: the compaction marker records it
+SELECT a5_get_resolution(cell)  -- 10
+FROM (
+  SELECT unnest(a5_uncompact(a5_geometry_to_cells(
+    'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10
+  ))) AS cell
+)
+LIMIT 1;
+```
+
+#### Notes
+
+- All output cells are at the covering's resolution; the [compaction marker](#coverings-and-the-compaction-marker) is not included
+- The expansion is complete - every descendant cell at that resolution is included
+- **Ordering property**: If the input is sorted in curve order (as `a5_compact` returns it), the output is too. All children of a cell form a contiguous, ordered block on the curve, so `a5_uncompact` on a covering produces sorted output without requiring a re-sort, which is useful for large result sets
+
+### a5_covering_resolution
+
+Returns the resolution a covering stands for: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_covering_resolution(cells UBIGINT[]) -> INTEGER
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** A covering, or any array of cells
+
+#### Return value
+
+- **(number)** Resolution (0–30), or -1 for an empty array or the [world cell](https://a5geo.org/docs/technical/index-encoding.md#special-case-world-cell)
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- Children at resolution 4 of a resolution 2 cell
+SELECT a5_covering_resolution(
+  a5_compact(a5_cell_to_children(a5_hex_to_u64('6a80000000000000'), 4))
+);  -- 4
+```
+
+### a5_is_compaction_marker
+
+Checks whether a value is a [compaction marker](#coverings-and-the-compaction-marker), the value at the end of a covering that records its resolution. Most code never needs it: the A5 functions that read coverings handle the [compaction marker](#coverings-and-the-compaction-marker) themselves, and to get a covering's cells one at a time, use [`a5_uncompact`](#uncompact). Always keep the [compaction marker](#coverings-and-the-compaction-marker) when you store or pass on a covering, as without it the compacted cells no longer say which resolution they stand for.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_is_compaction_marker(value UBIGINT) -> BOOLEAN
+```
+
+#### Parameters
+
+- `value` **(bigint)** Value from a covering
+
+#### Return value
+
+- **(boolean)** Whether the value is a [compaction marker](#coverings-and-the-compaction-marker)
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+SELECT a5_is_compaction_marker(a5_lonlat_to_cell(2.35, 48.85, 10));  -- false: a cell
+```
+
+## Coverings and the compaction marker
+
+A compacted array holds cells at mixed resolutions, but it stands for a set of cells at **one** resolution: compacting 8 cells at resolution 4 may leave 2 cells at resolution 3, which still mean those 8 cells. To keep that resolution, every compacted array ends with a **compaction marker**: a value in quintant 60 (only 0–59 exist), which no cell can take, recording the resolution of the set — for example `0xf00a000000000040` for resolution 10. We call such an array a *covering*, see [Coverings](https://a5geo.org/docs/api-reference/coverings.md) for the functions that combine, query and measure them.
+
+- `a5_uncompact` reads the compaction marker, so it needs no resolution argument.
+- The array is still a plain `BigUint64Array` of 64-bit values, so a covering stores as a single list column in a database, Parquet or Arrow — the resolution travels with it.
+- `a5_cell_to_boundary` returns `[]` for the compaction marker, so rendering a covering draws only its cells.
+- An array without a compaction marker is a covering too: its resolution is that of its finest cell.
+
+Read coverings only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`a5_count`](https://a5geo.org/docs/api-reference/coverings.md#count) and [`a5_area`](https://a5geo.org/docs/api-reference/coverings.md#area) measure a covering, [`a5_contains`](https://a5geo.org/docs/api-reference/coverings.md#contains) tests a cell, [`a5_uncompact`](#uncompact) lists its cells at its resolution, and [`a5_covering_resolution`](#coveringresolution) gives that resolution.
+
+`a5_compact`, [`a5_geometry_to_cells`](https://a5geo.org/docs/api-reference/indexing.md#polygontocells), [`a5_grid_disk`](https://a5geo.org/docs/api-reference/traversal.md#griddisk), [`a5_grid_disk_vertex`](https://a5geo.org/docs/api-reference/traversal.md#griddiskvertex), [`a5_spherical_cap`](https://a5geo.org/docs/api-reference/traversal.md#sphericalcap), [`a5_cell_to_subcell`](https://a5geo.org/docs/api-reference/hierarchy.md#celltosubcells) and the [set operations](https://a5geo.org/docs/api-reference/coverings.md) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
+
+See [Bit Tags](https://a5geo.org/docs/technical/bit-tags.md#compaction-marker-encoding) for how the compaction marker is encoded.
+
+
+---
+
+Source: https://a5geo.org/docs/api-reference/coverings
+
+# Coverings
+
+A **covering** is a set of cells at one resolution, standing for an area of the globe, possibly in disjoint parts, such as the output of [`a5_geometry_to_cells`](https://a5geo.org/docs/api-reference/indexing.md#polygontocells) or [`a5_spherical_cap`](https://a5geo.org/docs/api-reference/traversal.md#sphericalcap). It is stored [compacted](https://a5geo.org/docs/api-reference/compaction.md), and in general should be used with methods expecting compacted data. If the actual cells are required (for example for a JOIN operation) a covering should be [uncompacted](https://a5geo.org/docs/api-reference/compaction.md#uncompact) first (warning: could use a huge amount of memory).
+
+The functions on this page combine, query and measure coverings:
+
+- [Set operations](#set-operations): [`a5_union`](#union), [`a5_intersect`](#intersect), [`a5_difference`](#difference)
+- [Predicates](#predicates): [`a5_contains`](#contains), [`a5_overlaps`](#overlaps)
+- [Measures](#measures): [`a5_count`](#count), [`a5_area`](#area)
+
+## Example processing flow
+
+```rust
+// Construct coverings
+let france = polygon_to_cells(&france_polygon, 18, None)?; // 944ms -> 1.09 billion cells
+let germany = polygon_to_cells(&germany_polygon, 18, None)?; // 708ms -> 718 million cells
+let near_bern = spherical_cap(bern, 400_000.0)?; // 302ms -> 1.02 billion cells
+let near_luxembourg = spherical_cap(luxembourg, 150_000.0)?; // 113ms -> 143 million cells
+
+// Set operations
+let france_and_germany = union(&france, &germany)?; // 7.0ms -> 1.81 billion cells
+let also_close_to_bern = intersect(&france_and_germany, &near_bern)?; // 5.4ms -> 646 million cells
+let but_far_from_luxembourg = difference(&also_close_to_bern, &near_luxembourg)?; // 3.2ms -> 545 million cells
+
+// Area of covering, to the nearest resolution 18 cell (~500m²)
+println!("{} km²", area(&but_far_from_luxembourg)? / 1e6); // 1.4ms -> 269516 km²
+
+// Point in polygon
+println!("{}", contains(&but_far_from_luxembourg, munich)?); // 50ns -> true
+```
+
+Timings measured with the [Rust implementation](https://github.com/felixpalmer/a5-rs) on an Apple M1 Pro.
+
+## Set operations
+
+### a5_union
+
+Returns the cells in either covering. Both must be at the same resolution, or it throws.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_union(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `a` **(bigint[] | BigUint64Array)** First covering
+- `b` **(bigint[] | BigUint64Array)** Second covering
+
+#### Return value
+
+- **(BigUint64Array)** Combined covering of both input coverings
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- A multi-polygon: the union of its parts
+SELECT a5_union(a5_geometry_to_cells(mainland, 10), a5_geometry_to_cells(island, 10)) AS coverage
+FROM parts;
+```
+
+### a5_intersect
+
+Returns the cells in both coverings. Both must be at the same resolution, or it throws.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_intersect(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `a` **(bigint[] | BigUint64Array)** First covering
+- `b` **(bigint[] | BigUint64Array)** Second covering
+
+#### Return value
+
+- **(BigUint64Array)** Covering of cells present in both input coverings
+
+### a5_difference
+
+Returns the cells in the first covering but not in the second. Both must be at the same resolution, or it throws.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_difference(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
+```
+
+#### Parameters
+
+- `a` **(bigint[] | BigUint64Array)** Covering to subtract from
+- `b` **(bigint[] | BigUint64Array)** Covering to subtract
+
+#### Return value
+
+- **(BigUint64Array)** Covering of cells present in the first covering but not the second
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- A country without the area within 50 km of its capital
+SELECT a5_difference(
+  a5_geometry_to_cells(geom, 10),
+  a5_spherical_cap(a5_lonlat_to_cell(capital_lon, capital_lat, 10), 50000)
+) AS outside
+FROM countries;
+```
+
+## Predicates
+
+### a5_contains
+
+Checks whether a cell is in a covering. The cell must be at the covering's resolution, or it throws: A5 cells don't nest geometrically across resolutions, so a finer cell isn't guaranteed to lie inside its ancestor. To test a point, index it at the covering's resolution with `lonLatToCell(point, resolution)`.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_contains(cells UBIGINT[], cell UBIGINT) -> BOOLEAN
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** Sorted covering
+- `cell` **(bigint)** Cell to test, at the covering's resolution
+
+#### Return value
+
+- **(boolean)** Whether the cell is in the covering
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+SELECT a5_contains(a5_geometry_to_cells(geom, 12), a5_lonlat_to_cell(2.35, 48.85, 12)) AS inside
+FROM countries;
+```
+
+### a5_overlaps
+
+Checks whether two coverings share any cell. Both must be at the same resolution, or it throws.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_overlaps(a UBIGINT[], b UBIGINT[]) -> BOOLEAN
+```
+
+#### Parameters
+
+- `a` **(bigint[] | BigUint64Array)** First covering
+- `b` **(bigint[] | BigUint64Array)** Second covering
+
+#### Return value
+
+- **(boolean)** Whether some cell is in both coverings
+
+## Measures
+
+### a5_count
+
+Returns the number of cells in a covering, equivalent to the length of `uncompact(cells)` without having to materialize the uncompacted cells. Note that this generally differs from the length of the compacted array.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_count(cells UBIGINT[]) -> UBIGINT
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** A covering
+
+#### Return value
+
+- **(bigint)** Number of cells at the covering's resolution. A `bigint`, as it can exceed `Number.MAX_SAFE_INTEGER` at high resolutions
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- Stored compactly, as 78929 cells at mixed resolutions
+SELECT a5_count(a5_geometry_to_cells(geom, 16))  -- 67995098 cells at resolution 16
+FROM countries
+WHERE name = 'France';
+```
+
+### a5_area
+
+Returns the area of a covering in square meters. As A5 cells are equal-area, this is exact: the number of cells times the [cell area](https://a5geo.org/docs/api-reference/cell-info.md#cellarea) at the covering's resolution.
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_area(cells UBIGINT[]) -> DOUBLE
+```
+
+#### Parameters
+
+- `cells` **(bigint[] | BigUint64Array)** A covering
+
+#### Return value
+
+- **(number)** Area in square meters
+
+
+---
+
+Source: https://a5geo.org/docs/api-reference/miscellaneous
+
+# Miscellaneous
+
+### a5_migrate
+
+Converts a cell ID from the legacy v0 A5 index to the format supported by A5 v1+. The mapping is fast because it only operates on the bit representation. The shape and positions of the cells do not change, so there is no need to re-index data from its original coordinates.
+
+**Note this function will be retired in a future version, there is no plan to support the legacy v0 A5 index going forward**
+
+_Not yet in a released version for DuckDB._
+
+```sql
+a5_migrate(cell UBIGINT) -> UBIGINT
+```
+
+#### Parameters
+
+- `cell` **(bigint)** A cell ID from the legacy v0 A5 index
+
+#### Return value
+
+- **(bigint)** The ID of the same cell in the v1 index
+
+#### Example
+
+_Not yet in a released version for DuckDB._
+
+```sql
+-- Resolution 8 cell in the legacy v0 A5 index
+SELECT a5_u64_to_hex(a5_migrate(a5_hex_to_u64('59c4780000000000')));  -- '59c4280000000000'
+```
