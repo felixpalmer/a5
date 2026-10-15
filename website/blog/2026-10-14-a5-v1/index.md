@@ -13,7 +13,11 @@ Today I'm excited to announce that the `v1.0` version of A5 is out, bringing a [
 
 <!-- truncate -->
 
-If you're new to A5, in a nutshell it is a grid system that allows the representation of any position, line or polygon region on the globe as a compact 64-bit integer. The industry term for this is a DGGS, and there are already a number of other systems out there which are powering some of the world's largest companies and data analytics pipelines. For a concrete example of an application, take a look at the [FIRMS Explorer](https://portolan-mirrors.github.io/firms-catalog/) which uses A5 to aggregate 631 million fires worldwide since 2000.
+If you're new to A5, in a nutshell it is a grid system that allows the representation of any position, line or polygon region on the globe as a pentagonal cell (or collection of cells), each represented as compact 64-bit integer. 
+
+The industry term for this is a Discrete Global Grid System (DGGS), and there are already a number of other systems out there which are powering some of the world's largest companies and data analytics pipelines. 
+
+For a concrete example of an application leveraging A5, take a look at the [FIRMS Explorer](https://portolan-mirrors.github.io/firms-catalog/) which uses A5 to aggregate 631 million fires worldwide since 2000.
 
 <img src={require('./firms.jpg').default} alt="FIRMS Explorer: fire detections worldwide aggregated to A5 cells" style={{width: "100%", maxWidth: "600px"}}/>
 
@@ -25,17 +29,22 @@ New in `v1.0` is a whole new set of functions for working with collections of ce
 
 <img src={require('./coverings.jpg').default} alt="A covering built with set operations, drawn as its compacted cells" style={{width: "100%", maxWidth: "600px"}}/>
 
+When working with coverings, you can now use set operations: [`union`](./api-reference/coverings#union), [`intersect`](./api-reference/coverings#intersect) and [`difference`](./api-reference/coverings#difference), predicates: [`contains`](./api-reference/coverings#contains) and [`overlaps`](./api-reference/coverings#overlaps) and measuring functions: [`count`](./api-reference/coverings#count) and [`area`](./api-reference/coverings#area).
+
+By using compacted data and these operations, it is possible to run process billions of cells efficiently without having to uncompact the data, as was necessary before. An example workflow might be to union several coverings from database queries, intersect with a polygon or spherical cap and then filter a collection of points against the resulting covering. See here for an [example workflow](/docs/api-reference/coverings#example-processing-flow). 
+
+
 ### Spatial hierarchy functions
 
-A common request was how to break down an A5 cell into finer cells that fill (by centroid) that cell. Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - only quadrilaterals and triangles can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
+Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - only quadrilaterals and triangles can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
 
-In order to support resampling and other operations, a new function `cellToSubcells` has been added. While this is slower than the `cellToChildren` API it produces a correct covering of the cell. The inverse, `cellToSupercell` is also available.
+In order to support resampling and other operations, a new function `cellToSubcells` has been added. While this is slower than the `cellToChildren` API it produces a correct covering (by centroid) of the cell. The inverse, `cellToSupercell` is also available.
 
 <img src={require('./spatial-hierarchy.jpg').default} alt="The subcells of an A5 cell: the finer cells whose centers lie inside it" style={{width: "100%", maxWidth: "600px"}}/>
 
 ### Equal area
 
-One of the key strengths of A5 has always been the guarantee that every cell is **exactly** the same area at a given resolution, which means that any analysis run using the system is [free of bias](/docs/recipes/a5-vs-h3) due to unequal cell sizes. New in `v1.0`, all the cells at all resolutions have the same pentagonal topology - unlike a common limitation of hexagon-cell systems which must include 12 pentagonal cells, which complicate the topology and break the pure equal-area guarantee.
+One of the key strengths of A5 has always been the guarantee that every cell is **exactly** the same area at a given resolution, which means that any analysis run using the system is [free of bias](/docs/recipes/a5-vs-h3) due to unequal cell sizes. New in `v1.0`, all the cells at all resolutions have the same pentagonal topology. This is in contrast to hexagonal DGGS systems which must include 12 pentagonal cells, which complicate the topology and break the pure equal-area guarantee.
 
 ### Vibrant ecosystem
 
