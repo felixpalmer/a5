@@ -73,7 +73,7 @@ export function cellToSupercell(cell: bigint, resolution: number): bigint {
  * @param resolution - Target resolution, at least the cell's own
  * @returns Compacted cells sorted in curve order, then the compaction marker
  */
-export function cellToSubcell(cell: bigint, resolution: number): BigUint64Array {
+export function cellToSubcells(cell: bigint, resolution: number): BigUint64Array {
   const cellResolution = getResolution(cell);
   if (resolution < cellResolution) {
     throw new Error(

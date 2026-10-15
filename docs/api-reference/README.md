@@ -26,7 +26,7 @@ For examples on how to use the code, see the [example code on Github](https://gi
 - [cellToParent](./api-reference/hierarchy#celltoparent)
 - [cellToChildren](./api-reference/hierarchy#celltochildren)
 - [cellToSupercell](./api-reference/hierarchy#celltosupercell)
-- [cellToSubcell](./api-reference/hierarchy#celltosubcell)
+- [cellToSubcells](./api-reference/hierarchy#celltosubcells)
 - [getRes0Cells](./api-reference/hierarchy#getres0cells)
 
 ### Cell Info

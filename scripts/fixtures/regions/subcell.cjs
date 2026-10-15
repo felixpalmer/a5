@@ -7,7 +7,7 @@ const {
   gridDisk,
   uncompact,
   u64ToHex,
-  cellToSubcell,
+  cellToSubcells,
   cellToSupercell,
   getResolution,
   WORLD_CELL
@@ -48,7 +48,7 @@ cases.push([lonLatToCell(points[0], 28), 30], [lonLatToCell([-120, -60], 28), 30
 
 const subcell = [];
 for (const [cell, resolution] of cases) {
-  const result = Array.from(cellToSubcell(cell, resolution));
+  const result = Array.from(cellToSubcells(cell, resolution));
   const cells = new Set(uncompact(result));
   const [first] = cells;
   const actualResolution = first === undefined ? resolution : getResolution(first);
@@ -70,12 +70,12 @@ for (const [cell, resolution] of cases) {
 
   subcell.push({cell: u64ToHex(cell), resolution, count: cells.size, cells: result.map(c => u64ToHex(c))});
 }
-console.log(`  cellToSubcell: ${subcell.length} cases`);
+console.log(`  cellToSubcells: ${subcell.length} cases`);
 
 const supercell = [];
 for (const [cell, resolution] of cases) {
   // A few subcells of each case, mapped back up to each coarser resolution
-  const fine = uncompact(cellToSubcell(cell, resolution));
+  const fine = uncompact(cellToSubcells(cell, resolution));
   for (const c of [fine[0], fine[fine.length >> 1], fine[fine.length - 1]]) {
     const res = getResolution(c);
     for (const target of [0, 1, res >> 1, res - 1, res]) {
