@@ -119,7 +119,7 @@ import {cellToChildren} from 'a5';
 
 ## Example: Compare Cell Areas
 
-This example show how to obtain the cell area, cross-checking against the value from `ST_Area_Spheroid()`.
+This example shows how to obtain the cell area, cross-checking against the value from `ST_Area_Spheroid()`.
 
 _Note that all cells at the same resolution have the exact same area. In general `a5_cell_area()` should always be used rather than manually computing the area_
 

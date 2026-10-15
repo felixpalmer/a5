@@ -26,12 +26,12 @@ class ProjectionDemo extends Component {
           While there are a number of other similar projections, DSEA was chosen as it produces minimal sag (deviation
           from great circles) in cell edges, compared to{' '}
           <a href="https://proj.org/en/stable/operations/projections/isea.html#dual">ISEA</a> and RTSEA. It has minimal
-          cusps (2°) and while ISEA is better here both are practicially inperceptible.
+          cusps (2°) and while ISEA is better here both are practically imperceptible.
         </p>
         <p>
           The remaining three{' '}
           <a href="https://www.tandfonline.com/doi/abs/10.1559/152304006779500687">Parallel Small Circle projections</a>{' '}
-          have similar metrics to DSEA but no known closed form inverse so are more computationally intensive.
+          have similar metrics to DSEA but no known closed-form inverse, so are more computationally intensive.
         </p>
       </div>
     );

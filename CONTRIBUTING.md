@@ -70,7 +70,7 @@ git cherry-pick 1234abcd
 
 ### Website update
 
-Any changes pushed to the newest (based on npm) release branch updates the website
+Any change pushed to the newest (based on npm) release branch updates the website.
 
 ```bash
 git checkout 1.2-release

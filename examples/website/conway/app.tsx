@@ -318,7 +318,7 @@ const App: React.FC<AppProps> = ({embed, dark = true}) => {
         <Check
           label="o₂ₙD row"
           checked={showOrtho}
-          title="Kite for pentagon the Teohedron: T(n) = g oₙD has one face per corner of oₙD, as o₂ₙD = o oₙD does"
+          title="Kite counterpart of the Teohedron: T(n) = g oₙD has one face per corner of oₙD, as does o₂ₙD = o oₙD"
           onChange={setShowOrtho}
         />
         <div style={{...sectionStyle, color: MUTED}}>Drag any cell to turn them all.</div>

@@ -159,7 +159,7 @@ a5_intersect(x, y)
 
 #### Return value
 
-- **(BigUint64Array)** Covering of cell present in both input coverings
+- **(BigUint64Array)** Covering of cells present in both input coverings
 
 ### difference
 
@@ -196,7 +196,7 @@ a5_difference(x, y)
 
 #### Return value
 
-- **(BigUint64Array)** Covering of cell present in first coverings, but not the second
+- **(BigUint64Array)** Covering of cells present in the first covering but not the second
 
 #### Example
 

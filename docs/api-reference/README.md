@@ -8,7 +8,7 @@ A5 has the same API in every language, with the following functions available. T
 
 AI coding agents can read these docs as Markdown, with code samples in a single language: see [llms.txt](pathname:///llms.txt).
 
-For examples on how to use the code, see the [example code on Github](https://github.com/felixpalmer/a5/tree/main/examples)
+For examples of how to use the code, see the [example code on GitHub](https://github.com/felixpalmer/a5/tree/main/examples).
 
 ### Indexing
 

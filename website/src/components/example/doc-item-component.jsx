@@ -5,6 +5,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import {PageMetadata} from '@docusaurus/theme-common';
 
 const DemoContainer = styled.div`
   position: absolute;
@@ -23,10 +24,13 @@ const DemoContainer = styled.div`
 export default function DocItem({content, route}) {
   const MDXComponent = content;
   const indexPath = useBaseUrl('/examples');
+  const {title, description} = content.metadata;
+  const metadata = <PageMetadata title={title} description={description} />;
 
   if (route.path === indexPath) {
     return (
       <div key="index">
+        {metadata}
         <MDXComponent />
       </div>
     );
@@ -34,6 +38,7 @@ export default function DocItem({content, route}) {
 
   return (
     <DemoContainer key="demo">
+      {metadata}
       <MDXComponent />
     </DemoContainer>
   );

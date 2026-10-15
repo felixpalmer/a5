@@ -163,6 +163,7 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      image: 'images/a5-globe.jpg',
       navbar: {
         title: isNext ? 'A5 (next)' : 'A5',
         logo: {
