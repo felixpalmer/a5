@@ -14,8 +14,7 @@ Documentation for A5 1.0.0-beta.3. The API is the same in every language, with n
 
 ## Overview
 
-- [Introduction](https://a5geo.org/next/docs.md): A5 divides the world into equal-area pentagonal cells at 31 resolutions, each identified by a 64-bit integer. What it is for, and how it is constructed.
-- [Motivation](https://a5geo.org/next/docs/motivation.md): Why A5 exists: the search for a pentagonal tiling of the sphere.
+- [Introduction](https://a5geo.org/next/docs.md): A5 divides the world into exactly equal-area pentagonal cells at 31 resolutions, each identified by a stable 64-bit integer. What it is for and where to start.
 - [What's New](https://a5geo.org/next/docs/whats-new.md): What's new in A5 v1: permanent cell IDs, coverings and set operations, spatial hierarchy functions and faster traversal and polygon filling.
 - [Upgrade Guide](https://a5geo.org/next/docs/upgrade-guide.md): Upgrading to A5 v1: the new cell IDs, migrating stored v0 data, coverings and API changes, and using A5 with deck.gl.
 
@@ -33,14 +32,6 @@ Documentation for A5 1.0.0-beta.3. The API is the same in every language, with n
 - [A5 vs H3 Comparison](https://a5geo.org/next/docs/recipes/a5-vs-h3.md): Ranking Airbnb listing density worldwide with A5 and H3, showing the bias H3's unequal cell areas introduce.
 - [Paris Restaurant Density](https://a5geo.org/next/docs/recipes/paris-restaurant-density.md): Fetch Overture Maps restaurants, aggregate them into A5 cells with DuckDB and visualize the density.
 
-## Technical Details
-
-- [Discrete Global Grid Systems](https://a5geo.org/next/docs/technical/dggs.md): What a Discrete Global Grid System is, and the steps for constructing one.
-- [The Pentagon That Could](https://a5geo.org/next/docs/technical/the-pentagon-that-could.md): The equilateral, irregular pentagon that tiles the plane with five-fold symmetry, which A5 cells are based on.
-- [Teohedron](https://a5geo.org/next/docs/technical/teohedron.md): How A5 builds its grid from a dodecahedron, and the solid and cell shape at each resolution.
-- [Index Encoding](https://a5geo.org/next/docs/technical/index-encoding.md): How an A5 cell is encoded as a 64-bit integer: origin, curve position and resolution tag.
-- [Bit Tags](https://a5geo.org/next/docs/technical/bit-tags.md): How the trailing-zero tag of a 64-bit value tells cells, the world cell and compaction markers apart.
-
 ## API Reference
 
 - [Overview](https://a5geo.org/next/docs/api-reference.md): Index of all A5 functions, with how their names differ between TypeScript, Python, Rust, DuckDB and R.
@@ -51,6 +42,12 @@ Documentation for A5 1.0.0-beta.3. The API is the same in every language, with n
 - [Compaction](https://a5geo.org/next/docs/api-reference/compaction.md): Store sets of cells efficiently: compact, uncompact, and the compaction marker that records a covering's resolution.
 - [Coverings](https://a5geo.org/next/docs/api-reference/coverings.md): Combine, test and measure coverings: union, intersect, difference, contains, overlaps, count and area.
 - [Miscellaneous](https://a5geo.org/next/docs/api-reference/miscellaneous.md): migrate: convert legacy v0 cell IDs to the A5 v1 format.
+
+## Technical Details
+
+- [Bit Tags](https://a5geo.org/next/docs/technical/bit-tags.md): How the trailing-zero tag of a 64-bit value tells cells, the world cell and compaction markers apart.
+- [Index Encoding](https://a5geo.org/next/docs/technical/index-encoding.md): How an A5 cell is encoded as a 64-bit integer: origin, curve position and resolution tag.
+- [Teohedron](https://a5geo.org/next/docs/technical/teohedron.md): How A5 builds its grid from a dodecahedron, and the solid and cell shape at each resolution.
 
 ## Ecosystem
 
