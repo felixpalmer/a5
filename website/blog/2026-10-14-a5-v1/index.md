@@ -27,7 +27,7 @@ New in `v1.0` is a whole new set of functions for working with collections of ce
 
 ### Spatial hierarchy functions
 
-A common request was how to break down an A5 cell into finer cells that fill that cell. Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - only quadrilaterals and triangles can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
+A common request was how to break down an A5 cell into finer cells that fill (by centroid) that cell. Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - only quadrilaterals and triangles can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
 
 In order to support resampling and other operations, a new function `cellToSubcells` has been added. While this is slower than the `cellToChildren` API it produces a correct covering of the cell. The inverse, `cellToSupercell` is also available.
 
@@ -47,11 +47,13 @@ One of the important characteristics of a grid system is its support across a ra
 
 Along with a raft of implementations in popular systems, such as [DuckDB](https://query.farm/products/extensions/a5/), [R](https://belian-earth.github.io/a5R/dev/index.html), [Python](https://github.com/felixpalmer/a5-py) and more, it is easier to build and experiment with A5 than ever. If you would like to get involved, or just have a question - feel free to join the Slack channel!
 
-### Under the hood
+## Under the hood
 
 Over the past 18 months, the design of A5 has been refined - both from the point of view of internals, low-level geometry and algorithms as well as the APIs exposed to make the life of developers easier.
 
-The key change that the majority of the other improvements flow from is the implementation (and well, discovery!) of a [new space-filling curve](/examples/teohedral-curve), which defines the order in which the cells are indexed. The new curve passes around the whole world, without ever intersecting itself, while also grouping cells such that they form a spatial hierarchy.
+### Teohedral space-filling curve
+
+The key change that the majority of the other improvements flow from is the implementation (and well, discovery!) of a [new space-filling curve](/examples/teohedral-curve), which defines the order in which the cells are indexed. The new curve passes around the whole world, without ever intersecting itself, while also grouping cells such that they form an (approximate) spatial hierarchy.
 
 ![The teohedral curve touring the 12 faces of the dodecahedron](./teohedral-curve.jpg)
 
@@ -59,6 +61,10 @@ The fact that it doesn't self-intersect is crucial to some of the algorithms tha
 
 ![polygonToCells time against the number of cells in the result, for old and new A5, H3 and S2](./polygon-perf.jpg)
 
-Prior to v1, A5 couldn't handle polygon fills with over a million cells, with the runtime going through the roof. The same is true of [H3](https://h3geo.org/) today. By contrast, [S2](https://s2geometry.io/) is able to handle up to a billion cells without any issues, as is the new version of A5. It is no coincidence that S2 also uses a space-filling curve ([Hilbert](https://en.wikipedia.org/wiki/Hilbert_curve)) which **doesn't** self-intersect, while the curve H3 uses **does** self-intersect.
+Prior to v1, A5 couldn't handle polygon fills with over a million cells, with the runtime going through the roof. The same is true of [H3](https://h3geo.org/) today. By contrast, [S2](https://s2geometry.io/) is able to handle up to a billion cells without any issues, as is the new version of A5. It is no coincidence that S2 also uses a space-filling curve ([Hilbert](https://en.wikipedia.org/wiki/Hilbert_curve)) which **doesn't** self-intersect, while H3 index order has no such property.
 
 Similar algorithmic tricks can be used to speed up other operations, like intersections or area counts. For an interactive example of these operations, see the [Coverings](/examples/coverings) example.
+
+### Cell IDs
+
+A necessary consequence of changing the curve is that the cell IDs change. See the [Upgrade Guide](/docs/upgrade-guide) for migration instructions.
