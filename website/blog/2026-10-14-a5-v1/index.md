@@ -3,49 +3,42 @@ title: A5 v1.0
 description: A permanent cell ID system, coverings with set operations, spatial hierarchy functions and faster indexing, in every language.
 authors: [felixpalmer]
 tags: [release]
-draft: true
 ---
 
-{/* DRAFT: written from CHANGELOG.md, edit freely. Set the date in the folder name to the release date and remove `draft: true` to publish */}
+![A5 logo made of pentagonal cells flying onto a globe](./a5globe.jpg)
 
-A5 1.0 is here. It brings a new, permanent cell ID system, so data indexed with A5 today stays valid in every future release, along with coverings and set operations, a spatial hierarchy and large speedups across the API.
+It has been 18 months since the first announcment of A5. What started off as a experiment in visualization (and an obsession with pentagons) has grown into a useful tool, with a wealth of [libraries, tools and software](/docs/ecosystem) building on top.
 
-<!-- truncate -->
+Today I'm excited to announce that the `v1.0` version of A5 is out, bringing a powerful set of features and performance improvements as well as crystalizing the grid and index definition for the future.
 
-## A permanent cell ID system
+If you're new to A5, in a nutshell it is a grid system that allows the representation of any position, line or polygon region on the globe as a compact 64-bit integer. The industry term for this is a DGGS, and there are already a number of other systems out there which are powering some of the world's largest companies and data analytics pipelines. For a concrete example of an application, take a look at the [FIRMS Explorer](https://portolan-mirrors.github.io/firms-catalog/) which uses A5 to aggregate 631 million fires worldwide since November 2000.
 
-The cells are numbered along a space-filling curve, the [teohedral curve](/examples/teohedral-curve), which now never crosses itself, and takes a simpler tour through the 12 faces of the dodecahedron. Resolution 1 cells are now pentagons too, so every cell at every resolution has the same shape.
+![FIRMS Explorer: fire detections worldwide aggregated to A5 cells](./firms.jpg)
 
-These changes mean v1 cell IDs differ from those in 0.x. They are the last such change: from 1.0 on, a cell ID is permanent.
+## Powerful data analytics
 
-To upgrade existing data, re-index it from longitude and latitude, or convert the IDs with [`migrate`](/docs/api-reference/miscellaneous#migrate).
+### Compacted data processing
 
-## Coverings and set operations
+New in `v1.0` is a whole new set of functions for working with collections of cells, known as [coverings](/docs/api-reference/coverings). 
 
-A [covering](/docs/api-reference/coverings) is a set of cells at one resolution, standing for an area of the globe. Functions such as `polygonToCells`, `sphericalCap` and `gridDisk` return coverings in compacted form, ending with a [compaction marker](/docs/api-reference/compaction#coverings-and-the-compaction-marker) that records their resolution, so `uncompact` needs no resolution argument.
+![A covering built with set operations, drawn as its compacted cells](./coverings.jpg)
 
-Coverings can be combined with `union`, `intersect` and `difference`, tested with `contains` and `overlaps`, and measured with `count` and `area`, all without uncompacting them.
+### Equal area
 
-## Spatial hierarchy
+One of the key strengths of A5 has always been the guarantee that every cell is **exactly** the same area at a given resolution, which means that any analysis run using the system is [free of bias](/docs/recipes/a5-vs-h3) due to unequal cell sizes. Newly in `v1.0`, all the cells at all resolutions have the same pentagonal topology - unlike a common limitation of hexagon-cell systems which must include 12 pentagonal cells, which complicate the topology and break the pure equal-area guarantee.
 
-`cellToParent` and `cellToChildren` group cells by index. The new [`cellToSupercell`](/docs/api-reference/hierarchy#celltosupercell) and [`cellToSubcell`](/docs/api-reference/hierarchy#celltosubcell) group them by location instead: a finer cell belongs to the coarser cell containing its center, so aggregating to a coarser resolution attributes each value to the cell it actually lies in.
 
-## Faster
 
-{/* TODO: benchmark numbers */}
+### Vibrant ecosystem
 
-`polygonToCells` now fills polygons from their boundary alone, and `gridDisk`, `sphericalCap` and `lineStringToCells` have all been optimized. The slow spiral search in `lonLatToCell` is gone.
+One of the important characterics of a grid system is its support across a range of tools and software, both in industry and academia. By standardizing on a definiton of the grid and cell identifiers, it is easy to move data between systems and applications. For example, the FIRMS explorer above was builtusing:
 
-## Every language
+- [Geoparquet.io](https://geoparquet.io/) to [aggregate](https://geoparquet.io/concepts/spatial-indices/?h=a5#a5-cells) the data: `gpio add a5 input.parquet output.parquet --resolution 15`
+- [Portolan](https://www.portolan-sdi.org/) to host
+- a5-js and the [A5Layer](https://deck.gl/docs/api-reference/geo-layers/a5-layer) in deck.gl to visualize
 
-A5 1.0 is released for TypeScript, Python and Rust, with the same API in each. Support in the DuckDB extension and the a5R package for R follows. {/* TODO: status of DuckDB and R */}
+Along with a raft of implementations in popular systems, such as [DuckDB](https://query.farm/products/extensions/a5/), [R](https://belian-earth.github.io/a5R/dev/index.html), [Python](https://github.com/felixpalmer/a5-py) and more, having a common standard for
 
-```bash
-npm install a5-js@{{A5_VERSION}}
-pip install pya5=={{A5_PYPI_VERSION}}
-cargo add a5@{{A5_VERSION}}
-```
+### Under the hood
 
-AI coding agents can read the documentation in their language via [llms.txt](pathname:///llms.txt).
-
-The full list of changes is in the [changelog](https://github.com/felixpalmer/a5/blob/main/CHANGELOG.md).
+Over the past 18 months, the design of A5 has been refined - both from the point of view of
