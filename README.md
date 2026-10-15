@@ -1,33 +1,28 @@
-# [A5](https://a5geo.org) - Global, equal-area, millimeter-accurate geospatial index
+<img src="https://raw.githubusercontent.com/felixpalmer/a5/main/website/static/images/a5-globe.jpg" alt="A5 logo made of pentagonal cells flying onto a globe" width="100%" />
 
-## Website: [A5Geo.org](https://a5geo.org)
+A5 is a geospatial index that partitions the world into [pentagonal cells](https://a5geo.org/examples/teohedron). The cells are available at [31 resolution levels](https://a5geo.org/examples/hierarchy), from a handful covering the whole world down to less than 30mm², and every cell at a given resolution has [exactly the same area](https://a5geo.org/examples/area). Each cell is identified by a 64-bit integer, which is frozen from v1.0: an A5 cell ID stored today will refer to the same place in the future.
 
-<img width="472" alt="thumbnails" src="https://github.com/user-attachments/assets/865d3afa-a4d6-4e86-b814-252587b10ca0" />
+Once data is in cells, very different datasets can be joined, aggregated and compared directly: points can be counted per cell, as with the [density of holiday rentals](https://a5geo.org/examples/airbnb) across a city, and regions such as countries or parcels of land become [coverings](https://a5geo.org/docs/api-reference/coverings), sets of cells which support union, intersection and difference.
 
-## Introduction
-  
-A5 is a geospatial index that partitions the world into [pentagonal cells](https://a5geo.org/examples/teohedron). The cells are available at [31 different resolution levels](https://a5geo.org/examples/hierarchy), with the largest cell covering the whole world, and the smallest less than 30mm². Within each resolution level the cells have [equal area](https://a5geo.org/examples/area), as per the [OGC definition](https://docs.ogc.org/as/20-040r3/20-040r3.html#toc29).
+## Key strengths
 
-A5 cells provide simple way to represent spatial data as a collection of cells, which together represent regions on the globe. These can be anything, from city districts to parcels of land. Once data is in a cell-based format, it becomes much simpler to perform analysis such as calculating the correlation between different variables - for example elevation and crop yield.
+- **Equal area, single topology**: every cell is an exactly equal-area pentagon with 5 neighbors, so aggregates are free of bias from unequal cell sizes. See [A5 vs H3](https://a5geo.org/docs/recipes/a5-vs-h3).
+- **Built for big data**: cell IDs follow a [space-filling curve](https://a5geo.org/examples/teohedral-curve) that never crosses itself, so polygons and coverings are compact ID ranges. Billions of cells can be filled, combined and counted in seconds.
+- **Fast & rich API**: high-level functions for [indexing](https://a5geo.org/docs/api-reference/indexing), [hierarchy](https://a5geo.org/docs/api-reference/hierarchy), [traversal](https://a5geo.org/docs/api-reference/traversal) and [coverings](https://a5geo.org/docs/api-reference/coverings), with a native Rust core.
+- **Strong ecosystem**: official libraries for [TypeScript](https://a5geo.org/docs/quickstart/javascript), [Python](https://a5geo.org/docs/quickstart/python) and [Rust](https://a5geo.org/docs/quickstart/rust), with [DuckDB](https://a5geo.org/docs/quickstart/duckdb), [PostgreSQL](https://a5geo.org/docs/quickstart/postgresql), R, QGIS and deck.gl integrations. See the [Ecosystem](https://a5geo.org/docs/ecosystem).
 
-Cells can also be used to group (aggregate) point data, to understand how it spatially distributed. For example, the [density of holiday rentals](https://a5geo.org/examples/airbnb) across a city.
+## Where to start
 
-To understand how it works, take a look at the [Examples](https://a5geo.org/examples).
+- [Quickstart](https://a5geo.org/docs/quickstart/javascript): index your first cell in your language of choice
+- [DuckDB playground](https://a5geo.org/examples/duckdb-playground): Use DuckDB to experiment with A5
+- [Examples](https://a5geo.org/examples): interactive examples showcasing the system
+- [API Reference](https://a5geo.org/docs/api-reference/): every function, with snippets in each language
+- [What's new](https://a5geo.org/docs/whats-new): the changes in v1.0
 
-A5 is implemented in TypeScript and is available as a [library](https://www.npmjs.com/package/a5-js), with [API documentation here](https://a5geo.org/docs/api-reference/). It is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
+A5 is [open source](https://github.com/felixpalmer/a5) and licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0.txt).
 
-## Benefits over alternative systems
+## Links
 
-Like other [DGGSs](https://a5geo.org/docs/technical/dggs), A5 can be used for indexing, spatial joins, and other spatial operations. The appropriate choice of DGGS will depend on the use case, the key strengths of A5 over other similar indexing systems are:
-
-- Equal area cells group spatial features without introducing bias.
-- Very high resolution of 30mm² at final resolution level, encoded as a 64-bit integer. 
-- Single cell topology type, with minimal shape distortion across the globe.
-
-## Geometric Construction
-
-[DGGSs](https://a5geo.org/docs/technical/dggs) are generally based on a planar cell tiling which is applied to the sides of a [platonic solid](https://a5geo.org/docs/technical/teohedron), before being projected onto a sphere.
-
-A5 is unique in that it uses a pentagonal tiling of a dodecahedron. The [pentagon chosen](https://a5geo.org/docs/technical/the-pentagon-that-could) for the tiling is equilateral, but not regular - unlike other common DGGSs which use regular polygons, for example [HTM](https://www.microsoft.com/en-us/research/wp-content/uploads/2005/09/tr-2005-123.pdf) uses triangles, [S2](https://s2geometry.io/) uses squares, and [H3](https://h3geo.org/) uses hexagons.
-
-The benefit of choosing a dodecahedron is that it is the platonic solid with the lowest vertex curvature, and by this measure it is the most spherical of all the platonic solids. This is key for minimizing cell distortion as the process of projecting a platonic solid onto a sphere involves warping the cell geometry to force the vertex curvature to approach zero. Thus, the lower the original vertex curvature, the less distortion will be introduced by the projection.
+- Website: [a5geo.org](https://a5geo.org)
+- Bugs or feature requests: [GitHub Issues](https://github.com/felixpalmer/a5/issues)
+- Questions and discussion: [join the community on Slack](https://join.slack.com/t/a5-3ap4392/shared_invite/zt-35rpdc904-2vcsoikrJKFRJF7ncN1fmw)
