@@ -46,17 +46,14 @@ const Eyebrow = styled.div`
 
 const Intro = styled.section`
   padding-top: 3.5rem;
-  text-align: center;
 `;
 
 const Lead = styled.p`
-  max-width: 46rem;
-  margin: 0 auto;
-  text-align: center;
+  margin: 0;
   font-size: 1.35rem;
   line-height: 1.6;
   color: #dcdce8;
-  text-wrap: balance;
+  text-wrap: pretty;
 `;
 
 // Shared by the moving highlight bar and the text and cell fades
@@ -266,7 +263,7 @@ const Links = styled.div`
 const FEATURES = [
   {
     title: 'Strong ecosystem',
-    text: 'Robust base libraries, with higher-level tools, applications and visualization support built on top. All interoperable via the A5 cell index.'
+    text: 'Robust base libraries in TypeScript, Python and Rust, with DuckDB, R, QGIS deck.gl and more built on top. All interoperable via a cell index that is frozen from v1.0, so stored IDs stay valid.'
   },
   {
     title: 'Fast & rich API',
@@ -274,11 +271,11 @@ const FEATURES = [
   },
   {
     title: 'Equal area, single topology',
-    text: 'Cells are all equal-area pentagons — no exceptions, no kinks. Resolutions all the way down to 30mm² give a common way to represent point, line, polygon and raster data without statistical bias.'
+    text: 'Every cell is an exactly equal-area pentagon — no exceptions, no kinks. Resolutions all the way down to 30mm² give a common way to represent point, line, polygon and raster data without statistical bias.'
   },
   {
     title: 'Built for big data',
-    text: 'A5 is a natural key for partitioning and sharding large datasets, thanks to cell indices following a global space-filling curve.'
+    text: 'Cell IDs follow a global space-filling curve that never crosses itself, so polygons and coverings are compact ID ranges. Fill, union and intersect billions of cells in seconds, and use A5 as a natural partitioning key.'
   },
   {
     title: 'Unmistakable on a map',
@@ -437,7 +434,7 @@ const ECOSYSTEM = [
 ];
 
 const LINKS = [
-  ['Introduction', 'A5 overview and how to use', '/docs'],
+  ['Overview', 'What A5 is and where to start', '/docs'],
   ['Quickstart', 'Get up and running in a variety of languages', '/docs/quickstart/javascript'],
   ['Examples', 'Interactive maps and visualizations', '/examples'],
   ['API Reference', 'Functions for working with A5', '/docs/api-reference']
