@@ -17,11 +17,17 @@ If you're new to A5, in a nutshell it is a grid system that allows the represent
 
 The industry term for this is a Discrete Global Grid System (DGGS), and there are already a number of other systems out there which are powering some of the world's largest companies and data analytics pipelines. 
 
-For a concrete example of an application leveraging A5, take a look at the [FIRMS Explorer](https://portolan-mirrors.github.io/firms-catalog/) which uses A5 to aggregate 631 million fires worldwide since 2000.
+For a concrete example of an application leveraging A5, take a look at the [FIRMS Explorer](https://portolan-mirrors.github.io/firms-catalog/) which uses A5 to aggregate 631 million fire detections worldwide since 2000.
 
 <img src={require('./firms.jpg').default} alt="FIRMS Explorer: fire detections worldwide aggregated to A5 cells" style={{width: "100%", maxWidth: "600px"}}/>
 
-## Powerful data analytics
+## Stable platform for the future
+
+With the `v1.0` we are commiting to keeping the grid layout and the cell IDs frozen going forward. While the system will evolve and grow, for example by adding more utility functions, the fundamentals will stay fixed so applications, database and workflows will be able to rely on an A5 cell representing a specific geographic location into the future.
+
+The community around the project has grown, in particular with the implementations in [DuckDB](https://query.farm/products/extensions/a5/), [R](https://belian-earth.github.io/a5R/dev/index.html) which have beautiful sites which arguably even put the official A5 site to shame! As such, going forward, the documentation on the A5 website will present code snippets and API documentation in these languages, as well as the officially supported TypeScript, Rust and Python libraries.
+
+## What's new
 
 ### Compacted data processing
 
@@ -36,7 +42,7 @@ By using compacted data and these operations, it is possible to run process bill
 
 ### Spatial hierarchy functions
 
-Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - only quadrilaterals and triangles can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
+Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - unlike quadrilaterals and triangles, which can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
 
 In order to support resampling and other operations, a new function `cellToSubcells` has been added. While this is slower than the `cellToChildren` API it produces a correct covering (by centroid) of the cell. The inverse, `cellToSupercell` is also available.
 
@@ -46,7 +52,7 @@ In order to support resampling and other operations, a new function `cellToSubce
 
 One of the key strengths of A5 has always been the guarantee that every cell is **exactly** the same area at a given resolution, which means that any analysis run using the system is [free of bias](/docs/recipes/a5-vs-h3) due to unequal cell sizes. New in `v1.0`, all the cells at all resolutions have the same pentagonal topology. This is in contrast to hexagonal DGGS systems which must include 12 pentagonal cells, which complicate the topology and break the pure equal-area guarantee.
 
-### Vibrant ecosystem
+## Vibrant ecosystem
 
 One of the important characteristics of a grid system is its support across a range of tools and software, both in industry and academia. By standardizing on a definition of the grid and cell identifiers, it is easy to move data between systems and applications. For example, the FIRMS Explorer above was built using:
 
@@ -58,7 +64,7 @@ Along with a raft of implementations in popular systems, such as [DuckDB](https:
 
 ## Under the hood
 
-Over the past 18 months, the design of A5 has been refined - both from the point of view of internals, low-level geometry and algorithms as well as the APIs exposed to make the life of developers easier.
+Over the past 18 months, both A5's internals and its APIs have been refined.
 
 ### Teohedral space-filling curve
 
@@ -66,9 +72,13 @@ The key change that the majority of the other improvements flow from is the impl
 
 ![The teohedral curve touring the 12 faces of the dodecahedron](./teohedral-curve.jpg)
 
-The fact that it doesn't self-intersect is crucial to some of the algorithms that can be built on top. For example, when filling a polygon with cells we can immediately deduce which cells are on the interior of the region without having to perform a costly flood fill. The benchmarks below are instructive:
+The fact that it doesn't self-intersect is crucial to some of the algorithms that can be built on top. For example, when filling a polygon with cells we can immediately deduce which cells are on the interior of the region without having to perform a costly flood fill. This works due to the boundary acting as as a set of cutting points along the global space-filling curve - if we know these, then we can trivially fill in the cells inbetween.
+
+The benchmarks below are instructive:
 
 ![polygonToCells time against the number of cells in the result, for old and new A5, H3 and S2](./polygon-perf.jpg)
+
+*How these were measured: each point is one call filling a country outline (UK, France, Brazil, USA and Australia, from the A5 test fixtures) at one resolution, timed with the native libraries: A5 1.0.0-beta.3 and 0.10.1 (Rust crates, rustc 1.87), H3 4.5.0 (the C library, via h3-py's NumPy API) and S2 (the C++ library, via the s2geometry 0.14.0 Python bindings; `S2RegionCoverer` with no cell limit, so it returns a compacted covering at the target level). Times are the fastest of repeated runs, or a single run for calls over 2 seconds, on an Apple M1 Pro. Each library was stopped once a call took longer than a minute (6 seconds for A5), or past a billion cells.*
 
 Prior to v1, A5 couldn't handle polygon fills with over a million cells, with the runtime going through the roof. The same is true of [H3](https://h3geo.org/) today. By contrast, [S2](https://s2geometry.io/) is able to handle up to a billion cells without any issues, as is the new version of A5. It is no coincidence that S2 also uses a space-filling curve ([Hilbert](https://en.wikipedia.org/wiki/Hilbert_curve)) which **doesn't** self-intersect, while H3 index order has no such property.
 
@@ -77,3 +87,11 @@ Similar algorithmic tricks can be used to speed up other operations, like inters
 ### Cell IDs
 
 A necessary consequence of changing the curve is that the cell IDs change. See the [Upgrade Guide](/docs/upgrade-guide) for migration instructions.
+
+## Future
+
+It has been a challenge and a lot of fun to work on A5, it has led to some great conversations with many smart people. A big thank you to all the people who have got involved, by building libraries on top of A5, reporting bugs or just spreading the word.
+
+In general, I find the topic fascinating and I hope you find the system useful in your work and the examples on the site help you understand how a DGGS can be put together. We are currently working on a paper which will explain the design of A5 more rigorously as well as provide comparisons to other DGGS libraries.
+
+If you would like to get involved, join us on our Slack channel and if you build anything with A5, please share!
