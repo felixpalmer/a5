@@ -1,16 +1,16 @@
 ---
+title: Overview
+hide_title: true
 description: "A5 divides the world into exactly equal-area pentagonal cells at 31 resolutions, each identified by a stable 64-bit integer. What it is for and where to start."
 ---
 
-import A5Preview from '/images/a5-preview.png';
+import A5Globe from '/images/a5-globe.jpg';
 
-# Overview
+<img src={A5Globe} alt="A5 logo made of pentagonal cells flying onto a globe" style={{width: "100%"}}/>
 
 A5 is a geospatial index that partitions the world into [pentagonal cells](/examples/teohedron). The cells are available at [31 resolution levels](/examples/hierarchy), from a handful covering the whole world down to less than 30mm², and every cell at a given resolution has [exactly the same area](/examples/area). Each cell is identified by a 64-bit integer, which is frozen from v1.0: an A5 cell ID stored today will refer to the same place in the future.
 
 Once data is in cells, very different datasets can be joined, aggregated and compared directly: points can be counted per cell, as with the [density of holiday rentals](/examples/airbnb) across a city, and regions such as countries or parcels of land become [coverings](/docs/api-reference/coverings), sets of cells which support union, intersection and difference.
-
-<img src={A5Preview} style={{width: "100%", maxWidth: "800px"}}/>
 
 ## Key strengths
 

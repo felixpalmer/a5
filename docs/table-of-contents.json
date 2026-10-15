@@ -22,15 +22,6 @@
   },
   {
     "type": "category",
-    "label": "Technical Details",
-    "items": [
-      "technical/teohedron",
-      "technical/index-encoding",
-      "technical/bit-tags"
-    ]
-  },
-  {
-    "type": "category",
     "label": "API Reference",
     "items": [
       "api-reference/README",
@@ -41,6 +32,15 @@
       "api-reference/compaction",
       "api-reference/coverings",
       "api-reference/miscellaneous"
+    ]
+  },
+  {
+    "type": "category",
+    "label": "Technical Details",
+    "items": [
+      "technical/bit-tags",
+      "technical/index-encoding",
+      "technical/teohedron"
     ]
   },
   {
