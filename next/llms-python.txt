@@ -2,7 +2,7 @@
 
 > A5 is a discrete global grid system (DGGS) that divides the Earth into equal-area pentagonal cells, at 31 resolutions from the whole world down to 30mm², each identified by a 64-bit integer.
 
-This is the A5 1.0.0-beta.3 documentation for the `pya5` PyPI package, imported as `a5`. Cell IDs are `int`. Code samples are in Python only, and function headings use the Python names. Parameter names and types in the descriptions follow the TypeScript API: `bigint` is a cell ID, and `camelCase` parameters are `snake_case` in Python, Rust, DuckDB and R. Documentation for other languages is listed at https://a5geo.org/next/llms.txt.
+This is the A5 1.0.0-beta.4 documentation for the `pya5` PyPI package, imported as `a5`. Cell IDs are `int`. Code samples are in Python only, and function headings use the Python names. Parameter names and types in the descriptions follow the TypeScript API: `bigint` is a cell ID, and `camelCase` parameters are `snake_case` in Python, Rust, DuckDB and R. Documentation for other languages is listed at https://a5geo.org/next/llms.txt.
 
 ---
 
@@ -43,13 +43,13 @@ Get started with A5 in Python by installing the [package](https://pypi.org/proje
 Install the [A5 package](https://pypi.org/project/pya5/) using pip:
 
 ```bash
-pip install pya5==1.0.0b3
+pip install pya5==1.0.0b4
 ```
 
 Or using uv:
 
 ```bash
-uv add pya5==1.0.0b3
+uv add pya5==1.0.0b4
 ```
 
 ## Example: Generate A5 Cells

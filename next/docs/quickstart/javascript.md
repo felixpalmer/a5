@@ -7,13 +7,13 @@ Get started with A5 in JavaScript by installing the [package](https://www.npmjs.
 Install the [A5 package](https://www.npmjs.com/package/a5-js) using npm:
 
 ```bash
-npm install a5-js@1.0.0-beta.3
+npm install a5-js@1.0.0-beta.4
 ```
 
 Or using yarn:
 
 ```bash
-yarn add a5-js@1.0.0-beta.3
+yarn add a5-js@1.0.0-beta.4
 ```
 
 ## Code Example: Generate A5 Cells

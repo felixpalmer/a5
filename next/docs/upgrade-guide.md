@@ -29,9 +29,9 @@ The [`A5Layer`](https://deck.gl/docs/api-reference/geo-layers/a5-layer) in `@dec
 Until deck.gl depends on v1, force a single copy of `a5-js` with your package manager's overrides:
 
 ```json
-"overrides": {"a5-js": "1.0.0-beta.3"} // npm
-"resolutions": {"a5-js": "1.0.0-beta.3"} // yarn
-"pnpm": {"overrides": {"a5-js": "1.0.0-beta.3"}} // pnpm
+"overrides": {"a5-js": "1.0.0-beta.4"} // npm
+"resolutions": {"a5-js": "1.0.0-beta.4"} // yarn
+"pnpm": {"overrides": {"a5-js": "1.0.0-beta.4"}} // pnpm
 ```
 
 ### Shimming old data
