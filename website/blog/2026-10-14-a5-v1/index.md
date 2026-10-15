@@ -13,7 +13,7 @@ Today I'm excited to announce that the `v1.0` version of A5 is out, bringing a [
 
 <!-- truncate -->
 
-If you're new to A5, in a nutshell it is a grid system that allows the representation of any position, line or polygon region on the globe as a pentagonal cell (or collection of cells), each represented as compact 64-bit integer. 
+If you're new to A5, in a nutshell it is a grid system that allows the representation of any position, line or polygon region on the globe as a pentagonal cell (or collection of cells), each represented as a compact 64-bit integer. 
 
 The industry term for this is a Discrete Global Grid System (DGGS), and there are already a number of other systems out there which are powering some of the world's largest companies and data analytics pipelines. 
 
@@ -35,16 +35,16 @@ New in `v1.0` is a whole new set of functions for working with collections of ce
 
 <img src={require('./coverings.jpg').default} alt="A covering built with set operations, drawn as its compacted cells" style={{width: "100%", maxWidth: "600px"}}/>
 
-When working with coverings, you can now use set operations: [`union`](./api-reference/coverings#union), [`intersect`](./api-reference/coverings#intersect) and [`difference`](./api-reference/coverings#difference), predicates: [`contains`](./api-reference/coverings#contains) and [`overlaps`](./api-reference/coverings#overlaps) and measuring functions: [`count`](./api-reference/coverings#count) and [`area`](./api-reference/coverings#area).
+When working with coverings, you can now use set operations: [`union`](/docs/api-reference/coverings#union), [`intersect`](/docs/api-reference/coverings#intersect) and [`difference`](/docs/api-reference/coverings#difference), predicates: [`contains`](/docs/api-reference/coverings#contains) and [`overlaps`](/docs/api-reference/coverings#overlaps) and measuring functions: [`count`](/docs/api-reference/coverings#count) and [`area`](/docs/api-reference/coverings#area).
 
-By using compacted data and these operations, it is possible to run process billions of cells efficiently without having to uncompact the data, as was necessary before. An example workflow might be to union several coverings from database queries, intersect with a polygon or spherical cap and then filter a collection of points against the resulting covering. See here for an [example workflow](/docs/api-reference/coverings#example-processing-flow). 
+By using compacted data and these operations, it is possible to process billions of cells efficiently without having to uncompact the data, as was necessary before. An example workflow might be to union several coverings from database queries, intersect with a polygon or spherical cap and then filter a collection of points against the resulting covering. See here for an [example workflow](/docs/api-reference/coverings#example-processing-flow). 
 
 
 ### Spatial hierarchy functions
 
 Geometrically, it is impossible to split an A5 pentagon into more pentagons in such a manner that the result exactly overlaps; the same is true of hexagons - unlike quadrilaterals and triangles, which can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
 
-In order to support resampling and other operations, a new function `cellToSubcells` has been added. While this is slower than the `cellToChildren` API it produces a correct covering (by centroid) of the cell. The inverse, `cellToSupercell` is also available.
+In order to support resampling and other operations, a new function [`cellToSubcells`](/docs/api-reference/hierarchy#celltosubcells) has been added. While this is slower than the `cellToChildren` API it produces a correct covering (by centroid) of the cell. The inverse, [`cellToSupercell`](/docs/api-reference/hierarchy#celltosupercell), is also available.
 
 <img src={require('./spatial-hierarchy.jpg').default} alt="The subcells of an A5 cell: the finer cells whose centers lie inside it" style={{width: "100%", maxWidth: "600px"}}/>
 
@@ -60,7 +60,7 @@ One of the important characteristics of a grid system is its support across a ra
 - [Portolan](https://www.portolan-sdi.org/) to host
 - a5-js and the [A5Layer](https://deck.gl/docs/api-reference/geo-layers/a5-layer) in deck.gl to visualize
 
-Along with a raft of implementations in popular systems, such as [DuckDB](https://query.farm/products/extensions/a5/), [R](https://belian-earth.github.io/a5R/dev/index.html), [Python](https://github.com/felixpalmer/a5-py) and more, it is easier to build and experiment with A5 than ever. If you would like to get involved, or just have a question - feel free to join the Slack channel!
+Along with a raft of implementations in popular systems, such as [DuckDB](https://query.farm/products/extensions/a5/), [R](https://belian-earth.github.io/a5R/dev/index.html), [Python](https://github.com/felixpalmer/a5-py) and more, it is easier to build and experiment with A5 than ever. If you would like to get involved, or just have a question - feel free to join the [Slack channel](https://join.slack.com/t/a5-3ap4392/shared_invite/zt-35rpdc904-2vcsoikrJKFRJF7ncN1fmw)!
 
 ## Under the hood
 
@@ -68,7 +68,7 @@ Over the past 18 months, both A5's internals and its APIs have been refined.
 
 ### Teohedral space-filling curve
 
-The key change that the majority of the other improvements flow from is the implementation (and well, discovery!) of a [new space-filling curve](/examples/teohedral-curve), which defines the order in which the cells are indexed. The new curve passes around the whole world, without ever intersecting itself, while also grouping cells such that they form an (approximate) spatial hierarchy.
+The key change that the majority of the other improvements flow from is the implementation (and well, discovery!) of a new [teohedral](/docs/technical/teohedron) [space-filling curve](/examples/teohedral-curve), which defines the order in which the cells are indexed. The new curve passes around the whole world, without ever intersecting itself, while also grouping cells such that they form an (approximate) spatial hierarchy.
 
 ![The teohedral curve touring the 12 faces of the dodecahedron](./teohedral-curve.jpg)
 
@@ -80,7 +80,7 @@ The benchmarks below are instructive:
 
 *How these were measured: each point is one call filling a country outline (UK, France, Brazil, USA and Australia, from the A5 test fixtures) at one resolution, timed with the native libraries: A5 1.0.0-beta.3 and 0.10.1 (Rust crates, rustc 1.87), H3 4.5.0 (the C library, via h3-py's NumPy API) and S2 (the C++ library, via the s2geometry 0.14.0 Python bindings; `S2RegionCoverer` with no cell limit, so it returns a compacted covering at the target level). Times are the fastest of repeated runs, or a single run for calls over 2 seconds, on an Apple M1 Pro. Each library was stopped once a call took longer than a minute (6 seconds for A5), or past a billion cells.*
 
-Prior to v1, A5 couldn't handle polygon fills with over a million cells, with the runtime going through the roof. The same is true of [H3](https://h3geo.org/) today. By contrast, [S2](https://s2geometry.io/) is able to handle up to a billion cells without any issues, as is the new version of A5. It is no coincidence that S2 also uses a space-filling curve ([Hilbert](https://en.wikipedia.org/wiki/Hilbert_curve)) which **doesn't** self-intersect, while H3 index order has no such property.
+Prior to v1, A5 polygon fills became impractically slow beyond a million cells, with the runtime going through the roof. The same is true of [H3](https://h3geo.org/) today. By contrast, [S2](https://s2geometry.io/) is able to handle up to a billion cells without any issues, as is the new version of A5. It is no coincidence that S2 also uses a space-filling curve ([Hilbert](https://en.wikipedia.org/wiki/Hilbert_curve)) which **doesn't** self-intersect, while H3 index order has no such property.
 
 Similar algorithmic tricks can be used to speed up other operations, like intersections or area counts. For an interactive example of these operations, see the [Coverings](/examples/coverings) example.
 
@@ -94,4 +94,4 @@ It has been a challenge and a lot of fun to work on A5, it has led to some great
 
 In general, I find the topic fascinating and I hope you find the system useful in your work and the examples on the site help you understand how a DGGS can be put together. We are currently working on a paper which will explain the design of A5 more rigorously as well as provide comparisons to other DGGS libraries.
 
-If you would like to get involved, join us on our Slack channel and if you build anything with A5, please share!
+If you would like to get involved, join us on our [Slack channel](https://join.slack.com/t/a5-3ap4392/shared_invite/zt-35rpdc904-2vcsoikrJKFRJF7ncN1fmw) and if you build anything with A5, please share!
