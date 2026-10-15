@@ -26,7 +26,7 @@ Like other [DGGSs](https://a5geo.org/docs/technical/dggs), A5 can be used for in
 
 ## Geometric Construction
 
-[DGGSs](https://a5geo.org/docs/technical/dggs) are generally based on a planar cell tiling which is applied to the sides of a [platonic solid](https://a5geo.org/docs/technical/platonic-solids), before being projected onto a sphere.
+[DGGSs](https://a5geo.org/docs/technical/dggs) are generally based on a planar cell tiling which is applied to the sides of a [platonic solid](https://a5geo.org/docs/technical/teohedron), before being projected onto a sphere.
 
 A5 is unique in that it uses a pentagonal tiling of a dodecahedron. The [pentagon chosen](https://a5geo.org/docs/technical/the-pentagon-that-could) for the tiling is equilateral, but not regular - unlike other common DGGSs which use regular polygons, for example [HTM](https://www.microsoft.com/en-us/research/wp-content/uploads/2005/09/tr-2005-123.pdf) uses triangles, [S2](https://s2geometry.io/) uses squares, and [H3](https://h3geo.org/) uses hexagons.
 

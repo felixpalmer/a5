@@ -17,7 +17,7 @@ Generally the term **cell** is used to describe the pentagonal region that the A
 - Resolution 2+ cells are just **cells**
 - There is a [world cell](#special-case-world-cell) which can be thought of as having resolution -1
 
-See [Platonic Solids](./platonic-solids) for more details.
+See [Teohedron](./teohedron) for more details.
 
 ## 64-Bit Structure
 

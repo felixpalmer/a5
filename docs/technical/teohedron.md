@@ -9,7 +9,7 @@ import SolidTeohedron from '/images/solid-teohedron.png';
 import SolidTeohedron2 from '/images/solid-teohedron-2.png';
 import SolidTeohedron3 from '/images/solid-teohedron-3.png';
 
-# Platonic Solids
+# Teohedron
 
 In order to create a uniform grid of cells that covers the globe at different resolutions, the A5 system uses at each level:
 
