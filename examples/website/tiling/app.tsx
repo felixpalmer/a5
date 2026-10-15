@@ -30,6 +30,7 @@ import {Check, MUTED, panelStyle, sectionStyle, useElementSize} from './panel';
 type RGBA = [number, number, number, number];
 
 const LINE: RGBA = [235, 235, 235, 255];
+const LINE_LIGHT: RGBA = [40, 40, 40, 255];
 
 // flipY: false keeps math-convention y-up
 const VIEW = new OrthographicView({id: 'ortho', flipY: false});
@@ -95,16 +96,30 @@ function canonicalizeRing(verts: [number, number][]): [number, number][] {
   return [...ring.slice(k), ...ring.slice(0, k)];
 }
 
-const App: React.FC = () => {
+// Height of an embedded demo, in CSS pixels.
+const EMBED_HEIGHT = {levels: 240, dodecahedron: 420};
+
+type AppProps = {
+  /**
+   * Reduced form for embedding in a docs page, at resolution 4 on a
+   * transparent background: every level side by side, or the 3D dodecahedron
+   * with just the project to sphere toggle.
+   */
+  embed?: 'levels' | 'dodecahedron';
+  /** Embedded on a dark page: draw the cell outlines light */
+  dark?: boolean;
+};
+
+const App: React.FC<AppProps> = ({embed, dark = true}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const size = useElementSize(containerRef);
 
   // A5 resolution: resolution 1 is gD, one pentagon per quintant.
-  const [level, setLevel] = useState(2);
+  const [level, setLevel] = useState(embed ? 4 : 2);
   const [showFills, setShowFills] = useState(false);
-  const [showAllLevels, setShowAllLevels] = useState(false);
+  const [showAllLevels, setShowAllLevels] = useState(embed === 'levels');
   const [showAdjacent, setShowAdjacent] = useState(false);
-  const [view3D, setView3D] = useState(false);
+  const [view3D, setView3D] = useState(embed === 'dodecahedron');
   const [sphere, setSphere] = useState(false);
   const faceVerts = useMemo(
     () =>
@@ -262,12 +277,12 @@ const App: React.FC = () => {
     const rowHeight = unitBounds.height * 1.35;
     // Fit the row between the control panel (left) and the info panel (right)
     // when the container is wide enough to keep both clear.
-    const wide = size.width >= 1000;
+    const wide = !embed && size.width >= 1000;
     const freeWidth = wide ? size.width - PANEL_LEFT - PANEL_RIGHT : size.width;
     const zoom = Math.min(Math.log2((freeWidth * 0.95) / rowWidth), Math.log2((size.height * 0.85) / rowHeight), 8.2);
     const shift = wide ? (PANEL_RIGHT - PANEL_LEFT) / 2 / 2 ** zoom : 0;
     setViewState({target: [shift, 0, 0], zoom});
-  }, [shownLevels.length, unitBounds, view3D, size.width, size.height]);
+  }, [shownLevels.length, unitBounds, view3D, embed, size.width, size.height]);
 
   const layers = view3D
     ? [
@@ -308,7 +323,7 @@ const App: React.FC = () => {
           data: cells,
           getPolygon: d => d.vertices,
           getFillColor: d => (showFills ? QUINTANT_FILLS[d.quintant] : [0, 0, 0, 0]),
-          getLineColor: LINE,
+          getLineColor: dark ? LINE : LINE_LIGHT,
           filled: true,
           stroked: true,
           lineWidthUnits: 'pixels',
@@ -319,6 +334,26 @@ const App: React.FC = () => {
       ];
 
   const pentagonCount = view3D ? 12 * 5 * 4 ** (level - 1) : cells.length;
+
+  if (embed) {
+    return (
+      <div ref={containerRef} style={{position: 'relative', height: EMBED_HEIGHT[embed]}}>
+        <DeckGL
+          views={view3D ? VIEW_3D : VIEW}
+          viewState={viewState}
+          onViewStateChange={({viewState: vs}) => setViewState(vs as Record<string, unknown>)}
+          // Leave the page scroll alone: the 3D view turns, the flat row is fixed.
+          controller={view3D ? {scrollZoom: false} : false}
+          layers={layers}
+        />
+        {view3D && (
+          <div style={{position: 'absolute', top: 8, left: 8, fontSize: '14px'}}>
+            <Check label="Project to sphere" checked={sphere} onChange={setSphere} />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} style={{position: 'absolute', inset: 0, background: 'linear-gradient(0, #000, #223)'}}>

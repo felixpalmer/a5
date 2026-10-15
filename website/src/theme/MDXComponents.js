@@ -5,8 +5,11 @@
 // Components available in every markdown page without an import
 import MDXComponents from '@theme-original/MDXComponents';
 import CodeTabs from '../components/code-tabs';
+import {ConwayDemo, TilingDemo} from '../components/embedded-demos';
 
 export default {
   ...MDXComponents,
-  CodeTabs
+  CodeTabs,
+  ConwayDemo,
+  TilingDemo
 };

@@ -57,6 +57,7 @@ const ROWS: {key: RowKey; label: string; expression: string; cell: (n: number) =
 ];
 
 const LABEL: [number, number, number] = [225, 225, 225];
+const LABEL_LIGHT: [number, number, number] = [40, 40, 40];
 
 // Space for the labels around the grid, in CSS pixels.
 const ROW_LABEL_WIDTH = 100;
@@ -71,7 +72,18 @@ const MARGIN = 20;
 const DEFAULT_ROTATION = {rotationX: 20, rotationOrbit: -30, zoomOffset: 0};
 type Rotation = typeof DEFAULT_ROTATION;
 
-const App: React.FC = () => {
+type AppProps = {
+  /**
+   * Reduced form for embedding in a docs page: only these rows, on a
+   * transparent background, with just the project to sphere toggle. The
+   * height follows from the width.
+   */
+  embed?: RowKey[];
+  /** Embedded on a dark page: draw the labels light */
+  dark?: boolean;
+};
+
+const App: React.FC<AppProps> = ({embed, dark = true}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const size = useElementSize(containerRef);
 
@@ -79,19 +91,26 @@ const App: React.FC = () => {
   const [colour, setColour] = useState(true);
   const [labels, setLabels] = useState(true);
   const [showOrtho, setShowOrtho] = useState(false);
-  const rows = useMemo(() => ROWS.filter(row => showOrtho || row.key !== 'ortho'), [showOrtho]);
+  const rows = useMemo(
+    () => ROWS.filter(row => (embed ? embed.includes(row.key) : showOrtho || row.key !== 'ortho')),
+    [embed, showOrtho]
+  );
   const [rotation, setRotation] = useState<Rotation>(DEFAULT_ROTATION);
 
   // The free region between the panels, and the largest grid that fits it.
-  const wide = size.width >= 1000;
-  const regionX = wide ? PANEL_LEFT : MARGIN;
-  const regionWidth = Math.max(0, size.width - regionX - (wide ? PANEL_RIGHT : MARGIN));
+  const wide = !embed && size.width >= 1000;
+  const regionX = wide ? PANEL_LEFT : embed ? 0 : MARGIN;
+  const regionWidth = Math.max(0, size.width - regionX - (wide ? PANEL_RIGHT : embed ? 0 : MARGIN));
   const regionHeight = Math.max(0, size.height - 2 * MARGIN);
   const left = labels ? ROW_LABEL_WIDTH : 0;
   const top = labels ? HEADER_HEIGHT : 0;
   const cell = Math.max(
     40,
-    Math.floor(Math.min((regionWidth - left) / FREQUENCIES.length, (regionHeight - top) / rows.length))
+    Math.floor(
+      embed
+        ? (regionWidth - left) / FREQUENCIES.length
+        : Math.min((regionWidth - left) / FREQUENCIES.length, (regionHeight - top) / rows.length)
+    )
   );
   const width = left + cell * FREQUENCIES.length;
   const height = top + cell * rows.length;
@@ -136,14 +155,15 @@ const App: React.FC = () => {
             height: cell,
             // Centre the polyhedron above its label.
             padding: {bottom: labels ? CELL_LABEL_HEIGHT : 0},
-            controller: true
+            // Embedded, leave the page scroll alone.
+            controller: embed ? {scrollZoom: false} : true
           })
         )
       )
     );
     vs.push(new OrthographicView({id: 'labels', controller: false}));
     return vs;
-  }, [rows, left, top, cell, labels]);
+  }, [rows, left, top, cell, labels, embed]);
 
   // Every polyhedron has circumradius 1; leave room for the cell's label.
   const baseZoom = Math.log2((cell - (labels ? CELL_LABEL_HEIGHT : 0)) / 2.25);
@@ -238,11 +258,37 @@ const App: React.FC = () => {
         getSize: d => d.size,
         getTextAnchor: d => d.anchor,
         getAlignmentBaseline: 'center',
-        getColor: LABEL,
+        getColor: dark ? LABEL : LABEL_LIGHT,
         fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif',
         characterSet: 'auto'
       })
   ];
+
+  const deck = (
+    <DeckGL
+      width={width}
+      height={height}
+      views={views}
+      // One state per view id; deck's typing only knows the single-view form.
+      viewState={viewState as Record<string, never>}
+      onViewStateChange={({viewId: id, viewState: vs}) => {
+        if (id === 'labels') return;
+        const v = vs as {rotationX: number; rotationOrbit: number; zoom: number};
+        setRotation({rotationX: v.rotationX, rotationOrbit: v.rotationOrbit, zoomOffset: v.zoom - baseZoom});
+      }}
+      layerFilter={({layer, viewport}) => layer.id.startsWith(`${viewport.id}:`)}
+      layers={layers}
+    />
+  );
+
+  if (embed) {
+    return (
+      <div ref={containerRef}>
+        <Check label="Project to sphere" checked={sphere} onChange={setSphere} />
+        {size.width > 0 && <div style={{position: 'relative', width, height}}>{deck}</div>}
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} style={{position: 'absolute', inset: 0, background: 'linear-gradient(0, #000, #223)'}}>
@@ -256,20 +302,7 @@ const App: React.FC = () => {
             height
           }}
         >
-          <DeckGL
-            width={width}
-            height={height}
-            views={views}
-            // One state per view id; deck's typing only knows the single-view form.
-            viewState={viewState as Record<string, never>}
-            onViewStateChange={({viewId: id, viewState: vs}) => {
-              if (id === 'labels') return;
-              const v = vs as {rotationX: number; rotationOrbit: number; zoom: number};
-              setRotation({rotationX: v.rotationX, rotationOrbit: v.rotationOrbit, zoomOffset: v.zoom - baseZoom});
-            }}
-            layerFilter={({layer, viewport}) => layer.id.startsWith(`${viewport.id}:`)}
-            layers={layers}
-          />
+          {deck}
         </div>
       )}
 
