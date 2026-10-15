@@ -37,11 +37,7 @@
   {
     "type": "category",
     "label": "Technical Details",
-    "items": [
-      "technical/bit-tags",
-      "technical/index-encoding",
-      "technical/teohedron"
-    ]
+    "items": ["technical/bit-tags", "technical/index-encoding", "technical/teohedron"]
   },
   {
     "type": "category",
