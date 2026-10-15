@@ -3,9 +3,10 @@ import type {Degrees, LonLat} from 'a5/core/coordinate-systems';
 import {cellToBoundary, cellToLonLat, lonLatToCell, a5cellContainsPoint} from 'a5/core/cell';
 import {fromLonLat} from 'a5/core/coordinate-transforms';
 import {deserialize, MAX_RESOLUTION} from 'a5/core/serialization';
-import {hexToU64} from 'a5/core/hex';
+import {hexToU64, u64ToHex} from 'a5/core/hex';
 import populatedPlaces from './data/ne_50m_populated_places_nameonly.json';
 import cellToLonLatFixtures from './fixtures/cell-to-lonlat.json';
+import lonLatToCellSequenceFixtures from './fixtures/lonlat-to-cell-sequence.json';
 
 interface GeoJSONFeature {
   type: 'Feature';
@@ -206,6 +207,20 @@ describe('cellToLonLat Tests', () => {
       const [lon, lat] = cellToLonLat(cell);
       expect(lon).toBeCloseTo(fixture.center_lonlat[0], 10);
       expect(lat).toBeCloseTo(fixture.center_lonlat[1], 10);
+    }
+  });
+});
+
+describe('lonLatToCell sequence', () => {
+  // The lookups are made in order: each must match a cold lookup of its point,
+  // whatever the lookup before it was
+  it('should not depend on earlier lookups', () => {
+    const {points, sequences} = lonLatToCellSequenceFixtures;
+    for (const {resolution, lookups, cells} of sequences) {
+      for (let i = 0; i < lookups.length; i++) {
+        const cell = lonLatToCell(points[lookups[i]] as LonLat, resolution);
+        expect(u64ToHex(cell), `resolution ${resolution}, lookup ${i}`).toBe(cells[i]);
+      }
     }
   });
 });
