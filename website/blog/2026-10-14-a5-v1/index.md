@@ -25,10 +25,17 @@ New in `v1.0` is a whole new set of functions for working with collections of ce
 
 <img src={require('./coverings.jpg').default} alt="A covering built with set operations, drawn as its compacted cells" style={{width: "100%", maxWidth: "600px"}}/>
 
+### Spatial hierarchy functions
+
+A common request was how to break down an A5 cell into finer cells that fill that cell. Geometrically, it is impossible to split a pentagon into more pentagons in such a manner that the result exactly overlaps, the same is true of hexagons - only quadrilaterals and triangles can be split exactly. The A5 hierarchy is thus logical, and only approximately spatial.
+
+In order to support resampling and other operations, a new function `cellToSubcells` has been added. While this is slower than the `cellToChildren` API it produces a correct covering of the cell. The inverse, `cellToSupercell` is also available.
+
+<img src={require('./spatial-hierarchy.jpg').default} alt="The subcells of an A5 cell: the finer cells whose centers lie inside it" style={{width: "100%", maxWidth: "600px"}}/>
+
 ### Equal area
 
 One of the key strengths of A5 has always been the guarantee that every cell is **exactly** the same area at a given resolution, which means that any analysis run using the system is [free of bias](/docs/recipes/a5-vs-h3) due to unequal cell sizes. Newly in `v1.0`, all the cells at all resolutions have the same pentagonal topology - unlike a common limitation of hexagon-cell systems which must include 12 pentagonal cells, which complicate the topology and break the pure equal-area guarantee.
-
 
 
 ### Vibrant ecosystem
@@ -39,7 +46,7 @@ One of the important characteristics of a grid system is its support across a ra
 - [Portolan](https://www.portolan-sdi.org/) to host
 - a5-js and the [A5Layer](https://deck.gl/docs/api-reference/geo-layers/a5-layer) in deck.gl to visualize
 
-Along with a raft of implementations in popular systems, such as [DuckDB](https://query.farm/products/extensions/a5/), [R](https://belian-earth.github.io/a5R/dev/index.html), [Python](https://github.com/felixpalmer/a5-py) and more, having a common standard for
+Along with a raft of implementations in popular systems, such as [DuckDB](https://query.farm/products/extensions/a5/), [R](https://belian-earth.github.io/a5R/dev/index.html), [Python](https://github.com/felixpalmer/a5-py) and more, it is easier to build and experiment with A5 than ever. If you would like to get involved, or just have a question - feel free to join the Slack channel!
 
 ### Under the hood
 
@@ -53,6 +60,6 @@ The fact that it doesn't self-intersect is crucial to some of the algorithms tha
 
 ![polygonToCells time against the number of cells in the result, for old and new A5, H3 and S2](./polygon-perf.jpg)
 
-Prior to v1, A5 couldn't handle polygon fills with over a million cells, with the runtime going through the roof. The same is true of [H3](https://h3geo.org/) today. By contrast, [S2](https://s2geometry.io/) is able to handle up to a billion cells without any issues, as is the new version of A5. It is no coincidence that S2 also uses a space-filling curve ([Hilbert](https://en.wikipedia.org/wiki/Hilbert_curve)) which doesn't self-intersect, while H3 does not.
+Prior to v1, A5 couldn't handle polygon fills with over a million cells, with the runtime going through the roof. The same is true of [H3](https://h3geo.org/) today. By contrast, [S2](https://s2geometry.io/) is able to handle up to a billion cells without any issues, as is the new version of A5. It is no coincidence that S2 also uses a space-filling curve ([Hilbert](https://en.wikipedia.org/wiki/Hilbert_curve)) which **doesn't** self-intersect, while the curve H3 uses **does** self-intersect.
 
 Similar algorithmic tricks can be used to speed up other operations, like intersections or area counts. For an interactive example of these operations, see the [Coverings](/examples/coverings) example.
