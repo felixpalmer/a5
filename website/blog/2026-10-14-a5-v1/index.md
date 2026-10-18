@@ -9,7 +9,7 @@ tags: [release]
 
 It has been 18 months since the first announcement of A5. What started off as an experiment in visualization (and an obsession with pentagons) has grown into a useful tool, with a wealth of [libraries, tools and software](/docs/ecosystem) building on top.
 
-Today I'm excited to announce that the `v1.0` version of A5 is out, bringing a [powerful set of features and performance improvements](/docs/whats-new) as well as [crystallizing the grid and index definition](/docs/upgrade-guide) for the future.
+Today I'm excited to announce that the `v1.0` version of A5 is out, bringing a [powerful set of features and performance improvements](/docs/whats-new) as well as [crystallizing the grid and index definition](/docs/upgrade-guide) for the future. The website has also been overhauled, be sure to check out the [new homepage in particular](https://a5geo.org), that has an interactive version of the image above.
 
 <!-- truncate -->
 
