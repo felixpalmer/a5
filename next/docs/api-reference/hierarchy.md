@@ -74,7 +74,7 @@ Rust:
 pub fn cell_to_parent(index: u64, parent_resolution: Option<i32>) -> Result<u64, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_cell_to_parent(cell UBIGINT) -> UBIGINT
@@ -125,7 +125,7 @@ a5_cell_to_children(cell UBIGINT) -> UBIGINT[]
 a5_cell_to_children(cell UBIGINT, child_resolution INTEGER) -> UBIGINT[]
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_cell_to_children(cell, resolution = NULL, simplify = TRUE)
@@ -166,13 +166,13 @@ Rust:
 pub fn cell_to_supercell(cell: u64, resolution: i32) -> Result<u64, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_cell_to_supercell(cell UBIGINT, resolution INTEGER) -> UBIGINT
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_cell_to_supercell(cell, resolution = NULL)
@@ -209,16 +209,16 @@ Rust:
 pub fn cell_to_subcells(cell: u64, resolution: i32) -> Result<Vec<u64>, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
-a5_cell_to_subcell(cell UBIGINT, resolution INTEGER) -> UBIGINT[]
+a5_cell_to_subcells(cell UBIGINT, resolution INTEGER) -> UBIGINT[]
 ```
 
-R (not yet released):
+R:
 
 ```r
-a5_cell_to_subcell(cell, resolution = NULL)
+a5_cell_to_subcells(cell, resolution = NULL)
 ```
 
 #### Parameters
@@ -262,23 +262,23 @@ let subcells = uncompact(&cell_to_subcells(cell, 11)?)?;
 subcells.iter().all(|&subcell| cell_to_supercell(subcell, 8) == Ok(cell)); // true
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 SELECT bool_and(a5_cell_to_supercell(subcell, 8) = cell)  -- true
 FROM (
-  SELECT cell, unnest(a5_uncompact(a5_cell_to_subcell(cell, 11))) AS subcell
+  SELECT cell, unnest(a5_uncompact(a5_cell_to_subcells(cell, 11))) AS subcell
   FROM (SELECT a5_lonlat_to_cell(2.35, 48.85, 8) AS cell)
 );
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
 
 cell <- a5_lonlat_to_cell(2.35, 48.85, resolution = 8)
-subcells <- a5_uncompact(a5_cell_to_subcell(cell, resolution = 11))
+subcells <- a5_uncompact(a5_cell_to_subcells(cell, resolution = 11))
 all(a5_cell_to_supercell(subcells, resolution = 8) == cell)  # TRUE
 ```
 
@@ -359,7 +359,7 @@ SELECT unnest(a5_cell_to_children(cell, 1)) AS cell
 FROM (SELECT unnest(a5_get_res0_cells()) AS cell);
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)

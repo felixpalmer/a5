@@ -206,7 +206,7 @@ Rust:
 pub fn cell_edge_length_avg(resolution: i32) -> f64
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_cell_edge_length_avg(resolution INTEGER) -> DOUBLE
@@ -255,7 +255,7 @@ println!("{}", cell_edge_length_avg(2)); // ~1,190,000 m
 println!("{}", cell_edge_length_avg(10)); // ~4,680 m
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 SELECT a5_cell_edge_length_avg(2);   -- ~1,190,000 m
@@ -299,7 +299,7 @@ DuckDB:
 a5_is_valid_cell(cell UBIGINT) -> BOOLEAN
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_is_valid_cell(x)  # a5_cell or hex strings
@@ -349,7 +349,7 @@ SELECT a5_is_valid_cell(a5_lonlat_to_cell(2.35, 48.85, 10));  -- true
 SELECT a5_is_valid_cell(a5_hex_to_u64('fd00000000000000'));   -- false: resolution 1 has no quintant 63
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)

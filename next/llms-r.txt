@@ -58,7 +58,7 @@ For examples of how to use the code, see the [example code on GitHub](https://gi
 - [a5_cell_to_parent](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltoparent)
 - [a5_cell_to_children](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltochildren)
 - [a5_cell_to_supercell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosupercell)
-- [a5_cell_to_subcell](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
+- [a5_cell_to_subcells](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
 - [a5_get_res0_cells](https://a5geo.org/next/docs/api-reference/hierarchy.md#getres0cells)
 
 ### Cell Info
@@ -193,8 +193,6 @@ a5_polygon_to_cells(x, resolution, containment = c("centre", "overlapping"))
 - **(BigUint64Array)** Compacted cells belonging to the polygon sorted in curve order, then the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker). A polygon with no cells gives just the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -334,8 +332,6 @@ a5_cell_to_parent(cell, resolution = NULL)
 
 Returns the child cells of an A5 cell.
 
-_Not yet in a released version for R._
-
 ```r
 a5_cell_to_children(cell, resolution = NULL, simplify = TRUE)
 ```
@@ -357,8 +353,6 @@ Where the parent/child relationship groups cells by index, subcells and supercel
 
 Returns the cell at a coarser resolution that contains the center of an A5 cell: the spatial counterpart of `a5_cell_to_parent`.
 
-_Not yet in a released version for R._
-
 ```r
 a5_cell_to_supercell(cell, resolution = NULL)
 ```
@@ -372,14 +366,12 @@ a5_cell_to_supercell(cell, resolution = NULL)
 
 - **(bigint)** The cell at `resolution` containing the center of `index`
 
-### a5_cell_to_subcell
+### a5_cell_to_subcells
 
 Returns the cells at a finer resolution whose centers lie in an A5 cell: the spatial counterpart of `a5_cell_to_children`, and the inverse of `a5_cell_to_supercell`. Like the other functions returning a [covering](https://a5geo.org/next/docs/api-reference/coverings.md), the result is compacted, ending with a [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) recording the resolution.
 
-_Not yet in a released version for R._
-
 ```r
-a5_cell_to_subcell(cell, resolution = NULL)
+a5_cell_to_subcells(cell, resolution = NULL)
 ```
 
 #### Parameters
@@ -393,13 +385,11 @@ a5_cell_to_subcell(cell, resolution = NULL)
 
 #### Example
 
-_Not yet in a released version for R._
-
 ```r
 library(a5R)
 
 cell <- a5_lonlat_to_cell(2.35, 48.85, resolution = 8)
-subcells <- a5_uncompact(a5_cell_to_subcell(cell, resolution = 11))
+subcells <- a5_uncompact(a5_cell_to_subcells(cell, resolution = 11))
 all(a5_cell_to_supercell(subcells, resolution = 8) == cell)  # TRUE
 ```
 
@@ -416,8 +406,6 @@ a5_get_res0_cells()
 - **(bigint[])** Array of 12 A5 cell identifiers
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -461,8 +449,6 @@ a5_grid_disk(cell, k, vertex = FALSE)
 - **(BigUint64Array)** Compacted cells in the disk sorted in curve order, then the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -511,8 +497,6 @@ a5_spherical_cap(cell, radius)
 - **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker)
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -614,8 +598,6 @@ a5_cell_edge_length_avg(10, units = "km") # ~4.68 [km]
 
 Checks whether a 64-bit value is an A5 cell. Use it to validate cell IDs from outside sources, such as a file or a database, before passing them to other A5 functions. The [world cell](https://a5geo.org/next/docs/technical/index-encoding.md#special-case-world-cell) is a valid cell: it has no boundary, but `a5_cell_to_parent` returns it as the parent of the resolution 0 cells. A [compaction marker](https://a5geo.org/next/docs/api-reference/compaction.md#coverings-and-the-compaction-marker) is not a cell.
 
-_Not yet in a released version for R._
-
 ```r
 a5_is_valid_cell(x)  # a5_cell or hex strings
 ```
@@ -629,8 +611,6 @@ a5_is_valid_cell(x)  # a5_cell or hex strings
 - **(boolean)** Whether the value is an A5 cell identifier
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -657,7 +637,7 @@ The result of a compaction is a [covering](https://a5geo.org/next/docs/api-refer
 Many of the functions in the A5 API return and accept compacted data, and should be used whenever possible rather than using the more low-level functions below. See [here](https://a5geo.org/next/docs/api-reference/coverings.md#example-processing-flow) for an example.
 
 - Indexing: [`a5_polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells)
-- Hierarchy: [`a5_cell_to_subcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
+- Hierarchy: [`a5_cell_to_subcells`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells)
 - Traversal: [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`a5_spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap)
 - Set operations: [`a5_union`](https://a5geo.org/next/docs/api-reference/coverings.md#union), [`a5_intersect`](https://a5geo.org/next/docs/api-reference/coverings.md#intersect), [`a5_difference`](https://a5geo.org/next/docs/api-reference/coverings.md#difference)
 - Predicates: [`a5_contains`](https://a5geo.org/next/docs/api-reference/coverings.md#contains), [`a5_overlaps`](https://a5geo.org/next/docs/api-reference/coverings.md#overlaps)
@@ -668,8 +648,6 @@ Many of the functions in the A5 API return and accept compacted data, and should
 ### a5_compact
 
 Compacts a set of A5 cells by replacing complete groups of sibling cells with their parent cells, and appends the [compaction marker](#coverings-and-the-compaction-marker) recording the resolution of the finest input cell. In most cases users will use [a5_polygon_to_cells](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells)
-
-_Not yet in a released version for R._
 
 ```r
 a5_compact(cells, resolution = NULL)
@@ -684,8 +662,6 @@ a5_compact(cells, resolution = NULL)
 - **(BigUint64Array)** Compacted cells sorted in curve order, then the [compaction marker](#coverings-and-the-compaction-marker). An empty input returns an empty array.
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -705,8 +681,6 @@ a5_uncompact(compacted)            # the 4 children again
 
 Expands a covering to all of its cells at the covering's resolution: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
 
-_Not yet in a released version for R._
-
 ```r
 a5_uncompact(x, resolution = NULL, simplify = TRUE)
 ```
@@ -720,8 +694,6 @@ a5_uncompact(x, resolution = NULL, simplify = TRUE)
 - **(BigUint64Array)** Array of cell identifiers, all at the covering's resolution
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -744,8 +716,6 @@ a5_get_resolution(flat[1])  # 10
 
 Returns the resolution a covering stands for: the resolution of its [compaction marker](#coverings-and-the-compaction-marker), or of its finest cell when it has none.
 
-_Not yet in a released version for R._
-
 ```r
 a5_covering_resolution(x)
 ```
@@ -759,8 +729,6 @@ a5_covering_resolution(x)
 - **(number)** Resolution (0–30), or -1 for an empty array or the [world cell](https://a5geo.org/next/docs/technical/index-encoding.md#special-case-world-cell)
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -799,7 +767,7 @@ A compacted array holds cells at mixed resolutions, but it stands for a set of c
 
 Read coverings only through the A5 functions, which handle the compaction marker for you, rather than indexing the array or taking its length: [`a5_count`](https://a5geo.org/next/docs/api-reference/coverings.md#count) and [`a5_area`](https://a5geo.org/next/docs/api-reference/coverings.md#area) measure a covering, [`a5_contains`](https://a5geo.org/next/docs/api-reference/coverings.md#contains) tests a cell, [`a5_uncompact`](#uncompact) lists its cells at its resolution, and [`a5_covering_resolution`](#coveringresolution) gives that resolution.
 
-`a5_compact`, [`a5_polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`a5_spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap), [`a5_cell_to_subcell`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells) and the [set operations](https://a5geo.org/next/docs/api-reference/coverings.md) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
+`a5_compact`, [`a5_polygon_to_cells`](https://a5geo.org/next/docs/api-reference/indexing.md#polygontocells), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddisk), [`a5_grid_disk`](https://a5geo.org/next/docs/api-reference/traversal.md#griddiskvertex), [`a5_spherical_cap`](https://a5geo.org/next/docs/api-reference/traversal.md#sphericalcap), [`a5_cell_to_subcells`](https://a5geo.org/next/docs/api-reference/hierarchy.md#celltosubcells) and the [set operations](https://a5geo.org/next/docs/api-reference/coverings.md) all return coverings. The cells come sorted in curve order (the order of the A5 space-filling curve), with the compaction marker last.
 
 See [Bit Tags](https://a5geo.org/next/docs/technical/bit-tags.md#compaction-marker-encoding) for how the compaction marker is encoded.
 
@@ -847,8 +815,6 @@ Timings measured with the [Rust implementation](https://github.com/felixpalmer/a
 
 Returns the cells in either covering. Both must be at the same resolution, or it throws.
 
-_Not yet in a released version for R._
-
 ```r
 a5_union(x, y = NULL)
 ```
@@ -864,8 +830,6 @@ a5_union(x, y = NULL)
 
 #### Example
 
-_Not yet in a released version for R._
-
 ```r
 library(a5R)
 
@@ -879,8 +843,6 @@ coverage <- a5_union(
 ### a5_intersect
 
 Returns the cells in both coverings. Both must be at the same resolution, or it throws.
-
-_Not yet in a released version for R._
 
 ```r
 a5_intersect(x, y)
@@ -899,8 +861,6 @@ a5_intersect(x, y)
 
 Returns the cells in the first covering but not in the second. Both must be at the same resolution, or it throws.
 
-_Not yet in a released version for R._
-
 ```r
 a5_difference(x, y)
 ```
@@ -915,8 +875,6 @@ a5_difference(x, y)
 - **(BigUint64Array)** Covering of cells present in the first covering but not the second
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
@@ -935,8 +893,6 @@ outside <- a5_difference(
 
 Checks whether a cell is in a covering. The cell must be at the covering's resolution, or it throws: A5 cells don't nest geometrically across resolutions, so a finer cell isn't guaranteed to lie inside its ancestor. To test a point, index it at the covering's resolution with `lonLatToCell(point, resolution)`.
 
-_Not yet in a released version for R._
-
 ```r
 a5_contains(x, cell)
 ```
@@ -952,8 +908,6 @@ a5_contains(x, cell)
 
 #### Example
 
-_Not yet in a released version for R._
-
 ```r
 library(a5R)
 
@@ -964,8 +918,6 @@ inside <- a5_contains(coverage, a5_lonlat_to_cell(2.35, 48.85, resolution = 12))
 ### a5_overlaps
 
 Checks whether two coverings share any cell. Both must be at the same resolution, or it throws.
-
-_Not yet in a released version for R._
 
 ```r
 a5_overlaps(x, y)
@@ -986,8 +938,6 @@ a5_overlaps(x, y)
 
 Returns the number of cells in a covering, equivalent to the length of `uncompact(cells)` without having to materialize the uncompacted cells. Note that this generally differs from the length of the compacted array.
 
-_Not yet in a released version for R._
-
 ```r
 a5_count(x)
 ```
@@ -1002,8 +952,6 @@ a5_count(x)
 
 #### Example
 
-_Not yet in a released version for R._
-
 ```r
 library(a5R)
 
@@ -1015,8 +963,6 @@ a5_count(france)  # 67995098 cells at resolution 16
 ### a5_area
 
 Returns the area of a covering in square meters. As A5 cells are equal-area, this is exact: the number of cells times the [cell area](https://a5geo.org/next/docs/api-reference/cell-info.md#cellarea) at the covering's resolution.
-
-_Not yet in a released version for R._
 
 ```r
 a5_area(x, units = "m^2")
@@ -1043,8 +989,6 @@ Converts a cell ID from the legacy v0 A5 index to the format supported by A5 v1+
 
 **Note this function will be retired in a future version, there is no plan to support the legacy v0 A5 index going forward**
 
-_Not yet in a released version for R._
-
 ```r
 a5_migrate(cell)
 ```
@@ -1058,8 +1002,6 @@ a5_migrate(cell)
 - **(bigint)** The ID of the same cell in the v1 index
 
 #### Example
-
-_Not yet in a released version for R._
 
 ```r
 library(a5R)
