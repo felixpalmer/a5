@@ -30,6 +30,18 @@ v0 cell IDs rendered using v1 appear roughly in the same place but are shuffled 
 
 ## Downstream libraries
 
+### DuckDB
+
+The [DuckDB extension](./quickstart/duckdb.md) supports A5 v1 from DuckDB v1.5.6. Older versions of DuckDB install an earlier build of the extension that still produces v0 cell IDs, so upgrade DuckDB and run `FORCE INSTALL a5 FROM community;`. Data indexed with v0 can be converted in SQL with `a5_migrate`:
+
+```sql
+UPDATE my_table SET cell = a5_migrate(cell);
+```
+
+### R
+
+[a5R](https://belian-earth.github.io/a5R/) supports A5 v1 from version 1.0.0, and provides `a5_migrate` to convert v0 cell IDs.
+
 ### deck.gl v9
 
 The [`A5Layer`](https://deck.gl/docs/api-reference/geo-layers/a5-layer) in `@deck.gl/geo-layers` depends on `a5-js` 0.x (`^0.10.0` as of deck.gl 9.4), a range that does not accept v1. Adding `a5-js` v1 to your app therefore installs a second copy, and the layer keeps decoding cells with the old one: v1 IDs render in the wrong place, without any error.
