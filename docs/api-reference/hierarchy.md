@@ -68,7 +68,7 @@ def cell_to_parent(index: int, parent_resolution: Optional[int] = None) -> int
 pub fn cell_to_parent(index: u64, parent_resolution: Option<i32>) -> Result<u64, String>
 ```
 
-```sql unreleased
+```sql
 a5_cell_to_parent(cell UBIGINT) -> UBIGINT
 a5_cell_to_parent(cell UBIGINT, parent_resolution INTEGER) -> UBIGINT
 ```
@@ -111,7 +111,7 @@ a5_cell_to_children(cell UBIGINT) -> UBIGINT[]
 a5_cell_to_children(cell UBIGINT, child_resolution INTEGER) -> UBIGINT[]
 ```
 
-```r unreleased
+```r
 a5_cell_to_children(cell, resolution = NULL, simplify = TRUE)
 ```
 
@@ -148,11 +148,11 @@ def cell_to_supercell(cell: int, resolution: int) -> int
 pub fn cell_to_supercell(cell: u64, resolution: i32) -> Result<u64, String>
 ```
 
-```sql unreleased
+```sql
 a5_cell_to_supercell(cell UBIGINT, resolution INTEGER) -> UBIGINT
 ```
 
-```r unreleased
+```r
 a5_cell_to_supercell(cell, resolution = NULL)
 ```
 
@@ -185,12 +185,12 @@ def cell_to_subcells(cell: int, resolution: int) -> List[int]
 pub fn cell_to_subcells(cell: u64, resolution: i32) -> Result<Vec<u64>, String>
 ```
 
-```sql unreleased
-a5_cell_to_subcell(cell UBIGINT, resolution INTEGER) -> UBIGINT[]
+```sql
+a5_cell_to_subcells(cell UBIGINT, resolution INTEGER) -> UBIGINT[]
 ```
 
-```r unreleased
-a5_cell_to_subcell(cell, resolution = NULL)
+```r
+a5_cell_to_subcells(cell, resolution = NULL)
 ```
 
 </CodeTabs>
@@ -232,19 +232,19 @@ let subcells = uncompact(&cell_to_subcells(cell, 11)?)?;
 subcells.iter().all(|&subcell| cell_to_supercell(subcell, 8) == Ok(cell)); // true
 ```
 
-```sql unreleased
+```sql
 SELECT bool_and(a5_cell_to_supercell(subcell, 8) = cell)  -- true
 FROM (
-  SELECT cell, unnest(a5_uncompact(a5_cell_to_subcell(cell, 11))) AS subcell
+  SELECT cell, unnest(a5_uncompact(a5_cell_to_subcells(cell, 11))) AS subcell
   FROM (SELECT a5_lonlat_to_cell(2.35, 48.85, 8) AS cell)
 );
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 cell <- a5_lonlat_to_cell(2.35, 48.85, resolution = 8)
-subcells <- a5_uncompact(a5_cell_to_subcell(cell, resolution = 11))
+subcells <- a5_uncompact(a5_cell_to_subcells(cell, resolution = 11))
 all(a5_cell_to_supercell(subcells, resolution = 8) == cell)  # TRUE
 ```
 
@@ -315,7 +315,7 @@ SELECT unnest(a5_cell_to_children(cell, 1)) AS cell
 FROM (SELECT unnest(a5_get_res0_cells()) AS cell);
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 res0_cells <- a5_get_res0_cells()

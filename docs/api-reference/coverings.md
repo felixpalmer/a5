@@ -59,11 +59,11 @@ def union(a: Cells, b: Cells) -> List[int]
 pub fn union(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
 ```
 
-```sql unreleased
+```sql
 a5_union(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
 ```
 
-```r unreleased
+```r
 a5_union(x, y = NULL)
 ```
 
@@ -106,13 +106,13 @@ let coverage = union(
 )?;
 ```
 
-```sql unreleased
+```sql
 -- A multi-polygon: the union of its parts
 SELECT a5_union(a5_geometry_to_cells(mainland, 10), a5_geometry_to_cells(island, 10)) AS coverage
 FROM parts;
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 # A multi-polygon: the union of its parts
@@ -142,11 +142,11 @@ def intersect(a: Cells, b: Cells) -> List[int]
 pub fn intersect(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
 ```
 
-```sql unreleased
+```sql
 a5_intersect(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
 ```
 
-```r unreleased
+```r
 a5_intersect(x, y)
 ```
 
@@ -179,11 +179,11 @@ def difference(a: Cells, b: Cells) -> List[int]
 pub fn difference(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
 ```
 
-```sql unreleased
+```sql
 a5_difference(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
 ```
 
-```r unreleased
+```r
 a5_difference(x, y)
 ```
 
@@ -226,7 +226,7 @@ let outside = difference(
 )?;
 ```
 
-```sql unreleased
+```sql
 -- A country without the area within 50 km of its capital
 SELECT a5_difference(
   a5_geometry_to_cells(geom, 10),
@@ -235,7 +235,7 @@ SELECT a5_difference(
 FROM countries;
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 # A country without the area within 50 km of its capital
@@ -268,11 +268,11 @@ def contains(cells: Cells, cell: int) -> bool
 pub fn contains(cells: &[u64], cell: u64) -> Result<bool, String>
 ```
 
-```sql unreleased
+```sql
 a5_contains(cells UBIGINT[], cell UBIGINT) -> BOOLEAN
 ```
 
-```r unreleased
+```r
 a5_contains(x, cell)
 ```
 
@@ -312,12 +312,12 @@ let coverage = polygon_to_cells(&[ring], 12, None)?;
 let inside = contains(&coverage, lonlat_to_cell(LonLat::new(2.35, 48.85), 12)?)?;
 ```
 
-```sql unreleased
+```sql
 SELECT a5_contains(a5_geometry_to_cells(geom, 12), a5_lonlat_to_cell(2.35, 48.85, 12)) AS inside
 FROM countries;
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 coverage <- a5_polygon_to_cells(country, resolution = 12)
@@ -344,11 +344,11 @@ def overlaps(a: Cells, b: Cells) -> bool
 pub fn overlaps(a: &[u64], b: &[u64]) -> Result<bool, String>
 ```
 
-```sql unreleased
+```sql
 a5_overlaps(a UBIGINT[], b UBIGINT[]) -> BOOLEAN
 ```
 
-```r unreleased
+```r
 a5_overlaps(x, y)
 ```
 
@@ -383,11 +383,11 @@ def count(cells: Sequence[int]) -> int
 pub fn count(cells: &[u64]) -> Result<u64, String>
 ```
 
-```sql unreleased
+```sql
 a5_count(cells UBIGINT[]) -> UBIGINT
 ```
 
-```r unreleased
+```r
 a5_count(x)
 ```
 
@@ -429,14 +429,14 @@ let france = polygon_to_cells(&[france_ring], 16, None)?;
 println!("{}", count(&france)?); // 67995098 cells at resolution 16
 ```
 
-```sql unreleased
+```sql
 -- Stored compactly, as 78929 cells at mixed resolutions
 SELECT a5_count(a5_geometry_to_cells(geom, 16))  -- 67995098 cells at resolution 16
 FROM countries
 WHERE name = 'France';
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 # Stored compactly, as 78929 cells at mixed resolutions
@@ -464,11 +464,11 @@ def area(cells: Sequence[int]) -> float
 pub fn area(cells: &[u64]) -> Result<f64, String>
 ```
 
-```sql unreleased
+```sql
 a5_area(cells UBIGINT[]) -> DOUBLE
 ```
 
-```r unreleased
+```r
 a5_area(x, units = "m^2")
 ```
 

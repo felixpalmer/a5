@@ -180,7 +180,7 @@ pub struct PolygonToCellsOptions {
 }
 ```
 
-```sql unreleased
+```sql
 a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER) -> UBIGINT[]
 a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER, overlapping BOOLEAN) -> UBIGINT[]
 ```
@@ -285,7 +285,7 @@ let options = PolygonToCellsOptions { containment: Containment::Overlapping };
 let covering = polygon_to_cells(&[ring], 10, Some(options))?;
 ```
 
-```sql unreleased
+```sql
 -- Bounding box around central Paris
 SELECT a5_geometry_to_cells(
   'POLYGON((2.25 48.81, 2.42 48.81, 2.42 48.90, 2.25 48.90, 2.25 48.81))'::GEOMETRY, 10
@@ -308,7 +308,7 @@ SELECT a5_geometry_to_cells(
 ) AS covering;
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 # Bounding box around central Paris
