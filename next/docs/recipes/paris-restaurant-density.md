@@ -8,7 +8,7 @@ Thanks to the flexibility of Overture Maps, the recipe can easily be modified to
 
 In this example, we:
 1. Use DuckDB to fetch restaurant data from Overture Maps for the Paris region
-2. Aggregate the data using the [A5 DuckDB extension](https://query.farm/duckdb_extension_a5.html) 
+2. Aggregate the data using the [A5 DuckDB extension](https://query.farm/products/extensions/a5/) 
 3. Save the aggregated data efficiently as a [Parquet](https://parquet.apache.org/) file
 4. Visualize the data with the [A5Layer](https://deck.gl/docs/api-reference/geo-layers/a5-layer) in [deck.gl](https://deck.gl/)
 

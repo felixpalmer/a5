@@ -19,11 +19,18 @@ The TypeScript, Python, and Rust libraries are maintained directly by the A5 pro
 
 ## Community Libraries
 
+### Bevy (Rust)
+A [Bevy](https://bevyengine.org/) plugin that places the A5 cell hierarchy under a game world.
+
+📖 [Docs](https://docs.rs/bevy_a5) • 📦 [Package](https://crates.io/crates/bevy_a5) • 🔗 [Source](https://github.com/jonititan/bevy_a5)
+
 ### Go
 🔗 [Source](https://github.com/corewood-tech/a5go)
 
-### Python (Rust bindings)
-📦 [Package](https://pypi.org/project/a5-fast/) • 🔗 [Source](https://github.com/afterrealism/a5_fast)
+### JavaScript (GeoJSON conversion)
+Converts A5 cells to GeoJSON, and GeoJSON polygons and lines to A5 cells.
+
+📦 [Package](https://www.npmjs.com/package/a5-to-geojson) • 🔗 [Source](https://github.com/alrico88/a5-to-geojson)
 
 ### R
 📖 [Docs](https://belian-earth.github.io/a5R/) • 📦 [Package](https://cran.r-project.org/package=a5R) • 🔗 [Source](https://github.com/belian-earth/a5R)
@@ -44,6 +51,9 @@ The [DGGS Plugin](https://geolibre.app/user-guide/plugins/) renders and identifi
 ### GeoParquet
  🔗 [Website](https://geoparquet.io/) • 📖 [Docs](https://geoparquet.io/guide/partition/#by-a5-cells) • 🔗 [Source](https://github.com/geoparquet/geoparquet-io)
 
+### kepler.gl
+📖 [Docs](https://github.com/keplergl/kepler.gl/blob/master/docs/user-guides/c-types-of-layers/q-a5.md) • 🌍 [App](https://kepler.gl/) • 🔗 [Source](https://github.com/keplergl/kepler.gl)
+
 ### lonboard
 📖 [Docs](https://developmentseed.org/lonboard/latest/api/layers/a5-layer/) • 📦 [Package](https://pypi.org/project/lonboard/) • 🔗 [Source](https://github.com/developmentseed/lonboard/blob/main/lonboard/layer/_a5.py)
 
@@ -59,8 +69,16 @@ The [DGGS Plugin](https://geolibre.app/user-guide/plugins/) renders and identifi
 ### raster2dggs
 📖 [Quickstart](https://github.com/manaakiwhenua/raster2dggs?tab=readme-ov-file#installation) • 📦 [Package](https://pypi.org/project/raster2dggs/) • 🔗 [Source](https://github.com/manaakiwhenua/raster2dggs)
 
+### spml
+Spatial machine learning from [PySAL](https://pysal.org/), with A5 cells for spatial cross-validation.
+
+📖 [Docs](https://pysal.org/spml/) • 📦 [Package](https://pypi.org/project/spml/) • 🔗 [Source](https://github.com/pysal/spml)
+
 ### Streamlit
 📖 [Demo](https://a5-vs-h3-app-demo.streamlit.app/) • 📦 [Package](https://pypi.org/project/streamlit-hexviz/) • 🔗 [Source](https://github.com/Robert-Ziegltrum/streamlit-hexviz)
+
+### vector2dggs
+📖 [Quickstart](https://github.com/manaakiwhenua/vector2dggs?tab=readme-ov-file#installation) • 📦 [Package](https://pypi.org/project/vector2dggs/) • 🔗 [Source](https://github.com/manaakiwhenua/vector2dggs)
 
 ## Products
 
@@ -68,7 +86,8 @@ The [DGGS Plugin](https://geolibre.app/user-guide/plugins/) renders and identifi
 📖 [Example](https://icon-map.com/blog/30-day-map-challenge-day-17-a-new-tool.html) • 📦 [Plugin](https://marketplace.microsoft.com/en-us/product/power-bi-visuals/tekantislimited1706613112857.iconmap_slicer) • 🔗 [Overview](https://icon-map.com/products/slicer/)
 
 ### Other
-- [geotoolkit](https://github.com/Geomatys/geotoolkit) Java language library for developing geospatial applications with support for [A5](https://github.com/Geomatys/geotoolkit/tree/main/geotk-dggs/src/main/java/org/geotoolkit/dggs/a5)
+- [d3geo-dggs](https://github.com/eKerney/d3geo-dggs) 3D [D3 globe](https://ekerney.github.io/d3geo-dggs/) transforming countries into H3 hexagons and A5 pentagons
+- [greenpy](https://github.com/sdgresearch/greenpy) Urban greenery metrics pipeline that can aggregate to A5 cells
 - [vgrid libraries](https://github.com/opengeoshub) A5 tools & utilities for [MapLibre](https://gishub.vn/pages/dggs/a5/), [pandas](https://vgridpandas.gishub.vn/notebooks/03_a5/), [QGIS](https://github.com/opengeoshub/vgridtools) & more
 
 _Have a library you would like to share? Make an [Issue](https://github.com/felixpalmer/a5/issues)_
