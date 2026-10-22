@@ -38,7 +38,7 @@ The TypeScript, Python, and Rust libraries are maintained directly by the A5 pro
 📖 [Docs](https://deck.gl/docs/api-reference/geo-layers/a5-layer) • 🌍 [Demo app](https://deck.gl/examples/global-grids) • 🔗 [Source](https://github.com/visgl/deck.gl/blob/master/modules/geo-layers/src/a5-layer/a5-layer.ts)
 
 ### DuckDB
-📖 [Quickstart](../quickstart/duckdb.md) • 📦 [Extension](https://query.farm/duckdb_extension_a5.html) • 🔗 [Source](https://github.com/Query-farm/a5)
+📖 [Quickstart](../quickstart/duckdb.md) • 📦 [Extension](https://query.farm/products/extensions/a5/) • 🔗 [Source](https://github.com/Query-farm/a5)
 
 ### GeoLibre
 The [DGGS Plugin](https://geolibre.app/user-guide/plugins/) renders and identifies A5 cells over the current view, and [DGGS Processing](https://geolibre.app/user-guide/processing/) generates, bins and compacts A5 cells.

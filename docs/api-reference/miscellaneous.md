@@ -24,11 +24,11 @@ def migrate(cell: int) -> int
 pub fn migrate(cell: u64) -> Result<u64, String>
 ```
 
-```sql unreleased
+```sql
 a5_migrate(cell UBIGINT) -> UBIGINT
 ```
 
-```r unreleased
+```r
 a5_migrate(cell)
 ```
 
@@ -67,12 +67,12 @@ let v0_cell = hex_to_u64("59c4780000000000")?; // Resolution 8 cell in the legac
 println!("{}", u64_to_hex(migrate(v0_cell)?)); // 59c4280000000000
 ```
 
-```sql unreleased
+```sql
 -- Resolution 8 cell in the legacy v0 A5 index
 SELECT a5_u64_to_hex(a5_migrate(a5_hex_to_u64('59c4780000000000')));  -- '59c4280000000000'
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 v0_cell <- a5_cell("59c4780000000000")  # Resolution 8 cell in the legacy v0 A5 index

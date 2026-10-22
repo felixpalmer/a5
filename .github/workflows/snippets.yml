@@ -21,8 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         language: [ts, python, rust, sql, r]
-    # DuckDB and R are community ports, not yet on the A5 v1 API
-    continue-on-error: ${{ matrix.language == 'sql' || matrix.language == 'r' }}
     env:
       HEAD_REF: ${{ github.head_ref }}
 

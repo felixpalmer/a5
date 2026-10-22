@@ -79,7 +79,7 @@ let ring1 = grid_disk(cell, 1)?; // center + 5 edge neighbors (compacted)
 let ring2 = uncompact(&grid_disk(cell, 2)?)?; // center + ring 1 + ring 2 (uncompacted)
 ```
 
-```sql unreleased
+```sql
 -- center + 5 edge neighbors (compacted)
 SELECT a5_grid_disk(a5_lonlat_to_cell(2.3522, 48.8566, 10), 1) AS ring1;
 
@@ -87,7 +87,7 @@ SELECT a5_grid_disk(a5_lonlat_to_cell(2.3522, 48.8566, 10), 1) AS ring1;
 SELECT a5_uncompact(a5_grid_disk(a5_lonlat_to_cell(2.3522, 48.8566, 10), 2)) AS ring2;
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 cell <- a5_lonlat_to_cell(2.3522, 48.8566, resolution = 10)
@@ -203,7 +203,7 @@ let compact = spherical_cap(cell, 500_000.0)?; // 500 km
 let flat = uncompact(&compact)?; // all cells at resolution 10
 ```
 
-```sql unreleased
+```sql
 -- 500 km
 SELECT a5_spherical_cap(a5_lonlat_to_cell(2.3522, 48.8566, 10), 500000) AS compact;
 
@@ -211,7 +211,7 @@ SELECT a5_spherical_cap(a5_lonlat_to_cell(2.3522, 48.8566, 10), 500000) AS compa
 SELECT unnest(a5_uncompact(a5_spherical_cap(a5_lonlat_to_cell(2.3522, 48.8566, 10), 500000))) AS cell;
 ```
 
-```r unreleased
+```r
 library(a5R)
 
 cell <- a5_lonlat_to_cell(2.3522, 48.8566, resolution = 10)
