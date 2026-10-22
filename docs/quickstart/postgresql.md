@@ -94,7 +94,7 @@ SELECT
         'type', 'Polygon',
         'coordinates', jsonb_build_array(
             jsonb_agg(
-                jsonb_build_array(coords[1], coords[2])
+                jsonb_build_array(coords[i][1], coords[i][2])
                 ORDER BY i
             )
         )
