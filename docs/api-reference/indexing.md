@@ -198,7 +198,7 @@ pub struct PolygonToCellsOptions {
 }
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_geometry_to_cells(geom GEOMETRY, resolution INTEGER) -> UBIGINT[]
@@ -309,7 +309,7 @@ let options = PolygonToCellsOptions { containment: Containment::Overlapping };
 let covering = polygon_to_cells(&[ring], 10, Some(options))?;
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 -- Bounding box around central Paris
@@ -334,7 +334,7 @@ SELECT a5_geometry_to_cells(
 ) AS covering;
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)

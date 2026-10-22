@@ -55,13 +55,13 @@ Rust:
 pub fn union(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_union(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_union(x, y = NULL)
@@ -108,7 +108,7 @@ let coverage = union(
 )?;
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 -- A multi-polygon: the union of its parts
@@ -116,7 +116,7 @@ SELECT a5_union(a5_geometry_to_cells(mainland, 10), a5_geometry_to_cells(island,
 FROM parts;
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
@@ -150,13 +150,13 @@ Rust:
 pub fn intersect(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_intersect(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_intersect(x, y)
@@ -193,13 +193,13 @@ Rust:
 pub fn difference(a: &[u64], b: &[u64]) -> Result<Vec<u64>, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_difference(a UBIGINT[], b UBIGINT[]) -> UBIGINT[]
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_difference(x, y)
@@ -246,7 +246,7 @@ let outside = difference(
 )?;
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 -- A country without the area within 50 km of its capital
@@ -257,7 +257,7 @@ SELECT a5_difference(
 FROM countries;
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
@@ -294,13 +294,13 @@ Rust:
 pub fn contains(cells: &[u64], cell: u64) -> Result<bool, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_contains(cells UBIGINT[], cell UBIGINT) -> BOOLEAN
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_contains(x, cell)
@@ -344,14 +344,14 @@ let coverage = polygon_to_cells(&[ring], 12, None)?;
 let inside = contains(&coverage, lonlat_to_cell(LonLat::new(2.35, 48.85), 12)?)?;
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 SELECT a5_contains(a5_geometry_to_cells(geom, 12), a5_lonlat_to_cell(2.35, 48.85, 12)) AS inside
 FROM countries;
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
@@ -382,13 +382,13 @@ Rust:
 pub fn overlaps(a: &[u64], b: &[u64]) -> Result<bool, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_overlaps(a UBIGINT[], b UBIGINT[]) -> BOOLEAN
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_overlaps(x, y)
@@ -427,13 +427,13 @@ Rust:
 pub fn count(cells: &[u64]) -> Result<u64, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_count(cells UBIGINT[]) -> UBIGINT
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_count(x)
@@ -479,7 +479,7 @@ let france = polygon_to_cells(&[france_ring], 16, None)?;
 println!("{}", count(&france)?); // 67995098 cells at resolution 16
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 -- Stored compactly, as 78929 cells at mixed resolutions
@@ -488,7 +488,7 @@ FROM countries
 WHERE name = 'France';
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
@@ -520,13 +520,13 @@ Rust:
 pub fn area(cells: &[u64]) -> Result<f64, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_area(cells UBIGINT[]) -> DOUBLE
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_area(x, units = "m^2")

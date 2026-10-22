@@ -47,7 +47,7 @@ DuckDB:
 a5_compact(cells UBIGINT[]) -> UBIGINT[]
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_compact(cells, resolution = NULL)
@@ -111,7 +111,7 @@ println!("{}", covering_resolution(&compacted)); // 3
 println!("{:?}", uncompact(&compacted)?); // the 4 children again
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 -- Get 4 sibling cells at resolution 3, the children of a resolution 2 cell, and
@@ -126,7 +126,7 @@ SELECT
 FROM compacted;
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
@@ -164,13 +164,13 @@ Rust:
 pub fn uncompact(cells: &[u64]) -> Result<Vec<u64>, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_uncompact(cells UBIGINT[]) -> UBIGINT[]
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_uncompact(x, resolution = NULL, simplify = TRUE)
@@ -230,7 +230,7 @@ let flat = uncompact(&compacted)?;
 println!("{}", get_resolution(flat[0])); // 10
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 -- No resolution needed: the compaction marker records it
@@ -243,7 +243,7 @@ FROM (
 LIMIT 1;
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
@@ -284,13 +284,13 @@ Rust:
 pub fn covering_resolution(cells: &[u64]) -> i32
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_covering_resolution(cells UBIGINT[]) -> INTEGER
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_covering_resolution(x)
@@ -336,7 +336,7 @@ let compacted = compact(&cell_to_children(parent, Some(4))?)?;
 println!("{}", covering_resolution(&compacted)); // 4
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 -- Children at resolution 4 of a resolution 2 cell
@@ -345,7 +345,7 @@ SELECT a5_covering_resolution(
 );  -- 4
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
@@ -377,7 +377,7 @@ Rust:
 pub fn is_compaction_marker(value: u64) -> bool
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_is_compaction_marker(value UBIGINT) -> BOOLEAN
@@ -417,7 +417,7 @@ use a5::{is_compaction_marker, lonlat_to_cell, LonLat};
 println!("{}", is_compaction_marker(lonlat_to_cell(LonLat::new(2.35, 48.85), 10)?)); // false: a cell
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 SELECT a5_is_compaction_marker(a5_lonlat_to_cell(2.35, 48.85, 10));  -- false: a cell

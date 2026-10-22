@@ -24,13 +24,13 @@ Rust:
 pub fn migrate(cell: u64) -> Result<u64, String>
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 a5_migrate(cell UBIGINT) -> UBIGINT
 ```
 
-R (not yet released):
+R:
 
 ```r
 a5_migrate(cell)
@@ -73,14 +73,14 @@ let v0_cell = hex_to_u64("59c4780000000000")?; // Resolution 8 cell in the legac
 println!("{}", u64_to_hex(migrate(v0_cell)?)); // 59c4280000000000
 ```
 
-DuckDB (not yet released):
+DuckDB:
 
 ```sql
 -- Resolution 8 cell in the legacy v0 A5 index
 SELECT a5_u64_to_hex(a5_migrate(a5_hex_to_u64('59c4780000000000')));  -- '59c4280000000000'
 ```
 
-R (not yet released):
+R:
 
 ```r
 library(a5R)
