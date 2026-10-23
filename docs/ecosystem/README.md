@@ -64,6 +64,11 @@ The [DGGS Plugin](https://geolibre.app/user-guide/plugins/) renders and identifi
 ### PostgreSQL
 📖 [Quickstart](../quickstart/postgresql.md) • 📦 [Extension](https://github.com/decision-labs/a5pg) • 🔗 [Source](https://github.com/decision-labs/a5pg)
 
+### pycnogrid
+R package for pycnophylactic interpolation of polygon totals to A5 and other grid systems.
+
+📖 [Docs](https://higgicd.github.io/pycnogrid/) • 📦 [Package](https://cran.r-project.org/package=pycnogrid) • 🔗 [Source](https://github.com/higgicd/pycnogrid)
+
 ### pydeck
 📖 [Docs](https://deckgl.readthedocs.io/en/latest/gallery/a5_layer.html) • 📦 [Package](https://pypi.org/project/pydeck/) • 🔗 [Source](https://github.com/visgl/deck.gl/blob/master/bindings/pydeck/examples/a5_layer.py)
 
