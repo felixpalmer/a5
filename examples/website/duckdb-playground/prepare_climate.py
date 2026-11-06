@@ -24,10 +24,12 @@ Method:
     in a 5x5 window, and cells with no valid pixel at all (Antarctica, some
     small islands) are omitted from temperature.parquet.
 
-Requires: python3 + numpy + GDAL bindings, the duckdb CLI, and curl.
+Requires: python3 + numpy + GDAL bindings, the duckdb CLI (v1.5.6 or later:
+older versions load an a5 extension build that still uses the v0 index), and
+curl.
 
 Usage (from the repo root, after countries.parquet has been generated):
-  python3 examples/website/population/prepare_climate.py --workdir /tmp/climate
+  python3 examples/website/duckdb-playground/prepare_climate.py --workdir /tmp/climate
 """
 
 import argparse
@@ -43,7 +45,6 @@ gdal.UseExceptions()
 REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../..'))
 DATA_DIR = os.path.join(REPO_ROOT, 'website/static/data')
 COUNTRIES = os.path.join(DATA_DIR, 'countries.parquet')
-RESOLUTION = 9
 
 ETOPO_URL = (
     'https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO2022/data/60s/'
@@ -81,7 +82,7 @@ def export_cell_centers(workdir):
 INSTALL a5 FROM community; LOAD a5;
 COPY (
   SELECT cell, a5_cell_to_lonlat(cell)[1] AS lon, a5_cell_to_lonlat(cell)[2] AS lat
-  FROM (SELECT unnest(a5_uncompact(list(cell), {RESOLUTION})) AS cell FROM '{COUNTRIES}')
+  FROM (SELECT unnest(a5_uncompact(list(cell))) AS cell FROM '{COUNTRIES}')
   ORDER BY cell
 ) TO '{csv_path}' (FORMAT csv, HEADER);
 """
