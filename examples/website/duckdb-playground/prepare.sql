@@ -11,8 +11,9 @@
 --
 -- Then run with the DuckDB CLI:
 --   duckdb < prepare.sql
--- DuckDB v1.5.6 or later is needed: older versions load an a5 extension
--- build that still uses the v0 index
+-- DuckDB v1.5.6 or a later v1.5 release is needed: older versions load an
+-- a5 extension build that still uses the v0 index, and from v2.0 a5 installs
+-- from the Query.Farm repository instead (see docs/quickstart/duckdb.md)
 
 INSTALL spatial;
 LOAD spatial;

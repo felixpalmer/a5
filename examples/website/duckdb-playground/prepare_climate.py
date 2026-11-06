@@ -24,8 +24,9 @@ Method:
     in a 5x5 window, and cells with no valid pixel at all (Antarctica, some
     small islands) are omitted from temperature.parquet.
 
-Requires: python3 + numpy + GDAL bindings, the duckdb CLI (v1.5.6 or later:
-older versions load an a5 extension build that still uses the v0 index), and
+Requires: python3 + numpy + GDAL bindings, the duckdb CLI (v1.5.6 or a later
+v1.5 release: older versions load an a5 extension build that still uses the v0
+index, and from v2.0 a5 installs from the Query.Farm repository instead), and
 curl.
 
 Usage (from the repo root, after countries.parquet has been generated):

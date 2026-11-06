@@ -8,7 +8,8 @@
  *   ts      against the built library (dist/a5.js) — run `yarn build` first
  *   python  against the a5-py checkout (A5_PY_PATH, default ../a5-py)
  *   rust    against the a5-rs checkout (A5_RS_PATH, default ../a5-rs)
- *   sql     with the DuckDB CLI (DUCKDB, default duckdb) and the community a5 extension
+ *   sql     with the DuckDB CLI (DUCKDB, default duckdb) and the a5 extension, from the
+ *           community repository before DuckDB 2.0 and the Query.Farm one from 2.0
  *   r       with Rscript (RSCRIPT, default Rscript) and the installed a5R package
  *
  * Usage: node scripts/verify-snippets.cjs [ts|python|rust|sql|r ...]
@@ -38,6 +39,7 @@ const A5_PY_PATH = path.resolve(ROOT, process.env.A5_PY_PATH || '../a5-py');
 const A5_RS_PATH = path.resolve(ROOT, process.env.A5_RS_PATH || '../a5-rs');
 const DUCKDB = process.env.DUCKDB || 'duckdb';
 const RSCRIPT = process.env.RSCRIPT || 'Rscript';
+const QUERY_FARM_REPOSITORY = 'https://duckdb-extensions.query.farm';
 
 // Placeholder polygons and points the docs examples leave undefined
 const RING = [
@@ -246,11 +248,26 @@ ${snippets.map((_, i) => `        "${i}" => snippet${i}(),`).join('\n')}
   sql: {
     unavailable: () => !hasCommand(DUCKDB) && `${DUCKDB} not found`,
     run(snippets) {
-      const install = run(DUCKDB, ['-c', 'INSTALL a5 FROM community;']);
+      const version = run(DUCKDB, ['-c', 'SELECT version();']);
+      if (!version.ok) {
+        return snippets.map(() => version);
+      }
+      // From DuckDB 2.0 a5 is distributed from the Query.Farm repository: the
+      // community build only throws an error pointing there
+      const queryFarm = Number(version.output.match(/v(\d+)\.\d+\.\d+/)?.[1]) >= 2;
+      const install = run(DUCKDB, [
+        '-c',
+        queryFarm
+          ? `SET allow_extension_repositories = 'allowed';
+CREATE EXTENSION REPOSITORY IF NOT EXISTS query_farm WITH PREFIX '${QUERY_FARM_REPOSITORY}';
+INSTALL a5 FROM query_farm;`
+          : 'INSTALL a5 FROM community;'
+      ]);
       if (!install.ok) {
         return snippets.map(() => install);
       }
-      return snippets.map(snippet => run(DUCKDB, ['-bail'], {input: `LOAD a5;\n${PRELUDES.sql}\n${snippet.code}`}));
+      const load = queryFarm ? 'LOAD a5 FROM query_farm;' : 'LOAD a5;';
+      return snippets.map(snippet => run(DUCKDB, ['-bail'], {input: `${load}\n${PRELUDES.sql}\n${snippet.code}`}));
     }
   },
 
