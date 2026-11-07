@@ -5,13 +5,14 @@ import {Map as Maplibre, useControl} from 'react-map-gl/maplibre';
 import {MapboxOverlay as DeckOverlay} from '@deck.gl/mapbox';
 import {A5Layer} from '@deck.gl/geo-layers';
 import {Color} from '@deck.gl/core';
-import {cellToLonLat, migrate} from 'a5';
+import {cellToLonLat} from 'a5';
 import type {MapRef} from 'react-map-gl/maplibre';
 
 // Loaded at runtime from the CDN, which also serves the WASM binary and worker.
-// 1.33.x runs DuckDB v1.5, required for the a5 extension's traversal functions
-// (a5_spherical_cap, a5_grid_disk) — the v1.4.x extension builds predate them
-const DUCKDB_BUNDLE = 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev57.0/+esm';
+// Haybarn (Query.Farm's DuckDB distribution, same API as @duckdb/duckdb-wasm)
+// runs DuckDB v2.0, whose a5 extension builds have the A5 v1 API — the
+// duckdb-wasm releases still run DuckDB v1.5.4, which serves the v0 extension
+const DUCKDB_BUNDLE = 'https://cdn.jsdelivr.net/npm/@haybarn/haybarn-wasm@2.0.0-rc12/+esm';
 
 type DuckDBConnection = {
   query: (sql: string) => Promise<any>;
@@ -45,11 +46,11 @@ const PRESETS: {label: string; query: string}[] = [
   {
     label: 'Brazil population',
     query: `-- Countries are stored as compacted cells, uncompact
--- to resolution 9 to match the population table
+-- to their finest resolution (9) to match the population table
 SELECT cell, population
 FROM population
 WHERE cell IN (
-  SELECT unnest(a5_uncompact(list(cell), 9))
+  SELECT unnest(a5_uncompact(list(cell)))
   FROM countries
   WHERE name = 'Brazil'
 )`
@@ -61,7 +62,7 @@ WHERE cell IN (
 SELECT cell, elevation AS value
 FROM elevation
 WHERE cell IN (
-  SELECT unnest(a5_uncompact(list(cell), 9))
+  SELECT unnest(a5_uncompact(list(cell)))
   FROM countries
   WHERE name = 'Chile'
 )`
@@ -72,7 +73,7 @@ WHERE cell IN (
 SELECT cell, temperature AS value
 FROM temperature
 WHERE cell IN (
-  SELECT unnest(a5_uncompact(list(cell), 9))
+  SELECT unnest(a5_uncompact(list(cell)))
   FROM countries
   WHERE name = 'Japan'
 )`
@@ -85,7 +86,7 @@ SELECT cell, elevation AS value
 FROM elevation
 WHERE cell IN (
   SELECT unnest(a5_uncompact(
-    a5_spherical_cap(a5_lonlat_to_cell(-104.99, 39.74, 9), 1000000.0), 9))
+    a5_spherical_cap(a5_lonlat_to_cell(-104.99, 39.74, 9), 1000000.0)))
 )`
   },
   {
@@ -95,7 +96,7 @@ WHERE cell IN (
 SELECT cell, COUNT(*) AS value
 FROM (
   SELECT unnest(a5_uncompact(
-    a5_spherical_cap(a5_lonlat_to_cell(longitude, latitude, 8), 500000.0), 8)) AS cell
+    a5_spherical_cap(a5_lonlat_to_cell(longitude, latitude, 8), 500000.0))) AS cell
   FROM places
   WHERE capital
 )
@@ -363,8 +364,7 @@ const App: React.FC = () => {
       const value = field ? toNumber(row[field]) : 1;
       if (value < minValue) minValue = value;
       if (value > maxValue) maxValue = value;
-      // The data files and the DuckDB extension both use the v0 index
-      rows.push({cell: migrate(BigInt(row.cell)), value});
+      rows.push({cell: BigInt(row.cell), value});
     }
     setResult({rows, minValue, maxValue, field, elapsedMs, autoPalette: autoPalette(field, sql)});
     setStatus(`${rows.length.toLocaleString()} cells · ${Math.round(elapsedMs)}ms`);

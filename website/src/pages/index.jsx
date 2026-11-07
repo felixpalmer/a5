@@ -377,19 +377,24 @@ function FeatureFlower() {
 
 const LANGUAGE = {JavaScript: 'javascript', Python: 'python', Rust: 'rust', R: 'r', DuckDB: 'sql'};
 
+// DuckDB 2.0 installs a5 from the Query.Farm repository, which has to be added
+// first. Too long to show, so the install line copies it with the INSTALL
+const DUCKDB_SETUP = `SET allow_extension_repositories = 'allowed';
+CREATE EXTENSION REPOSITORY IF NOT EXISTS query_farm WITH PREFIX 'https://duckdb-extensions.query.farm';
+`;
+
 // Install the version the site documents (see website/a5-version.js)
 const getInstall = ({A5_VERSION, A5_PYPI_VERSION}) => ({
   JavaScript: `npm install a5-js@${A5_VERSION}`,
   Python: `pip install pya5==${A5_PYPI_VERSION}`,
   Rust: `cargo add a5@${A5_VERSION}`,
   R: 'install.packages("a5R")',
-  DuckDB: 'INSTALL a5 FROM community;'
+  DuckDB: 'INSTALL a5 FROM query_farm;'
 });
 
 // Same order as ECOSYSTEM
 const CODE = {
-  DuckDB: `INSTALL a5 FROM community;
-LOAD a5;
+  DuckDB: `LOAD a5 FROM query_farm;
 
 SELECT a5_cell_to_boundary(
   a5_cell_to_parent(a5_lonlat_to_cell(2.2945, 48.8584, 20), 10)
@@ -445,7 +450,7 @@ function CodeSample() {
   const [copied, setCopied] = useState(false);
   const install = getInstall(useDocusaurusContext().siteConfig.customFields.versions)[language];
   const copy = async () => {
-    await navigator.clipboard.writeText(install);
+    await navigator.clipboard.writeText(language === 'DuckDB' ? DUCKDB_SETUP + install : install);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
