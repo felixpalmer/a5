@@ -48,9 +48,12 @@ This produces a parquet file with restaurant locations including their coordinat
 Next, we aggregate the restaurants by A5 cells. This groups nearby restaurants together and counts them, making the data much more efficient to visualize and analyze.
 
 ```sql
--- Install and load the A5 extension
-INSTALL a5 FROM community;
-LOAD a5;
+-- Install and load the A5 extension (DuckDB v2.0 and later, see the
+-- DuckDB Quickstart for v1.5)
+SET allow_extension_repositories = 'allowed';
+CREATE EXTENSION REPOSITORY IF NOT EXISTS query_farm WITH PREFIX 'https://duckdb-extensions.query.farm';
+INSTALL a5 FROM query_farm;
+LOAD a5 FROM query_farm;
 
 -- Aggregate restaurants by A5 cells at resolution 15 (neighborhood analysis)
 -- Resolution 15 provides cells of approximately 0.03 square kilometers
