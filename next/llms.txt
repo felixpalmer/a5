@@ -20,7 +20,7 @@ Documentation for A5 1.0.0-beta.4. The API is the same in every language, with n
 
 ## Quickstart
 
-- [DuckDB Quickstart](https://a5geo.org/next/docs/quickstart/duckdb.md): Install the A5 DuckDB community extension and index, aggregate and export cells with SQL.
+- [DuckDB Quickstart](https://a5geo.org/next/docs/quickstart/duckdb.md): Install the A5 DuckDB extension and index, aggregate and export cells with SQL.
 - [JavaScript Quickstart](https://a5geo.org/next/docs/quickstart/javascript.md): Install the a5-js npm package and generate A5 cells as GeoJSON in JavaScript or TypeScript.
 - [PostgreSQL Quickstart](https://a5geo.org/next/docs/quickstart/postgresql.md): Build and install the a5pg PostgreSQL extension and work with A5 cells in SQL, with PostGIS.
 - [Python Quickstart](https://a5geo.org/next/docs/quickstart/python.md): Install the pya5 package and generate A5 cells as GeoJSON in Python.

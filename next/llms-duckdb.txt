@@ -40,18 +40,32 @@ Get started with A5 in DuckDB by installing the [extension](https://query.farm/p
 
 ## Installation
 
-Install and load the [A5](https://query.farm/products/extensions/a5/) extension with this SQL:
+From DuckDB v2.0, the [A5](https://query.farm/products/extensions/a5/) extension is distributed from the Query.Farm extension repository. Add the repository and install the extension once:
 
 ```sql
-INSTALL a5 from community;
-LOAD a5;
+SET allow_extension_repositories = 'allowed';
+CREATE EXTENSION REPOSITORY IF NOT EXISTS query_farm WITH PREFIX 'https://duckdb-extensions.query.farm';
+INSTALL a5 FROM query_farm;
+```
+
+Then load it in each session with:
+
+```sql
+LOAD a5 FROM query_farm;
 
 -- Optional: Install spatial extension for geometry operations
 INSTALL spatial;
 LOAD spatial;
 ```
 
-A5 v1 needs DuckDB v1.5.6 or later: on older versions of DuckDB, `INSTALL a5` gets an earlier build of the extension, which uses the legacy v0 cell IDs (see the [Upgrade Guide](https://a5geo.org/next/docs/upgrade-guide.md)). Check with `SELECT version();`, and run `FORCE INSTALL a5 FROM community;` after upgrading DuckDB to replace a previously installed build.
+On DuckDB v1.5, install and load the extension from the community repository instead:
+
+```sql
+INSTALL a5 FROM community;
+LOAD a5;
+```
+
+A5 v1 needs DuckDB v1.5.6 or later: on older versions of DuckDB, `INSTALL a5` gets an earlier build of the extension, which uses the legacy v0 cell IDs (see the [Upgrade Guide](https://a5geo.org/next/docs/upgrade-guide.md)). Check with `SELECT version();`, and run `FORCE INSTALL a5 FROM community;` after upgrading to v1.5.6 to replace a previously installed build.
 
 ## Example: Translate Lat/Lon to A5 Cell and back
 

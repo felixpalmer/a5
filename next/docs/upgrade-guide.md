@@ -24,7 +24,7 @@ v0 cell IDs rendered using v1 appear roughly in the same place but are shuffled 
 
 ### DuckDB
 
-The [DuckDB extension](https://a5geo.org/next/docs/quickstart/duckdb.md) supports A5 v1 from DuckDB v1.5.6. Older versions of DuckDB install an earlier build of the extension that still produces v0 cell IDs, so upgrade DuckDB and run `FORCE INSTALL a5 FROM community;`. Data indexed with v0 can be converted in SQL with `a5_migrate`:
+The [DuckDB extension](https://a5geo.org/next/docs/quickstart/duckdb.md) supports A5 v1 from DuckDB v1.5.6. Older versions of DuckDB install an earlier build of the extension that still produces v0 cell IDs, so upgrade DuckDB and reinstall the extension: `FORCE INSTALL a5 FROM community;` on DuckDB v1.5, or from the Query.Farm repository on DuckDB v2.0 and later (see the [DuckDB Quickstart](https://a5geo.org/next/docs/quickstart/duckdb.md#installation)). Data indexed with v0 can be converted in SQL with `a5_migrate`:
 
 ```sql
 UPDATE my_table SET cell = a5_migrate(cell);
