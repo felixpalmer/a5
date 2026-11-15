@@ -175,7 +175,7 @@ Multi-polygons are not supported directly — call `polygonToCells` per polygon 
 TypeScript / JavaScript:
 
 ```ts
-function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, options?: {
+function polygonToCells(polygon: number[][] | number[][][], resolution: number, options?: {
   containment?: 'center' | 'overlapping';
 }): BigUint64Array;
 ```
@@ -213,7 +213,7 @@ a5_polygon_to_cells(x, resolution, containment = c("centre", "overlapping"))
 
 #### Parameters
 
-- `polygon` **(LonLat[] | LonLat[][])** Either a single ring of `[longitude, latitude]` vertices, or an array of rings where the first ring is the outer boundary and subsequent rings are holes. The outer ring must contain at least 3 vertices.
+- `polygon` **(number[][] | number[][][])** Either a single ring of `[longitude, latitude]` vertices, or an array of rings where the first ring is the outer boundary and subsequent rings are holes. The outer ring must contain at least 3 vertices.
 - `resolution` **(number)** Target resolution (0–30)
 - `options` **(object)** Optional configuration object
   - `containment` **('center' | 'overlapping')** Which cells to include relative to the polygon. `'center'` includes a cell only if its center is inside; `'overlapping'` also includes cells that touch the polygon, for gap-free coverage. Defaults to `'center'`.
@@ -363,7 +363,7 @@ The result is uncompacted at the requested resolution and is not sorted — cell
 TypeScript / JavaScript:
 
 ```ts
-function lineStringToCells(waypoints: LonLat[], resolution: number): bigint[];
+function lineStringToCells(waypoints: number[][], resolution: number): bigint[];
 ```
 
 Python:
@@ -392,7 +392,7 @@ a5_linestring_to_cells(x, resolution)
 
 #### Parameters
 
-- `waypoints` **(LonLat[])** Polyline vertices, each as `[longitude, latitude]`
+- `waypoints` **(number[][])** Polyline vertices, each as `[longitude, latitude]`
 - `resolution` **(number)** Target resolution (0–30)
 
 #### Return value

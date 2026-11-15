@@ -271,7 +271,7 @@ pub struct PolygonToCellsOptions {
 
 #### Parameters
 
-- `polygon` **(LonLat[] | LonLat[][])** Either a single ring of `[longitude, latitude]` vertices, or an array of rings where the first ring is the outer boundary and subsequent rings are holes. The outer ring must contain at least 3 vertices.
+- `polygon` **(number[][] | number[][][])** Either a single ring of `[longitude, latitude]` vertices, or an array of rings where the first ring is the outer boundary and subsequent rings are holes. The outer ring must contain at least 3 vertices.
 - `resolution` **(number)** Target resolution (0–30)
 - `options` **(object)** Optional configuration object
   - `containment` **('center' | 'overlapping')** Which cells to include relative to the polygon. `'center'` includes a cell only if its center is inside; `'overlapping'` also includes cells that touch the polygon, for gap-free coverage. Defaults to `'center'`.
@@ -321,7 +321,7 @@ pub fn line_string_to_cells(waypoints: &[LonLat], resolution: i32) -> Result<Vec
 
 #### Parameters
 
-- `waypoints` **(LonLat[])** Polyline vertices, each as `[longitude, latitude]`
+- `waypoints` **(number[][])** Polyline vertices, each as `[longitude, latitude]`
 - `resolution` **(number)** Target resolution (0–30)
 
 #### Return value

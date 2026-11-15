@@ -254,14 +254,14 @@ The result is a [covering](https://a5geo.org/next/docs/api-reference/coverings.m
 Multi-polygons are not supported directly — call `polygonToCells` per polygon and combine the results with [`union`](https://a5geo.org/next/docs/api-reference/coverings.md#union). Coverings can also be intersected, subtracted and tested for containment without uncompacting, see [Coverings](https://a5geo.org/next/docs/api-reference/coverings.md).
 
 ```ts
-function polygonToCells(polygon: LonLat[] | LonLat[][], resolution: number, options?: {
+function polygonToCells(polygon: number[][] | number[][][], resolution: number, options?: {
   containment?: 'center' | 'overlapping';
 }): BigUint64Array;
 ```
 
 #### Parameters
 
-- `polygon` **(LonLat[] | LonLat[][])** Either a single ring of `[longitude, latitude]` vertices, or an array of rings where the first ring is the outer boundary and subsequent rings are holes. The outer ring must contain at least 3 vertices.
+- `polygon` **(number[][] | number[][][])** Either a single ring of `[longitude, latitude]` vertices, or an array of rings where the first ring is the outer boundary and subsequent rings are holes. The outer ring must contain at least 3 vertices.
 - `resolution` **(number)** Target resolution (0–30)
 - `options` **(object)** Optional configuration object
   - `containment` **('center' | 'overlapping')** Which cells to include relative to the polygon. `'center'` includes a cell only if its center is inside; `'overlapping'` also includes cells that touch the polygon, for gap-free coverage. Defaults to `'center'`.
@@ -305,12 +305,12 @@ Returns all cells whose pentagons intersect a polyline defined by a sequence of 
 The result is uncompacted at the requested resolution and is not sorted — cells appear roughly in the order they were discovered along the path. Cells at waypoint junctions are deduplicated.
 
 ```ts
-function lineStringToCells(waypoints: LonLat[], resolution: number): bigint[];
+function lineStringToCells(waypoints: number[][], resolution: number): bigint[];
 ```
 
 #### Parameters
 
-- `waypoints` **(LonLat[])** Polyline vertices, each as `[longitude, latitude]`
+- `waypoints` **(number[][])** Polyline vertices, each as `[longitude, latitude]`
 - `resolution` **(number)** Target resolution (0–30)
 
 #### Return value
