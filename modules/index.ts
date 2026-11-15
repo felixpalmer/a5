@@ -42,4 +42,3 @@ export {polygonToCells} from './regions/polygon';
 
 // Types
 export type {Degrees, Radians} from './core/coordinate-systems';
-export type {A5Cell} from './core/utils';

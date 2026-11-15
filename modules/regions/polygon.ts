@@ -45,7 +45,7 @@ type PolygonToCellsOptions = {
  * @returns Compacted cells sorted in curve order, then the compaction marker
  */
 export function polygonToCells(
-  polygon: LonLat[] | LonLat[][],
+  polygon: readonly (readonly number[])[] | readonly (readonly (readonly number[])[])[],
   resolution: number,
   {containment = 'center'}: PolygonToCellsOptions = {}
 ): BigUint64Array {

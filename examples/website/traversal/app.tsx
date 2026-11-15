@@ -54,7 +54,7 @@ function kRingWithDistance(cellId: bigint, k: number, edgeOnly: boolean): Map<bi
 
 const EARTH_RADIUS_KM = 6371;
 const DEG_TO_RAD = Math.PI / 180;
-function haversineDistance(a: LonLat, b: LonLat): number {
+function haversineDistance(a: readonly number[], b: readonly number[]): number {
   const dLat = (b[1] - a[1]) * DEG_TO_RAD;
   const dLon = (b[0] - a[0]) * DEG_TO_RAD;
   const sinLat = Math.sin(dLat / 2);
