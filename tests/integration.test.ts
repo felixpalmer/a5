@@ -1,7 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {cellToBoundary} from 'a5/core/cell';
 import {hexToU64} from 'a5/core/hex';
-import type {LonLat} from 'a5/core/coordinate-systems';
 
 // Import test data
 import wireframe0 from './integration/wireframe-0.json';
@@ -28,7 +27,7 @@ interface GeoJSON {
 }
 
 // Helper to compare two arrays of coordinates with floating point values
-function compareCoordinates(actual: LonLat[], expected: number[][], precision = 6) {
+function compareCoordinates(actual: number[][], expected: number[][], precision = 6) {
   expect(actual.length).toBe(expected.length);
   for (let i = 0; i < actual.length; i++) {
     expect(actual[i]).toBeCloseToArray(expected[i], precision);

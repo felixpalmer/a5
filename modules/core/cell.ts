@@ -73,8 +73,8 @@ export function lastCellShape(cellId: bigint): {originId: OriginId; pentagon: Pe
   return _lastResult !== null && _lastResult.cellId === cellId ? _lastResult : null;
 }
 
-export function lonLatToCell(lonLat: LonLat, resolution: number): bigint {
-  return sphericalToCell(fromLonLat(lonLat), resolution);
+export function lonLatToCell(lonLat: readonly number[], resolution: number): bigint {
+  return sphericalToCell(fromLonLat(lonLat as LonLat), resolution);
 }
 
 // Haversine of the angle from a face center to its edge midpoints, atan(2)/2:
@@ -335,7 +335,7 @@ export function cellToSpherical(cell: bigint): Spherical {
   return dodecahedron.inverse(pentagon.getCenter() as Face, origin.id);
 }
 
-export function cellToLonLat(cell: bigint): LonLat {
+export function cellToLonLat(cell: bigint): [longitude: number, latitude: number] {
   // WORLD_CELL represents the entire world, return [0, 0] as a reasonable default
   if (cell === WORLD_CELL) {
     return [0, 0] as LonLat;
@@ -360,7 +360,7 @@ type CellToBoundaryOptions = {
 export function cellToBoundary(
   cellId: bigint,
   {closedRing = true, segments = 'auto'}: CellToBoundaryOptions = {closedRing: true, segments: 'auto'}
-): LonLat[] {
+): [longitude: number, latitude: number][] {
   if (cellId === WORLD_CELL || isCompactionMarker(cellId)) {
     // WORLD_CELL represents the entire world and is unbounded; a compaction marker
     // (recording a covering's resolution) is not a cell at all

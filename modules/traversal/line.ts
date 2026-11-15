@@ -232,13 +232,13 @@ export function tracePath(
  *
  * @returns Array of unique cell IDs along the polyline, in order
  */
-export function lineStringToCells(waypoints: LonLat[], resolution: number): bigint[] {
+export function lineStringToCells(waypoints: readonly (readonly number[])[], resolution: number): bigint[] {
   if (waypoints.length === 0) return [];
   if (waypoints.length === 1) return [lonLatToCell(waypoints[0], resolution)];
 
   const seen = new Set<bigint>();
   const result: bigint[] = [];
-  tracePath(waypoints, false, resolution, cell => {
+  tracePath(waypoints as LonLat[], false, resolution, cell => {
     if (!seen.has(cell)) {
       seen.add(cell);
       result.push(cell);

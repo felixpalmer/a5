@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) A5 contributors
 
-import type {LonLat} from '../core/coordinate-systems';
 import {cellToBoundary} from '../core/cell';
 import {cellToChildren, FIRST_CURVE_RESOLUTION} from '../core/serialization';
 
 // TODO find a nicer way to expose this
-export function generateWireframe(resolution: number, {segments = 1}: {segments?: number} = {}): LonLat[][] {
-  let cells: LonLat[][] = [];
+export function generateWireframe(resolution: number, {segments = 1}: {segments?: number} = {}): [longitude: number, latitude: number][][] {
+  let cells: [longitude: number, latitude: number][][] = [];
   let baseCells = 1;
   let stamp = 0n;
   if (resolution === 0) {

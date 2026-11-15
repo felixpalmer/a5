@@ -27,7 +27,7 @@ interface GeoJSONFeatureCollection {
 }
 
 function boundaryToGeoJSON(
-  boundary: LonLat[],
+  boundary: number[][],
   resolution: number,
   cellId: string,
   originPoint: LonLat
