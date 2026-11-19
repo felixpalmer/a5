@@ -1,0 +1,291 @@
+// A5
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) A5 contributors
+
+import React from 'react';
+import styled from 'styled-components';
+import Layout from '@theme/Layout';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+// Projects built with A5. Thumbnails are 960x600 (16:10) in /static/images/showcase
+const PROJECTS = [
+  {
+    title: 'Fields of The World',
+    url: 'https://research.taylorgeospatial.org/global-ftw-2e/',
+    author: 'Taylor Geospatial',
+    authorUrl: 'https://taylorgeospatial.org',
+    image: '/images/showcase/fields-of-the-world.jpg',
+    description:
+      'Over 3 billion agricultural field boundaries, mapped from Sentinel-2 imagery for every year from 2017 to 2025. A5 cells are used to provide aggregated overviews at high zooms. Data served using <a href="pmtiles">PMTiles</a>, generated with <a href="https://geoparquet-io.github.io/tylertoo">TylerToo</a>',
+    tags: ['PMTiles', 'MapLibre', 'GeoParquet', 'TylerToo'],
+    links: [
+      {label: 'Open ↗', url: 'https://research.taylorgeospatial.org/global-ftw-2e/'},
+      {label: 'Data', url: 'https://source.coop/ftw/global-data-2e'}
+    ]
+  },
+  {
+    title: 'FIRMS Explorer',
+    url: 'https://portolan-mirrors.github.io/firms-catalog/',
+    author: 'Portolan',
+    authorUrl: 'https://github.com/portolan-mirrors',
+    image: '/images/showcase/firms-explorer.jpg',
+    description:
+      'Every NASA FIRMS active fire detection since November 2000, about 631 million of them, on one map you can scrub through in time. Detections are counted per A5 cell, with the grid getting finer as you zoom in, and everything is served as static GeoParquet files with no server.',
+    tags: ['deck.gl', 'MapLibre', 'GeoParquet', 'STAC'],
+    links: [
+      {label: 'Open ↗', url: 'https://portolan-mirrors.github.io/firms-catalog/'},
+      {label: 'Source', url: 'https://github.com/portolan-mirrors/firms-catalog'}
+    ]
+  },
+  {
+    title: 'a5-pyramids',
+    url: 'https://a5-pyramids.belian.earth/',
+    author: 'Belian Earth',
+    authorUrl: 'https://belian.earth',
+    image: '/images/showcase/a5-pyramids.jpg',
+    description:
+      'AlphaEarth Foundations satellite embeddings for Sabah, Borneo, stored on A5 cells and coloured by the principal components of whatever is on screen. Cell pyramids stream from Parquet on a CDN and are coloured on the GPU, with no tile server.',
+    tags: ['deck.gl', 'Parquet', 'AlphaEarth'],
+    links: [
+      {label: 'Open ↗', url: 'https://a5-pyramids.belian.earth/'},
+      {label: 'Source', url: 'https://github.com/belian-earth/deck.gl-a5pyramid'}
+    ]
+  }
+];
+
+const SUBMIT_URL = 'https://github.com/felixpalmer/a5/issues/new?title=Showcase%3A%20';
+
+const Page = styled.main`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem 6rem;
+  @media screen and (max-width: 632px) {
+    padding: 2.5rem 16px 4rem;
+  }
+`;
+
+// Small label above the heading, as on the homepage
+const Eyebrow = styled.div`
+  margin-bottom: 0.75rem;
+  color: var(--ifm-color-primary);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+`;
+
+const Header = styled.header`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem 3rem;
+  margin-bottom: 3rem;
+
+  h1 {
+    margin: 0 0 1rem;
+    font-size: 2.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  p {
+    max-width: 38rem;
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--ifm-color-content-secondary);
+    text-wrap: pretty;
+  }
+`;
+
+const SubmitLink = styled.a`
+  flex-shrink: 0;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 999px;
+  color: var(--ifm-font-color-base);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition:
+    border-color var(--ifm-transition-fast),
+    color var(--ifm-transition-fast);
+  &:hover {
+    border-color: var(--ifm-color-primary);
+    color: var(--ifm-color-primary);
+    text-decoration: none;
+  }
+`;
+
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 2rem;
+  @media screen and (max-width: 632px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Card = styled.article`
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease,
+    border-color 250ms ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: var(--ifm-color-emphasis-300);
+    box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.35);
+  }
+`;
+
+const Thumbnail = styled.a`
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #0a0a12;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  ${Card}:hover & img {
+    transform: scale(1.04);
+  }
+`;
+
+const Body = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1.25rem 1.4rem 1.4rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  h2 a {
+    color: inherit;
+  }
+  p {
+    flex: 1;
+    margin: 0.75rem 0 1rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--ifm-color-content-secondary);
+  }
+`;
+
+const Author = styled.div`
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-600);
+  a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--ifm-color-emphasis-300);
+    text-underline-offset: 2px;
+  }
+`;
+
+const Tags = styled.ul`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: 0.15rem 0.55rem;
+    border-radius: 6px;
+    background: var(--ifm-color-emphasis-100);
+    color: var(--ifm-color-emphasis-700);
+    font-family: var(--ifm-font-family-monospace);
+    font-size: 0.75rem;
+  }
+`;
+
+const Links = styled.div`
+  display: flex;
+  gap: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  font-size: 0.9rem;
+  font-weight: 500;
+
+  a:last-child {
+    color: var(--ifm-color-emphasis-700);
+  }
+`;
+
+function ProjectCard({project}) {
+  const {title, url, author, authorUrl, image, description, tags, links} = project;
+  return (
+    <Card>
+      <Thumbnail href={url} target="_blank" rel="noopener" tabIndex={-1} aria-hidden>
+        <img src={useBaseUrl(image)} alt="" loading="lazy" />
+      </Thumbnail>
+      <Body>
+        <h2>
+          <a href={url} target="_blank" rel="noopener">
+            {title}
+          </a>
+        </h2>
+        <Author>
+          by{' '}
+          <a href={authorUrl} target="_blank" rel="noopener">
+            {author}
+          </a>
+        </Author>
+        <p>{description}</p>
+        <Tags>
+          {tags.map(tag => (
+            <li key={tag}>{tag}</li>
+          ))}
+        </Tags>
+        <Links>
+          {links.map(link => (
+            <a key={link.label} href={link.url} target="_blank" rel="noopener">
+              {link.label}
+            </a>
+          ))}
+        </Links>
+      </Body>
+    </Card>
+  );
+}
+
+export default function Showcase() {
+  return (
+    <Layout title="Showcase" description="Apps and tools built with A5, the equal-area pentagonal geospatial index">
+      <Page>
+        <Header>
+          <div>
+            <Eyebrow>Showcase</Eyebrow>
+            <h1>Built with A5</h1>
+            <p>Maps, apps and tools from the community that index, aggregate and visualize data on A5 cells.</p>
+          </div>
+          <SubmitLink href={SUBMIT_URL} target="_blank" rel="noopener">
+            Submit your project →
+          </SubmitLink>
+        </Header>
+        <Grid>
+          {PROJECTS.map(project => (
+            <ProjectCard key={project.title} project={project} />
+          ))}
+        </Grid>
+      </Page>
+    </Layout>
+  );
+}
