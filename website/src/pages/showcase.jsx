@@ -7,6 +7,12 @@ import styled from 'styled-components';
 import Layout from '@theme/Layout';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 
+const ExternalLink = ({href, children}) => (
+  <a href={href} target="_blank" rel="noopener">
+    {children}
+  </a>
+);
+
 // Projects built with A5. Thumbnails are 960x600 (16:10) in /static/images/showcase
 const PROJECTS = [
   {
@@ -15,9 +21,15 @@ const PROJECTS = [
     author: 'Taylor Geospatial',
     authorUrl: 'https://taylorgeospatial.org',
     image: '/images/showcase/fields-of-the-world.jpg',
-    description:
-      'Over 3 billion agricultural field boundaries, mapped from Sentinel-2 imagery for every year from 2017 to 2025. A5 cells are used to provide aggregated overviews at high zooms. Data served using <a href="pmtiles">PMTiles</a>, generated with <a href="https://geoparquet-io.github.io/tylertoo">TylerToo</a>',
-    tags: ['PMTiles', 'MapLibre', 'GeoParquet', 'TylerToo'],
+    description: (
+      <>
+        Over 3 billion agricultural field boundaries, mapped from Sentinel-2 imagery for every year from 2017 to 2025.
+        A5 cells are used to provide aggregated overviews at high zooms. Data served using{' '}
+        <ExternalLink href="https://docs.protomaps.com/pmtiles/">PMTiles</ExternalLink>, generated with{' '}
+        <ExternalLink href="https://geoparquet-io.github.io/tylertoo">TylerToo</ExternalLink>
+      </>
+    ),
+    tags: ['GeoParquet', 'TylerToo', 'PMTiles', 'MapLibre'],
     links: [
       {label: 'Open ↗', url: 'https://research.taylorgeospatial.org/global-ftw-2e/'},
       {label: 'Data', url: 'https://source.coop/ftw/global-data-2e'}
@@ -29,8 +41,16 @@ const PROJECTS = [
     author: 'Portolan',
     authorUrl: 'https://github.com/portolan-mirrors',
     image: '/images/showcase/firms-explorer.jpg',
-    description:
-      'Every NASA FIRMS active fire detection since November 2000, about 631 million of them, on one map you can scrub through in time. Detections are counted per A5 cell, with the grid getting finer as you zoom in, and everything is served as static GeoParquet files with no server.',
+    description: (
+      <>
+        NASA FIRMS active fire detections since November 2000, with realtime spatial and temporal filtering and
+        aggregation to A5 cells visualized using deck.gl{' '}
+        <ExternalLink href="https://deck.gl/docs/api-reference/geo-layers/a5-layer">A5Layer</ExternalLink>. Served as a{' '}
+        <ExternalLink href="https://stacspec.org">STAC</ExternalLink> catalog of{' '}
+        <ExternalLink href="https://geoparquet.org">GeoParquet</ExternalLink> files with no server. Built and served
+        using <ExternalLink href="https://portolan-sdi.org">Portolan</ExternalLink>
+      </>
+    ),
     tags: ['deck.gl', 'MapLibre', 'GeoParquet', 'STAC'],
     links: [
       {label: 'Open ↗', url: 'https://portolan-mirrors.github.io/firms-catalog/'},
@@ -43,8 +63,16 @@ const PROJECTS = [
     author: 'Belian Earth',
     authorUrl: 'https://belian.earth',
     image: '/images/showcase/a5-pyramids.jpg',
-    description:
-      'AlphaEarth Foundations satellite embeddings for Sabah, Borneo, stored on A5 cells and coloured by the principal components of whatever is on screen. Cell pyramids stream from Parquet on a CDN and are coloured on the GPU, with no tile server.',
+    description: (
+      <>
+        AlphaEarth Foundations satellite embeddings for Sabah, Borneo, stored on A5 cells and coloured by the principal
+        components of whatever is on screen.{' '}
+        <ExternalLink href="https://belian-earth.github.io/a5pyramid/">A5 Cell pyramids</ExternalLink> stream Parquet
+        tiles and are coloured on the GPU using{' '}
+        <ExternalLink href="https://github.com/belian-earth/deck.gl-a5pyramid">custom deck.gl layer</ExternalLink>, with
+        no tile server needed.
+      </>
+    ),
     tags: ['deck.gl', 'Parquet', 'AlphaEarth'],
     links: [
       {label: 'Open ↗', url: 'https://a5-pyramids.belian.earth/'},
