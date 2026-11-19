@@ -43,9 +43,10 @@ const PROJECTS = [
         <ExternalLink href="https://deepmind.google/discover/blog/alphaearth-foundations-helps-map-our-planet-in-unprecedented-detail/">
           AlphaEarth Foundations
         </ExternalLink>{' '}
-        satellite embeddings for Sabah, Borneo, resampled to A5 cells and colored by the principal components of whatever
-        is on screen. <ExternalLink href="https://belian-earth.github.io/a5pyramid/">A5 Cell pyramids</ExternalLink>{' '}
-        stream Parquet tiles and are colored on the GPU using a{' '}
+        satellite embeddings for Sabah, Borneo, resampled to A5 cells and colored by the principal components of
+        whatever is on screen.{' '}
+        <ExternalLink href="https://belian-earth.github.io/a5pyramid/">A5 Cell pyramids</ExternalLink> stream Parquet
+        tiles and are colored on the GPU using a{' '}
         <ExternalLink href="https://github.com/belian-earth/deck.gl-a5pyramid">custom deck.gl layer</ExternalLink>, with
         no tile server needed.
       </>
@@ -61,10 +62,10 @@ const PROJECTS = [
     description: (
       <>
         NASA <ExternalLink href="https://www.earthdata.nasa.gov/data/tools/firms">FIRMS</ExternalLink> active fire
-        detections since November 2000, with real-time spatial and temporal filtering and
-        aggregation to A5 cells visualized using deck.gl{' '}
-        <ExternalLink href="https://deck.gl/docs/api-reference/geo-layers/a5-layer">A5Layer</ExternalLink>. Built and served
-        using <ExternalLink href="https://portolan-sdi.org">Portolan</ExternalLink> as a{' '}
+        detections since November 2000, with real-time spatial and temporal filtering and aggregation to A5 cells
+        visualized using deck.gl{' '}
+        <ExternalLink href="https://deck.gl/docs/api-reference/geo-layers/a5-layer">A5Layer</ExternalLink>. Built and
+        served using <ExternalLink href="https://portolan-sdi.org">Portolan</ExternalLink> as a{' '}
         <ExternalLink href="https://stacspec.org">STAC</ExternalLink> catalog of{' '}
         <ExternalLink href="https://geoparquet.org">GeoParquet</ExternalLink> files with no server.
       </>
