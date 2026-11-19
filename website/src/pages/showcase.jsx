@@ -32,7 +32,7 @@ const PROJECTS = [
     tags: ['GeoParquet', 'TylerToo', 'PMTiles']
   },
   {
-    title: 'a5-pyramids',
+    title: 'A5 Pyramids',
     url: 'https://a5-pyramids.belian.earth/',
     author: 'Belian Earth',
     authorUrl: 'https://belian.earth',
