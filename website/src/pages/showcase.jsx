@@ -24,15 +24,37 @@ const PROJECTS = [
     description: (
       <>
         Over 3 billion agricultural field boundaries, mapped from Sentinel-2 imagery for every year from 2017 to 2025.
-        A5 cells are used to provide aggregated overviews at high zooms. Data served using{' '}
+        A5 cells are used to provide aggregated overviews at low zooms. Data served using{' '}
         <ExternalLink href="https://docs.protomaps.com/pmtiles/">PMTiles</ExternalLink>, generated with{' '}
         <ExternalLink href="https://geoparquet-io.github.io/tylertoo">TylerToo</ExternalLink>
       </>
     ),
-    tags: ['GeoParquet', 'TylerToo', 'PMTiles', 'MapLibre'],
+    tags: ['GeoParquet', 'TylerToo', 'PMTiles'],
     links: [
       {label: 'Open ↗', url: 'https://research.taylorgeospatial.org/global-ftw-2e/'},
       {label: 'Data', url: 'https://source.coop/ftw/global-data-2e'}
+    ]
+  },
+  {
+    title: 'a5-pyramids',
+    url: 'https://a5-pyramids.belian.earth/',
+    author: 'Belian Earth',
+    authorUrl: 'https://belian.earth',
+    image: '/images/showcase/a5-pyramids.jpg',
+    description: (
+      <>
+        AlphaEarth Foundations satellite embeddings for Sabah, Borneo, resampled to A5 cells and coloured by the principal
+        components of whatever is on screen.{' '}
+        <ExternalLink href="https://belian-earth.github.io/a5pyramid/">A5 Cell pyramids</ExternalLink> stream Parquet
+        tiles and are coloured on the GPU using{' '}
+        <ExternalLink href="https://github.com/belian-earth/deck.gl-a5pyramid">custom deck.gl layer</ExternalLink>, with
+        no tile server needed.
+      </>
+    ),
+    tags: ['AlphaEarth', 'Parquet', 'a5px'],
+    links: [
+      {label: 'Open ↗', url: 'https://a5-pyramids.belian.earth/'},
+      {label: 'Source', url: 'https://github.com/belian-earth/deck.gl-a5pyramid'}
     ]
   },
   {
@@ -45,38 +67,16 @@ const PROJECTS = [
       <>
         NASA FIRMS active fire detections since November 2000, with realtime spatial and temporal filtering and
         aggregation to A5 cells visualized using deck.gl{' '}
-        <ExternalLink href="https://deck.gl/docs/api-reference/geo-layers/a5-layer">A5Layer</ExternalLink>. Served as a{' '}
+        <ExternalLink href="https://deck.gl/docs/api-reference/geo-layers/a5-layer">A5Layer</ExternalLink>. Built and served
+        using <ExternalLink href="https://portolan-sdi.org">Portolan</ExternalLink> as a{' '}
         <ExternalLink href="https://stacspec.org">STAC</ExternalLink> catalog of{' '}
-        <ExternalLink href="https://geoparquet.org">GeoParquet</ExternalLink> files with no server. Built and served
-        using <ExternalLink href="https://portolan-sdi.org">Portolan</ExternalLink>
+        <ExternalLink href="https://geoparquet.org">GeoParquet</ExternalLink> files with no server.
       </>
     ),
-    tags: ['deck.gl', 'MapLibre', 'GeoParquet', 'STAC'],
+    tags: ['GeoParquet', 'STAC', 'Portolan', 'deck.gl'],
     links: [
       {label: 'Open ↗', url: 'https://portolan-mirrors.github.io/firms-catalog/'},
       {label: 'Source', url: 'https://github.com/portolan-mirrors/firms-catalog'}
-    ]
-  },
-  {
-    title: 'a5-pyramids',
-    url: 'https://a5-pyramids.belian.earth/',
-    author: 'Belian Earth',
-    authorUrl: 'https://belian.earth',
-    image: '/images/showcase/a5-pyramids.jpg',
-    description: (
-      <>
-        AlphaEarth Foundations satellite embeddings for Sabah, Borneo, stored on A5 cells and coloured by the principal
-        components of whatever is on screen.{' '}
-        <ExternalLink href="https://belian-earth.github.io/a5pyramid/">A5 Cell pyramids</ExternalLink> stream Parquet
-        tiles and are coloured on the GPU using{' '}
-        <ExternalLink href="https://github.com/belian-earth/deck.gl-a5pyramid">custom deck.gl layer</ExternalLink>, with
-        no tile server needed.
-      </>
-    ),
-    tags: ['deck.gl', 'Parquet', 'AlphaEarth'],
-    links: [
-      {label: 'Open ↗', url: 'https://a5-pyramids.belian.earth/'},
-      {label: 'Source', url: 'https://github.com/belian-earth/deck.gl-a5pyramid'}
     ]
   }
 ];
@@ -302,7 +302,7 @@ export default function Showcase() {
           <div>
             <Eyebrow>Showcase</Eyebrow>
             <h1>Built with A5</h1>
-            <p>Maps, apps and tools from the community that index, aggregate and visualize data on A5 cells.</p>
+            <p>Maps, apps and tools from the community that use A5</p>
           </div>
           <SubmitLink href={SUBMIT_URL} target="_blank" rel="noopener">
             Submit your project →
