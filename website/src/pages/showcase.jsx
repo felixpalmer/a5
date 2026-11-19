@@ -29,11 +29,7 @@ const PROJECTS = [
         <ExternalLink href="https://geoparquet-io.github.io/tylertoo">TylerToo</ExternalLink>
       </>
     ),
-    tags: ['GeoParquet', 'TylerToo', 'PMTiles'],
-    links: [
-      {label: 'Open ↗', url: 'https://research.taylorgeospatial.org/global-ftw-2e/'},
-      {label: 'Data', url: 'https://source.coop/ftw/global-data-2e'}
-    ]
+    tags: ['GeoParquet', 'TylerToo', 'PMTiles']
   },
   {
     title: 'a5-pyramids',
@@ -51,11 +47,7 @@ const PROJECTS = [
         no tile server needed.
       </>
     ),
-    tags: ['AlphaEarth', 'Parquet', 'a5px'],
-    links: [
-      {label: 'Open ↗', url: 'https://a5-pyramids.belian.earth/'},
-      {label: 'Source', url: 'https://github.com/belian-earth/deck.gl-a5pyramid'}
-    ]
+    tags: ['AlphaEarth', 'Parquet', 'a5px']
   },
   {
     title: 'FIRMS Explorer',
@@ -73,11 +65,7 @@ const PROJECTS = [
         <ExternalLink href="https://geoparquet.org">GeoParquet</ExternalLink> files with no server.
       </>
     ),
-    tags: ['GeoParquet', 'STAC', 'Portolan', 'deck.gl'],
-    links: [
-      {label: 'Open ↗', url: 'https://portolan-mirrors.github.io/firms-catalog/'},
-      {label: 'Source', url: 'https://github.com/portolan-mirrors/firms-catalog'}
-    ]
+    tags: ['GeoParquet', 'STAC', 'Portolan', 'deck.gl']
   }
 ];
 
@@ -251,14 +239,10 @@ const Links = styled.div`
   border-top: 1px solid var(--ifm-color-emphasis-200);
   font-size: 0.9rem;
   font-weight: 500;
-
-  a:last-child {
-    color: var(--ifm-color-emphasis-700);
-  }
 `;
 
 function ProjectCard({project}) {
-  const {title, url, author, authorUrl, image, description, tags, links} = project;
+  const {title, url, author, authorUrl, image, description, tags} = project;
   return (
     <Card>
       <Thumbnail href={url} target="_blank" rel="noopener" tabIndex={-1} aria-hidden>
@@ -283,11 +267,9 @@ function ProjectCard({project}) {
           ))}
         </Tags>
         <Links>
-          {links.map(link => (
-            <a key={link.label} href={link.url} target="_blank" rel="noopener">
-              {link.label}
-            </a>
-          ))}
+          <a href={url} target="_blank" rel="noopener">
+            Open ↗
+          </a>
         </Links>
       </Body>
     </Card>
