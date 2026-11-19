@@ -182,6 +182,11 @@ const config = {
             position: 'left',
             label: 'Examples'
           },
+          {
+            to: '/showcase',
+            position: 'left',
+            label: 'Showcase'
+          },
           ...(hasPublishedPosts
             ? [
                 {
