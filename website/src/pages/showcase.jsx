@@ -23,10 +23,11 @@ const PROJECTS = [
     image: '/images/showcase/fields-of-the-world.jpg',
     description: (
       <>
-        Over 3 billion agricultural field boundaries, mapped from Sentinel-2 imagery for every year from 2017 to 2025.
-        A5 cells are used to provide aggregated overviews at low zooms. Data served using{' '}
+        Over 3 billion agricultural field boundaries, mapped from{' '}
+        <ExternalLink href="https://sentinels.copernicus.eu/copernicus/sentinel-2">Sentinel-2</ExternalLink> imagery for
+        every year from 2017 to 2025. A5 cells are used to provide aggregated overviews at low zooms. Data served using{' '}
         <ExternalLink href="https://docs.protomaps.com/pmtiles/">PMTiles</ExternalLink>, generated with{' '}
-        <ExternalLink href="https://geoparquet-io.github.io/tylertoo">TylerToo</ExternalLink>
+        <ExternalLink href="https://geoparquet-io.github.io/tylertoo">TylerToo</ExternalLink>.
       </>
     ),
     tags: ['GeoParquet', 'TylerToo', 'PMTiles']
@@ -39,10 +40,12 @@ const PROJECTS = [
     image: '/images/showcase/a5-pyramids.jpg',
     description: (
       <>
-        AlphaEarth Foundations satellite embeddings for Sabah, Borneo, resampled to A5 cells and coloured by the principal
-        components of whatever is on screen.{' '}
-        <ExternalLink href="https://belian-earth.github.io/a5pyramid/">A5 Cell pyramids</ExternalLink> stream Parquet
-        tiles and are coloured on the GPU using{' '}
+        <ExternalLink href="https://deepmind.google/discover/blog/alphaearth-foundations-helps-map-our-planet-in-unprecedented-detail/">
+          AlphaEarth Foundations
+        </ExternalLink>{' '}
+        satellite embeddings for Sabah, Borneo, resampled to A5 cells and colored by the principal components of whatever
+        is on screen. <ExternalLink href="https://belian-earth.github.io/a5pyramid/">A5 Cell pyramids</ExternalLink>{' '}
+        stream Parquet tiles and are colored on the GPU using a{' '}
         <ExternalLink href="https://github.com/belian-earth/deck.gl-a5pyramid">custom deck.gl layer</ExternalLink>, with
         no tile server needed.
       </>
@@ -57,7 +60,8 @@ const PROJECTS = [
     image: '/images/showcase/firms-explorer.jpg',
     description: (
       <>
-        NASA FIRMS active fire detections since November 2000, with realtime spatial and temporal filtering and
+        NASA <ExternalLink href="https://www.earthdata.nasa.gov/data/tools/firms">FIRMS</ExternalLink> active fire
+        detections since November 2000, with real-time spatial and temporal filtering and
         aggregation to A5 cells visualized using deck.gl{' '}
         <ExternalLink href="https://deck.gl/docs/api-reference/geo-layers/a5-layer">A5Layer</ExternalLink>. Built and served
         using <ExternalLink href="https://portolan-sdi.org">Portolan</ExternalLink> as a{' '}
