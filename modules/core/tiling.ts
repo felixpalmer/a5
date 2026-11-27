@@ -160,5 +160,7 @@ export function getFaceVertices(): PentagonShape {
 }
 
 export function getQuintantPolar([_, gamma]: Polar): number {
-  return (Math.round(gamma / TWO_PI_OVER_5) + 5) % 5;
+  // `| 0` types the operand as an integer, so V8 computes `%` inline rather
+  // than as a (much slower) double remainder
+  return ((Math.round(gamma / TWO_PI_OVER_5) + 5) | 0) % 5;
 }
