@@ -84,11 +84,16 @@ const LO_MASK = 0x3ffffffn;
 //   2x - y - z = (sum.b + 4) / 4
 // and the parity x+y+z ∈ {0,1} pins x, y, z. No floating point.
 export function abToTriple(sumA: number, sumB: number): Triple {
-  if ((2 * sumA + sumB) % 12 !== 0 || sumB % 4 !== 0) {
+  // The remainders are taken of absolute values: V8 computes `%` of a value
+  // that may be negative (here a double) out of line, ~50x slower, and this
+  // runs once per sToCell
+  if (Math.abs(2 * sumA + sumB) % 12 !== 0 || Math.abs(sumB) % 4 !== 0) {
     throw new Error(`abToTriple: off-lattice corner sum (${sumA},${sumB})`);
   }
-  // x = (2x - y - z + parity) / 3 is an integer, which pins the parity
-  const parity = (((-(sumB + 4) / 4) % 3) + 3) % 3;
+  // x = (2x - y - z + parity) / 3 is an integer, which pins the parity: -k mod 3
+  const k = (sumB + 4) / 4;
+  const remainder = Math.abs(k) % 3;
+  const parity = remainder === 0 || k < 0 ? remainder : 3 - remainder;
   const triple = {x: 0, y: 0, z: 0};
   abToTripleInto(sumA, sumB, parity, triple);
   if (parity > 1 || triple.x + triple.y + triple.z !== parity) {
